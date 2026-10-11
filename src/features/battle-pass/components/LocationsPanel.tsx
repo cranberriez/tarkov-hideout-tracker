@@ -1,14 +1,17 @@
 "use client";
+import { useBattlePassData } from "../BattlePassSeason";
+
 import { useId, useState } from "react";
 import Image from "next/image";
 import { Columns3, Map as MapIcon, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { documents } from "../lib/battle-pass-model";
-import { documentDisplayName, locations, mapNames, mapOrder } from "../lib/battle-pass-display";
+
+import { documentDisplayName } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { MapGrid } from "./MapGrid";
 
 function MapHeading({ map }: { map: string }) {
+	const { mapThumbnails } = useBattlePassData();
 	const [failed, setFailed] = useState(false);
 	return (
 		<div className="mb-3 flex min-h-24 flex-col items-center gap-2 text-center">
@@ -18,7 +21,7 @@ function MapHeading({ map }: { map: string }) {
 				</div>
 			) : (
 				<Image
-					src={`/images/battle-pass/maps/${map.toLowerCase().replaceAll(" ", "-")}.webp`}
+					src={mapThumbnails[map.toLowerCase().replaceAll(" ", "-")]}
 					alt=""
 					width={480}
 					height={288}
@@ -33,6 +36,7 @@ function MapHeading({ map }: { map: string }) {
 }
 
 export function LocationsPanel() {
+	const { documents, locations, mapNames, mapOrder } = useBattlePassData();
 	const [view, setView] = useState<"columns" | "table">("columns");
 	const viewId = useId();
 	return (

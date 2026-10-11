@@ -172,3 +172,54 @@ test("new storage wins over later edits by an old build", async () => {
 	assert.deepEqual(useUserStore.getState().itemCounts, oldState.itemCounts);
 	assert.equal(useUserStore.getState().hasConvertedDeprecatedLegacyState, true);
 });
+
+test("a stale tab's write preserves seasonal characters added and edited in another tab", () => {
+	const values = new Map<string, string>();
+	const storage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			values.set(key, value);
+		},
+		removeItem: (key: string) => {
+			values.delete(key);
+		},
+	} as Storage;
+	const original = {
+		version: 26,
+		state: {
+			selectedSeasonId: "season-1",
+			profiles: { KORD: { playerLevel: 10 } },
+			seasonalProfiles: { "season-1": { playerLevel: 10, itemCounts: {} } },
+		},
+	};
+	storage.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(original));
+	const first = createUserStateStorage(storage);
+	const second = createUserStateStorage(storage);
+	first.getItem(USER_STORE_STORAGE_KEY);
+	second.getItem(USER_STORE_STORAGE_KEY);
+	const remote = structuredClone(original) as unknown as {
+		version: number;
+		state: { selectedSeasonId: string; profiles: Record<string, unknown>; seasonalProfiles: Record<string, unknown> };
+	};
+	remote.state.seasonalProfiles["season-2"] = { playerLevel: 25 };
+	remote.state.seasonalProfiles["season-1"] = { playerLevel: 10, itemCounts: { remoteItem: { have: 9, haveFir: 2 } } };
+	second.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(remote));
+	const local = structuredClone(original);
+	local.state.seasonalProfiles["season-1"].playerLevel = 11;
+	first.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(local));
+	const saved = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+	assert.equal(saved.state.seasonalProfiles["season-2"].playerLevel, 25);
+	assert.equal(saved.state.seasonalProfiles["season-1"].playerLevel, 11);
+	assert.equal(saved.state.seasonalProfiles["season-1"].itemCounts.remoteItem.have, 9);
+	local.state.seasonalProfiles["season-1"].playerLevel = 12;
+	first.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(local));
+	const savedAgain = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+	assert.equal(savedAgain.state.seasonalProfiles["season-2"].playerLevel, 25);
+	assert.equal(savedAgain.state.seasonalProfiles["season-1"].playerLevel, 12);
+	assert.equal(savedAgain.state.seasonalProfiles["season-1"].itemCounts.remoteItem.have, 9);
+	const reset = { ...original, state: { ...original.state, seasonalResetRevision: 1 } };
+	first.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(reset));
+	const savedReset = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+	assert.equal(savedReset.state.seasonalProfiles["season-2"], undefined);
+	assert.deepEqual(savedReset.state.seasonalProfiles["season-1"].itemCounts, {});
+});

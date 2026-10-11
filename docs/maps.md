@@ -232,3 +232,18 @@ node --test scripts/pull-map-overlays.test.mjs
 
 For visible changes, verify rotated maps, multi-floor maps, unsupported maps,
 coincident objectives, visited-objective undo, and narrow/wide layouts as relevant.
+
+## Seasonal document map ownership
+
+[battle-pass-seasons.ts](../src/lib/battle-pass-seasons.ts) associates each season
+with its pass rewards, document IDs, location summaries, marker records, map
+background registrations, image paths, thumbnails and artwork. Test currently
+uses an independent clone of the Season 1 snapshot and is labeled as placeholder
+data. Replace Test's registry data when reviewed Season 2 data is available;
+retain Season 1's snapshot and stable entity IDs.
+
+The document map accepts an explicit `season` query parameter. Map selection,
+loading/close links and battlepass navigation retain that parameter, so opening
+an old season does not silently switch its map to the current pass. Character
+inventory and account-wide pass progress follow the season scopes documented in
+[user state](user-state.md#battle-pass-progress).

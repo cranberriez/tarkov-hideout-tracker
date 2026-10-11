@@ -85,18 +85,29 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 	return options;
 }
 
-export function profitOptionsStorageKey(mode: GameMode): string {
+export function profitOptionsStorageKey(mode: GameMode | `KORD:${string}`): string {
 	return `tarkov-profit-options-v1:${mode}`;
 }
 
-export function createProfitOptionsStore(mode: GameMode, getStorage: () => Pick<Storage, "getItem" | "setItem">) {
+export function createProfitOptionsStore(
+	mode: GameMode | `KORD:${string}`,
+	getStorage: () => Pick<Storage, "getItem" | "setItem">,
+) {
 	const key = profitOptionsStorageKey(mode);
 	let snapshot = DEFAULT_PROFIT_OPTIONS;
 	let lastRaw: string | null | undefined;
 
 	function getSnapshot(): ProfitOptions {
 		try {
-			const raw = getStorage().getItem(key);
+			const stored = getStorage().getItem(key);
+			const legacy =
+				stored === null && mode.startsWith("KORD:") ? getStorage().getItem(profitOptionsStorageKey("KORD")) : null;
+			// Display preferences remain familiar; character skills start fresh.
+			const raw =
+				stored ??
+				(legacy
+					? JSON.stringify({ ...parseProfitOptions(legacy), craftingSkillLevel: 0, hideoutManagementSkillLevel: 0 })
+					: null);
 			if (raw !== lastRaw) {
 				snapshot = parseProfitOptions(raw);
 				lastRaw = raw;

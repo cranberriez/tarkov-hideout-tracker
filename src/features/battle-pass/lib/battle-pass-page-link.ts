@@ -5,8 +5,8 @@ export function parseBattlePassPage(value: string | string[] | undefined, pageCo
 	return Number.isSafeInteger(page) && page <= pageCount ? page : undefined;
 }
 
-export function battlePassPageHref(page: number) {
-	return `/battle-pass?page=${page}#pass-page-${page}`;
+export function battlePassPageHref(page: number, seasonId?: string) {
+	return `/battle-pass?page=${page}${seasonId ? `&season=${seasonId}` : ""}#pass-page-${page}`;
 }
 
 export function battlePassSpreadStart(page: number, pageCount: number, spread: number) {

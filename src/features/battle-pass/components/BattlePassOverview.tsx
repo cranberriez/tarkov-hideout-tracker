@@ -1,5 +1,8 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
+import { getSeason } from "@/lib/cfg/seasons";
 import type { ReactNode } from "react";
-import { pages, tiles, documents, type Tile, type planGoals, type coverCosts } from "../lib/battle-pass-model";
+import { type Tile, type planGoals, type coverCosts } from "../lib/battle-pass-model";
 import { Stat } from "./ui/Stat";
 import { DocumentChip } from "./ui/DocumentChip";
 
@@ -28,11 +31,14 @@ export function BattlePassOverview({
 	headerAction: ReactNode;
 	children: ReactNode;
 }) {
+	const { pages, tiles, documents, seasonId } = useBattlePassData();
 	return (
 		<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Season 1 · KORD Breach</p>
+					<p className="mb-1 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">
+						{getSeason(seasonId).title}
+					</p>
 					<h1 className="text-2xl font-semibold tracking-tight">Battle Pass</h1>
 				</div>
 				{headerAction}

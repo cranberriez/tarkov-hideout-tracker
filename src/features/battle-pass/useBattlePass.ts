@@ -2,6 +2,9 @@
 
 import { useCallback, useMemo } from "react";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
+import { inventoryScopeIsCurrent } from "./lib/battle-pass-scope";
+import { useBattlePassData } from "./BattlePassSeason";
+import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
 	commitInventoryUpdate,
@@ -14,42 +17,80 @@ import { parseProgress, type Progress } from "./lib/battle-pass-model";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
 
 // The pass is account-wide across PVP/PVE/KORD, independent of character progress.
+const EMPTY_COUNTS = {};
 export const BATTLE_PASS_STORAGE_KEY = "tarkov-battle-pass-season-1-v1";
 export function useBattlePass() {
-	const [raw, write] = useStoredProfitValue(BATTLE_PASS_STORAGE_KEY);
-	const itemCounts = useUserStore((state) => state.itemCounts);
+	const data = useBattlePassData();
+	const current = useCurrentSeason();
+	const mode = useUserStore((state) => state.gameMode);
+	const selectedSeason = useUserStore((state) => state.selectedSeasonId);
+	const seasonalInventory = mode === "KORD" || data.seasonId !== current.id;
+	const itemCounts = useUserStore((state) =>
+		seasonalInventory ? (state.seasonalProfiles[data.seasonId]?.itemCounts ?? EMPTY_COUNTS) : state.itemCounts,
+	);
+	const [raw, write] = useStoredProfitValue(data.storageKey);
 	const [{ consumeDocs }, setPreference] = useBattlePassPreferences();
 	const setConsumeDocs = useCallback((checked: boolean) => setPreference("consumeDocs", checked), [setPreference]);
-	const progress = useMemo(() => inventoryProgress(parseProgress(raw), itemCounts), [raw, itemCounts]);
+	const progress = useMemo(
+		() => inventoryProgress(parseProgress(raw), itemCounts, data.documentItemIds),
+		[raw, itemCounts, data],
+	);
 	// Storage transforms remain pure; profile effects run once after the completed save.
 	const commit = useCallback(
 		(prepare: (stored: Progress, counts: typeof itemCounts) => InventoryUpdate) => {
 			const state = useUserStore.getState();
-			commitInventoryUpdate(write, state.itemCounts, prepare, state.addItemCounts);
+			// Callbacks from an earlier character visit cannot affect the newly selected character.
+			if (
+				!inventoryScopeIsCurrent(
+					{ mode, selectedSeasonId: selectedSeason, seasonId: data.seasonId, seasonal: seasonalInventory },
+					state,
+				)
+			)
+				return;
+			const counts = seasonalInventory
+				? (state.seasonalProfiles[data.seasonId]?.itemCounts ?? EMPTY_COUNTS)
+				: state.itemCounts;
+			commitInventoryUpdate(
+				write,
+				counts,
+				prepare,
+				seasonalInventory
+					? (itemId, have, fir) => state.addItemCountsForSeason(data.seasonId, itemId, have, fir)
+					: state.addItemCounts,
+			);
 		},
-		[write],
+		[write, mode, selectedSeason, seasonalInventory, data],
 	);
 	const update = useCallback(
 		(transform: (current: Progress) => Progress) => {
-			commit((stored, counts) => prepareInventoryUpdate(stored, transform(inventoryProgress(stored, counts)), counts));
+			commit((stored, counts) =>
+				prepareInventoryUpdate(
+					stored,
+					transform(inventoryProgress(stored, counts, data.documentItemIds)),
+					counts,
+					data.documentItemIds,
+				),
+			);
 		},
-		[commit],
+		[commit, data],
 	);
 	const completeTiles = useCallback(
 		(ids: string[]) => {
-			commit((stored, counts) => completeInventoryTiles(stored, counts, ids, consumeDocs));
+			commit((stored, counts) =>
+				completeInventoryTiles(stored, counts, ids, consumeDocs, data.tiles, data.documentItemIds),
+			);
 		},
-		[commit, consumeDocs],
+		[commit, consumeDocs, data],
 	);
 	const toggleTile = useCallback(
 		(id: string) => {
 			commit((stored, counts) =>
 				stored.completed.includes(id)
 					? { progress: { ...stored, completed: stored.completed.filter((entry) => entry !== id) }, changes: [] }
-					: completeInventoryTiles(stored, counts, [id], consumeDocs),
+					: completeInventoryTiles(stored, counts, [id], consumeDocs, data.tiles, data.documentItemIds),
 			);
 		},
-		[commit, consumeDocs],
+		[commit, consumeDocs, data],
 	);
 	return [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] as const;
 }

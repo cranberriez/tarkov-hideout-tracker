@@ -10,7 +10,7 @@ account for existing users' data.
 
 | Storage key                                     | Owner and scope                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v25**; profiles, active profile projection, shared preferences and conversion state                                                                                                                                                |
+| `tarkov-hideout-profiles-state`                 | [useUserStore](../src/lib/stores/useUserStore.ts), Zustand persist **v26**; profiles, active profile projection, shared preferences and conversion state                                                                                                                                                |
 | `tarkov-hideout-user-state`                     | Previous application's save; read-only fallback through [user-state-storage](../src/lib/stores/user-state-storage.ts), never written or removed by the new user store                                                                                                                                   |
 | `tarkov-kappa-checklist-state`                  | [useKappaStore](../src/lib/stores/useKappaStore.ts), Zustand persist **v1**; `completedItemsByMode`, shared `viewMode`, and uploader `ignoreInUploader` (reset with `viewMode`)                                                                                                                         |
 | `tarkov-profit-price-overrides-v1:{mode}`       | [useManualPriceOverrides](../src/features/profit-pages/useManualPriceOverrides.ts); independent buy/sell overrides and optional empty-container values                                                                                                                                                  |
@@ -31,7 +31,7 @@ account for existing users' data.
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage                                                                                                    |
 | `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads                                                                                                                                                                                                                      |
 
-Profit key suffixes are app modes `PVP`, `PVE`, and `KORD`, not dataset names.
+Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Test), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
 Story chapter completion uses the existing mode-scoped progress writer and adds
 only active required step IDs after route choices resolve. Its undo receipt is
 ephemeral, scoped to the chapter/profile visit, and removes only IDs added by
@@ -55,8 +55,9 @@ existing Next.js history metadata and is validated on restore. This transient
 state adds no local-storage key, profile field, migration, backup, or reset behavior.
 
 [useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
-`tarkov-battle-pass-season-1-v1`, an independent account-wide save for the
-Season 1 pass, which is shared across PVP/PVE/KORD. It stores completed tile IDs,
+`tarkov-battle-pass-{seasonId}-v1`, an independent account-wide save for each
+season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
+`tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 and avoided document types (defaulting to none for older saves). Collection
 preferences persist in the same save and are shared across modes. They only break
@@ -65,8 +66,11 @@ authoritative. After ordinary inventory, avoided shortages become classified
 demand. When enabled, owned classified stock covers avoided types first, then
 other shortages, once across the plan. The top document section and floating document panel show the same live remaining
 ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
-in either view immediately update both. Known document item IDs read the active
-profile's tracked inventory, combining non-FiR and FiR stock. Missing records and
+in either view immediately update both. Known document item IDs read the selected seasonal character's inventory when
+using KORD or viewing a non-current pass. For the current pass in PVP/PVE, they
+read the active permanent profile. Explicit historical links never spend the new
+seasonal character's stock. An absent historical character supplies zero stock
+and is not created by editing the pass. Counts combine non-FiR and FiR stock. Missing records and
 tracked zeros both mean zero owned ordinary documents. Legacy account-wide
 ordinary balances remain saved but are inactive; they are never automatically
 assigned to a profile. Reads never copy balances between profiles or rewrite the
@@ -74,8 +78,8 @@ account-wide save. Editing an ordinary balance uses the existing item count acti
 creating an absent profile record as needed and retaining FiR stock where possible.
 Classified balances remain account-wide and independent of profile inventory.
 It reuses the external-store storage helper, never writes on mount, and synchronizes
-between tabs. No existing profile key, migration, backup or reset scope changes;
-this save is not included in progression backups or Settings resets.
+between tabs. Battlepass saves remain independent of profile migrations, progression backups
+and Settings resets.
 
 Individual completion toggles only the selected tile. Page headers also offer
 Complete suggested (the currently suggested prerequisite tiles on that page)
@@ -117,6 +121,41 @@ partial rewards. Completed
 rewards contribute only to actual progress. This local preview does not change
 completion, goals, saved balances, or **Consume Docs from Inventory** behavior.
 
+### Seasonal activation and history
+
+[seasons.ts](../src/lib/cfg/seasons.ts) owns stable IDs, names, colors, end dates
+and seasonal crafting rules. The end date controls availability only: crossing
+it never activates a character or clears progress. The registry order determines
+the next season. A null end date means there is no scheduled end.
+
+The v26 user-store migration assigns the existing KORD character to `season-1`,
+retaining every profile field and the legacy conversion snapshot. Activation
+creates a default character only if the available season has no profile, then
+selects it. Repeated activation selects the existing character without resetting
+it. Selection and all normal progress actions synchronize the active projection
+and the matching seasonal profile. Storage failure during activation restores
+the previous in-memory state and reports the error.
+
+The three primary choices are PVE, PVP and the currently available season.
+**View past** replaces them with saved seasonal characters; **View current**
+returns to the primary list. Past characters stay editable. A banner on an old
+seasonal character offers Activate or Switch to the current season. Availability
+refreshes on focus and periodically while the page remains open.
+
+Season 2 uses the placeholder name **Test** and blue identity color. Its character
+starts with default progress, while shared app preferences remain intact. Profit
+filters fall back to existing preferences until edited, but character skill
+levels start at zero. No Season 1 character, battlepass or auxiliary key is
+removed or copied into Test. Uploader receipts remount per seasonal identity.
+The storage adapter merges unchanged seasonal fields from newer saved payloads
+to preserve characters created in another tab; simultaneous edits to the same
+field remain last-writer-wins.
+
+Historical characters retain stable progress IDs, but the server's `pvp-season`
+catalog is still the live seasonal dataset. This does not snapshot historical
+quest/hideout provider releases. Battlepass/map snapshots are separately owned
+by season through [battle-pass-seasons.ts](../src/lib/battle-pass-seasons.ts).
+
 ### Character profiles
 
 `PlayerProfileState` and `createDefaultPlayerProfile` in
@@ -124,7 +163,9 @@ completion, goals, saved balances, or **Consume Docs from Inventory** behavior.
 station levels/hidden stations/station goals/completed requirements, inventory, quest state
 (including visited objectives and hand-ins), player/prestige level, trader loyalty,
 Fence reputation, faction, edition, and setup state. `profiles` stores
-PVP/PVE/KORD independently. The flat active fields are a projection used by
+PVP/PVE plus a compatibility KORD projection. `seasonalProfiles` stores each
+seasonal character under its stable season ID; `selectedSeasonId` determines
+which character supplies the KORD projection. The flat active fields are a projection used by
 existing consumers; the wrapped setter keeps them synchronized with the active
 profile. Shared display and filter preferences live outside the profile shape.
 Use existing actions rather than writing one side of that projection directly.
@@ -195,14 +236,17 @@ the draft model.
 
 Settings uses [PlayerProgressCard](../src/features/settings/PlayerProgressCard.tsx)
 and its [controller](../src/features/settings/useProgressBackupController.ts) to
-download all three profiles directly as a versioned JSON file and review imports.
+download permanent and all saved seasonal profiles as a versioned JSON file and review imports.
 The import dialog starts with a file drop zone, then shows the chosen filename
 and profile comparisons; choosing a file also works from the keyboard. The
 [backup model](../src/features/settings/progress-backup.ts) validates the complete
 file before any write, rejects unknown versions/fields and unsafe values, preserves
 signed inventory balances produced by existing consumption actions, and
-compares records independently of object key order. Files may contain any nonempty
-selection of PVP/PVE/KORD profiles; IDs and modes are retained exactly.
+compares records independently of object key order. Version 2 files may contain any nonempty
+selection of PVP/PVE/KORD/KORD:season-2 profiles. KORD always means Season 1
+in a backup, regardless of the currently selected character. Version 1 files
+remain supported and their KORD entry also targets Season 1. The review lists
+season names explicitly, including new archive destinations; IDs stay unchanged.
 
 The explicit [progress allowlist](../src/lib/player-progress.ts) includes inventory,
 hideout levels/requirements, completed/failed quests, visited objectives, hand-ins,
@@ -221,8 +265,7 @@ values and full records with their stable IDs. The
 [storage coordinator](../src/features/settings/progress-backup-storage.ts) rejects
 stale previews, uses dedicated user/Kappa import actions, preserves active-mode
 projection and preferences, merges only skills into profit settings, and restores
-previous state if a write fails. Persistent keys, schemas, migrations and reset
-scopes are unchanged. The former hideout-only clipboard code is replaced by this
+previous state if a write fails. The backup envelope is version 2; existing profile storage keys remain in place. The former hideout-only clipboard code is replaced by this
 file format; old `v1-` codes are not accepted as full progress backups.
 
 Run `node --test --import jiti/register src/features/settings/progress-backup.test.ts`
@@ -239,7 +282,7 @@ actions with resets of other owners. Its current behavior is:
 | Hideout reset   | Active profile's station levels, hidden stations, station goals, and completed requirements                                                              |
 | Item reset      | Active profile's inventory; Kappa completion for **all modes**, retaining Kappa view preference                                                          |
 | Quest reset     | Active profile's completed/failed/visited-objective/hand-in/ignored/pinned/history state; removes the shared import seen-files key                       |
-| Delete ALL data | Resets the entire user store and all three profiles to defaults, selects PVP and updates its cookie; resets all Kappa completion and its view preference |
+| Delete ALL data | Resets the user store, including saved seasonal characters, to defaults, selects PVP and updates its cookie; resets all Kappa completion and its view preference |
 
 Section resets preserve unrelated settings/profiles except the explicitly
 all-mode Kappa reset above. Despite its label, Delete ALL data does **not** remove

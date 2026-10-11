@@ -344,3 +344,37 @@ Do not treat content_version as a restore point.
 Map/quest-content utilities remain independent: npm run pull-map-overlays,
 quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
 and [data layer](data-layer.md) for their source policies.
+
+## Seasonal rollover rehearsal
+
+The single availability setting is Season 1's `endsAt` in
+[seasons.ts](../src/lib/cfg/seasons.ts). Its configured end remains December 7,
+2026 at 23:59:59 UTC. Season 2 is the blue **Test** placeholder. Crossing the
+boundary changes availability and navigation; character activation is manual.
+
+Use a disposable browser origin/profile rather than an existing player's save:
+
+1. Select KORD, record recognizable level, inventory, story and pass progress.
+2. Temporarily set Season 1's `endsAt` to a UTC timestamp in the past. Reload or
+   refocus the app. The old character must remain selected, with an Activate Test
+   banner and unchanged progress.
+3. Activate Test. Confirm a new default character and separate pass progress.
+   Repeated activation must preserve any Test edits.
+4. Open the profile menu, choose **View past**, then KORD. The three current
+   profile choices are replaced by past seasonal characters. Confirm old progress
+   remains editable and the banner now offers **Switch to Test**.
+5. Switch among KORD, Test, PVP and PVE, reload, and check pass/map links and
+   document consumption isolation. Export/import a v2 backup with both seasons;
+   a v1 KORD backup must affect Season 1 only.
+6. Restore the original `endsAt`. This changes availability only; it does not
+   remove the disposable Test character. Never clear real player data to rerun.
+
+Focused checks:
+
+```bash
+node --test --import jiti/register src/lib/cfg/seasons.test.ts src/lib/stores/useUserStore.profile.test.ts src/lib/stores/user-state-storage.test.ts src/features/settings/progress-backup.test.ts src/features/battle-pass/lib/battle-pass-seasons.test.ts
+```
+
+The historical character keeps progress IDs. It does not freeze the live
+`pvp-season` server catalog; only the bundled seasonal battlepass/map content is
+versioned by this preparation.

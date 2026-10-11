@@ -1,10 +1,13 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
 import { useMemo, type Ref } from "react";
-import { coverCosts, pages, planGoals, tiles } from "../lib/battle-pass-model";
+import { coverCosts, planGoals } from "../lib/battle-pass-model";
 import { useBattlePass } from "../useBattlePass";
 import { DocumentInventory } from "./DocumentInventory";
 import styles from "../battle-pass-map.module.css";
 
 export function MapDocumentPanel({ ref }: { ref: Ref<HTMLElement> }) {
+	const { pages, tiles, documentKeys } = useBattlePassData();
 	const [progress, update] = useBattlePass();
 	const scope = progress.goals.length === 0 ? "all" : "goals";
 	const plan = useMemo(
@@ -15,11 +18,12 @@ export function MapDocumentPanel({ ref }: { ref: Ref<HTMLElement> }) {
 				pages,
 				progress.avoidedDocuments,
 			),
-		[scope, progress.goals, progress.completed, progress.avoidedDocuments],
+		[scope, progress.goals, progress.completed, progress.avoidedDocuments, pages, tiles],
 	);
 	const coverage = useMemo(
-		() => coverCosts(plan.costs, progress.inventory, progress.classified, false, progress.avoidedDocuments),
-		[plan.costs, progress.inventory, progress.classified, progress.avoidedDocuments],
+		() =>
+			coverCosts(plan.costs, progress.inventory, progress.classified, false, progress.avoidedDocuments, documentKeys),
+		[plan.costs, progress.inventory, progress.classified, progress.avoidedDocuments, documentKeys],
 	);
 	return (
 		<aside
@@ -29,7 +33,9 @@ export function MapDocumentPanel({ ref }: { ref: Ref<HTMLElement> }) {
 			tabIndex={-1}
 			className={styles.documentPanel}
 		>
-			<h2 id="map-documents-heading" className="text-sm font-semibold">Documents</h2>
+			<h2 id="map-documents-heading" className="text-sm font-semibold">
+				Documents
+			</h2>
 			<p className="mt-1 text-xs text-muted-foreground">
 				Documents still needed for {scope === "all" ? "all remaining rewards" : "your reward goals"}.
 			</p>

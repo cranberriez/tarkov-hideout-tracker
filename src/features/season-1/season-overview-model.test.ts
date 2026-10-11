@@ -51,8 +51,9 @@ test("empty goals produce no implicit whole-pass plan", () => {
 });
 
 test("countdown uses calendar days and stops at zero on and after the estimated end date", () => {
-	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 9, 10, 0)), 58);
-	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 9, 10, 23, 59)), 58);
-	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 11, 7)), 0);
-	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 11, 8)), 0);
+	const endsAt = Date.UTC(2026, 11, 7);
+	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 9, 10, 0), endsAt), 58);
+	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 9, 10, 23, 59), endsAt), 58);
+	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 11, 7), endsAt), 0);
+	assert.equal(estimatedDaysRemaining(Date.UTC(2026, 11, 8), endsAt), 0);
 });

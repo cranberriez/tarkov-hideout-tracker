@@ -1,17 +1,11 @@
 "use client";
+import { useBattlePassData } from "./BattlePassSeason";
+
 /// <reference types="react/canary" />
 import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map as MapIcon } from "lucide-react";
 import Link from "next/link";
-import {
-	coverCosts,
-	pages,
-	planGoals,
-	previewProgress,
-	tiles,
-	unlockedPages,
-	type Costs,
-} from "./lib/battle-pass-model";
+import { coverCosts, planGoals, previewProgress, unlockedPages, type Costs } from "./lib/battle-pass-model";
 import { useBattlePass } from "./useBattlePass";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
 import { DocumentDock } from "./components/DocumentDock";
@@ -39,6 +33,7 @@ function useSpread() {
 }
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
+	const { pages, tiles, documentKeys, seasonId } = useBattlePassData();
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
 	const [
 		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode },
@@ -68,7 +63,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			}
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [initialPage, first, listMode, spread]);
+	}, [initialPage, first, listMode, spread, pages.length]);
 	const go = useCallback(
 		(to: number) => {
 			const next = Math.max(0, Math.min(to, lastStart));
@@ -103,11 +98,19 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				pages,
 				progress.avoidedDocuments,
 			),
-		[progress.goals, progress.completed, progress.avoidedDocuments, scope],
+		[progress.goals, progress.completed, progress.avoidedDocuments, scope, pages, tiles],
 	);
 	const coverage = useMemo(
-		() => coverCosts(plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments),
-		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments],
+		() =>
+			coverCosts(
+				plan.costs,
+				progress.inventory,
+				progress.classified,
+				useClassified,
+				progress.avoidedDocuments,
+				documentKeys,
+			),
+		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments, documentKeys],
 	);
 	const cumulativeCosts = useMemo(
 		() =>
@@ -119,7 +122,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						]),
 					)
 				: new Map<string, Costs>(),
-		[cumulative, progress.completed, progress.avoidedDocuments],
+		[cumulative, progress.completed, progress.avoidedDocuments, pages, tiles],
 	);
 	const possibleProgress = useMemo(
 		() =>
@@ -130,6 +133,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				progress.classified,
 				useClassified,
 				progress.avoidedDocuments,
+				pages,
 			),
 		[
 			plan.selected,
@@ -138,6 +142,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			progress.classified,
 			useClassified,
 			progress.avoidedDocuments,
+			pages,
 		],
 	);
 	const possibleFractions = showPossibleProgress ? possibleProgress.fractions : new Map<string, number>();
@@ -145,7 +150,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const goals = new Set(progress.goals);
 	const filler = new Set(plan.fillerIds);
 	const selected = new Set(plan.selected.map((tile) => tile.id));
-	const openPages = unlockedPages(progress.completed);
+	const openPages = unlockedPages(progress.completed, pages);
 	const completedCount = tiles.filter((tile) => complete.has(tile.id)).length;
 	const remainingTotal = tiles
 		.filter((tile) => !complete.has(tile.id))
@@ -162,7 +167,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				{...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}
 				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
 				headerAction={
-					<Link href="/battle-pass/map" className={buttonClassName({ tone: "brand" })}>
+					<Link href={"/battle-pass/map?season=" + seasonId} className={buttonClassName({ tone: "brand" })}>
 						<MapIcon size={15} aria-hidden />
 						Document map
 					</Link>

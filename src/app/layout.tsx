@@ -5,7 +5,7 @@ import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
 import { SetupModal } from "../features/setup/SetupModal";
 import { Analytics } from "@vercel/analytics/next";
-import { SeasonUpdateBanner } from "@/components/core/SeasonUpdateBanner";
+import { SeasonCharacterBanner } from "@/features/seasons/SeasonCharacterBanner";
 import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
@@ -46,7 +46,7 @@ export default function RootLayout({
 						<ActiveGameModeSync />
 						<AppThemeSync />
 						<Navbar />
-						{/* <SeasonUpdateBanner /> */}
+						<SeasonCharacterBanner />
 						<div className="flex min-h-0 flex-1 flex-col">{children}</div>
 						<SetupModal />
 						<QuickAddModal />

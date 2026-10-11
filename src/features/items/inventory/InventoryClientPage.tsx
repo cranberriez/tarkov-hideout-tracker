@@ -22,13 +22,15 @@ import {
 	type InventorySort,
 } from "./inventory-model";
 import { InventoryRow } from "./InventoryRow";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
 export function InventoryClientPage() {
 	const hydrated = useUserStoreHydrated();
 	const gameMode = useUserStore((state) => state.gameMode);
+	const profileScope = useProfileStorageScope(gameMode);
 	if (!hydrated) return <RouteLoader page="items" title="Inventory" />;
-	// Keyed by mode so rows kept at zero belong to one profile's visit.
-	return <InventoryView key={gameMode} mode={toTarkovJsonGameMode(gameMode)} />;
+	// Rows kept at zero belong to one character's visit, including past seasons.
+	return <InventoryView key={profileScope} mode={toTarkovJsonGameMode(gameMode)} />;
 }
 
 function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {

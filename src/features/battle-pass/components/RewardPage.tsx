@@ -1,9 +1,11 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
 /// <reference types="react/canary" />
 import { ViewTransition } from "react";
 import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { pages, toggleId, type PassPage, type Costs } from "../lib/battle-pass-model";
-import { tileSpans } from "../lib/battle-pass-display";
+import { toggleId, type PassPage, type Costs } from "../lib/battle-pass-model";
+
 import type { useBattlePass } from "../useBattlePass";
 import { RewardCard } from "./RewardCard";
 import styles from "../battle-pass.module.css";
@@ -37,6 +39,7 @@ export function RewardPage({
 	possibleFractions: Map<string, number>;
 	possibleAllocations?: Map<string, Costs>;
 }) {
+	const { pages, tileSpans } = useBattlePassData();
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 	const suggestedIds = page.cells

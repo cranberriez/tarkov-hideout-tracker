@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useSyncExternalStore } from "react";
 
+import { useUserStore } from "../../lib/stores/useUserStore";
+import { FIRST_SEASON_ID } from "../../lib/cfg/seasons";
+
 const listeners = new Set<() => void>();
 const fallback = new Map<string, string>();
 function read(key: string): string | null {
@@ -26,7 +29,9 @@ function subscribe(listener: () => void) {
 	};
 }
 /** No mount-time writes; synchronizes consumers without overwriting another mode. */
-export function useStoredProfitValue(key: string) {
+export function useStoredProfitValue(baseKey: string) {
+	const seasonId = useUserStore((state) => state.selectedSeasonId);
+	const key = baseKey.endsWith(":KORD") && seasonId !== FIRST_SEASON_ID ? `${baseKey}:${seasonId}` : baseKey;
 	const raw = useSyncExternalStore(
 		subscribe,
 		() => read(key),

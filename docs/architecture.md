@@ -29,14 +29,26 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
 | `/season-1`                                        | [Season 1 overview](../src/app/season-1/page.tsx): estimated season countdown, saved battle pass completion/goals and document coverage; static data and existing client progress only, no server reads |
-| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): static Season 1 rewards, account-wide completion/goals and document inventory; under the Season 1 main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
+| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; under the available season main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/battle-pass/map`                                 | [Document map](../src/app/battle-pass/map/page.tsx): full-viewport interactive document spawn maps without site navigation; lazy client rendering and native browser history |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
-Season 1 follows Quests in the main navigation, with Overview, Battle Pass and
+The available season follows Quests in the main navigation, with Overview, Battle Pass and
 Docs Maps links. It is available in every mode before and after setup, including
 a compact direct overview link on mobile. Battle Pass routes activate this menu;
 the full-viewport document map still hides site navigation.
+Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
+is at `/season-2`. Battlepass and map links carry `?season=season-1` or
+`?season=season-2`. Without an explicit season, KORD uses its selected character
+and permanent profiles use the available season. Test content is clearly labeled
+as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
+
+Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
+is at `/season-2`. Battlepass and map links carry `?season=season-1` or
+`?season=season-2`. Without an explicit season, KORD uses its selected character
+and permanent profiles use the available season. Test content is clearly labeled
+as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
+
 The [overview](../src/features/season-1/SeasonOverviewPage.tsx) reads the existing
 battle pass progress and classified preference without writes. Its selected goal
 estimates share one sequential preview across the combined prerequisite plan,

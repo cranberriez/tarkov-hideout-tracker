@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, PackagePlus, Undo2 } from "lucide-react";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
+import { profileStorageScope } from "@/lib/seasons/profile-scope";
 import { useKappaStore } from "@/lib/stores/useKappaStore";
 import { cn } from "@/lib/utils";
 import type { SummaryRow } from "./summary-model";
@@ -30,6 +32,7 @@ export function UploaderInventoryActions({
 	disabled: boolean;
 }) {
 	const mode = useUserStore((state) => state.gameMode);
+	const scope = useProfileStorageScope(mode);
 	const router = useRouter();
 	const [message, setMessage] = useState("");
 	const sentAny = Object.keys(sent).length > 0 || kappaSent.length > 0;
@@ -37,12 +40,13 @@ export function UploaderInventoryActions({
 	const all = planUploaderInventory(rows, sent, false, kappaSent);
 	const apply = (keptOnly: boolean) => {
 		const store = useUserStore.getState();
-		if (disabled || store.gameMode !== mode) return;
+		if (disabled || store.gameMode !== mode || profileStorageScope(store.gameMode, store.selectedSeasonId) !== scope)
+			return;
 		const plan = planUploaderInventory(rows, sent, keptOnly, kappaSent);
 		if (plan.unknown || (!plan.deltas.length && !plan.kappa.length)) return;
 		try {
 			for (const delta of plan.deltas) store.addItemCounts(delta.itemId, delta.have, delta.haveFir);
-			if (plan.kappa.length) useKappaStore.getState().completeItems(mode, plan.kappa);
+			if (plan.kappa.length) useKappaStore.getState().completeItems(scope, plan.kappa);
 			onSent(plan.deltas, plan.kappa);
 			setMessage(
 				[
@@ -60,15 +64,15 @@ export function UploaderInventoryActions({
 	// Reverses every send from this scan, so an accidental click leaves inventory as it was.
 	const undo = () => {
 		const store = useUserStore.getState();
-		if (store.gameMode !== mode) return;
+		if (store.gameMode !== mode || profileStorageScope(store.gameMode, store.selectedSeasonId) !== scope) return;
 		const kappaStore = useKappaStore.getState();
 		let units = 0;
 		for (const [itemId, amount] of Object.entries(sent)) {
 			store.addItemCounts(itemId, -amount.have, -amount.haveFir);
 			units += amount.have + amount.haveFir;
 		}
-		const completed = kappaStore.completedItemsByMode[mode] ?? {};
-		for (const itemId of kappaSent) if (completed[itemId]) kappaStore.toggleCompletedItem(mode, itemId);
+		const completed = kappaStore.completedItemsByMode[scope] ?? {};
+		for (const itemId of kappaSent) if (completed[itemId]) kappaStore.toggleCompletedItem(scope, itemId);
 		onUndo();
 		setMessage(
 			[

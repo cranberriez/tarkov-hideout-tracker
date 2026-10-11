@@ -1,5 +1,7 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
 import { Flag, LockKeyhole } from "lucide-react";
-import { pages } from "../lib/battle-pass-model";
+
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
 
@@ -20,6 +22,7 @@ export function PageMinimap({
 	go: (to: number) => void;
 	possibleProgress: number[];
 }) {
+	const { pages } = useBattlePassData();
 	return (
 		<nav aria-label="Battle pass pages" className={styles.minimap}>
 			<div className="container mx-auto flex items-stretch gap-1 px-4 sm:px-6">

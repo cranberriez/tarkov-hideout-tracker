@@ -1,4 +1,6 @@
 "use client";
+import { useBattlePassData } from "../../BattlePassSeason";
+
 import { useState, type CSSProperties, type SyntheticEvent } from "react";
 import { Check, FileText, MapPin } from "lucide-react";
 import {
@@ -8,7 +10,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Artwork } from "./Artwork";
-import { documentDisplayName, documentMarks, locations, mapNames } from "../../lib/battle-pass-display";
+import { documentDisplayName } from "../../lib/battle-pass-display";
 import { cn } from "@/lib/utils";
 import styles from "../../battle-pass.module.css";
 
@@ -25,6 +27,7 @@ export function DocumentChip({
 	fulfilled?: boolean;
 	partial?: boolean;
 }) {
+	const { documentMarks, locations, mapNames } = useBattlePassData();
 	const [placement, setPlacement] = useState({ end, width: 280 });
 	const placeLabel = (event: SyntheticEvent<HTMLElement>) => {
 		const box = event.currentTarget.getBoundingClientRect();

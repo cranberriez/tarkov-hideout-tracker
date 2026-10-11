@@ -128,11 +128,12 @@ export function coverCosts(
 	classified: number,
 	useClassified: boolean,
 	avoidedDocuments: string[] = [],
+	keys: string[] = documentKeys,
 ) {
 	let pool = useClassified ? normalizeCount(classified) : 0;
 	const avoided = new Set(avoidedDocuments);
 	// Reserve owned wildcards for avoided types first; every wildcard is used only once.
-	const allocations = [...documentKeys]
+	const allocations = [...keys]
 		.sort((a, b) => Number(avoided.has(b)) - Number(avoided.has(a)))
 		.map((key) => {
 			const required = costs[key] ?? 0;
@@ -151,7 +152,7 @@ export function coverCosts(
 				classifiedMissing: avoided.has(key) ? deficit : 0,
 			};
 		});
-	const rows = documentKeys.map((key) => allocations.find((row) => row.key === key)!);
+	const rows = keys.map((key) => allocations.find((row) => row.key === key)!);
 	const classifiedMissing = rows.reduce((n, row) => n + row.classifiedMissing, 0);
 	return {
 		rows,
@@ -162,11 +163,11 @@ export function coverCosts(
 	};
 }
 
-export function unlockedPages(completed: string[]) {
+export function unlockedPages(completed: string[], passPages = pages) {
 	const done = new Set(completed);
 	let open = true;
-	return pages.map((page, i) => {
-		if (i > 0) open = open && pages[i - 1].cells.filter((tile) => done.has(tile.id)).length >= page.req;
+	return passPages.map((page, i) => {
+		if (i > 0) open = open && passPages[i - 1].cells.filter((tile) => done.has(tile.id)).length >= page.req;
 		return open;
 	});
 }

@@ -40,9 +40,13 @@ export function commitInventoryUpdate(
 const positiveCount = (value: number) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0);
 
 /** Ordinary stock belongs exclusively to the active profile; absent records mean zero. */
-export function inventoryProgress(progress: Progress, itemCounts: PlayerItemCounts): Progress {
+export function inventoryProgress(
+	progress: Progress,
+	itemCounts: PlayerItemCounts,
+	itemIds = documentItemIds,
+): Progress {
 	const inventory = { ...progress.inventory };
-	for (const [key, itemId] of Object.entries(documentItemIds)) {
+	for (const [key, itemId] of Object.entries(itemIds)) {
 		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
 		inventory[key] = positiveCount(counts.have) + positiveCount(counts.haveFir);
 	}
@@ -58,11 +62,16 @@ export function itemCountChange(itemId: string, counts: PlayerItemCounts[string]
 }
 
 /** Keep mapped inventory edits in their existing profile owner, without copying them to the pass save. */
-export function prepareInventoryUpdate(stored: Progress, next: Progress, itemCounts: PlayerItemCounts) {
+export function prepareInventoryUpdate(
+	stored: Progress,
+	next: Progress,
+	itemCounts: PlayerItemCounts,
+	itemIds = documentItemIds,
+) {
 	const inventory = { ...next.inventory };
 	const changes: ItemCountChange[] = [];
-	const current = inventoryProgress(stored, itemCounts);
-	for (const [key, itemId] of Object.entries(documentItemIds)) {
+	const current = inventoryProgress(stored, itemCounts, itemIds);
+	for (const [key, itemId] of Object.entries(itemIds)) {
 		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
 		if (Object.hasOwn(next.inventory, key) && next.inventory[key] !== current.inventory[key])
 			changes.push(itemCountChange(itemId, counts, next.inventory[key]));
@@ -79,6 +88,7 @@ export function completeInventoryTiles(
 	ids: string[],
 	consume: boolean,
 	knownTiles: Tile[] = tiles,
+	itemIds = documentItemIds,
 ) {
 	const completed = new Set(stored.completed);
 	const requested = new Set(ids);
@@ -91,7 +101,7 @@ export function completeInventoryTiles(
 	if (!consume) return { progress, changes };
 	progress.inventory = { ...stored.inventory };
 	for (const [key, amount] of Object.entries(sumCosts(newlyCompleted))) {
-		const itemId = documentItemIds[key];
+		const itemId = itemIds[key];
 		const counts = itemId ? itemCounts[itemId] : undefined;
 		if (counts) {
 			const haveDelta = -Math.min(positiveCount(counts.have), amount) || 0;

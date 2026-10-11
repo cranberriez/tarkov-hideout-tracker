@@ -1,30 +1,63 @@
 "use client";
 
 import { useState } from "react";
+
 import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2, FileJson, ShieldCheck } from "lucide-react";
-import { GAME_MODES } from "@/lib/game-mode";
+
+import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
+
+import { useUserStore } from "@/lib/stores/useUserStore";
+
+import { profileStorageScope } from "@/lib/seasons/profile-scope";
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { comparisonRows, profileStatus } from "./progress-backup";
+
+import { comparisonRows, profileStatus, emptyBackupProfile, type BackupProfileScope } from "./progress-backup";
+
 import { useProgressBackupController } from "./useProgressBackupController";
 
 const button =
 	"inline-flex items-center justify-center gap-2 rounded-md border border-highlight/15 bg-highlight/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-highlight/10 focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40";
+
 const primary = `${button} border-brand/30 bg-brand/10 text-brand hover:bg-brand/20`;
+
 function summary(value: unknown): string {
 	if (value === null) return "Not set";
+
 	if (typeof value === "boolean") return value ? "Yes" : "No";
+
 	if (typeof value === "object") {
 		const count = Object.keys(value as object).length;
+
 		return count
 			? `${count.toLocaleString()} ${Array.isArray(value) ? "event" : "record"}${count === 1 ? "" : "s"}`
 			: "None";
 	}
+
 	return String(value);
 }
 
+function profileLabel(scope: BackupProfileScope) {
+	return scope === "KORD"
+		? getSeason("season-1").title
+		: scope.startsWith("KORD:")
+			? getSeason(scope.slice(5) as SeasonId).title
+			: scope;
+}
+
 export function PlayerProgressCard() {
+	const seasonalProfiles = useUserStore((state) => state.seasonalProfiles);
+
+	const savedScopes: BackupProfileScope[] = [
+		"PVP",
+		"PVE",
+		...Object.keys(seasonalProfiles).map((id) => profileStorageScope("KORD", id as SeasonId)),
+	];
+
 	const c = useProgressBackupController();
+
 	const [dragging, setDragging] = useState(false);
+
 	return (
 		<>
 			<section className="overflow-hidden rounded-lg border border-[var(--brand)]/25 bg-card">
@@ -33,38 +66,47 @@ export function PlayerProgressCard() {
 						<div className="rounded-md border border-[var(--brand)]/20 bg-[var(--brand)]/10 p-2.5 text-[var(--brand)]">
 							<ShieldCheck size={21} />
 						</div>
+
 						<div>
 							<h2 className="text-sm font-semibold text-foreground">Player progress</h2>
+
 							<p className="mt-1 text-xs text-muted-foreground">Your characters. One portable backup.</p>
 						</div>
 					</div>
+
 					<div className="flex gap-2">
 						<button className={button} disabled={!c.ready} onClick={c.open}>
 							<ArrowUpFromLine size={14} />
 							Import file
 						</button>
+
 						<button className={primary} disabled={!c.ready} onClick={c.exportBackup}>
 							<ArrowDownToLine size={14} />
 							Export backup
 						</button>
 					</div>
 				</div>
+
 				<div className="space-y-4 px-5 py-4">
 					<p className="max-w-2xl text-xs leading-5 text-muted-foreground">
 						Back up or transfer stored items, hideout upgrades, quests, Kappa completion, character details, and skills.
 						Review each profile before importing.
 					</p>
+
 					<div className="grid grid-cols-3 gap-2">
-						{GAME_MODES.map((mode) => (
+						{savedScopes.map((mode) => (
 							<div
 								key={mode}
+
 								className="flex flex-col gap-1 rounded-md border border-highlight/8 bg-shadow/15 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
 							>
-								<span className="text-xs font-semibold tracking-wider text-[var(--brand)]">{mode}</span>
+								<span className="text-xs font-semibold tracking-wider text-[var(--brand)]">{profileLabel(mode)}</span>
+
 								<span className="text-[10px] text-subtle-foreground">Separate profile</span>
 							</div>
 						))}
 					</div>
+
 					{c.status && (
 						<p role="status" className="text-xs text-success">
 							{c.status}
@@ -76,89 +118,125 @@ export function PlayerProgressCard() {
 			<Dialog open={c.dialog} onOpenChange={(open) => !open && c.close()}>
 				<DialogContent
 					showCloseButton={false}
+
 					className={`flex max-h-[90dvh] flex-col overflow-hidden p-0 ${c.backup ? "max-w-[min(48rem,calc(100%-2rem))]" : "max-w-[min(30rem,calc(100%-2rem))]"}`}
+
 					onCloseAutoFocus={(event) => {
 						event.preventDefault();
+
 						c.restoreFocus();
 					}}
 				>
 					<DialogTitle className="sr-only">Import player progress</DialogTitle>
+
 					<DialogDescription className="sr-only">Choose a backup and review the profiles to import.</DialogDescription>
+
 					<div className="min-h-0 space-y-3 overflow-y-auto p-4">
 						<label
 							className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center transition-colors focus-within:ring-2 focus-within:ring-brand ${dragging ? "border-brand bg-brand/10" : "border-highlight/20 bg-highlight/[0.02] hover:bg-highlight/5"} ${c.fileName ? "px-4 py-4" : "px-6 py-12"}`}
+
 							onDragOver={(event) => {
 								event.preventDefault();
+
 								setDragging(true);
 							}}
+
 							onDragLeave={(event) => {
 								if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
 							}}
+
 							onDrop={(event) => {
 								event.preventDefault();
+
 								setDragging(false);
+
 								void c.readFile(event.dataTransfer.files[0]);
 							}}
 						>
 							<input
 								type="file"
+
 								accept=".json,application/json"
+
 								aria-label="Choose a progress backup"
+
 								className="sr-only"
+
 								onChange={(event) => {
 									void c.readFile(event.target.files?.[0]);
+
 									event.target.value = "";
 								}}
 							/>
+
 							<FileJson size={22} className="shrink-0 text-[var(--brand)]" />
+
 							<span className="max-w-full break-all text-sm font-medium text-foreground">
 								{c.fileName || "Drop your backup here"}
 							</span>
+
 							<span className="text-xs text-subtle-foreground">
 								{c.fileName ? "Drop another file or click to replace" : "or click to browse"}
 							</span>
 						</label>
+
 						{c.loading && (
 							<p role="status" className="text-sm text-muted-foreground">
 								Reading and validating backup…
 							</p>
 						)}
+
 						{c.error && (
 							<p
 								role="alert"
+
 								className="rounded border border-danger/25 bg-danger/10 p-3 text-xs leading-5 text-danger"
 							>
 								{c.error}
 							</p>
 						)}
+
 						{c.backup && c.current && (
 							<>
-								{GAME_MODES.map((mode) => {
+								{(Object.keys(c.backup.profiles) as BackupProfileScope[]).map((mode) => {
 									const incoming = c.backup!.profiles[mode];
+
 									if (!incoming)
 										return (
 											<p key={mode} className="text-xs text-subtle-foreground">
 												{mode} · Not in backup
 											</p>
 										);
-									const old = c.current!.profiles[mode]!;
+
+									const old = c.current!.profiles[mode] ?? emptyBackupProfile();
+
 									const state = profileStatus(old, incoming);
+
 									const same = state === "up-to-date";
+
 									const rows = comparisonRows(old, incoming);
+
 									return (
 										<section
 											key={mode}
+
 											className={`overflow-hidden rounded-md border ${c.selected.includes(mode) ? "border-brand/30" : "border-highlight/10"}`}
 										>
 											<label className="flex cursor-pointer items-center gap-3 bg-highlight/[0.03] px-4 py-3">
 												<input
 													type="checkbox"
+
 													className="size-4 accent-brand"
+
 													checked={c.selected.includes(mode)}
+
 													disabled={same}
+
 													onChange={() => c.toggle(mode)}
 												/>
-												<span className="text-sm font-semibold text-foreground">{mode}</span>
+
+												<span className="text-sm font-semibold text-foreground">{profileLabel(mode)}</span>
+
 												<span
 													className={`ml-auto flex items-center gap-1.5 text-xs ${same || state === "empty" ? "text-success" : "text-warning"}`}
 												>
@@ -174,14 +252,17 @@ export function PlayerProgressCard() {
 													)}
 												</span>
 											</label>
+
 											<div className="grid grid-cols-3 gap-2 border-t border-highlight/5 px-4 py-3 text-xs text-muted-foreground">
 												<span>
 													Level <b className="text-foreground">{incoming.progress.playerLevel}</b>
 												</span>
+
 												<span>
 													<b className="text-foreground">{Object.keys(incoming.progress.itemCounts).length}</b> item
 													types
 												</span>
+
 												<span>
 													<b className="text-foreground">
 														{Object.values(incoming.progress.completedQuests).filter(Boolean).length}
@@ -189,35 +270,44 @@ export function PlayerProgressCard() {
 													quests done
 												</span>
 											</div>
+
 											{!same && (
 												<details className="border-t border-highlight/5">
 													<summary className="cursor-pointer px-4 py-2.5 text-xs text-[var(--brand)]">
 														Compare progress
 													</summary>
+
 													<div className="overflow-x-auto px-4 pb-3">
 														<table className="w-full text-left text-xs">
 															<thead className="text-[10px] uppercase tracking-wider text-subtle-foreground">
 																<tr>
 																	<th className="py-2 font-medium">Progress</th>
+
 																	<th className="py-2 font-medium">Current</th>
+
 																	<th className="py-2 font-medium">Incoming</th>
 																</tr>
 															</thead>
+
 															<tbody>
 																{rows.map((row) => (
 																	<tr
 																		key={row.label}
+
 																		className={`border-t border-highlight/5 ${row.changed ? "text-warning" : "text-muted-foreground"}`}
 																	>
 																		<td className="max-w-48 py-2 pr-3 align-top">
 																			{row.label}
+
 																			{!row.changed && (
 																				<span className="block text-[10px] text-subtle-foreground">Unchanged</span>
 																			)}
 																		</td>
+
 																		{[row.current, row.incoming].map((value, index) => (
 																			<td key={index} className="max-w-52 py-2 pr-2 align-top">
 																				{summary(value)}
+
 																				{value !== null &&
 																					typeof value === "object" &&
 																					Object.keys(value).length > 0 && (
@@ -225,6 +315,7 @@ export function PlayerProgressCard() {
 																							<summary className="cursor-pointer text-[10px] text-[var(--brand)]">
 																								View records / IDs
 																							</summary>
+
 																							<pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-shadow/20 p-2 text-[10px]">
 																								{JSON.stringify(value, null, 2)}
 																							</pre>
@@ -242,12 +333,16 @@ export function PlayerProgressCard() {
 										</section>
 									);
 								})}
+
 								{c.replacing && (
 									<label className="flex items-start gap-3 rounded-md border border-warning/25 bg-warning/5 p-3 text-xs leading-5 text-warning">
 										<input
 											type="checkbox"
+
 											className="mt-1 size-4 shrink-0 accent-brand"
+
 											checked={c.acknowledged}
+
 											onChange={(event) => c.setAcknowledged(event.target.checked)}
 										/>
 										Replace selected profiles, including removing progress absent from this backup.
@@ -256,13 +351,17 @@ export function PlayerProgressCard() {
 							</>
 						)}
 					</div>
+
 					<DialogFooter className="grid shrink-0 grid-cols-2 items-center border-t border-highlight/10 bg-shadow/15 px-5 py-4 sm:flex">
 						<button className={button} onClick={c.close}>
 							Cancel
 						</button>
+
 						<button
 							className={primary}
+
 							onClick={c.submit}
+
 							disabled={!c.backup || !c.selected.length || c.loading || (c.replacing && !c.acknowledged)}
 						>
 							Confirm import

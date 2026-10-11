@@ -1,9 +1,10 @@
 "use client";
+import { useBattlePassData } from "../../BattlePassSeason";
+
 import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 import { FileText } from "lucide-react";
-import { documentLocationArtwork } from "../../lib/battle-pass-document-artwork";
-import { documentMarks } from "../../lib/battle-pass-display";
+
 import { cn } from "@/lib/utils";
 import styles from "../../battle-pass.module.css";
 
@@ -15,6 +16,7 @@ export function LocationsDocumentArtwork({
 	doc: { key: string; img?: string };
 	className?: string;
 }) {
+	const { documentLocationArtwork, documentMarks } = useBattlePassData();
 	const sources = [...new Set([documentLocationArtwork[doc.key]?.image512pxLink, doc.img].filter(Boolean))];
 	const [sourceIndex, setSourceIndex] = useState(0);
 	const src = sources[sourceIndex];

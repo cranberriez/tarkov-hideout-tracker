@@ -8,6 +8,7 @@ import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useSearchManifest } from "@/lib/search/useSearchManifest";
 import { useAppPreferencesStore } from "@/lib/stores/useAppPreferencesStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 import { cn } from "@/lib/utils";
 import { uploaderCatalog } from "./uploader-catalog";
 import { useUploaderController } from "./useUploaderController";
@@ -19,6 +20,7 @@ import { KeyHint, UploaderSidebarHeader } from "./UploaderSidebarHeader";
 export function UploaderClientPage() {
 	const hydrated = useUserStoreHydrated();
 	const gameMode = useUserStore((state) => state.gameMode);
+	const profileScope = useProfileStorageScope(gameMode);
 	useEffect(() => {
 		document.body.classList.add("uploader-workspace-active");
 		return () => document.body.classList.remove("uploader-workspace-active");
@@ -29,7 +31,7 @@ export function UploaderClientPage() {
 				Loading uploader…
 			</main>
 		);
-	return <UploaderView key={gameMode} mode={toTarkovJsonGameMode(gameMode)} />;
+	return <UploaderView key={profileScope} mode={toTarkovJsonGameMode(gameMode)} />;
 }
 
 function UploaderView({ mode }: { mode: TarkovJsonGameMode }) {

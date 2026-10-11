@@ -1,5 +1,6 @@
 "use client";
 
+import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Coffee, Menu, MessageSquare, Plus, Search, Settings2 } from "lucide-react";
@@ -21,17 +22,21 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
+import { devNavItem, gamesNavItem, seasonNavMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
 export function Navbar() {
 	const gameMode = useUserStore((state) => state.gameMode);
+	const profileScope = useProfileStorageScope(gameMode);
 	const currentPage = usePathname();
 	if (currentPage === "/battle-pass/map") return null;
-	return <NavbarContent key={gameMode} />;
+	return <NavbarContent key={profileScope} />;
 }
 
 function NavbarContent() {
+	const season = useCurrentSeason();
+	const navMenus = seasonNavMenus(season);
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchTrigger = useRef<HTMLElement | null>(null);
@@ -136,15 +141,15 @@ function NavbarContent() {
 
 							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
 								<Link
-									href="/season-1"
+									href={"/" + season.id}
 									className={cn(
 										"shrink-0 whitespace-nowrap rounded px-2 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-brand",
-										currentPage === "/season-1" || currentPage.startsWith("/battle-pass")
+										currentPage === "/" + season.id || currentPage.startsWith("/battle-pass")
 											? "bg-brand text-inverse"
 											: "text-muted-foreground hover:text-foreground",
 									)}
 								>
-									Season 1
+									{season.name}
 								</Link>
 								<button
 									onClick={() => setQuickAddOpen(true)}
@@ -243,13 +248,13 @@ function NavbarContent() {
 }
 
 function isNavItemActive(currentPage: string, item: NavItem) {
-	return currentPage === item.href || currentPage.startsWith(`${item.href}/`);
+	return currentPage === item.href.split("?")[0] || currentPage.startsWith(`${item.href.split("?")[0]}/`);
 }
 
 function isNavMenuActive(currentPage: string, menu: NavMenu) {
 	return (
 		isNavItemActive(currentPage, menu) ||
-		(menu.href === "/season-1" && !!menu.children?.some((item) => isNavItemActive(currentPage, item)))
+		(menu.href.startsWith("/season-") && !!menu.children?.some((item) => isNavItemActive(currentPage, item)))
 	);
 }
 

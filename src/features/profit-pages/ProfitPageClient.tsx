@@ -35,6 +35,7 @@ import { useManualPriceOverrides } from "./useManualPriceOverrides";
 import { usePinnedCrafts } from "./usePinnedCrafts";
 import { useProfitOptions } from "./useProfitOptions";
 import { useStoredProfitValue } from "./useStoredProfitValue";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
 interface ProfitPageClientProps {
 	kind: ProfitPageKind;
@@ -57,6 +58,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 			traderLoyaltyLevels: state.questTraderLoyaltyLevels,
 		})),
 	);
+	const profileScope = useProfileStorageScope(gameMode);
 	const { overrides, setItemOverride } = useManualPriceOverrides(gameMode);
 	const { pinnedCrafts, togglePinnedCraft } = usePinnedCrafts(gameMode);
 	const [search, setSearch] = useState("");
@@ -308,7 +310,7 @@ export function ProfitPageClient({ kind, data, initialTargetRecipeId }: ProfitPa
 				)}
 				<div className="mb-4">
 					<ProfitPageControls
-						key={gameMode}
+						key={profileScope}
 						craftingSkillForced={craftingSkillForced}
 						craftingSkillNote={craftingSkillNote}
 						craftingSkillLevel={craftingSkillLevel}

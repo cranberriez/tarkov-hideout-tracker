@@ -206,3 +206,23 @@ test("locked recipe preference defaults off for old saves and persists per mode"
 	for (const mode of ["PVP", "KORD"] as const)
 		assert.equal(createProfitOptionsStore(mode, () => storage).getSnapshot().preferBestLockedRoute, false);
 });
+
+test("a new season retains display preferences while skills and writes stay isolated", () => {
+	const values = new Map<string, string>();
+	const original = JSON.stringify({ profitableOnly: true, craftingSkillLevel: 25, hideoutManagementSkillLevel: 30 });
+	values.set(profitOptionsStorageKey("KORD"), original);
+	const storage = {
+		getItem: (key: string) => values.get(key) ?? null,
+		setItem: (key: string, value: string) => {
+			values.set(key, value);
+		},
+	};
+	const store = createProfitOptionsStore("KORD:season-2", () => storage);
+	assert.equal(store.getSnapshot().profitableOnly, true);
+	assert.equal(store.getSnapshot().craftingSkillLevel, 0);
+	assert.equal(store.getSnapshot().hideoutManagementSkillLevel, 0);
+	assert.equal(values.has(profitOptionsStorageKey("KORD:season-2")), false);
+	store.setOption("craftingSkillLevel", 17);
+	assert.equal(store.getSnapshot().craftingSkillLevel, 17);
+	assert.equal(values.get(profitOptionsStorageKey("KORD")), original);
+});

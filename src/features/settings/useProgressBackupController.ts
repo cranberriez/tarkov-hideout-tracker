@@ -1,10 +1,16 @@
 "use client";
 
 import { useRef, useState, useSyncExternalStore } from "react";
-import { GAME_MODES, type GameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useKappaStore } from "@/lib/stores/useKappaStore";
-import { MAX_BACKUP_BYTES, parseProgressBackup, profileStatus, type ProgressBackup } from "./progress-backup";
+import {
+	MAX_BACKUP_BYTES,
+	emptyBackupProfile,
+	parseProgressBackup,
+	profileStatus,
+	type ProgressBackup,
+	type BackupProfileScope,
+} from "./progress-backup";
 import { importProgressBackup, readProgressBackup } from "./progress-backup-storage";
 
 function subscribeHydration(notify: () => void) {
@@ -24,7 +30,7 @@ export function useProgressBackupController() {
 	const [dialog, setDialog] = useState(false);
 	const [backup, setBackup] = useState<ProgressBackup | null>(null);
 	const [current, setCurrent] = useState<ProgressBackup | null>(null);
-	const [selected, setSelected] = useState<GameMode[]>([]);
+	const [selected, setSelected] = useState<BackupProfileScope[]>([]);
 	const [acknowledged, setAcknowledged] = useState(false);
 	const [error, setError] = useState("");
 	const [status, setStatus] = useState("");
@@ -74,9 +80,10 @@ export function useProgressBackupController() {
 			setCurrent(snapshot);
 			setBackup(parsed);
 			setSelected(
-				GAME_MODES.filter(
+				(Object.keys(parsed.profiles) as BackupProfileScope[]).filter(
 					(mode) =>
-						parsed.profiles[mode] && profileStatus(snapshot.profiles[mode]!, parsed.profiles[mode]!) === "empty",
+						parsed.profiles[mode] &&
+						profileStatus(snapshot.profiles[mode] ?? emptyBackupProfile(), parsed.profiles[mode]!) === "empty",
 				),
 			);
 		} catch (e) {
@@ -91,7 +98,7 @@ export function useProgressBackupController() {
 			current?.profiles[mode] &&
 			profileStatus(current.profiles[mode]!, backup.profiles[mode]!) === "replace",
 	);
-	function toggle(mode: GameMode) {
+	function toggle(mode: BackupProfileScope) {
 		setAcknowledged(false);
 		setSelected((previous) =>
 			previous.includes(mode) ? previous.filter((entry) => entry !== mode) : [...previous, mode],

@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { constrainMapView, zoomViewAroundPoint } from "@/features/maps/map-view-transform";
-import { documents } from "../lib/battle-pass-model";
-import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
-import { documentMaps, documentLocations, type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
+import { useBattlePassData } from "../BattlePassSeason";
+import { documentDisplayName } from "../lib/battle-pass-display";
+import { type BattlePassDocumentLocation } from "@/lib/battle-pass-map-data";
 import { filterDocumentLocations, documentMapCounts } from "../lib/battle-pass-map-controls";
 import { resolveDocumentBasemap } from "../lib/battle-pass-map-background";
 import { localDocumentMapImage } from "../lib/battle-pass-map-images";
@@ -36,6 +36,7 @@ import { useDocumentMapNavigation } from "../useDocumentMapNavigation";
 import styles from "../battle-pass-map.module.css";
 
 function LocationPhoto({ src, title }: { src?: string; title: string }) {
+	const { imagePaths } = useBattlePassData();
 	const [state, setState] = useState<"loading" | "ready" | "error">("loading");
 	return (
 		<div className={styles.photo}>
@@ -52,7 +53,7 @@ function LocationPhoto({ src, title }: { src?: string; title: string }) {
 						</div>
 					)}
 					<Image
-						src={localDocumentMapImage(src)}
+						src={localDocumentMapImage(src, imagePaths)}
 						fill
 						sizes="(max-width: 640px) 100vw, 640px"
 						loading="lazy"
@@ -84,6 +85,7 @@ function LocationPreview({
 	nearby: BattlePassDocumentLocation[];
 	onSelect: (id: string) => void;
 }) {
+	const { documents, documentMarks } = useBattlePassData();
 	const doc = documents.find((entry) => entry.key === location.documentKey);
 	const [photo, setPhoto] = useState(0);
 	const [photoLocation, setPhotoLocation] = useState(location.id);
@@ -170,6 +172,16 @@ function LocationPreview({
 }
 
 export function BattlePassMapView({ onClose }: { onClose: () => void }) {
+	const {
+		documents,
+		documentMarks,
+		documentMaps,
+		documentLocations,
+		backgrounds,
+		imagePaths,
+		mapThumbnails,
+		placeholder,
+	} = useBattlePassData();
 	const { mapId, view, hiddenTypes, mapColors, setMapColors, setView, setHiddenTypes, changeMap } =
 		useDocumentMapNavigation();
 	const [hovered, setHovered] = useState<string | null>(null);
@@ -198,8 +210,11 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 	const [controlsHeight, setControlsHeight] = useState(0);
 	const drag = useRef<{ pointer: number; x: number; y: number; viewX: number; viewY: number } | null>(null);
 	const map = documentMaps.find((entry) => entry.id === mapId);
-	const background = map ? resolveDocumentBasemap(map, useOriginal) : undefined;
-	const mapLocations = useMemo(() => documentLocations.filter((location) => location.mapId === mapId), [mapId]);
+	const background = map ? resolveDocumentBasemap(map, useOriginal, backgrounds, documentLocations) : undefined;
+	const mapLocations = useMemo(
+		() => documentLocations.filter((location) => location.mapId === mapId),
+		[mapId, documentLocations],
+	);
 	const mapDocuments = documents.filter(
 		(doc) => map && (doc.key in map.spawns || mapLocations.some((location) => location.documentKey === doc.key)),
 	);
@@ -307,7 +322,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								onClick={() => changeMap(entry.id)}
 							>
 								<Image
-									src={`/images/battle-pass/maps/${entry.slug}.webp`}
+									src={mapThumbnails[entry.slug]}
 									alt=""
 									fill
 									sizes="96px"
@@ -424,7 +439,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								className={styles.mapImage}
 								data-colors={mapColors}
 								style={{ "--map-grayscale": `${grayscaleAmount}%` } as CSSProperties}
-								src={localDocumentMapImage(background.imageUrl)}
+								src={localDocumentMapImage(background.imageUrl, imagePaths)}
 								width={background.width}
 								height={background.height}
 								loading="lazy"
@@ -653,6 +668,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 				)}
 			</div>
 			<footer className={styles.footer}>
+				{placeholder && <span>Test placeholder · Season 1 locations</span>}
 				<span>
 					Drag to pan · scroll to zoom · <LockKeyhole size={11} /> key required
 				</span>

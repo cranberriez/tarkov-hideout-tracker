@@ -1,5 +1,7 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
 import { Check } from "lucide-react";
-import { documents, type Costs } from "../lib/battle-pass-model";
+import { type Costs } from "../lib/battle-pass-model";
 import { DocumentChip } from "./ui/DocumentChip";
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
@@ -15,6 +17,7 @@ export function CostList({
 	wide?: boolean;
 	previewEnabled?: boolean;
 }) {
+	const { documents } = useBattlePassData();
 	const shown = documents.filter((doc) => (costs[doc.key] ?? 0) > 0);
 	return (
 		<div

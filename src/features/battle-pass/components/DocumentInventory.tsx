@@ -1,6 +1,8 @@
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
 import { Ban, Check } from "lucide-react";
-import { documents, normalizeCount, toggleId, type coverCosts } from "../lib/battle-pass-model";
-import { documentDisplayName, documentMarks } from "../lib/battle-pass-display";
+import { normalizeCount, toggleId, type coverCosts } from "../lib/battle-pass-model";
+import { documentDisplayName } from "../lib/battle-pass-display";
 import type { useBattlePass } from "../useBattlePass";
 import { DocumentChip } from "./ui/DocumentChip";
 import { ActionChip } from "./ui/ActionChip";
@@ -15,6 +17,7 @@ export function DocumentInventory({
 	update: ReturnType<typeof useBattlePass>[1];
 	coverage: ReturnType<typeof coverCosts>;
 }) {
+	const { documents, documentMarks } = useBattlePassData();
 	return (
 		<div className="mt-3 grid grid-cols-[40px_1fr_64px_36px] items-center gap-x-2 gap-y-1">
 			<span aria-hidden />

@@ -1,89 +1,150 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
+
 import { Check, LoaderCircle } from "lucide-react";
+
 import { useRouter } from "next/navigation";
+
 import { useShallow } from "zustand/react/shallow";
+
 import { useUserStore, type GameMode, type PlayerProfileState } from "@/lib/stores/useUserStore";
+
 import { cn } from "@/lib/utils";
+
 import { countCompletedHideoutUpgrades, countCompletedQuests } from "@/lib/utils/profile-summary";
+
 import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
+
+import { getSeason, SEASONS, type SeasonId } from "@/lib/cfg/seasons";
+
+import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
+
 import { PlayerEndingSelector } from "@/features/story/components/PlayerEndingSelector";
 
 const PRESTIGE_LEVELS = [1, 2, 3, 4, 5, 6];
+
 const PROFILE_ORDER: GameMode[] = ["PVE", "PVP", "KORD"];
+
 type Faction = "USEC" | "BEAR" | null;
+
 type OpenPanel = "character" | "profiles";
+
 const OPEN_CHARACTER_EVENT = "tarkov-open-character-panel";
 
 /** Opens the navbar character panel with its level input focused, from anywhere on the page. */
+
 export function openCharacterPanel() {
 	window.dispatchEvent(new Event(OPEN_CHARACTER_EVENT));
 }
 
-const profileColorStyle = (mode: GameMode) => ({ "--profile-color": PROFILE_BASE_COLORS[mode] }) as CSSProperties;
+const profileColorStyle = (mode: GameMode, seasonId: SeasonId = "season-1") =>
+	({ "--profile-color": mode === "KORD" ? getSeason(seasonId).color : PROFILE_BASE_COLORS[mode] }) as CSSProperties;
 
 export function PlayerProfileMenu() {
+	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
+
 	const [hoveredPanel, setHoveredPanel] = useState<OpenPanel | null>(null);
+
 	const [pinnedPanel, setPinnedPanel] = useState<OpenPanel | null>(null);
+
 	const [isSwitching, startSwitch] = useTransition();
+
 	const router = useRouter();
+
 	const rootRef = useRef<HTMLDivElement>(null);
+
 	const focusLevelOnOpen = useRef(false);
+
 	const activePanel = pinnedPanel ?? hoveredPanel;
 
 	const {
 		playerLevel,
+
 		setPlayerLevel,
+
 		prestigeLevel,
+
 		setPrestigeLevel,
+
 		faction,
+
 		setQuestFaction,
+
 		gameMode,
+
 		profiles,
+
 		setGameMode,
 	} = useUserStore(
 		useShallow((state) => ({
 			playerLevel: state.playerLevel,
+
 			setPlayerLevel: state.setPlayerLevel,
+
 			prestigeLevel: state.prestigeLevel,
+
 			setPrestigeLevel: state.setPrestigeLevel,
+
 			faction: state.questFaction,
+
 			setQuestFaction: state.setQuestFaction,
+
 			gameMode: state.gameMode,
+
 			profiles: state.profiles,
+
 			setGameMode: state.setGameMode,
 		})),
 	);
 
+	const profileName = gameMode === "KORD" ? getSeason(selectedSeasonId).name : gameMode;
+
 	const [levelDraft, setLevelDraft] = useState<{ mode: GameMode; level: number; value: string } | null>(null);
+
 	const levelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	if (levelDraft && (levelDraft.mode !== gameMode || levelDraft.level !== playerLevel)) {
 		setLevelDraft(null);
 	}
+
 	const levelInputValue =
 		levelDraft?.mode === gameMode && levelDraft.level === playerLevel ? levelDraft.value : String(playerLevel);
 
 	useEffect(
 		() => () => {
 			if (levelTimer.current !== null) clearTimeout(levelTimer.current);
+
 			levelTimer.current = null;
 		},
-		[gameMode, playerLevel],
+
+		[gameMode, playerLevel, selectedSeasonId],
 	);
 
 	function changePlayerLevel(value: string) {
 		setLevelDraft({ mode: gameMode, level: playerLevel, value });
+
 		if (levelTimer.current !== null) clearTimeout(levelTimer.current);
+
 		const parsed = Number(value);
+
 		if (!value.trim() || !Number.isFinite(parsed)) return;
+
 		const level = Math.min(100, Math.max(1, Math.trunc(parsed)));
+
 		levelTimer.current = setTimeout(() => {
 			const current = useUserStore.getState();
-			if (current.gameMode === gameMode && current.playerLevel === playerLevel) {
+
+			if (
+				current.gameMode === gameMode &&
+				current.selectedSeasonId === selectedSeasonId &&
+				current.playerLevel === playerLevel
+			) {
 				setPlayerLevel(level);
+
 				setLevelDraft(null);
 			}
+
 			levelTimer.current = null;
 		}, 500);
 	}
@@ -94,59 +155,77 @@ export function PlayerProfileMenu() {
 		function onPointerDown(event: PointerEvent) {
 			if (!rootRef.current?.contains(event.target as Node)) {
 				setPinnedPanel(null);
+
 				setHoveredPanel(null);
 			}
 		}
 
 		document.addEventListener("pointerdown", onPointerDown);
+
 		return () => document.removeEventListener("pointerdown", onPointerDown);
 	}, [activePanel]);
 
 	useEffect(() => {
 		function onOpenCharacter() {
 			// The navbar mounts a mobile and a desktop copy; only the visible one responds.
+
 			if (!rootRef.current?.getClientRects().length) return;
+
 			const levelInput = rootRef.current.querySelector<HTMLInputElement>("#player-profile-level");
+
 			if (levelInput) levelInput.focus();
 			else focusLevelOnOpen.current = true;
+
 			setHoveredPanel("character");
+
 			setPinnedPanel("character");
 		}
 
 		window.addEventListener(OPEN_CHARACTER_EVENT, onOpenCharacter);
+
 		return () => window.removeEventListener(OPEN_CHARACTER_EVENT, onOpenCharacter);
 	}, []);
 
 	useEffect(() => {
 		if (pinnedPanel !== "character" || !focusLevelOnOpen.current) return;
+
 		focusLevelOnOpen.current = false;
+
 		rootRef.current?.querySelector<HTMLInputElement>("#player-profile-level")?.focus();
 	}, [pinnedPanel]);
 
 	function switchProfile(mode: GameMode) {
 		if (mode === gameMode || isSwitching) return;
+
 		setGameMode(mode);
+
 		startSwitch(() => router.refresh());
 	}
 
 	function pinPanel(panel: OpenPanel) {
 		setHoveredPanel(panel);
+
 		setPinnedPanel(panel);
 	}
 
 	function closePinnedPanel(activeElement?: HTMLElement) {
 		setPinnedPanel(null);
+
 		setHoveredPanel(null);
+
 		activeElement?.blur();
 	}
 
 	return (
 		<div
 			ref={rootRef}
+
 			className="relative"
+
 			onPointerLeave={() => {
 				if (!pinnedPanel) setHoveredPanel(null);
 			}}
+
 			onBlur={(event) => {
 				if (!pinnedPanel && !event.currentTarget.contains(event.relatedTarget)) {
 					setHoveredPanel(null);
@@ -154,34 +233,49 @@ export function PlayerProfileMenu() {
 			}}
 		>
 			<div
-				style={profileColorStyle(gameMode)}
+				style={profileColorStyle(gameMode, selectedSeasonId)}
+
 				className={cn(
 					"relative flex h-10 overflow-hidden rounded border border-highlight/10 bg-shadow/35 text-foreground transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_bottom_right,color-mix(in_srgb,var(--profile-color)_24%,transparent)_0%,transparent_60%)]",
+
 					activePanel && "border-brand/50 text-foreground",
 				)}
+
 				role="group"
+
 				aria-label="Character and profile"
 			>
 				<button
 					type="button"
+
 					onPointerEnter={() => {
 						if (!pinnedPanel) setHoveredPanel("character");
 					}}
+
 					onFocus={() => {
 						if (!pinnedPanel) setHoveredPanel("character");
 					}}
+
 					onClick={() => pinPanel("character")}
+
 					className={cn(
 						"relative z-10 flex items-center gap-2 px-2.5 transition-colors hover:bg-highlight/[0.05] focus-visible:bg-highlight/[0.05] focus-visible:outline-none",
+
 						activePanel === "character" && "bg-highlight/[0.05]",
 					)}
+
 					aria-haspopup="dialog"
+
 					aria-expanded={activePanel === "character"}
+
 					aria-controls="character-customizer-panel"
+
 					aria-label={`Character, level ${playerLevel}`}
 				>
 					<FactionShield faction={faction} size={16} className="shrink-0" />
+
 					<span className="font-mono text-sm font-semibold leading-none">{playerLevel}</span>
+
 					{prestigeLevel > 0 && (
 						<span className="rounded-sm bg-special/20 px-1.5 py-0.5 font-mono text-xs font-bold text-special">
 							{prestigeLevel}
@@ -193,32 +287,45 @@ export function PlayerProfileMenu() {
 
 				<button
 					type="button"
+
 					onPointerEnter={() => {
 						if (!pinnedPanel) setHoveredPanel("profiles");
 					}}
+
 					onFocus={() => {
 						if (!pinnedPanel) setHoveredPanel("profiles");
 					}}
+
 					onClick={() => pinPanel("profiles")}
+
 					className={cn(
 						"relative z-10 flex min-w-14 items-center justify-center px-2.5 transition-colors hover:bg-highlight/[0.05] focus-visible:bg-highlight/[0.05] focus-visible:outline-none",
+
 						activePanel === "profiles" && "bg-highlight/[0.05]",
 					)}
+
 					aria-haspopup="dialog"
+
 					aria-expanded={activePanel === "profiles"}
+
 					aria-controls="profile-selection-panel"
-					aria-label={`Profile, ${gameMode}`}
+
+					aria-label={`Profile, ${profileName}`}
 				>
-					<span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-foreground">{gameMode}</span>
+					<span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-foreground">{profileName}</span>
 				</button>
 			</div>
 
 			{activePanel && (
 				<div
 					id={activePanel === "character" ? "character-customizer-panel" : "profile-selection-panel"}
+
 					className="fixed left-4 right-4 top-[3.25rem] z-50 w-auto overflow-hidden rounded-md border border-highlight/10 bg-card p-3 text-sm shadow-2xl shadow-shadow/50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[min(20rem,calc(100vw-2rem))]"
+
 					role="dialog"
+
 					aria-modal="false"
+
 					aria-label={activePanel === "character" ? "Character customizer" : "Profiles"}
 				>
 					<div className="relative z-10 mb-3 flex items-start justify-between gap-3">
@@ -233,6 +340,7 @@ export function PlayerProfileMenu() {
 									"Profiles"
 								)}
 							</div>
+
 							<div className="mt-1 text-base font-semibold text-foreground">
 								{activePanel === "character"
 									? `Level ${playerLevel}${prestigeLevel > 0 ? ` · Prestige ${prestigeLevel}` : ""}`
@@ -242,7 +350,9 @@ export function PlayerProfileMenu() {
 
 						<button
 							type="button"
+
 							onClick={(event) => closePinnedPanel(event.currentTarget)}
+
 							className="rounded-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-subtle-foreground transition-colors hover:bg-highlight/5 hover:text-foreground"
 						>
 							Close
@@ -252,11 +362,17 @@ export function PlayerProfileMenu() {
 					{activePanel === "character" ? (
 						<CharacterCustomizer
 							gameMode={gameMode}
+
 							levelInputValue={levelInputValue}
+
 							onLevelInputChange={changePlayerLevel}
+
 							prestigeLevel={prestigeLevel}
+
 							setPrestigeLevel={setPrestigeLevel}
+
 							faction={faction}
+
 							setFaction={setQuestFaction}
 						/>
 					) : (
@@ -269,7 +385,7 @@ export function PlayerProfileMenu() {
 				<div className="fixed inset-0 z-[100] flex items-center justify-center bg-shadow/75 backdrop-blur-sm">
 					<div className="flex items-center gap-3 rounded-md border border-highlight/10 bg-surface-raised px-5 py-4 text-sm font-medium text-foreground shadow-2xl">
 						<LoaderCircle className="animate-spin text-brand" size={18} />
-						Loading {gameMode} character…
+						Loading {profileName} character…
 					</div>
 				</div>
 			)}
@@ -279,19 +395,31 @@ export function PlayerProfileMenu() {
 
 function CharacterCustomizer({
 	gameMode,
+
 	levelInputValue,
+
 	onLevelInputChange,
+
 	prestigeLevel,
+
 	setPrestigeLevel,
+
 	faction,
+
 	setFaction,
 }: {
 	gameMode: GameMode;
+
 	levelInputValue: string;
+
 	onLevelInputChange: (value: string) => void;
+
 	prestigeLevel: number;
+
 	setPrestigeLevel: (level: number) => void;
+
 	faction: Faction;
+
 	setFaction: (faction: Faction) => void;
 }) {
 	return (
@@ -300,13 +428,20 @@ function CharacterCustomizer({
 				<label htmlFor="player-profile-level" className="text-xs font-medium text-muted-foreground">
 					Character Level
 				</label>
+
 				<input
 					id="player-profile-level"
+
 					type="number"
+
 					min={1}
+
 					max={100}
+
 					value={levelInputValue}
+
 					onChange={(event) => onLevelInputChange(event.target.value)}
+
 					className="h-8 w-16 rounded border border-highlight/10 bg-shadow/40 px-2 text-right font-mono text-xs text-foreground outline-none transition-colors focus:border-brand/50"
 				/>
 			</div>
@@ -316,10 +451,14 @@ function CharacterCustomizer({
 					{PRESTIGE_LEVELS.map((level) => (
 						<button
 							key={level}
+
 							type="button"
+
 							onClick={() => setPrestigeLevel(prestigeLevel === level ? 0 : level)}
+
 							className={cn(
 								"flex h-8 items-center justify-center rounded-sm border text-xs font-bold transition-all",
+
 								prestigeLevel >= level
 									? "border-special/40 bg-special/80 text-inverse shadow-lg shadow-special/35"
 									: "border-highlight/10 bg-shadow/30 text-subtle-foreground hover:border-highlight/25 hover:text-foreground",
@@ -336,11 +475,13 @@ function CharacterCustomizer({
 					<SegmentButton active={faction === "USEC"} onClick={() => setFaction(faction === "USEC" ? null : "USEC")}>
 						USEC
 					</SegmentButton>
+
 					<SegmentButton active={faction === "BEAR"} onClick={() => setFaction(faction === "BEAR" ? null : "BEAR")}>
 						BEAR
 					</SegmentButton>
 				</div>
 			</ControlGroup>
+
 			<ControlGroup label="Ending">
 				<PlayerEndingSelector gameMode={gameMode} />
 			</ControlGroup>
@@ -355,57 +496,123 @@ function ProfileList({
 	onSelect,
 }: {
 	activeMode: GameMode;
+
 	profiles: Record<GameMode, PlayerProfileState>;
+
 	isSwitching: boolean;
+
 	onSelect: (mode: GameMode) => void;
 }) {
+	const current = useCurrentSeason();
+
+	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
+
+	const seasonalProfiles = useUserStore((state) => state.seasonalProfiles);
+
+	const [showPast, setShowPast] = useState(false);
+
+	const [error, setError] = useState<string | null>(null);
+
+	const router = useRouter();
+
+	const past = SEASONS.filter((season) => season.id !== current.id && seasonalProfiles[season.id]);
+
+	const choices = showPast
+		? past.map((season) => ({ mode: "KORD" as GameMode, season, profile: seasonalProfiles[season.id] }))
+		: PROFILE_ORDER.map((mode) => ({
+				mode,
+				season: current,
+				profile: mode === "KORD" ? seasonalProfiles[current.id] : profiles[mode],
+			}));
+
+	function select(mode: GameMode, seasonId: SeasonId) {
+		try {
+			if (mode === "KORD") {
+				const state = useUserStore.getState();
+
+				if (seasonId === current.id) state.activateSeason(seasonId);
+				else state.selectSeason(seasonId);
+
+				router.refresh();
+			} else onSelect(mode);
+
+			setError(null);
+		} catch (cause) {
+			setError(cause instanceof Error ? cause.message : "The character could not be saved.");
+		}
+	}
+
 	return (
 		<div className="relative z-10 grid gap-2">
-			{PROFILE_ORDER.map((mode) => {
-				const profile = profiles[mode];
-				const active = mode === activeMode;
-				const faction = profile.questFaction ?? "No faction";
-				const completedQuests = countCompletedQuests(profile);
-				const completedUpgrades = countCompletedHideoutUpgrades(profile);
+			{(past.length > 0 || showPast) && (
+				<button
+					type="button"
+					className="justify-self-end text-xs text-muted-foreground hover:text-foreground hover:underline"
+					onClick={() => setShowPast(!showPast)}
+				>
+					{showPast ? "View current" : "View past"}
+				</button>
+			)}
+
+			{choices.map(({ mode, season, profile }) => {
+				const active = mode === activeMode && (mode !== "KORD" || selectedSeasonId === season.id);
+
+				const name = mode === "KORD" ? season.name : mode;
 
 				return (
 					<button
-						key={mode}
+						key={mode === "KORD" ? season.id : mode}
 						type="button"
-						style={profileColorStyle(mode)}
-						onClick={() => onSelect(mode)}
+						style={profileColorStyle(mode, season.id)}
+						onClick={() => select(mode, season.id)}
 						disabled={isSwitching}
+
 						className={cn(
-							"relative flex w-full items-center gap-3 overflow-hidden rounded border border-highlight/10 bg-shadow/25 p-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_right,color-mix(in_srgb,var(--profile-color)_18%,transparent)_0%,transparent_72%)] before:opacity-0 before:transition-opacity before:duration-200 hover:border-[color-mix(in_srgb,var(--profile-color)_30%,transparent)] hover:before:opacity-100 disabled:cursor-wait disabled:opacity-60",
+							"relative flex w-full items-center gap-3 overflow-hidden rounded border border-highlight/10 bg-shadow/25 p-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_right,color-mix(in_srgb,var(--profile-color)_18%,transparent)_0%,transparent_72%)] before:opacity-0 before:transition-opacity hover:border-[color-mix(in_srgb,var(--profile-color)_30%,transparent)] hover:before:opacity-100 disabled:opacity-60",
 							active && "border-[color-mix(in_srgb,var(--profile-color)_40%,transparent)] before:opacity-50",
 						)}
 					>
-						<span className="relative z-10 inline-flex w-12 shrink-0 items-center justify-center px-2 py-1 text-[11px] font-bold tracking-wide text-foreground">
-							{mode}
+						<span className="relative z-10 inline-flex w-12 shrink-0 items-center justify-center text-[11px] font-bold">
+							{name}
 						</span>
+
 						<span className="relative z-10 min-w-0 flex-1">
-							<span className="flex items-center gap-2 font-semibold text-foreground">
-								{faction} · Level {profile.playerLevel}
-								{active && <Check size={14} className="shrink-0 text-success" />}
+							<span className="flex items-center gap-2 font-semibold">
+								{profile
+									? `${profile.questFaction ?? "No faction"} · Level ${profile.playerLevel}`
+									: `Activate ${name}`}
+								{active && <Check size={14} className="text-success" />}
 							</span>
-							<span className="mt-0.5 block truncate text-[11px] text-subtle-foreground">
-								{profile.prestigeLevel > 0 ? `Prestige ${profile.prestigeLevel} · ` : ""}
-								{completedQuests} quests · {completedUpgrades} hideout upgrades
+
+							<span className="mt-0.5 block text-[11px] text-subtle-foreground">
+								{profile
+									? `${countCompletedQuests(profile)} quests · ${countCompletedHideoutUpgrades(profile)} hideout upgrades`
+									: "Create a new seasonal character"}
 							</span>
 						</span>
 					</button>
 				);
 			})}
+
+			{error && (
+				<p role="alert" className="text-xs text-danger">
+					{error}
+				</p>
+			)}
 		</div>
 	);
 }
 
 function FactionShield({ faction, size, className }: { faction: Faction; size: number; className?: string }) {
 	const gradientId = useId().replace(/:/g, "");
+
 	const coordinates = { x1: "50%", y1: "0%", x2: "50%", y2: "100%" };
+
 	const bearStops = [
 		["0%", "var(--foreground)"],
+
 		["50%", "var(--faction-blue)"],
+
 		["100%", "var(--faction-red)"],
 	];
 
@@ -416,11 +623,17 @@ function FactionShield({ faction, size, className }: { faction: Faction; size: n
 					{faction === "USEC" ? (
 						<radialGradient id={gradientId} cx="30%" cy="28%" r="85%">
 							<stop offset="0%" stopColor="var(--faction-blue)" />
+
 							<stop offset="24%" stopColor="var(--faction-blue)" />
+
 							<stop offset="35%" stopColor="var(--foreground)" />
+
 							<stop offset="48%" stopColor="var(--faction-red)" />
+
 							<stop offset="62%" stopColor="var(--foreground)" />
+
 							<stop offset="78%" stopColor="var(--faction-red)" />
+
 							<stop offset="100%" stopColor="var(--faction-red)" />
 						</radialGradient>
 					) : (
@@ -432,8 +645,10 @@ function FactionShield({ faction, size, className }: { faction: Faction; size: n
 					)}
 				</defs>
 			)}
+
 			<path
 				d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+
 				fill={faction ? `url(#${gradientId})` : "var(--foreground)"}
 			/>
 		</svg>
@@ -444,6 +659,7 @@ function ControlGroup({ label, children }: { label: string; children: React.Reac
 	return (
 		<section className="space-y-2">
 			<div className="text-[10px] font-bold uppercase tracking-wide text-subtle-foreground">{label}</div>
+
 			{children}
 		</section>
 	);
@@ -451,19 +667,26 @@ function ControlGroup({ label, children }: { label: string; children: React.Reac
 
 function SegmentButton({
 	active,
+
 	onClick,
+
 	children,
 }: {
 	active: boolean;
+
 	onClick: () => void;
+
 	children: React.ReactNode;
 }) {
 	return (
 		<button
 			type="button"
+
 			onClick={onClick}
+
 			className={cn(
 				"inline-flex h-8 items-center justify-center rounded-sm border px-3 text-xs font-semibold transition-colors",
+
 				active
 					? "border-brand/50 bg-brand text-inverse"
 					: "border-highlight/10 bg-shadow/30 text-muted-foreground hover:border-highlight/25 hover:text-foreground",

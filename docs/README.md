@@ -17,6 +17,8 @@ disagrees; correct affected documentation in the same change.
 | [Operations](operations.md)     | Setup, validation commands, release/price operations, and diagnostics                   |
 
 These eight files (including this index) are the current behavior reference set.
+The deferred [season price data plan](data-layer.md#season-price-data-plan) records
+shared seasonal pricing and the proposed previous-season day-offset fallback.
 The [PostgreSQL migration](postgresql-migration.md) records the agreed architecture.
 The [production cutover runbook](postgresql-cutover.md) separates deployment,
 readiness and rollback from implementation. The [database tooling README](../db-scripts/README.md) owns detailed ingestion CLI

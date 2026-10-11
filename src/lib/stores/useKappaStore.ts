@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { GameMode } from "@/lib/stores/useUserStore";
+import type { ProfileStorageScope } from "../seasons/profile-scope";
 
 export const KAPPA_STORE_STORAGE_KEY = "tarkov-kappa-checklist-state";
 
 export type KappaViewMode = "all" | "need";
 
-type CompletedItemsByMode = Partial<Record<GameMode, Record<string, boolean>>>;
+type CompletedItemsByMode = Partial<Record<ProfileStorageScope, Record<string, boolean>>>;
 
 interface KappaState {
 	completedItemsByMode: CompletedItemsByMode;
@@ -15,9 +15,9 @@ interface KappaState {
 	ignoreInUploader: boolean;
 	setViewMode: (viewMode: KappaViewMode) => void;
 	setIgnoreInUploader: (ignore: boolean) => void;
-	toggleCompletedItem: (gameMode: GameMode, itemId: string) => void;
+	toggleCompletedItem: (gameMode: ProfileStorageScope, itemId: string) => void;
 	/** Checks items off without unchecking any already done. */
-	completeItems: (gameMode: GameMode, itemIds: readonly string[]) => void;
+	completeItems: (gameMode: ProfileStorageScope, itemIds: readonly string[]) => void;
 	resetCompletedItems: () => void;
 	importCompletedItems: (profiles: CompletedItemsByMode) => void;
 	resetAll: () => void;

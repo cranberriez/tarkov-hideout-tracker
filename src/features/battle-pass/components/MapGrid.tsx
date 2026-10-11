@@ -1,9 +1,12 @@
-import { documents } from "../lib/battle-pass-model";
-import { documentDisplayName, mapNames, mapOrder, locations } from "../lib/battle-pass-display";
+"use client";
+import { useBattlePassData } from "../BattlePassSeason";
+
+import { documentDisplayName } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { cn } from "@/lib/utils";
 
 export function MapGrid() {
+	const { documents, mapNames, mapOrder, locations } = useBattlePassData();
 	return (
 		<div className="overflow-x-auto rounded-lg bg-card p-3 sm:p-4">
 			<table className="mx-auto w-full min-w-[630px] max-w-5xl table-fixed border-separate border-spacing-1 text-xs">

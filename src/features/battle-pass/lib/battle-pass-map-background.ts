@@ -114,10 +114,19 @@ function isWithinCanvas(point: Point, width: number, height: number) {
 	);
 }
 
-export function resolveDocumentBasemap(map: BattlePassDocumentMap, useOriginal = false) {
-	const registration = (registrations.maps as DocumentBasemapRegistration[]).find((entry) => entry.mapId === map.id);
+export function resolveDocumentBasemap(
+	map: BattlePassDocumentMap,
+	useOriginal = false,
+	sourceRegistrations = registrations,
+	locations = documentLocations,
+) {
+	const registration = (sourceRegistrations.maps as DocumentBasemapRegistration[]).find(
+		(entry) => entry.mapId === map.id,
+	);
 	const replacement =
-		!useOriginal && registration && isDocumentBasemapRegistrationValid(map, registration) ? registration : undefined;
+		!useOriginal && registration && isDocumentBasemapRegistrationValid(map, registration, locations)
+			? registration
+			: undefined;
 	const manualPositions = new Map(replacement?.manualPositions?.map((position) => [position.id, position.target]));
 	return {
 		imageUrl: replacement?.imageUrl ?? map.imageUrl,

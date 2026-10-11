@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowUpRight, FileText, Map, Trophy } from "lucide-react";
 import { Artwork } from "@/features/battle-pass/components/ui/Artwork";
-import { documents } from "@/features/battle-pass/lib/battle-pass-model";
+import { BattlePassSeason, useBattlePassData } from "@/features/battle-pass/BattlePassSeason";
+import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
 import { battlePassPageHref } from "@/features/battle-pass/lib/battle-pass-page-link";
 import { useBattlePass } from "@/features/battle-pass/useBattlePass";
 import { useBattlePassPreferences } from "@/features/battle-pass/useBattlePassPreferences";
-import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
-import { SEASONAL_CONFIG } from "@/lib/cfg/seasonal";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { estimatedDaysRemaining, seasonOverview } from "./season-overview-model";
 
@@ -32,7 +31,16 @@ function ProgressBar({ value, label }: { value: number; label: string }) {
 	);
 }
 
-export function SeasonOverviewPage() {
+export function SeasonOverviewPage({ seasonId = "season-1" }: { seasonId?: SeasonId }) {
+	return (
+		<BattlePassSeason seasonId={seasonId} showHeader={false} showNotice>
+			<SeasonOverviewContent />
+		</BattlePassSeason>
+	);
+}
+function SeasonOverviewContent() {
+	const { documents, pages, documentKeys, seasonId } = useBattlePassData();
+	const season = getSeason(seasonId);
 	const [progress] = useBattlePass();
 	const [{ useClassified }] = useBattlePassPreferences();
 	const gameMode = useUserStore((state) => state.gameMode);
@@ -43,12 +51,15 @@ export function SeasonOverviewPage() {
 		const timer = setInterval(sync, 60_000);
 		return () => clearInterval(timer);
 	}, []);
-	const overview = useMemo(() => seasonOverview(progress, useClassified), [progress, useClassified]);
+	const overview = useMemo(
+		() => seasonOverview(progress, useClassified, pages, documentKeys),
+		[progress, useClassified, pages, documentKeys],
+	);
 	const covered = overview.coverage.ownedUsed + overview.coverage.classifiedUsed;
-	const days = now === null ? null : estimatedDaysRemaining(now);
-	const lastDay = new Date(SEASONAL_CONFIG.endsAt).toISOString().slice(0, 10);
-	const ended = now !== null && new Date(now).toISOString().slice(0, 10) > lastDay;
-	const endDate = new Date(SEASONAL_CONFIG.endsAt).toLocaleDateString("en-US", {
+	const days = now === null || season.endsAt === null ? null : estimatedDaysRemaining(now, season.endsAt);
+	const lastDay = new Date(season.endsAt ?? 0).toISOString().slice(0, 10);
+	const ended = season.endsAt !== null && now !== null && new Date(now).toISOString().slice(0, 10) > lastDay;
+	const endDate = new Date(season.endsAt ?? 0).toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		timeZone: "UTC",
@@ -65,13 +76,13 @@ export function SeasonOverviewPage() {
 	return (
 		<main className="container mx-auto px-3 py-6 sm:px-6 sm:py-8">
 			<header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-				<h1 className="text-lg font-semibold">Season 1</h1>
+				<h1 className="text-lg font-semibold">{season.title}</h1>
 				<div className="flex flex-wrap gap-5">
-					<Link href="/battle-pass" className={linkStyle}>
+					<Link href={"/battle-pass?season=" + seasonId} className={linkStyle}>
 						<Trophy size={16} />
 						Battle Pass
 					</Link>
-					<Link href="/battle-pass/map" className={linkStyle}>
+					<Link href={"/battle-pass/map?season=" + seasonId} className={linkStyle}>
 						<Map size={16} />
 						Docs Maps
 					</Link>
@@ -80,11 +91,13 @@ export function SeasonOverviewPage() {
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				<section
 					aria-label="Estimated season countdown"
-					style={{ "--profile-color": PROFILE_BASE_COLORS.KORD } as CSSProperties}
+					style={{ "--profile-color": season.color } as CSSProperties}
 					className="flex min-h-44 flex-col justify-between bg-[color-mix(in_oklab,var(--profile-color)_50%,var(--muted-foreground))] p-6 text-[var(--map-marker-ink)] sm:col-span-2 lg:col-span-1"
 				>
-					<h2 className="text-xs font-bold uppercase tracking-[0.2em]">KORD Breach</h2>
-					{days === 0 ? (
+					<h2 className="text-xs font-bold uppercase tracking-[0.2em]">{season.name}</h2>
+					{season.endsAt === null ? (
+						<p className="my-3 text-3xl font-bold">Test season</p>
+					) : days === 0 ? (
 						<p className="my-3 text-3xl font-bold">{ended ? "Season ended" : "Final day"}</p>
 					) : (
 						<p className="my-3 flex items-baseline gap-3">
@@ -93,8 +106,7 @@ export function SeasonOverviewPage() {
 						</p>
 					)}
 					<p className="text-xs font-medium">
-						Est. ends {endDate}
-						<span className="sr-only">, 2026</span>
+						{season.endsAt === null ? "End date not announced" : "Est. ends " + endDate}
 					</p>
 				</section>
 				<section className="flex min-w-0 flex-col justify-center bg-card p-6" aria-labelledby="completion-title">
@@ -131,7 +143,7 @@ export function SeasonOverviewPage() {
 					<h2 id="goals-title" className="text-lg font-semibold">
 						Your reward goals
 					</h2>
-					<Link href="/battle-pass" className={linkStyle}>
+					<Link href={"/battle-pass?season=" + seasonId} className={linkStyle}>
 						Edit goals
 						<ArrowUpRight size={15} />
 					</Link>
@@ -141,7 +153,7 @@ export function SeasonOverviewPage() {
 						{overview.goals.map(({ tile, page, completed, fraction }) => (
 							<li key={tile.id} className="min-w-0">
 								<Link
-									href={battlePassPageHref(page)}
+									href={battlePassPageHref(page, seasonId)}
 									className="group flex h-full flex-col bg-card transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
 								>
 									<div className="flex h-40 items-center justify-center bg-shadow/15 p-3 sm:h-48">
@@ -171,7 +183,7 @@ export function SeasonOverviewPage() {
 				) : (
 					<div className="flex flex-wrap items-center justify-between gap-4 bg-card p-6">
 						<p className="text-sm text-muted-foreground">Pick the rewards you want to work toward.</p>
-						<Link href="/battle-pass" className={linkStyle}>
+						<Link href={"/battle-pass?season=" + seasonId} className={linkStyle}>
 							Choose reward goals
 							<ArrowUpRight size={16} />
 						</Link>

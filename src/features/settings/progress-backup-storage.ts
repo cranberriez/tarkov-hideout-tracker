@@ -1,20 +1,38 @@
-import { GAME_MODES, type GameMode } from "../../lib/game-mode";
+import { type GameMode } from "../../lib/game-mode";
+import { FIRST_SEASON_ID, type SeasonId } from "../../lib/cfg/seasons";
+import { profileStorageScope } from "../../lib/seasons/profile-scope";
 import { pickPlayerProgress } from "../../lib/player-progress";
 import { USER_STORE_STORAGE_KEY, useUserStore } from "../../lib/stores/useUserStore";
 import { KAPPA_STORE_STORAGE_KEY, useKappaStore } from "../../lib/stores/useKappaStore";
 import { parseProfitOptions, profitOptionsStorageKey } from "../profit-pages/profit-options";
-import { canonical, parseProgressBackup, type ProgressBackup, type BackupProfile } from "./progress-backup";
+import {
+	canonical,
+	parseProgressBackup,
+	type ProgressBackup,
+	type BackupProfile,
+	type BackupProfileScope,
+} from "./progress-backup";
 
 export function readProgressBackup(storage: Storage): ProgressBackup {
 	const user = useUserStore.getState();
 	const kappa = useKappaStore.getState();
 	const profiles = Object.fromEntries(
-		GAME_MODES.map((mode) => {
+		(
+			[
+				"PVP",
+				"PVE",
+				...Object.keys(user.seasonalProfiles).map((id) => profileStorageScope("KORD", id as SeasonId)),
+			] as BackupProfileScope[]
+		).map((mode) => {
 			const options = parseProfitOptions(storage.getItem(profitOptionsStorageKey(mode)));
 			return [
 				mode,
 				{
-					progress: pickPlayerProgress(user.profiles[mode]),
+					progress: pickPlayerProgress(
+						mode.startsWith("KORD")
+							? user.seasonalProfiles[mode === "KORD" ? FIRST_SEASON_ID : mode.slice(5)]
+							: user.profiles[mode as GameMode],
+					),
 					kappa: kappa.completedItemsByMode[mode] ?? {},
 					skills: {
 						craftingSkillLevel: options.craftingSkillLevel,
@@ -26,7 +44,7 @@ export function readProgressBackup(storage: Storage): ProgressBackup {
 	);
 	return structuredClone({
 		format: "tarkov-player-progress",
-		version: 1,
+		version: 2,
 		exportedAt: new Date().toISOString(),
 		profiles,
 	});
@@ -36,7 +54,7 @@ export function readProgressBackup(storage: Storage): ProgressBackup {
 export function importProgressBackup(
 	incoming: ProgressBackup,
 	reviewed: ProgressBackup,
-	modes: GameMode[],
+	modes: BackupProfileScope[],
 	storage: Storage,
 ) {
 	const validated = parseProgressBackup(JSON.stringify(incoming));
@@ -65,7 +83,20 @@ export function importProgressBackup(
 		}
 		useUserStore
 			.getState()
-			.importPlayerProgress(Object.fromEntries(selected.map((mode) => [mode, validated.profiles[mode]!.progress])));
+			.importPlayerProgress(
+				Object.fromEntries(
+					selected.filter((mode) => !mode.startsWith("KORD")).map((mode) => [mode, validated.profiles[mode]!.progress]),
+				),
+			);
+		useUserStore
+			.getState()
+			.importSeasonalProgress(
+				Object.fromEntries(
+					selected
+						.filter((mode) => mode.startsWith("KORD"))
+						.map((mode) => [mode === "KORD" ? FIRST_SEASON_ID : mode.slice(5), validated.profiles[mode]!.progress]),
+				),
+			);
 		useKappaStore
 			.getState()
 			.importCompletedItems(Object.fromEntries(selected.map((mode) => [mode, validated.profiles[mode]!.kappa])));
@@ -101,8 +132,8 @@ export function importProgressBackup(
 	return selected.length;
 }
 
-export function selectBackupProfiles(backup: ProgressBackup, modes: GameMode[]): ProgressBackup {
-	const profiles: Partial<Record<GameMode, BackupProfile>> = {};
+export function selectBackupProfiles(backup: ProgressBackup, modes: BackupProfileScope[]): ProgressBackup {
+	const profiles: Partial<Record<BackupProfileScope, BackupProfile>> = {};
 	for (const mode of modes) if (backup.profiles[mode]) profiles[mode] = backup.profiles[mode];
 	return { ...backup, profiles };
 }

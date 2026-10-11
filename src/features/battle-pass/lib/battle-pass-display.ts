@@ -1,5 +1,5 @@
-import locations from "@/lib/data/season-1-document-locations.json";
-export { default as locations } from "@/lib/data/season-1-document-locations.json";
+import locations from "../../../lib/data/season-1-document-locations.json";
+export { default as locations } from "../../../lib/data/season-1-document-locations.json";
 export const mapNames: Record<string, string[]> = locations.mapsByDocumentKey;
 
 /** Compact type labels for presentation; source names and document keys stay canonical. */

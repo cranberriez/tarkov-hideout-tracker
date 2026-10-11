@@ -11,11 +11,14 @@ import {
 	type ProfitOptions,
 } from "./profit-options";
 
-const stores = new Map<GameMode, ReturnType<typeof createProfitOptionsStore>>();
+import { useUserStore } from "@/lib/stores/useUserStore";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
+
+const stores = new Map<string, ReturnType<typeof createProfitOptionsStore>>();
 const CHANGE_EVENT = "tarkov-profit-options-change";
 const getServerSnapshot = () => DEFAULT_PROFIT_OPTIONS;
 
-function getStore(gameMode: GameMode) {
+function getStore(gameMode: GameMode | `KORD:${string}`) {
 	let store = stores.get(gameMode);
 	if (!store) {
 		store = createProfitOptionsStore(gameMode, () => window.localStorage);
@@ -25,11 +28,13 @@ function getStore(gameMode: GameMode) {
 }
 
 export function useProfitOptions(gameMode: GameMode) {
-	const store = getStore(gameMode);
+	const scope = useProfileStorageScope(gameMode);
+	const seasonId = useUserStore((state) => state.selectedSeasonId);
+	const store = getStore(scope);
 	const subscribe = useCallback(
 		(notify: () => void) => {
 			function onStorage(event: StorageEvent) {
-				if (event.key === null || event.key === profitOptionsStorageKey(gameMode)) {
+				if (event.key === null || event.key === profitOptionsStorageKey(scope)) {
 					notify();
 				}
 			}
@@ -40,7 +45,7 @@ export function useProfitOptions(gameMode: GameMode) {
 				window.removeEventListener(CHANGE_EVENT, notify);
 			};
 		},
-		[gameMode],
+		[scope],
 	);
 	const options = useSyncExternalStore(subscribe, store.getSnapshot, getServerSnapshot);
 
@@ -49,7 +54,7 @@ export function useProfitOptions(gameMode: GameMode) {
 		window.dispatchEvent(new Event(CHANGE_EVENT));
 	}
 
-	const seasonalCrafting = getSeasonalCraftingSettings(gameMode, options.craftingSkillLevel);
+	const seasonalCrafting = getSeasonalCraftingSettings(gameMode, options.craftingSkillLevel, seasonId);
 	return {
 		...options,
 		...seasonalCrafting,

@@ -1,5 +1,66 @@
 # Data layer
 
+## Season price data plan
+
+**Status: deferred proposal, not implemented.** Seasonal character activation
+does not introduce historical pricing or change provider/cache behavior.
+
+All seasonal characters retain the internal KORD mode, mapped to `pvp-season`
+by [game-mode.ts](../src/lib/game-mode.ts). They reuse the same upstream seasonal
+datasets and price endpoints, including `https://json.tarkov.dev/pvp-season/prices/{itemId}`
+through the [price adapter](../src/server/services/priceHistory.ts). Runtime prices
+come from the shared mode-scoped database/cache, not a separate season archive.
+Switching between KORD and Test does not add a season ID to the price cache key
+or freeze its contents; normal refreshes still update the shared data. PVP and
+PVE retain their separate modes and caches. This reuse is an accepted tradeoff:
+we cannot currently preserve a reliable catalog and price snapshot for every
+past season.
+
+At rollover, an old observation can remain available while no longer being a
+valid price for the new season. New items, changed item availability and changed
+market rules can also make prior-season observations unusable. Addressing this
+is future work; the proposal below must not be read as current pricing behavior.
+
+### Proposed season-relative historical fallback
+
+When an item lacks usable current-season pricing, consider looking up the same
+elapsed point in the previous season:
+
+```text
+elapsed = current time - current season start
+reference time = previous season start + elapsed
+```
+
+For example, on day 3 of Season 2, consult prices from day 3 of Season 1. This is
+a possible historical reference, not evidence of a current market price. Keep
+the actual source season and observation timestamp, and visibly label any
+result as a previous-season estimate rather than silently presenting it as live.
+Prefer valid current-season observations when available.
+
+If the item or usable history is absent at the reference time, show **NO DATA**.
+Missing/unknown prices must not become zero or imply free inputs, and dependent
+cost/profit displays need explicit incomplete or unavailable states. Distinguish
+missing history from fetch failures so error screens can offer an appropriate
+retry without claiming that no history exists. Historical character views also
+need understandable unknown-item/data states when the live catalog no longer
+contains their saved IDs.
+
+Before implementation, decide and verify:
+
+- Reliable season start timestamps and whether upstream history retains enough
+  observations to support the lookup.
+- Which missing/stale current-season conditions permit the fallback, including
+  how to identify prices left over from before the new season began.
+- Exact timestamp versus daily bucket selection, acceptable gaps, and behavior
+  when the offset exceeds the previous season's duration or retained history.
+- Which item/market changes invalidate comparison, and whether estimates may
+  feed profit calculations or appear only as a labeled reference.
+- Source-aware cache identity and freshness, plus tests for rollover, missing
+  items/history, provider failures and separation from genuine current prices.
+
+No endpoint, cache key, stored price, fallback algorithm or UI behavior is changed
+by this plan.
+
 ## Source, normalization, and storage
 
 The runtime and routine writers use PostgreSQL domain tables through

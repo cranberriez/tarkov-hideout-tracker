@@ -113,3 +113,19 @@ export const devNavItem: NavItem = {
 	href: "/dev",
 	icon: Wrench,
 };
+
+export function seasonNavMenus(season: { id: string; name: string }): NavMenu[] {
+	return navMenus.map((menu) =>
+		menu.href === "/season-1"
+			? {
+					...menu,
+					name: season.name,
+					href: "/" + season.id,
+					children: menu.children?.map((child) => ({
+						...child,
+						href: child.href === "/season-1" ? "/" + season.id : child.href + "?season=" + season.id,
+					})),
+				}
+			: menu,
+	);
+}

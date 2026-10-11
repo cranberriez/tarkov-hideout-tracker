@@ -9,15 +9,20 @@ import {
 } from "../battle-pass/lib/battle-pass-model";
 
 /** Compare UTC calendar days; the reported final date is an estimate, not a timed announcement. */
-export function estimatedDaysRemaining(now: number) {
+export function estimatedDaysRemaining(now: number, endsAt = SEASONAL_CONFIG.endsAt) {
 	const date = new Date(now);
 	const today = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-	const end = new Date(SEASONAL_CONFIG.endsAt);
+	const end = new Date(endsAt ?? 0);
 	const lastDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
 	return Math.max(0, Math.round((lastDay - today) / 86_400_000));
 }
 
-export function seasonOverview(progress: Progress, useClassified: boolean, passPages: PassPage[] = pages) {
+export function seasonOverview(
+	progress: Progress,
+	useClassified: boolean,
+	passPages: PassPage[] = pages,
+	keys?: string[],
+) {
 	const all = passPages.flatMap((page) => page.cells);
 	const completed = new Set(progress.completed);
 	const goalIds = new Set(progress.goals);
@@ -28,6 +33,7 @@ export function seasonOverview(progress: Progress, useClassified: boolean, passP
 		progress.classified,
 		useClassified,
 		progress.avoidedDocuments,
+		keys,
 	);
 	// One pool across every goal and prerequisite. Locked pages cannot use leftover stock.
 	const preview = previewProgress(
