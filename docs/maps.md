@@ -100,12 +100,15 @@ The battle-pass overview opens a separate, lazily loaded
 at `/battle-pass/map`, without site navigation. Browser back and forward navigate
 between the overview and the map. The `map` query parameter selects a map by slug
 (for example, `/battle-pass/map?map=reserve`). Each history entry retains zoom,
-pan, floor filters, and document filters; changing maps creates an entry, while
+pan, floor filters, document filters, and the grayscale/color setting; changing maps creates an entry, while
 changing the view or filters updates the current entry. Shared links select the
 map with default view and filters, and unknown slugs fall back to Factory.
 This view uses the document palette and artwork,
 with a scenic map switcher in the top bar and each map's two document icons.
 The switcher fits the viewport, wrapping on narrow screens without horizontal scrolling.
+Hide collapses the selector; icon-only Close and Show maps controls then float
+over the map's top-right corner. Selector document artwork is enlarged with a
+dark shadow for contrast against the scenic backgrounds.
 Document-type filters and source-reported per-raid counts float over the map at the bottom
 center; the floating bottom-right floor checklist starts with every floor selected and
 supports multiple floors. Possible location counts are separate from per-raid
@@ -119,6 +122,12 @@ Crowded markers use small document-colored shapes with fixed black outlines.
 Separated markers retain the full document artwork. Residual displacement for
 overlapping anchors uses contrasting anchor dots and leader lines, preserving
 the true source positions and access to lock indicators and photo previews.
+Hovering or focusing a compact marker reveals its full document artwork without
+moving its anchor. The document map allows panning up to half the scaled artwork's
+width or height beyond the usual edge limits; other map viewers retain their
+existing pan bounds. Basemaps start in grayscale, with a color toggle beside the
+zoom and reset controls. The color choice carries across map switches and is
+restored with its history entry. Document colors and location photos remain in color.
 
 Document locations use native image-pixel coordinates and their matching source
 map layers. They are not world-space quest coordinates and must not be passed

@@ -30,3 +30,14 @@ test("allows a five percent pan when fitted artwork is smaller than the viewport
 		{ scale: 1, x: 25, y: -30 },
 	);
 });
+
+test("an explicit half-map allowance applies to both axes at fit and zoom", () => {
+	assert.deepEqual(
+		constrainMapView({ scale: 1, x: 1000, y: -1000 }, { width: 500, height: 600 }, { width: 800, height: 600 }, 0.5),
+		{ scale: 1, x: 250, y: -300 },
+	);
+	assert.deepEqual(
+		constrainMapView({ scale: 2, x: 10000, y: -10000 }, { width: 800, height: 600 }, { width: 800, height: 600 }, 0.5),
+		{ scale: 2, x: 1200, y: -900 },
+	);
+});

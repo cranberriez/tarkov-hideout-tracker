@@ -2,7 +2,18 @@
 /* eslint-disable @next/next/no-img-element -- Source map and location photos retain their native URLs. */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ExternalLink, ImageOff, LockKeyhole, Minus, Plus, RotateCcw, X } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronUp,
+	ExternalLink,
+	ImageOff,
+	Palette,
+	LockKeyhole,
+	Minus,
+	Plus,
+	RotateCcw,
+	X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { constrainMapView, zoomViewAroundPoint } from "@/features/maps/map-view-transform";
 import { documents } from "../lib/battle-pass-model";
@@ -122,14 +133,27 @@ function LocationPreview({
 }
 
 export function BattlePassMapView({ onClose }: { onClose: () => void }) {
-	const { mapId, view, hiddenFloors, hiddenTypes, setView, setHiddenFloors, setHiddenTypes, changeMap } =
-		useDocumentMapNavigation();
+	const {
+		mapId,
+		view,
+		hiddenFloors,
+		hiddenTypes,
+		mapColors,
+		setMapColors,
+		setView,
+		setHiddenFloors,
+		setHiddenTypes,
+		changeMap,
+	} = useDocumentMapNavigation();
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [pinned, setPinned] = useState<string | null>(null);
 	const [size, setSize] = useState({ width: 0, height: 0 });
 	const [imageState, setImageState] = useState<"loading" | "ready" | "error">("loading");
 	const [imageAttempt, setImageAttempt] = useState(0);
 	const [useOriginal, setUseOriginal] = useState(false);
+	const [headerHidden, setHeaderHidden] = useState(false);
+	const hideHeaderButton = useRef<HTMLButtonElement>(null);
+	const showHeaderButton = useRef<HTMLButtonElement>(null);
 	const [renderedMapId, setRenderedMapId] = useState(mapId);
 	if (renderedMapId !== mapId) {
 		setRenderedMapId(mapId);
@@ -191,7 +215,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 		return () => document.removeEventListener("keydown", closeOnEscape);
 	}, [onClose]);
 	function zoom(factor: number, point = { x: 0, y: 0 }) {
-		setView((current) => constrainMapView(zoomViewAroundPoint(current, factor, point, 1, 8), stage, size));
+		setView((current) => constrainMapView(zoomViewAroundPoint(current, factor, point, 1, 8), stage, size, 0.5));
 	}
 	function toggleType(key: string) {
 		if (!hiddenTypes.includes(key)) {
@@ -203,7 +227,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 
 	return (
 		<section className={styles.root} aria-label="Battle pass document map">
-			<header className={styles.header}>
+			<header className={styles.header} id="document-map-selector" hidden={headerHidden}>
 				<nav className={styles.mapTabs} aria-label="Choose document map">
 					<div className={styles.mapTabsInner}>
 						{documentMaps.map((entry) => (
@@ -227,11 +251,51 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						))}
 					</div>
 				</nav>
-				<Button className={styles.closeButton} onClick={onClose}>
-					<X size={16} /> Close
-				</Button>
+				<div className={styles.headerActions}>
+					<Button onClick={onClose}>
+						<X size={16} /> Close
+					</Button>
+					<Button
+						ref={hideHeaderButton}
+						aria-label="Hide map selector"
+						title="Hide map selector"
+						aria-controls="document-map-selector"
+						aria-expanded="true"
+						onClick={() => {
+							setHeaderHidden(true);
+							requestAnimationFrame(() => showHeaderButton.current?.focus());
+						}}
+					>
+						<ChevronUp size={16} /> Hide
+					</Button>
+				</div>
 			</header>
-			<div className={styles.mapArea} style={{ "--controls-clearance": `${controlsHeight + 28}px` } as CSSProperties}>
+			<div
+				className={styles.mapArea}
+				data-header-hidden={headerHidden}
+				style={{ "--controls-clearance": `${controlsHeight + 28}px` } as CSSProperties}
+			>
+				{headerHidden && (
+					<div className={styles.collapsedHeaderActions}>
+						<Button iconOnly aria-label="Close document map" title="Close document map" onClick={onClose}>
+							<X size={18} />
+						</Button>
+						<Button
+							ref={showHeaderButton}
+							iconOnly
+							aria-label="Show map selector"
+							title="Show map selector"
+							aria-controls="document-map-selector"
+							aria-expanded="false"
+							onClick={() => {
+								setHeaderHidden(false);
+								requestAnimationFrame(() => hideHeaderButton.current?.focus());
+							}}
+						>
+							<ChevronDown size={18} />
+						</Button>
+					</div>
+				)}
 				<div
 					ref={viewport}
 					className={styles.viewport}
@@ -265,6 +329,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 								},
 								stage,
 								size,
+								0.5,
 							),
 						);
 					}}
@@ -287,6 +352,7 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 							<img
 								key={`${map.id}:${background.imageUrl}:${imageAttempt}`}
 								className={styles.mapImage}
+								data-colors={mapColors}
 								src={background.imageUrl}
 								alt={`${map.name} map`}
 								draggable={false}
@@ -357,11 +423,14 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 													setHovered(location.id);
 												}}
 											>
-												{offset.compact ? (
-													<CompactDocumentGlyph documentKey={location.documentKey} />
-												) : (
-													<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className="size-7" />
+												{offset.compact && (
+													<span className={styles.compactGlyph}>
+														<CompactDocumentGlyph documentKey={location.documentKey} />
+													</span>
 												)}
+												<span className={styles.markerArtwork}>
+													<LocationsDocumentArtwork doc={doc ?? { key: location.documentKey }} className="size-7" />
+												</span>
 												{location.key && (
 													<span className={styles.markerLock}>
 														<LockKeyhole size={10} />
@@ -420,6 +489,15 @@ export function BattlePassMapView({ onClose }: { onClose: () => void }) {
 						</Button>
 						<Button iconOnly aria-label="Fit map" onClick={() => setView({ scale: 1, x: 0, y: 0 })}>
 							<RotateCcw size={16} />
+						</Button>
+						<Button
+							iconOnly
+							aria-label={mapColors ? "Use grayscale map" : "Show map colors"}
+							title={mapColors ? "Use grayscale map" : "Show map colors"}
+							aria-pressed={mapColors}
+							onClick={() => setMapColors((current) => !current)}
+						>
+							<Palette size={18} />
 						</Button>
 					</div>
 				</div>

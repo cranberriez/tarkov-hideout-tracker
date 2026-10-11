@@ -40,6 +40,7 @@ test("matching entries restore exact zoom, pan and filters independently", () =>
 		view: { scale: 3, x: -45, y: 23 },
 		hiddenFloors: ["unknown"],
 		hiddenTypes: ["medical"],
+		mapColors: true,
 	};
 	const second = {
 		...defaultDocumentMapSnapshot("factory"),
@@ -66,6 +67,7 @@ test("malformed entry fields cannot inject invalid map controls or nonfinite tra
 		view: { scale: 1, x: 0, y: 0 },
 		hiddenFloors: ["unknown"],
 		hiddenTypes: ["medical"],
+		mapColors: false,
 	});
 	const bounded = readDocumentMapSnapshot(
 		url("factory"),
@@ -78,6 +80,23 @@ test("malformed entry fields cannot inject invalid map controls or nonfinite tra
 		readDocumentMapSnapshot(url("factory"), { [DOCUMENT_MAP_HISTORY_KEY]: [] }, maps, keys),
 		defaultDocumentMapSnapshot("factory"),
 	);
+});
+
+test("older or malformed color preferences default to grayscale, while boolean choices roundtrip", () => {
+	for (const mapColors of [undefined, null, "true", 1, {}, []]) {
+		const saved = { mapId: "factory", mapColors };
+		assert.equal(
+			readDocumentMapSnapshot(url("factory"), { [DOCUMENT_MAP_HISTORY_KEY]: saved }, maps, keys).mapColors,
+			false,
+		);
+	}
+	for (const mapColors of [false, true]) {
+		const snapshot = { ...defaultDocumentMapSnapshot("factory"), mapColors };
+		assert.deepEqual(
+			readDocumentMapSnapshot(url("factory"), documentMapHistoryState(null, snapshot), maps, keys),
+			snapshot,
+		);
+	}
 });
 
 test("map URLs preserve other query fields and fragments, while snapshots merge history internals", () => {

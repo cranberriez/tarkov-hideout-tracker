@@ -54,7 +54,10 @@ export function useDocumentMapNavigation() {
 	}, []);
 
 	const update = useCallback(
-		<K extends "view" | "hiddenFloors" | "hiddenTypes">(key: K, value: SetStateAction<DocumentMapSnapshot[K]>) => {
+		<K extends "view" | "hiddenFloors" | "hiddenTypes" | "mapColors">(
+			key: K,
+			value: SetStateAction<DocumentMapSnapshot[K]>,
+		) => {
 			const previous = current.current;
 			const nextValue = typeof value === "function" ? value(previous[key]) : value;
 			const next = { ...previous, [key]: nextValue };
@@ -67,12 +70,17 @@ export function useDocumentMapNavigation() {
 	const setView = useCallback((value: SetStateAction<DocumentMapSnapshot["view"]>) => update("view", value), [update]);
 	const setHiddenFloors = useCallback((value: SetStateAction<string[]>) => update("hiddenFloors", value), [update]);
 	const setHiddenTypes = useCallback((value: SetStateAction<string[]>) => update("hiddenTypes", value), [update]);
+	const setMapColors = useCallback((value: SetStateAction<boolean>) => update("mapColors", value), [update]);
 	const changeMap = useCallback((mapId: string) => {
 		if (mapId === current.current.mapId || !routeMaps.some((map) => map.id === mapId)) return;
-		const next = { ...defaultDocumentMapSnapshot(mapId), hiddenTypes: current.current.hiddenTypes };
+		const next = {
+			...defaultDocumentMapSnapshot(mapId),
+			hiddenTypes: current.current.hiddenTypes,
+			mapColors: current.current.mapColors,
+		};
 		current.current = next;
 		writeEntry(next, true);
 		setSnapshot(next);
 	}, []);
-	return { ...snapshot, setView, setHiddenFloors, setHiddenTypes, changeMap };
+	return { ...snapshot, setView, setHiddenFloors, setHiddenTypes, setMapColors, changeMap };
 }

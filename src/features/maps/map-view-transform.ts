@@ -16,11 +16,17 @@ export interface MapViewSize {
 
 const MAP_EDGE_PAN_ALLOWANCE = 0.05;
 
-export function constrainMapView(view: MapViewTransform, stage: MapViewSize, viewport: MapViewSize): MapViewTransform {
+/** edgePanAllowance is a fraction of each scaled artwork dimension; existing viewers keep five percent. */
+export function constrainMapView(
+	view: MapViewTransform,
+	stage: MapViewSize,
+	viewport: MapViewSize,
+	edgePanAllowance = MAP_EDGE_PAN_ALLOWANCE,
+): MapViewTransform {
 	const scaledWidth = stage.width * view.scale;
 	const scaledHeight = stage.height * view.scale;
-	const maxX = Math.max(0, (scaledWidth - viewport.width) / 2) + scaledWidth * MAP_EDGE_PAN_ALLOWANCE;
-	const maxY = Math.max(0, (scaledHeight - viewport.height) / 2) + scaledHeight * MAP_EDGE_PAN_ALLOWANCE;
+	const maxX = Math.max(0, (scaledWidth - viewport.width) / 2) + scaledWidth * edgePanAllowance;
+	const maxY = Math.max(0, (scaledHeight - viewport.height) / 2) + scaledHeight * edgePanAllowance;
 	return {
 		...view,
 		x: Math.min(maxX, Math.max(-maxX, view.x)),

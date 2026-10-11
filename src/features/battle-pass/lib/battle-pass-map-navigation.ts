@@ -6,6 +6,7 @@ export type DocumentMapSnapshot = {
 	view: { scale: number; x: number; y: number };
 	hiddenFloors: string[];
 	hiddenTypes: string[];
+	mapColors: boolean;
 };
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -25,7 +26,7 @@ function finiteNumber(value: unknown, fallback: number, min: number, max: number
 }
 
 export function defaultDocumentMapSnapshot(mapId: string): DocumentMapSnapshot {
-	return { mapId, view: { scale: 1, x: 0, y: 0 }, hiddenFloors: [], hiddenTypes: [] };
+	return { mapId, view: { scale: 1, x: 0, y: 0 }, hiddenFloors: [], hiddenTypes: [], mapColors: false };
 }
 
 /** The shareable URL selects the map; entry state supplies only that map's display snapshot. */
@@ -49,6 +50,7 @@ export function readDocumentMapSnapshot(
 		},
 		hiddenFloors: selectedKeys(saved.hiddenFloors, map.floorIds),
 		hiddenTypes: selectedKeys(saved.hiddenTypes, documentKeys),
+		mapColors: saved.mapColors === true,
 	};
 }
 
