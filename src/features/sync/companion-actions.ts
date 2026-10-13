@@ -1,15 +1,23 @@
 import { getCurrentSeason } from "@/lib/cfg/seasons";
-import { ACTIVITY_LOG_LIMIT, useCompanionSyncStore, type ActivityEntry } from "@/lib/stores/useCompanionSyncStore";
+import { useCompanionSyncStore } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { findCompanion, pairingState, requestPairing, sync, unpair } from "./companion-client";
 import type { SyncResponse } from "./companion-contract";
 import {
 	activeProfileKey,
 	addHandled,
+	buildFeedEntries,
+	capBatches,
 	isEmptyChange,
+	mergeFeed,
+	patchFeed,
 	planBatch,
+	planOutcomes,
 	routeEvents,
+	setBatchStatus,
 	undoChange,
+	type BatchRecord,
+	type FeedEntry,
 	type PendingQuestEvent,
 	type ProfileKey,
 } from "./sync-model";
@@ -19,60 +27,66 @@ const syncStore = () => useCompanionSyncStore.getState();
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
 
+type FeedUpdates = Map<string, Partial<Pick<FeedEntry, "status" | "batchId">>>;
+
 function activeProfile(): ProfileKey {
 	const { gameMode, selectedSeasonId } = useUserStore.getState();
 	return activeProfileKey(gameMode, selectedSeasonId);
 }
 
-/** Applies a batch to the active profile and returns the log entry (undefined if nothing changed). */
-function applyToActiveProfile(profile: ProfileKey, items: readonly PendingQuestEvent[]): ActivityEntry | undefined {
-	const user = useUserStore.getState();
-	const plan = planBatch(items, user);
-	if (isEmptyChange(plan.args)) return undefined;
-	user.applyQuestCompletionChange(plan.args);
-	return {
-		id: newId(),
-		at: new Date().toISOString(),
-		profile,
-		completed: plan.completed,
-		failed: plan.failed,
-		status: "applied",
-		undo: plan.undo,
-	};
+interface AppliedBatch {
+	/** Set only when something actually changed (an undoable batch exists). */
+	batchId: string | null;
+	batch?: BatchRecord;
+	updates: FeedUpdates;
 }
 
-function prependLog(log: ActivityEntry[], entries: ActivityEntry[]): ActivityEntry[] {
-	return [...entries, ...log].slice(0, ACTIVITY_LOG_LIMIT);
+/** Applies items to the active profile; every item gets an applied/unchanged feed update. */
+function applyToActiveProfile(profile: ProfileKey, items: readonly PendingQuestEvent[]): AppliedBatch {
+	const user = useUserStore.getState();
+	const plan = planBatch(items, user);
+	const outcomes = planOutcomes(items, plan);
+	const changed = !isEmptyChange(plan.args);
+	const batchId = changed ? newId() : null;
+	if (changed) user.applyQuestCompletionChange(plan.args);
+	const updates: FeedUpdates = new Map();
+	for (const [id, status] of outcomes) {
+		updates.set(id, status === "applied" && batchId ? { status, batchId } : { status: "unchanged" });
+	}
+	return batchId
+		? { batchId, batch: { profile, undo: plan.undo, status: "applied" }, updates }
+		: { batchId, updates };
 }
 
 function processSyncResponse(response: SyncResponse): void {
 	const store = syncStore();
-	const routed = routeEvents(response.events, {
+	const currentSeasonId = getCurrentSeason().id;
+	const routed = routeEvents(response.events, { handled: store.handled, currentSeasonId });
+	const entries = buildFeedEntries(response.events, {
+		currentSeasonId,
+		receivedAt: new Date().toISOString(),
+		knownIds: new Set(store.feed.map((entry) => entry.id)),
 		handled: store.handled,
-		currentSeasonId: getCurrentSeason().id,
 	});
 	const active = activeProfile();
-	const newEntries: ActivityEntry[] = [];
 	const handledIds: Record<ProfileKey, string[]> = {};
 	const pending = { ...store.pending };
 	const review = { ...store.review };
+	const updates: FeedUpdates = new Map();
+	const newBatches: Record<string, BatchRecord> = {};
+	let announced: string | null = null;
 
 	for (const [profile, items] of Object.entries(routed.live)) {
 		(handledIds[profile] ??= []).push(...items.map((item) => item.id));
 		if (profile === active) {
-			const entry = applyToActiveProfile(profile, items);
-			if (entry) newEntries.push(entry);
+			const applied = applyToActiveProfile(profile, items);
+			for (const [id, patch] of applied.updates) updates.set(id, patch);
+			if (applied.batchId && applied.batch) {
+				newBatches[applied.batchId] = applied.batch;
+				announced = applied.batchId;
+			}
 		} else {
 			pending[profile] = [...(pending[profile] ?? []), ...items];
-			const plan = planBatch(items, { completedQuests: {}, failedQuests: {} });
-			newEntries.push({
-				id: newId(),
-				at: new Date().toISOString(),
-				profile,
-				completed: plan.completed,
-				failed: plan.failed,
-				status: "waiting",
-			});
 		}
 	}
 	for (const [profile, items] of Object.entries(routed.review)) {
@@ -80,7 +94,7 @@ function processSyncResponse(response: SyncResponse): void {
 		review[profile] = [...(review[profile] ?? []), ...items];
 	}
 
-	// Cursor, handled ids and queues are stored together so a replay cannot double-apply.
+	// Cursor, handled ids, queues and the feed are stored together so a replay cannot double-apply.
 	store.commit((state) => {
 		const handled = { ...state.handled };
 		for (const [profile, ids] of Object.entries(handledIds)) handled[profile] = addHandled(handled[profile], ids);
@@ -89,12 +103,16 @@ function processSyncResponse(response: SyncResponse): void {
 			handled,
 			pending,
 			review,
-			log: prependLog(state.log, newEntries),
-			unknownMode: state.unknownMode + routed.unknownMode,
+			feed: patchFeed(mergeFeed(state.feed, entries), updates),
+			batches: capBatches({ ...state.batches, ...newBatches }),
+			unknownMode: state.unknownMode + entries.filter((entry) => entry.status === "unknown_mode").length,
 		};
 	});
-	const announced = newEntries.find((entry) => entry.status === "applied");
-	if (announced) store.showNotice(announced.id);
+	store.setPosition(
+		response.state.position,
+		response.events.filter((event) => event.kind === "position").length,
+	);
+	if (announced) store.showNotice(announced);
 }
 
 let inFlight = false;
@@ -148,34 +166,43 @@ export async function runSyncOnce(): Promise<{ stop: boolean; fast: boolean }> {
 	}
 }
 
-/** Applies the queue of the now-active profile as one merged, undoable entry. */
+/** Applies the queue of the now-active profile as one merged, undoable batch. */
 export function applyPendingForActive(): void {
 	const store = syncStore();
 	const profile = activeProfile();
 	const items = store.pending[profile];
 	if (!items?.length) return;
-	const entry = applyToActiveProfile(profile, items);
+	const applied = applyToActiveProfile(profile, items);
 	store.commit((state) => {
 		const pending = { ...state.pending };
 		delete pending[profile];
-		const rest = state.log.filter((e) => !(e.profile === profile && e.status === "waiting"));
-		return { pending, log: prependLog(rest, entry ? [entry] : []) };
+		return {
+			pending,
+			feed: patchFeed(state.feed, applied.updates),
+			batches:
+				applied.batchId && applied.batch
+					? capBatches({ ...state.batches, [applied.batchId]: applied.batch })
+					: state.batches,
+		};
 	});
-	if (entry) store.showNotice(entry.id);
+	if (applied.batchId) store.showNotice(applied.batchId);
 }
 
-export function canUndo(entry: ActivityEntry): boolean {
-	return entry.status === "applied" && !!entry.undo?.quests.length;
+export function canUndo(batchId: string): boolean {
+	const batch = syncStore().batches[batchId];
+	return batch?.status === "applied" && batch.undo.quests.length > 0;
 }
 
-/** Returns false when the entry's profile is not active (nothing is touched). */
-export function undoEntry(id: string): boolean {
+/** Returns false when the batch's profile is not active (nothing is touched). */
+export function undoBatch(batchId: string): boolean {
 	const store = syncStore();
-	const entry = store.log.find((e) => e.id === id);
-	if (!entry || !canUndo(entry) || !entry.undo) return false;
-	if (entry.profile !== activeProfile()) return false;
-	useUserStore.getState().applyQuestCompletionChange(undoChange(entry.undo));
-	store.patchLog(id, { status: "undone", undo: undefined });
+	const batch = store.batches[batchId];
+	if (!batch || !canUndo(batchId) || batch.profile !== activeProfile()) return false;
+	useUserStore.getState().applyQuestCompletionChange(undoChange(batch.undo));
+	store.commit((state) => ({
+		batches: { ...state.batches, [batchId]: { ...batch, status: "undone" } },
+		feed: setBatchStatus(state.feed, batchId, "undone"),
+	}));
 	return true;
 }
 
@@ -183,11 +210,18 @@ export function applyReview(profile: ProfileKey): boolean {
 	const store = syncStore();
 	const items = store.review[profile];
 	if (!items?.length || profile !== activeProfile()) return false;
-	const entry = applyToActiveProfile(profile, items);
+	const applied = applyToActiveProfile(profile, items);
 	store.commit((state) => {
 		const review = { ...state.review };
 		delete review[profile];
-		return { review, log: prependLog(state.log, entry ? [entry] : []) };
+		return {
+			review,
+			feed: patchFeed(state.feed, applied.updates),
+			batches:
+				applied.batchId && applied.batch
+					? capBatches({ ...state.batches, [applied.batchId]: applied.batch })
+					: state.batches,
+		};
 	});
 	return true;
 }
@@ -196,23 +230,11 @@ export function dismissReview(profile: ProfileKey): void {
 	const store = syncStore();
 	const items = store.review[profile];
 	if (!items?.length) return;
-	const plan = planBatch(items, { completedQuests: {}, failedQuests: {} });
+	const updates: FeedUpdates = new Map(items.map((item) => [item.id, { status: "dismissed" }]));
 	store.commit((state) => {
 		const review = { ...state.review };
 		delete review[profile];
-		return {
-			review,
-			log: prependLog(state.log, [
-				{
-					id: newId(),
-					at: new Date().toISOString(),
-					profile,
-					completed: plan.completed,
-					failed: plan.failed,
-					status: "dismissed",
-				},
-			]),
-		};
+		return { review, feed: patchFeed(state.feed, updates) };
 	});
 }
 

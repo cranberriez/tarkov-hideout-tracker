@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { useCompanionSyncStore } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { applyPendingForActive, runSyncOnce, undoEntry } from "./companion-actions";
-import { activeProfileKey, describeCounts, describeProfile } from "./sync-model";
+import { applyPendingForActive, runSyncOnce, undoBatch } from "./companion-actions";
+import { activeProfileKey, dataModeForProfile, describeNotice, describeProfile } from "./sync-model";
 import { useSyncHydrated } from "./useSyncHydrated";
 
 const IDLE_MS = 30_000;
@@ -68,10 +70,12 @@ export function CompanionSyncController() {
 
 function SyncNotice() {
 	const notice = useCompanionSyncStore((state) => state.notice);
-	const entry = useCompanionSyncStore((state) => state.log.find((e) => e.id === state.notice?.logId));
+	const batch = useCompanionSyncStore((state) => (state.notice ? state.batches[state.notice.batchId] : undefined));
+	const feed = useCompanionSyncStore((state) => state.feed);
 	const gameMode = useUserStore((state) => state.gameMode);
 	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
 	const clearNotice = useCompanionSyncStore((state) => state.clearNotice);
+	const client = useQueryClient();
 	const [hovered, setHovered] = useState(false);
 	const nonce = notice?.nonce;
 
@@ -81,10 +85,16 @@ function SyncNotice() {
 		return () => clearTimeout(timer);
 	}, [nonce, hovered, clearNotice]);
 
-	if (!notice || !entry) return null;
-	const canUndo = entry.status === "applied" && !!entry.undo?.quests.length;
-	const isActive = entry.profile === activeProfileKey(gameMode, selectedSeasonId);
-	const label = describeProfile(entry.profile);
+	if (!notice || !batch) return null;
+	const label = describeProfile(batch.profile);
+	const undone = batch.status === "undone";
+	const quests = client.getQueryData(questWorkspacePageQueryOptions(dataModeForProfile(batch.profile)).queryKey)?.quests;
+	const names = new Map((quests ?? []).map((quest) => [quest.id, quest.name]));
+	const items = feed
+		.filter((entry) => entry.batchId === notice.batchId && entry.action && entry.questId)
+		.map((entry) => ({ action: entry.action!, name: names.get(entry.questId!) ?? null }));
+	const canUndo = !undone && batch.undo.quests.length > 0;
+	const isActive = batch.profile === activeProfileKey(gameMode, selectedSeasonId);
 
 	return (
 		<div
@@ -95,11 +105,11 @@ function SyncNotice() {
 		>
 			<span>
 				<span className="text-subtle-foreground">Mappinator · </span>
-				{entry.status === "undone" ? "undone" : `${describeCounts(entry.completed, entry.failed)} ${label} ${entry.completed + entry.failed === 1 ? "quest" : "quests"}`}
+				{undone ? "Undone" : describeNotice(items, label) || `Updated ${label} quests`}
 			</span>
 			{canUndo &&
 				(isActive ? (
-					<button type="button" onClick={() => undoEntry(entry.id)} className="font-medium text-brand hover:underline">
+					<button type="button" onClick={() => undoBatch(notice.batchId)} className="font-medium text-brand hover:underline">
 						Undo
 					</button>
 				) : (
