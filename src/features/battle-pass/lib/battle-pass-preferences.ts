@@ -9,6 +9,7 @@ export interface BattlePassPreferences {
 	consumeDocs: boolean;
 	showMaps: boolean;
 	documentsOpen: boolean;
+	allProfiles: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -20,6 +21,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	consumeDocs: false,
 	showMaps: false,
 	documentsOpen: false,
+	allProfiles: false,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

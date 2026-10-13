@@ -63,6 +63,20 @@
 .documentOnly {
 	width: 44px;
 }
+/* Large chips fill their grid column; the face tracks the chip's width. */
+.large {
+	height: 56px;
+	width: 100%;
+	min-width: 92px;
+	container-type: inline-size;
+}
+.large .face {
+	width: 100cqw;
+}
+.large.documentOnly {
+	width: 56px;
+	min-width: 0;
+}
 .mark {
 	position: absolute;
 	right: 3px;

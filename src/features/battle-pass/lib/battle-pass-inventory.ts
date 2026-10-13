@@ -39,18 +39,23 @@ export function commitInventoryUpdate(
 }
 const positiveCount = (value: number) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0);
 
+/** One profile's ordinary document totals (non-FiR plus FiR); absent records mean zero. */
+export function profileDocumentCounts(itemCounts: PlayerItemCounts, itemIds = documentItemIds) {
+	const inventory: Record<string, number> = {};
+	for (const [key, itemId] of Object.entries(itemIds)) {
+		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+		inventory[key] = positiveCount(counts.have) + positiveCount(counts.haveFir);
+	}
+	return inventory;
+}
+
 /** Ordinary stock belongs exclusively to the active profile; absent records mean zero. */
 export function inventoryProgress(
 	progress: Progress,
 	itemCounts: PlayerItemCounts,
 	itemIds = documentItemIds,
 ): Progress {
-	const inventory = { ...progress.inventory };
-	for (const [key, itemId] of Object.entries(itemIds)) {
-		const counts = itemCounts[itemId] ?? { have: 0, haveFir: 0 };
-		inventory[key] = positiveCount(counts.have) + positiveCount(counts.haveFir);
-	}
-	return { ...progress, inventory };
+	return { ...progress, inventory: { ...progress.inventory, ...profileDocumentCounts(itemCounts, itemIds) } };
 }
 
 /** Adjust a displayed total while preserving FIR stock until non-FIR stock runs out. */

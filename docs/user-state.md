@@ -99,8 +99,11 @@ balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
 and classified allocation never spend stored balances.
 [useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts)
 stores the requested plan scope, Use classified, Cumulative costs, Possible
-progress, List view, Consume Docs from Inventory, Locations visibility, and
-document-panel visibility in `tarkov-battle-pass-ui-preferences-v1`. These UI
+progress, List view, Consume Docs from Inventory, Locations visibility,
+document-panel visibility, and All profiles in `tarkov-battle-pass-ui-preferences-v1`.
+**All profiles** is read-only: the overview's documents to collect and breakdown
+sum ordinary stock from PVP, PVE and the pass's seasonal character, with a row per
+profile. Pages, the document panel, previews and edits still use the active profile. These UI
 preferences survive navigation and reload and are shared across profiles and
 PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
 (displaying Everything when no goals exist). Reads normalize invalid fields

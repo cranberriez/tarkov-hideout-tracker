@@ -20,12 +20,14 @@ export function DocumentChip({
 	end = false,
 	fulfilled = false,
 	partial = false,
+	large = false,
 }: {
 	doc: { key: string; name: string; img?: string };
 	amount?: number;
 	end?: boolean;
 	fulfilled?: boolean;
 	partial?: boolean;
+	large?: boolean;
 }) {
 	const { documentMarks, locations, mapNames } = useBattlePassData();
 	const [placement, setPlacement] = useState({ end, width: 280 });
@@ -53,16 +55,20 @@ export function DocumentChip({
 						"cursor-pointer border-0 bg-transparent p-0 text-left align-top",
 						placement.end && styles.end,
 						amount === undefined && styles.documentOnly,
+						large && styles.large,
 					)}
 				>
 					<span className={styles.chipInner}>
 						<span className={cn(styles.face, "items-center")}>
-							<span className="relative h-11 w-11 shrink-0">
+							<span className={cn("relative shrink-0", large ? "h-14 w-14" : "h-11 w-11")}>
 								{doc.img ? (
-									<Artwork src={doc.img} className="h-11 w-11 !object-cover" />
+									<Artwork src={doc.img} className={cn("!object-cover", large ? "h-14 w-14" : "h-11 w-11")} />
 								) : (
-									<span className="grid h-11 w-11 place-items-center" style={{ color: mark?.color }}>
-										<FileText className="h-8 w-8" />
+									<span
+										className={cn("grid place-items-center", large ? "h-14 w-14" : "h-11 w-11")}
+										style={{ color: mark?.color }}
+									>
+										<FileText className={large ? "h-10 w-10" : "h-8 w-8"} />
 									</span>
 								)}
 								{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
@@ -70,7 +76,8 @@ export function DocumentChip({
 							{amount !== undefined && (
 								<span
 									className={cn(
-										"inline-flex items-center gap-0.5 px-1.5 text-xs font-semibold tabular-nums",
+										"inline-flex items-center gap-0.5 px-1.5 font-semibold tabular-nums",
+										large ? "flex-1 justify-center text-lg" : "text-xs",
 										fulfilled && "text-success",
 									)}
 								>

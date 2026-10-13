@@ -8,6 +8,7 @@ import Link from "next/link";
 import { coverCosts, planGoals, previewProgress, unlockedPages, type Costs } from "./lib/battle-pass-model";
 import { useBattlePass } from "./useBattlePass";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
+import { useProfileDocuments } from "./useProfileDocuments";
 import { DocumentDock } from "./components/DocumentDock";
 import { BattlePassOverview } from "./components/BattlePassOverview";
 import { PageNavigation } from "./components/PageNavigation";
@@ -36,7 +37,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { pages, tiles, documentKeys, seasonId } = useBattlePassData();
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
 	const [
-		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode },
+		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode, allProfiles },
 		setPreference,
 	] = useBattlePassPreferences();
 	const setScope = (scope: "goals" | "all") => setPreference("requestedScope", scope);
@@ -46,6 +47,8 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const setShowMaps = (checked: boolean) => setPreference("showMaps", checked);
 	const setDocumentsOpen = (checked: boolean) => setPreference("documentsOpen", checked);
 	const setListMode = (checked: boolean) => setPreference("listMode", checked);
+	const setAllProfiles = (checked: boolean) => setPreference("allProfiles", checked);
+	const profileDocuments = useProfileDocuments();
 	const scope = progress.goals.length === 0 ? "all" : requestedScope;
 	const [start, setStart] = useState((initialPage ?? 1) - 1);
 	const pendingPage = useRef(initialPage);
@@ -112,6 +115,31 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			),
 		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments, documentKeys],
 	);
+	// Overview-only: pages, the dock and previews keep using the active profile's stock.
+	const allProfilesCoverage = useMemo(
+		() =>
+			allProfiles
+				? coverCosts(
+						plan.costs,
+						{ ...progress.inventory, ...profileDocuments.total },
+						progress.classified,
+						useClassified,
+						progress.avoidedDocuments,
+						documentKeys,
+					)
+				: coverage,
+		[
+			allProfiles,
+			coverage,
+			plan.costs,
+			progress.inventory,
+			profileDocuments.total,
+			progress.classified,
+			useClassified,
+			progress.avoidedDocuments,
+			documentKeys,
+		],
+	);
 	const cumulativeCosts = useMemo(
 		() =>
 			cumulative
@@ -164,7 +192,9 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			/>
 
 			<BattlePassOverview
-				{...{ scope, knownGoals, completedCount, remainingTotal, plan, coverage, selected, filler }}
+				{...{ scope, knownGoals, completedCount, remainingTotal, plan, selected, filler }}
+				{...{ allProfiles, setAllProfiles, profileDocuments }}
+				coverage={allProfilesCoverage}
 				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
 				headerAction={
 					<Link href={"/battle-pass/map?season=" + seasonId} className={buttonClassName({ tone: "brand" })}>

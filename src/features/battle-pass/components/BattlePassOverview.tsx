@@ -1,7 +1,10 @@
 "use client";
 import { useBattlePassData } from "../BattlePassSeason";
 import { getSeason } from "@/lib/cfg/seasons";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { ProfileDocuments } from "../useProfileDocuments";
 import { type Tile, type planGoals, type coverCosts } from "../lib/battle-pass-model";
 import { Stat } from "./ui/Stat";
 import { DocumentChip } from "./ui/DocumentChip";
@@ -17,6 +20,9 @@ export function BattlePassOverview({
 	selected,
 	filler,
 	headerAction,
+	allProfiles,
+	setAllProfiles,
+	profileDocuments,
 	children,
 }: {
 	scope: "all" | "goals";
@@ -29,9 +35,26 @@ export function BattlePassOverview({
 	selected: Set<string>;
 	filler: Set<string>;
 	headerAction: ReactNode;
+	/** When set, `coverage` already counts ordinary stock from every profile. */
+	allProfiles: boolean;
+	setAllProfiles: (checked: boolean) => void;
+	profileDocuments: ProfileDocuments;
 	children: ReactNode;
 }) {
 	const { pages, tiles, documents, seasonId } = useBattlePassData();
+	const collect = [
+		...coverage.rows
+			.filter((row) => row.missing > 0)
+			.map((row) => ({ doc: documents.find((doc) => doc.key === row.key)!, amount: row.missing })),
+		...(coverage.classifiedMissing > 0
+			? [
+					{
+						doc: { key: "classified", name: "Classified Docs · wildcard 1:1" },
+						amount: coverage.classifiedMissing,
+					},
+				]
+			: []),
+	];
 	return (
 		<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
 			<div className="flex items-start justify-between gap-3">
@@ -85,30 +108,64 @@ export function BattlePassOverview({
 						<Stat label="Classified" value={coverage.classifiedUsed} />
 						<Stat label="To collect" value={coverage.missing} accent />
 					</div>
-					{coverage.missing > 0 ? (
-						<div className="space-y-2">
-							<h2 className="text-xs text-muted-foreground">Documents to collect</h2>
-							<ul aria-label="Documents to collect" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-								{coverage.rows
-									.filter((row) => row.missing > 0)
-									.map((row) => (
-										<li key={row.key}>
-											<DocumentChip doc={documents.find((doc) => doc.key === row.key)!} amount={row.missing} />
-										</li>
-									))}
-								{coverage.classifiedMissing > 0 && (
-									<li>
-										<DocumentChip
-											doc={{ key: "classified", name: "Classified Docs · wildcard 1:1" }}
-											amount={coverage.classifiedMissing}
-										/>
-									</li>
-								)}
-							</ul>
+					<div className="space-y-2">
+						<div className="flex items-center justify-between gap-3">
+							<h2 className="text-xs text-muted-foreground">Documents to collect{allProfiles && " · all profiles"}</h2>
+							<Button
+								variant="ghost"
+								size="xs"
+								selected={allProfiles}
+								aria-pressed={allProfiles}
+								onClick={() => setAllProfiles(!allProfiles)}
+								title="Count ordinary documents owned by every profile. Classified documents are shared."
+							>
+								<Users size={13} aria-hidden />
+								All profiles
+							</Button>
 						</div>
-					) : (
-						<p className="text-xs text-success">All plan documents covered.</p>
-					)}
+						{collect.length > 0 ? (
+							<div className="overflow-x-auto p-1">
+								<div
+									role="table"
+									aria-label="Documents to collect"
+									className="grid items-center gap-x-3 gap-y-1.5"
+									style={
+										{
+											gridTemplateColumns: `${allProfiles ? "auto " : ""}repeat(${collect.length}, minmax(92px, 1fr))`,
+										} as CSSProperties
+									}
+								>
+									<div role="row" className="contents">
+										{allProfiles && <span role="columnheader" aria-hidden />}
+										{collect.map(({ doc, amount }) => (
+											<div key={doc.key} role="columnheader" className="min-w-0">
+												<DocumentChip doc={doc} amount={amount} large />
+											</div>
+										))}
+									</div>
+									{allProfiles &&
+										profileDocuments.profiles.map((profile) => (
+											<div key={profile.key} role="row" className="contents">
+												<span role="rowheader" className="pr-1 text-xs font-semibold" style={{ color: profile.color }}>
+													{profile.label}
+												</span>
+												{collect.map(({ doc }) => (
+													<span
+														key={doc.key}
+														role="cell"
+														className="text-center text-sm tabular-nums text-muted-foreground"
+													>
+														{doc.key === "classified" ? "—" : (profile.inventory[doc.key] ?? 0)}
+													</span>
+												))}
+											</div>
+										))}
+								</div>
+							</div>
+						) : (
+							<p className="text-xs text-success">All plan documents covered.</p>
+						)}
+					</div>
 					<details>
 						<summary className="w-fit cursor-pointer text-xs text-muted-foreground">
 							Breakdown · {plan.selected.length} rewards
@@ -122,7 +179,15 @@ export function BattlePassOverview({
 										<tr>
 											<th className="text-left font-normal">Document</th>
 											<th className="font-normal">Need</th>
-											<th className="font-normal">Owned</th>
+											{allProfiles ? (
+												profileDocuments.profiles.map((profile) => (
+													<th key={profile.key} className="font-normal" style={{ color: profile.color }}>
+														{profile.label}
+													</th>
+												))
+											) : (
+												<th className="font-normal">Owned</th>
+											)}
 											<th className="font-normal">Classified</th>
 											<th className="font-normal">Missing</th>
 										</tr>
@@ -134,7 +199,13 @@ export function BattlePassOverview({
 													<DocumentChip doc={documents.find((doc) => doc.key === row.key)!} />
 												</th>
 												<td>{row.required}</td>
-												<td>{row.used}</td>
+												{allProfiles ? (
+													profileDocuments.profiles.map((profile) => (
+														<td key={profile.key}>{profile.inventory[row.key] ?? 0}</td>
+													))
+												) : (
+													<td>{row.used}</td>
+												)}
 												<td className="text-special">
 													{row.classified || "—"}
 													{row.classifiedMissing > 0 && " (+" + row.classifiedMissing + " needed)"}
