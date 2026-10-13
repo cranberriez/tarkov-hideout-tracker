@@ -10,6 +10,7 @@
 		"format": "npx prettier . --write",
 		"docs:check": "node scripts/check-doc-links.mjs",
 		"test:architecture": "node --test --import jiti/register src/architecture/data-import-boundaries.test.ts",
+		"test:sync": "node --test --import jiti/register src/features/sync/sync-model.test.ts",
 		"test:theme": "node --test --import jiti/register src/architecture/theme-colors.test.ts",
 		"test:contracts": "node --test --import jiti/register src/server/queries/page-data-queries.test.ts src/server/queries/shared-data-queries.test.ts src/server/queries/item-detail-queries.test.ts src/server/queries/getKappaChecklistPageData.test.ts src/server/queries/searchItems.test.ts src/server/queries/getItemDetailViews.test.ts",
 		"test:query": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/query-foundation.test.ts",

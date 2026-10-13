@@ -374,6 +374,7 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 	const items: NavItem[] = [
 		{ name: "News", href: "/news" },
 		{ name: "Settings", href: "/settings" },
+		{ name: "Sync", href: "/sync" },
 		...(isDev ? [devNavItem] : []),
 	];
 
