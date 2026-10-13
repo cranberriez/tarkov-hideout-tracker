@@ -50,6 +50,8 @@ function pairingMessage(pairing: PairingProgress | null, now: number): string | 
 			return "Mappinator not found. Is Site connection on?";
 		case "failed":
 			return "Mappinator refused the request.";
+		case "revoked":
+			return "Access was revoked in Mappinator. Allow this site under Connection there, then connect again.";
 		default:
 			return null;
 	}

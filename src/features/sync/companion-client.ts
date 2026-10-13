@@ -17,6 +17,9 @@ export type ClientResult<T> =
 	| { kind: "bad_cursor" }
 	| { kind: "error"; status: number };
 
+/** Pairing refused: the user revoked this site in Mappinator and hasn't allowed it again. */
+export type PairingResult = ClientResult<PairRequested> | { kind: "revoked" };
+
 const TIMEOUT_MS = 3000;
 const BODY_LIMIT = 4096;
 
@@ -56,13 +59,13 @@ function describeExchange(method: string, path: string, status: number | "networ
 }
 const base = (port: number) => `http://127.0.0.1:${port}`;
 
-async function call<T>(
+async function call<T, X extends { kind: string } = never>(
 	port: number,
 	method: string,
 	path: string,
 	token?: string,
-	special?: (body: unknown, status: number) => ClientResult<T> | null,
-): Promise<ClientResult<T>> {
+	special?: (body: unknown, status: number) => ClientResult<T> | X | null,
+): Promise<ClientResult<T> | X> {
 	const startedAt = Date.now();
 	const record = (status: number | "network error", body: unknown) =>
 		useCompanionSyncStore.getState().recordExchange({
@@ -114,8 +117,10 @@ export async function findCompanion(
 	return null;
 }
 
-export function requestPairing(port: number): Promise<ClientResult<PairRequested>> {
-	return call<PairRequested>(port, "POST", "/v1/pair");
+export function requestPairing(port: number): Promise<PairingResult> {
+	return call<PairRequested, { kind: "revoked" }>(port, "POST", "/v1/pair", undefined, (body, status) =>
+		status === 403 && (body as { error?: string } | null)?.error === "revoked" ? { kind: "revoked" } : null,
+	);
 }
 
 export function pairingState(port: number, id: string): Promise<ClientResult<PairingState>> {

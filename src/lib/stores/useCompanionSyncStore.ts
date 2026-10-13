@@ -23,7 +23,7 @@ export type SyncStatus = "idle" | "pairing" | "connected" | "unreachable" | "rev
 export type PairingProgress =
 	| { phase: "scanning" }
 	| { phase: "waiting"; expiresAt: number }
-	| { phase: "denied" | "expired" | "unreachable" | "failed" };
+	| { phase: "denied" | "expired" | "unreachable" | "failed" | "revoked" };
 
 export interface CompanionConnection {
 	port: number;

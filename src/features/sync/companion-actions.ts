@@ -253,7 +253,7 @@ export async function connectCompanion(): Promise<void> {
 	const run = ++pairingRun;
 	const store = syncStore();
 	const cancelled = () => run !== pairingRun;
-	const fail = (phase: "denied" | "expired" | "unreachable" | "failed") => {
+	const fail = (phase: "denied" | "expired" | "unreachable" | "failed" | "revoked") => {
 		store.setPairing({ phase });
 		// An existing connection's next poll restores its real status.
 		store.setStatus("idle");
@@ -267,6 +267,7 @@ export async function connectCompanion(): Promise<void> {
 	const requested = await requestPairing(found.port);
 	if (cancelled()) return;
 	if (requested.kind === "unreachable") return fail("unreachable");
+	if (requested.kind === "revoked") return fail("revoked");
 	if (requested.kind !== "ok") return fail("failed");
 
 	const { pairing_id: id, expires_in_secs: ttl } = requested.data;
