@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
 import { devNavItem, gamesNavItem, seasonNavMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
+import { SyncStatusPill } from "./SyncStatusPill";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
 export function Navbar() {
@@ -164,6 +165,8 @@ function NavbarContent() {
 
 								<PlayerProfileMenu />
 
+								<SyncStatusPill />
+
 								{!hasCompletedSetup && (
 									<div className="hidden sm:block">
 										<SetupButton onClick={() => setSetupOpen(true)} compact />
@@ -208,6 +211,8 @@ function NavbarContent() {
 							))}
 
 							<PlayerProfileMenu />
+
+							<SyncStatusPill />
 
 							{!hasCompletedSetup && <SetupButton onClick={() => setSetupOpen(true)} />}
 
@@ -374,6 +379,7 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 	const items: NavItem[] = [
 		{ name: "News", href: "/news" },
 		{ name: "Settings", href: "/settings" },
+		{ name: "Sync", href: "/sync" },
 		...(isDev ? [devNavItem] : []),
 	];
 

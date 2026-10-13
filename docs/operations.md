@@ -16,6 +16,8 @@ PostgreSQL; production switching follows the separate
 | PG_QUERY_LOG                   | Opt-in SQL logging: 1 for summaries, verbose for SQL (default off) |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
 | CRON_SECRET                    | Bearer secret for the scheduled catalog route     |
+| APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
+| APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
 
 Only the optional one-time `db:discovery:export -- --turso discovery.json` command
