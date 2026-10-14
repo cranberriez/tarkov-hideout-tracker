@@ -1,0 +1,23 @@
+# Copy this file alongside .env; run docker compose -f compose.deploy.yml up -d.
+# Load market-analyzer.tar before deploying; see README.md.
+services:
+  market-analyzer:
+    image: tarkov-market-analyzer:local
+    pull_policy: never
+    restart: unless-stopped
+    env_file: .env
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      MARKET_STATE_DIR: /data
+    volumes:
+      - market-data:/data
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  market-data:
