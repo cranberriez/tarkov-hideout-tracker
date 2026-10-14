@@ -1,4 +1,4 @@
-import { Flag, Layers, Rows3, Map as MapIcon, ChevronDown } from "lucide-react";
+import { Flag, Layers, Rows3, Map as MapIcon, ChevronDown, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Toggle } from "./ui/Toggle";
@@ -17,6 +17,8 @@ export function BattlePassToolbar({
 	setListMode,
 	showMaps,
 	setShowMaps,
+	editCosts,
+	setEditCosts,
 }: {
 	scope: "all" | "goals";
 	setScope: (scope: "all" | "goals") => void;
@@ -31,6 +33,8 @@ export function BattlePassToolbar({
 	setListMode: (checked: boolean) => void;
 	showMaps: boolean;
 	setShowMaps: (show: boolean) => void;
+	editCosts: boolean;
+	setEditCosts: (checked: boolean) => void;
 }) {
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -84,6 +88,14 @@ export function BattlePassToolbar({
 					title="Show every page in one long list instead of the paged gallery."
 				>
 					List view
+				</Toggle>
+				<Toggle
+					checked={editCosts}
+					onChange={setEditCosts}
+					icon={<Pencil size={14} />}
+					title="Change reward document types to match your game. Totals stay the same."
+				>
+					Edit costs
 				</Toggle>
 				<Button
 					variant="ghost"

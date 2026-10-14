@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { inventoryScopeIsCurrent } from "./lib/battle-pass-scope";
-import { useBattlePassData } from "./BattlePassSeason";
+import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import {
@@ -13,7 +12,7 @@ import {
 	prepareInventoryUpdate,
 	type InventoryUpdate,
 } from "./lib/battle-pass-inventory";
-import { parseProgress, type Progress } from "./lib/battle-pass-model";
+import { setCostSwap, type Progress } from "./lib/battle-pass-model";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
 
 // The pass is account-wide across PVP/PVE/KORD, independent of character progress.
@@ -28,12 +27,12 @@ export function useBattlePass() {
 	const itemCounts = useUserStore((state) =>
 		seasonalInventory ? (state.seasonalProfiles[data.seasonId]?.itemCounts ?? EMPTY_COUNTS) : state.itemCounts,
 	);
-	const [raw, write] = useStoredProfitValue(data.storageKey);
+	const { stored, write } = useBattlePassSave();
 	const [{ consumeDocs }, setPreference] = useBattlePassPreferences();
 	const setConsumeDocs = useCallback((checked: boolean) => setPreference("consumeDocs", checked), [setPreference]);
 	const progress = useMemo(
-		() => inventoryProgress(parseProgress(raw), itemCounts, data.documentItemIds),
-		[raw, itemCounts, data],
+		() => inventoryProgress(stored, itemCounts, data.documentItemIds),
+		[stored, itemCounts, data],
 	);
 	// Storage transforms remain pure; profile effects run once after the completed save.
 	const commit = useCallback(
@@ -92,5 +91,21 @@ export function useBattlePass() {
 		},
 		[commit, consumeDocs, data],
 	);
-	return [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] as const;
+	const swapCost = useCallback(
+		(tileId: string, from: string, to: string) =>
+			commit((stored) => ({
+				progress: { ...stored, costSwaps: setCostSwap(stored.costSwaps, tileId, from, to) },
+				changes: [],
+			})),
+		[commit],
+	);
+	const resetCostSwaps = useCallback(
+		() => commit((stored) => ({ progress: { ...stored, costSwaps: {} }, changes: [] })),
+		[commit],
+	);
+	return [
+		progress,
+		update,
+		{ completeTiles, toggleTile, consumeDocs, setConsumeDocs, swapCost, resetCostSwaps },
+	] as const;
 }

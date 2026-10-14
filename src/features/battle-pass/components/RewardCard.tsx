@@ -19,6 +19,8 @@ export function RewardCard({
 	toggleDone,
 	possibleFraction,
 	previewEnabled,
+	ownCost,
+	swapCost,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -32,6 +34,10 @@ export function RewardCard({
 	toggleDone: () => void;
 	possibleFraction: number;
 	previewEnabled: boolean;
+	/** `costs` is this reward's own cost rather than a cumulative path. */
+	ownCost: boolean;
+	/** Edit mode; completed rewards stay locked. */
+	swapCost?: (from: string, to: string) => void;
 }) {
 	const label = `Page ${pageNumber}, ${tile.displayName}`;
 	const name = tile.displayName + (tile.rewards[0].type === "tarcoin" ? ` ×${tile.rewards[0].value}` : "");
@@ -106,6 +112,9 @@ export function RewardCard({
 					inventory={done ? {} : inventory}
 					wide={span === "wide"}
 					previewEnabled={previewEnabled && !done}
+					tileId={ownCost ? tile.id : undefined}
+					onSwap={swapCost}
+					swapLocked={done}
 				/>
 			</div>
 		</article>

@@ -24,6 +24,7 @@ export function RewardPage({
 	toggleTile,
 	possibleFractions,
 	possibleAllocations,
+	swapCost,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -38,6 +39,8 @@ export function RewardPage({
 	toggleTile: (id: string) => void;
 	possibleFractions: Map<string, number>;
 	possibleAllocations?: Map<string, Costs>;
+	/** Set while editing costs; cards then show each reward's own cost. */
+	swapCost?: (tileId: string, from: string, to: string) => void;
 }) {
 	const { pages, tileSpans } = useBattlePassData();
 	const index = pages.indexOf(page);
@@ -99,7 +102,9 @@ export function RewardPage({
 							done={complete.has(tile.id)}
 							goal={goals.has(tile.id)}
 							filler={filler.has(tile.id)}
-							costs={cumulative ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
+							costs={cumulative && !swapCost ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
+							ownCost={!cumulative || swapCost !== undefined}
+							swapCost={swapCost && ((from, to) => swapCost(tile.id, from, to))}
 							inventory={possibleAllocations ? (possibleAllocations.get(tile.id) ?? {}) : inventory}
 							possibleFraction={possibleFractions.get(tile.id) ?? 0}
 							previewEnabled={possibleAllocations !== undefined}

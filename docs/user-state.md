@@ -60,7 +60,15 @@ state adds no local-storage key, profile field, migration, backup, or reset beha
 season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
 `tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
-and avoided document types (defaulting to none for older saves). Collection
+avoided document types, and document-type swaps (both defaulting to none for older saves).
+Document types per reward differ between players while quantities and totals do not, so
+`costSwaps` maps tile ID -> baseline document key -> replacement key. Swaps never change
+quantities and a reward never repeats a type; setting a line back to its baseline type
+removes it, and all rewards can be reset to baseline. Editing is a session-only page
+mode and completed rewards are locked, since their documents were already consumed.
+[BattlePassSeason](../src/features/battle-pass/BattlePassSeason.tsx)
+applies swaps once, so planning, previews, cumulative costs and document consumption all
+use the player's costs; unknown tiles or targets are ignored but survive in the save. Collection
 preferences persist in the same save and are shared across modes. They only break
 equal-total-cost suggestion ties; explicit goals and minimum total cost remain
 authoritative. After ordinary inventory, avoided shortages become classified

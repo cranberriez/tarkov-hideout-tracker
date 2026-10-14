@@ -106,6 +106,9 @@ route imports it locally without provider services or runtime database queries.
 Each page's `req` counts claimed tiles on the immediately previous page, not
 cumulative rewards. `unlockRequirement` makes that relationship explicit. Each
 tile's `cost` maps document keys to quantities; `totalDocumentCost` is their sum.
+These costs are one player's assignment: totals match the wiki for every tile, but
+document types differ between players, so players can swap types (see
+[user state](user-state.md#battle-pass-progress)).
 The final page's six trader offers share one tile and one cost. Trader rewards
 unlock offers rather than directly granting items.
 

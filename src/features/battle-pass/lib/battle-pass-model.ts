@@ -45,13 +45,17 @@ export interface Progress {
 	inventory: Costs;
 	classified: number;
 	avoidedDocuments: string[];
+	/** Per-player document types: tile ID -> baseline document key -> replacement key. */
+	costSwaps: CostSwaps;
 }
+export type CostSwaps = Record<string, Record<string, string>>;
 export const emptyProgress = (): Progress => ({
 	completed: [],
 	goals: [],
 	inventory: {},
 	classified: 0,
 	avoidedDocuments: [],
+	costSwaps: {},
 });
 export function normalizeCount(value: unknown): number {
 	return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(99999, Math.floor(value))) : 0;
@@ -71,9 +75,46 @@ export function parseProgress(raw: string | null): Progress {
 			);
 		}
 		result.classified = normalizeCount(value.classified);
+		result.costSwaps = parseCostSwaps(value.costSwaps);
 	} catch {
 		/* A corrupt save is not rewritten on read. */
 	}
+	return result;
+}
+function parseCostSwaps(value: unknown): CostSwaps {
+	const result: CostSwaps = {};
+	if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+	for (const [tileId, swaps] of Object.entries(value)) {
+		if (!swaps || typeof swaps !== "object" || Array.isArray(swaps)) continue;
+		const valid = Object.entries(swaps).filter(
+			(entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== entry[0],
+		);
+		if (valid.length > 0) result[tileId] = Object.fromEntries(valid);
+	}
+	return result;
+}
+/** Swaps keep each baseline quantity; unknown sources or targets are ignored but stay saved. */
+export function applyCostSwaps(cost: Costs, swaps: Record<string, string> | undefined, keys: string[] = documentKeys) {
+	if (!swaps) return cost;
+	const result: Costs = {};
+	for (const [key, amount] of Object.entries(cost)) {
+		const target = swappedKey(key, swaps, keys);
+		result[target] = (result[target] ?? 0) + amount;
+	}
+	return result;
+}
+/** The document type a baseline line currently uses. */
+export function swappedKey(key: string, swaps: Record<string, string> | undefined, keys: string[] = documentKeys) {
+	return swaps && keys.includes(swaps[key]) ? swaps[key] : key;
+}
+/** Setting a line back to its baseline type removes the swap. */
+export function setCostSwap(swaps: CostSwaps, tileId: string, from: string, to: string): CostSwaps {
+	const tile = { ...swaps[tileId] };
+	if (to === from) delete tile[from];
+	else tile[from] = to;
+	const result = { ...swaps };
+	if (Object.keys(tile).length > 0) result[tileId] = tile;
+	else delete result[tileId];
 	return result;
 }
 export function toggleId(ids: string[], id: string) {

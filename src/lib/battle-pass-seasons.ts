@@ -7,7 +7,12 @@ import { documentItemIds } from "../features/battle-pass/lib/battle-pass-invento
 import { documentLocationArtwork } from "../features/battle-pass/lib/battle-pass-document-artwork";
 import { documentMarks, mapOrder, tileSpans } from "../features/battle-pass/lib/battle-pass-display";
 import type { SeasonId } from "./cfg/seasons";
-import type { PassPage } from "../features/battle-pass/lib/battle-pass-model";
+import {
+	applyCostSwaps,
+	type Costs,
+	type CostSwaps,
+	type PassPage,
+} from "../features/battle-pass/lib/battle-pass-model";
 import type { BattlePassDocumentMap, BattlePassDocumentLocation, BattlePassMapSource } from "./battle-pass-map-data";
 function createData(seasonId: SeasonId) {
 	const pass = structuredClone(snapshot.battlePass);
@@ -30,6 +35,11 @@ function createData(seasonId: SeasonId) {
 		storageKey: "tarkov-battle-pass-" + seasonId + "-v1",
 		pages,
 		tiles: pages.flatMap((page) => page.cells),
+		/** Snapshot costs before the player's saved document-type swaps. */
+		baselineCosts: Object.fromEntries(
+			pages.flatMap((page) => page.cells.map((tile) => [tile.id, tile.cost])),
+		) as Record<string, Costs>,
+		costSwaps: {} as CostSwaps,
 		documents: pass.documents,
 		documentKeys: pass.documents.map((doc) => doc.key),
 		documentItemIds: { ...documentItemIds },
@@ -58,4 +68,16 @@ export const BATTLE_PASS_DATA: Record<SeasonId, BattlePassData> = {
 };
 export function getBattlePassData(seasonId: SeasonId): BattlePassData {
 	return BATTLE_PASS_DATA[seasonId];
+}
+
+/** Every pass consumer reads swapped costs; the baseline stays available for display and reset. */
+export function withCostSwaps(data: BattlePassData, costSwaps: CostSwaps): BattlePassData {
+	if (Object.keys(costSwaps).length === 0) return data;
+	const pages = data.pages.map((page) => ({
+		...page,
+		cells: page.cells.map((tile) =>
+			costSwaps[tile.id] ? { ...tile, cost: applyCostSwaps(tile.cost, costSwaps[tile.id], data.documentKeys) } : tile,
+		),
+	}));
+	return { ...data, pages, tiles: pages.flatMap((page) => page.cells), costSwaps };
 }

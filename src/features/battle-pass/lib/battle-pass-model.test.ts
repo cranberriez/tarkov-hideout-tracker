@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	applyCostSwaps,
 	coverCosts,
 	documents,
 	pages,
 	parseProgress,
 	planGoals,
 	previewProgress,
+	setCostSwap,
 	tiles,
 	toggleId,
 	totalCost,
@@ -108,6 +110,7 @@ test("saved progress survives roundtrip and unknown IDs, malformed fields normal
 		inventory: {},
 		classified: 0,
 		avoidedDocuments: [],
+		costSwaps: {},
 	});
 	assert.deepEqual(toggleId(toggleId(progress.completed, "b"), "b"), progress.completed);
 });
@@ -286,4 +289,17 @@ test("preview applies wildcards to avoided shortages first within each reward", 
 	const reward = { ...tile("a", 4, 1), cost: { financial: 2, project: 2 } };
 	const result = previewProgress([reward], [], {}, 2, true, ["project"], [{ num: 1, req: 0, cells: [reward] }]);
 	assert.deepEqual(result.allocations.get("a"), { project: 2, financial: 0 });
+});
+
+test("cost swaps keep quantities, merge targets, reset to baseline and survive reloads", () => {
+	const cost = { user: 5, medical: 3, project: 2 };
+	assert.deepEqual(applyCostSwaps(cost, { project: "user", medical: "unknown" }), { user: 7, medical: 3 });
+	let swaps = setCostSwap({}, "a", "user", "financial");
+	swaps = setCostSwap(swaps, "a", "medical", "test");
+	assert.deepEqual(swaps, { a: { user: "financial", medical: "test" } });
+	swaps = setCostSwap(setCostSwap(swaps, "a", "user", "user"), "a", "medical", "medical");
+	assert.deepEqual(swaps, {});
+	const saved = parseProgress(JSON.stringify({ costSwaps: { a: { user: "test", bad: 4, same: "same" }, b: [] } }));
+	assert.deepEqual(saved.costSwaps, { a: { user: "test" } });
+	assert.deepEqual(parseProgress(JSON.stringify({ completed: [] })).costSwaps, {});
 });

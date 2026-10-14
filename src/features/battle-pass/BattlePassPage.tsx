@@ -17,6 +17,7 @@ import { LocationsPanel } from "./components/LocationsPanel";
 import { PageMinimap } from "./components/PageMinimap";
 import { RewardPage } from "./components/RewardPage";
 import { ConsumeDocumentsToggle } from "./components/ConsumeDocumentsToggle";
+import { CostEditBanner } from "./components/CostEditBanner";
 import { cn } from "@/lib/utils";
 import { buttonClassName } from "@/components/ui/button";
 import { battlePassSpreadStart } from "./lib/battle-pass-page-link";
@@ -34,8 +35,11 @@ function useSpread() {
 }
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
-	const { pages, tiles, documentKeys, seasonId } = useBattlePassData();
-	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs }] = useBattlePass();
+	const { pages, tiles, documentKeys, seasonId, costSwaps } = useBattlePassData();
+	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs, swapCost, resetCostSwaps }] =
+		useBattlePass();
+	// Session-only so costs are never edited by accident on a later visit.
+	const [editCosts, setEditCosts] = useState(false);
 	const [
 		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode, allProfiles },
 		setPreference,
@@ -218,9 +222,18 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						setListMode,
 						showMaps,
 						setShowMaps,
+						editCosts,
+						setEditCosts,
 					}}
 				/>
 			</BattlePassOverview>
+			{editCosts && (
+				<CostEditBanner
+					editedCount={tiles.filter((tile) => costSwaps[tile.id]).length}
+					resetAll={resetCostSwaps}
+					close={() => setEditCosts(false)}
+				/>
+			)}
 			{showMaps && (
 				<div id="document-locations-panel">
 					<LocationsPanel />
@@ -262,6 +275,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						inventory={progress.inventory}
 						possibleFractions={possibleFractions}
 						possibleAllocations={showPossibleProgress ? possibleProgress.allocations : undefined}
+						swapCost={editCosts ? swapCost : undefined}
 					/>
 				))}
 			</div>
