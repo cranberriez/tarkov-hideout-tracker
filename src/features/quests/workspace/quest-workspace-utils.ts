@@ -9,8 +9,10 @@ import { getQuestTraderGateType, questTraderRequirementMatchesProfile } from "..
 import { isQuestDisabledByCompletedFailedRequirement } from "../../../lib/quests/quest-failures";
 import {
 	compareTraderTierCompletionCount,
-	countCompletedTraderTierQuests,
+	buildCompletedTraderTierQuestCounts,
+	getCompletedTraderTierQuestCount,
 	getTraderTierCompletionGate,
+	type CompletedTraderTierQuestCounts,
 } from "../../../lib/quests/quest-trader-completion-gates";
 import { QUEST_SERIES_MANIFEST } from "../../../lib/quests/quest-series";
 import { isQuestAvailableForProfile } from "../../../lib/quests/quest-availability";
@@ -79,6 +81,7 @@ function isTaskRequirementMet(
 	requirement: QuestWorkspaceQuest["taskRequirements"][number],
 	profile: QuestWorkspaceProfile,
 	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
+	completedCounts: CompletedTraderTierQuestCounts,
 ) {
 	const statuses = requirement.status.map((status) => status.trim().toLowerCase());
 	const prerequisiteComplete = !!profile.completedQuests[requirement.task.id];
@@ -89,7 +92,7 @@ function isTaskRequirementMet(
 		if (prerequisiteComplete || prerequisiteFailed) return true;
 		const prerequisite = questsById.get(requirement.task.id);
 		if (!prerequisite) return false;
-		return isQuestAvailableForProfile(prerequisite, profile, questsById);
+		return isQuestAvailableForProfile(prerequisite, profile, questsById, undefined, completedCounts);
 	}
 	return false;
 }
@@ -200,6 +203,7 @@ function getMissingPrerequisiteQuestIds(
 	quest: QuestWorkspaceQuest,
 	profile: QuestWorkspaceProfile,
 	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
+	completedCounts: CompletedTraderTierQuestCounts,
 ) {
 	const missingIds = new Set<string>();
 	const visiting = new Set<string>();
@@ -209,7 +213,7 @@ function getMissingPrerequisiteQuestIds(
 		visiting.add(current.id);
 
 		for (const requirement of current.taskRequirements) {
-			if (isTaskRequirementMet(requirement, profile, questsById)) continue;
+			if (isTaskRequirementMet(requirement, profile, questsById, completedCounts)) continue;
 			missingIds.add(requirement.task.id);
 			const prerequisite = questsById.get(requirement.task.id);
 			if (prerequisite) visit(prerequisite);
@@ -227,6 +231,7 @@ export function getQuestWorkspaceStatus(
 	quest: QuestWorkspaceQuest,
 	profile: QuestWorkspaceProfile,
 	questsById: ReadonlyMap<string, QuestWorkspaceQuest>,
+	completedCounts = buildCompletedTraderTierQuestCounts(questsById.values(), profile.completedQuests),
 ): QuestWorkspaceStatusInfo {
 	const terminal = profile.completedQuests[quest.id] ? "completed" : profile.failedQuests[quest.id] ? "failed" : null;
 	const reasons: QuestLockReason[] = [];
@@ -285,7 +290,7 @@ export function getQuestWorkspaceStatus(
 	for (const requirement of quest.otherRequirements) {
 		const gate = getTraderTierCompletionGate(requirement);
 		if (!gate) continue;
-		const completedCount = countCompletedTraderTierQuests(questsById.values(), profile.completedQuests, gate);
+		const completedCount = getCompletedTraderTierQuestCount(completedCounts, gate);
 		if (!compareTraderTierCompletionCount(completedCount, gate)) {
 			reasons.push({
 				kind: "task-count",
@@ -296,7 +301,7 @@ export function getQuestWorkspaceStatus(
 			});
 		}
 	}
-	const missingPrerequisiteIds = getMissingPrerequisiteQuestIds(quest, profile, questsById);
+	const missingPrerequisiteIds = getMissingPrerequisiteQuestIds(quest, profile, questsById, completedCounts);
 	if (missingPrerequisiteIds.size > 0) {
 		const [firstMissingId] = missingPrerequisiteIds;
 		const firstMissingName =

@@ -7,10 +7,6 @@ import { useEffect, useRef, type ReactNode } from "react";
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import { QuestFilterBar, QuestTraderBar } from "./QuestFilterBar";
-import { QuestListPane } from "./QuestListPane";
-import { QuestActionBar } from "./QuestActionBar";
-import { QuestMobileMenu } from "./QuestMobileMenu";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneLoading() {
@@ -21,13 +17,25 @@ function PaneLoading() {
 	);
 }
 
+// Keep the routed detail outlet outside these browser-only boundaries: its public
+// quest content must still be present in the HTML on a direct visit.
+const QuestListSurface = dynamic(() => import("./QuestListSurface").then((module) => module.QuestListSurface), {
+	ssr: false,
+	loading: PaneLoading,
+});
+const QuestActionBar = dynamic(() => import("./QuestActionBar").then((module) => module.QuestActionBar), {
+	ssr: false,
+});
+const QuestMobileMenu = dynamic(() => import("./QuestMobileMenu").then((module) => module.QuestMobileMenu), {
+	ssr: false,
+});
 const QuestTraderBoardPane = dynamic(
 	() => import("./QuestTraderBoardPane").then((module) => module.QuestTraderBoardPane),
-	{ loading: PaneLoading },
+	{ ssr: false, loading: PaneLoading },
 );
 const QuestVisualizerPane = dynamic(
 	() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane),
-	{ loading: PaneLoading },
+	{ ssr: false, loading: PaneLoading },
 );
 
 /** `children` is the routed detail outlet: the selection prompt or `/quests/[questId]`. */
@@ -42,13 +50,6 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 	// Back/Forward, search, and shared links show the selected quest's details even when the
 	// visualizer is open. Workspace-initiated selection keeps the current mode.
 	const previousQuestId = useRef(selectedQuestId);
-	useEffect(() => {
-		const questId = previousQuestId.current;
-		if (questId)
-			requestAnimationFrame(() =>
-				document.getElementById(`quest-workspace-${questId}`)?.scrollIntoView({ block: "center" }),
-			);
-	}, []);
 	useEffect(() => {
 		if (previousQuestId.current === selectedQuestId) return;
 		previousQuestId.current = selectedQuestId;
@@ -81,9 +82,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					)}
 					data-quest-list-pane
 				>
-					<QuestFilterBar />
-					<QuestTraderBar />
-					<QuestListPane />
+					<QuestListSurface />
 				</section>
 				<section
 					className={cn("min-h-0 min-w-0 flex-col lg:flex", mode !== "details" || selectedQuestId ? "flex" : "hidden")}

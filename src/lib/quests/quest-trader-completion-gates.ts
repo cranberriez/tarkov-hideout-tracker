@@ -152,6 +152,36 @@ export function countCompletedTraderTierQuests(
 	return count;
 }
 
+export type CompletedTraderTierQuestCounts = ReadonlyMap<string, number>;
+
+function traderTierCountKey(counter: TraderTierCompletionCounter) {
+	return `${normalizeTraderName(counter.trader)}:${counter.tier}`;
+}
+
+/** Build counts for one quest set and profile snapshot; never share across modes. */
+export function buildCompletedTraderTierQuestCounts(
+	quests: Iterable<TraderTierQuest>,
+	completedQuests: Readonly<Record<string, boolean>>,
+): CompletedTraderTierQuestCounts {
+	const counts = new Map<string, number>();
+	for (const quest of quests) {
+		if (quest.removed || !completedQuests[quest.id] || isEssentialQuest(quest.id)) continue;
+		const key = traderTierCountKey({
+			trader: quest.trader.normalizedName || quest.trader.name,
+			tier: getQuestTraderTabLoyaltyLevel(quest),
+		});
+		counts.set(key, (counts.get(key) ?? 0) + 1);
+	}
+	return counts;
+}
+
+export function getCompletedTraderTierQuestCount(
+	counts: CompletedTraderTierQuestCounts,
+	counter: TraderTierCompletionCounter,
+) {
+	return counts.get(traderTierCountKey(counter)) ?? 0;
+}
+
 export function formatTraderTierCompletionGate(gate: TraderTierCompletionGate) {
 	return `${gate.trader} LL${gate.tier} tasks ${gate.compareMethod} ${gate.requiredCount}`;
 }

@@ -126,3 +126,47 @@ test("retains a just-completed quest in an active-only session", () => {
 
 	assert.deepEqual(result.filteredQuestIds, [quest.id]);
 });
+
+test("reuses one completion snapshot for gate reasons and active prerequisites on each selection", () => {
+	const completed = makeQuest("done", "Done");
+	completed.trader = { id: "prapor", name: "Prapor", normalizedName: "prapor" };
+	const gated = makeQuest("gated", "Gated");
+	gated.otherRequirements = [
+		{ type: "globalVariable", variableId: "6a20540cf1b67a977cc5a088", compareMethod: ">=", value: 1 },
+	];
+	const child = makeQuest("child", "Child");
+	child.taskRequirements = [{ task: { id: gated.id, name: gated.name }, status: ["active"] }];
+	const nextGate = makeQuest("next", "Next");
+	nextGate.otherRequirements = [{ ...gated.otherRequirements[0], value: 2 }];
+	const quests = [completed, gated, child, nextGate];
+	let scans = 0;
+	class QuestIndex extends Map<string, FullQuest> {
+		override values() {
+			scans += 1;
+			return super.values();
+		}
+	}
+	const index = new QuestIndex(quests.map((quest) => [quest.id, quest]));
+	const options: QuestWorkspaceSelectionOptions = {
+		selectedTraderIds: new Set(),
+		filterByTraderRequirements: false,
+		selectedMapKeys: new Set(),
+		selectedStatuses: new Set(["active", "locked"]),
+		lockedFilters: { ...lockedFilters, showAll: true },
+		selectedObjectiveCategories: new Set(),
+		hiddenQuests: {},
+		showHiddenQuests: false,
+		retainedCompletedQuestIds: new Set(),
+		searchQuery: "",
+	};
+	const result = selectWorkspaceQuests(quests, index, { ...profile, completedQuests: { done: true } }, options);
+	assert.equal(scans, 1);
+	assert.equal(result.statusByQuestId.get("gated")?.status, "active");
+	assert.equal(result.statusByQuestId.get("child")?.status, "active");
+	assert.equal(result.statusByQuestId.get("next")?.reasons[0].currentValue, 1);
+	const switched = selectWorkspaceQuests(quests, index, profile, options);
+	assert.equal(scans, 2);
+	assert.equal(switched.statusByQuestId.get("gated")?.status, "locked");
+	assert.equal(switched.statusByQuestId.get("child")?.status, "locked");
+	assert.equal(switched.statusByQuestId.get("next")?.reasons[0].currentValue, 0);
+});

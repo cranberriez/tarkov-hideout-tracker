@@ -104,9 +104,18 @@ between History and Search limits both the list and trader board to the active
 profile's pinned quests, using the existing shared `questShowPinnedOnly` preference.
 The list still applies its other filters; the board still folds resolved quests.
 Mobile exposes the same toggle as Pinned only in the quest menu.
-The workspace loads board and visualizer component code on demand, with a
-loading indicator in the selected pane. Shared quest indexes remain available
-for complete prerequisite and filter derivation.
+The workspace renders its list, filter controls, action bar and mobile menu in the
+browser; full visits do not render all list rows on the server. Board and visualizer
+component code also loads on demand in the browser, with a loading indicator in the
+selected pane. The persistent workspace and its providers stay outside these
+browser-only boundaries, so the selected quest's details and route metadata remain
+server rendered. URL-requested views apply after profile hydration. Shared quest
+indexes remain available for complete prerequisite and filter derivation.
+Selected detail queries use the server route's mode until profile hydration, then
+switch to the active profile's mode without reusing a different mode's fallback.
+Workspace status and item-demand derivations build trader-tier completion counts
+once per quest set/profile snapshot and reuse them for gates and active prerequisites.
+These counts are transient and never shared across profiles or modes.
 Standard items link
 open the [item-detail dialog](architecture.md#shared-ui-vocabulary-and-entity-links); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).

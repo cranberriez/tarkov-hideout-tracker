@@ -330,7 +330,9 @@ export function QuestWorkspaceProvider({
 	};
 
 	// Nav links open a panel via `?view=`; mode stays session state, so the parameter is applied once and removed.
-	const requestedView = searchParams.get(QUEST_VIEW_PARAM);
+	// Direct quest visits must render the selected details on the server, even
+	// when a browser-only board/visualizer view is requested in the URL.
+	const requestedView = hydrated ? searchParams.get(QUEST_VIEW_PARAM) : null;
 	const [appliedView, setAppliedView] = useState<string | null>(null);
 	if (requestedView !== appliedView) {
 		setAppliedView(requestedView);

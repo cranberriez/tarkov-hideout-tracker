@@ -64,6 +64,35 @@ test("client modules do not import server code", () => {
 	assert.deepEqual(violations, []);
 });
 
+test("quest browser-only surfaces leave the routed detail outlet server rendered", () => {
+	const readSource = (file: string) => readFileSync(path.join(sourceRoot, file), "utf8");
+	const workspace = readSource("features/quests/workspace/QuestWorkspace.tsx");
+	for (const surface of [
+		"QuestListSurface",
+		"QuestActionBar",
+		"QuestMobileMenu",
+		"QuestTraderBoardPane",
+		"QuestVisualizerPane",
+	]) {
+		assert.match(workspace, new RegExp(`const ${surface} = dynamic\\([\\s\\S]*?ssr: false`));
+		assert.doesNotMatch(workspace, new RegExp(`import \\{[^}]*\\b${surface}\\b[^}]*\\} from`));
+	}
+	// An ssr:false workspace wrapper would also suppress its routed detail child.
+	for (const file of [
+		"app/(data)/quests/layout.tsx",
+		"features/quests/QuestsQueryPage.tsx",
+		"features/quests/QuestsClientPage.tsx",
+		"features/quests/workspace/QuestDetailRoute.tsx",
+	]) {
+		assert.doesNotMatch(readSource(file), /\bssr\s*:\s*false/, file);
+	}
+	assert.match(workspace, /\{mode === "board" \? [\s\S]*?: \([\s\S]*?children/);
+	assert.match(
+		readSource("features/quests/workspace/QuestWorkspaceContext.tsx"),
+		/const requestedView = hydrated \? searchParams\.get\(QUEST_VIEW_PARAM\) : null/,
+	);
+});
+
 test("canonical types stay independent of UI, stores, and server implementations", () => {
 	const forbiddenPrefixes = ["@/features/", "@/lib/stores/", "@/server/"];
 	const violations: string[] = [];

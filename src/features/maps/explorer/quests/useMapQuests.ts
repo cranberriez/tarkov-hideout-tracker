@@ -7,6 +7,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled } from "@/lib/query/game-data";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
+import { buildCompletedTraderTierQuestCounts } from "@/lib/quests/quest-trader-completion-gates";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useQuestDetails } from "../../../quests/useQuestDetails";
@@ -40,11 +41,12 @@ export function useMapQuests(mode: TarkovJsonGameMode, mapKey: string) {
 		if (!summaries) return [];
 		const quests = expandQuestSummaries(summaries);
 		const byId = new Map<string, QuestWorkspaceQuest>(quests.map((quest) => [quest.id, quest]));
+		const completedCounts = buildCompletedTraderTierQuestCounts(quests, profile.completedQuests);
 		return quests.filter(
 			(quest) =>
 				!ignored[quest.id] &&
 				isQuestOnMap(quest, mapKey) &&
-				getQuestWorkspaceStatus(quest, profile, byId).status === "active",
+				getQuestWorkspaceStatus(quest, profile, byId, completedCounts).status === "active",
 		);
 	}, [summaries, ignored, mapKey, profile]);
 

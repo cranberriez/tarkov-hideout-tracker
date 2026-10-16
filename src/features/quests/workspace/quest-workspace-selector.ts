@@ -1,6 +1,7 @@
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
 import { questMatchesTraderRequirementProfile } from "../../../lib/quests/quest-trader-gates";
+import { buildCompletedTraderTierQuestCounts } from "../../../lib/quests/quest-trader-completion-gates";
 import { questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
 	buildNextTaskCountGateByGroup,
@@ -44,8 +45,9 @@ export function selectWorkspaceQuests(
 	profile: QuestProfileSnapshot,
 	options: QuestWorkspaceSelectionOptions,
 ): QuestWorkspaceSelection {
+	const completedCounts = buildCompletedTraderTierQuestCounts(questsById.values(), profile.completedQuests);
 	const statusByQuestId = new Map(
-		quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById)]),
+		quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById, completedCounts)]),
 	);
 	const nextTaskCountGateByGroup = buildNextTaskCountGateByGroup(statusByQuestId.values());
 	const upcomingLockedQuestIds = new Set(
