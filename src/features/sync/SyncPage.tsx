@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { ExternalLink } from "lucide-react";
 import { getCurrentSeason } from "@/lib/cfg/seasons";
 import { Badge } from "@/components/ui/badge";
 import { useCompanionSyncStore, type PairingProgress } from "@/lib/stores/useCompanionSyncStore";
@@ -14,6 +15,7 @@ import { relativeAge, useNow } from "./sync-view-utils";
 import { useRaidMapAction } from "./useRaidMapAction";
 import { useSyncHydrated } from "./useSyncHydrated";
 
+const DOWNLOAD_URL = "https://github.com/cranberriez/tarkov-mappinator/releases";
 const SECTION_TITLE = "text-[10px] font-semibold uppercase tracking-[0.25em] text-subtle-foreground";
 const LINK_BUTTON =
 	"text-xs font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline";
@@ -279,11 +281,23 @@ function SummarySection() {
 			{hydrated && totals.length === 0 && unknownMode > 0 && (
 				<p className="text-xs text-subtle-foreground">{unknownMode} with unknown mode</p>
 			)}
-			<section aria-labelledby="sync-download" className="space-y-1">
+			<section aria-labelledby="sync-download" className="rounded-lg border border-highlight/10 bg-card p-4">
 				<h2 id="sync-download" className={SECTION_TITLE}>
-					Download
+					Desktop app
 				</h2>
-				<p className="text-sm text-muted-foreground">Coming soon</p>
+				<p className="mt-3 text-sm font-medium text-foreground">Mappinator</p>
+				<p className="mt-0.5 text-xs text-muted-foreground">
+					Reads your game logs and screenshots to sync quest progress, raids and your live position here.
+				</p>
+				<a
+					href={DOWNLOAD_URL}
+					target="_blank"
+					rel="noopener noreferrer"
+					className={cn(PRIMARY_BUTTON, "mt-3 inline-flex items-center gap-1.5")}
+				>
+					Download
+					<ExternalLink className="size-3" aria-hidden="true" />
+				</a>
 			</section>
 		</div>
 	);
