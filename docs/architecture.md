@@ -32,9 +32,11 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/season-1`                                        | [Season 1 overview](../src/app/season-1/page.tsx): estimated season countdown, saved battle pass completion/goals and document coverage; static data and existing client progress only, no server reads |
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; under the available season main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/battle-pass/map`                                 | [Document map](../src/app/battle-pass/map/page.tsx): full-viewport interactive document spawn maps without site navigation; lazy client rendering and native browser history |
+| `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
-The available season follows Quests in the main navigation, with Overview, Battle Pass and
+Maps follows Quests in the main navigation, with one link per explorer map.
+The available season follows Maps, with Overview, Battle Pass and
 Docs Maps links. It is available in every mode before and after setup, including
 a compact direct overview link on mobile. Battle Pass routes activate this menu;
 the full-viewport document map still hides site navigation.

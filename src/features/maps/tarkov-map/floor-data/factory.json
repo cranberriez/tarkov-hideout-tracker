@@ -1,0 +1,74 @@
+{
+	"map": "factory",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "2mqq0o64",
+			"zone": "Second Floor",
+			"floor": "2nd Floor",
+			"height": [
+				3.3,
+				7.4
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 5.66,
+				"z": 3.33,
+				"width": 145.7,
+				"depth": 156.61,
+				"angle": 0
+			}
+		},
+		{
+			"id": "bvoogyzt",
+			"zone": "Ground",
+			"floor": "ground",
+			"height": [
+				0,
+				4.3
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 5.66,
+				"z": 3.33,
+				"width": 145.7,
+				"depth": 156.61,
+				"angle": 0
+			}
+		},
+		{
+			"id": "oebtkkss",
+			"zone": "Third Floor",
+			"floor": "3rd Floor",
+			"height": [
+				7.5,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 5.66,
+				"z": 3.33,
+				"width": 145.7,
+				"depth": 156.61,
+				"angle": 0
+			}
+		},
+		{
+			"id": "q55vvo1w",
+			"zone": "Underground",
+			"floor": "Tunnels",
+			"height": [
+				null,
+				0
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 5.66,
+				"z": 3.33,
+				"width": 145.7,
+				"depth": 156.61,
+				"angle": 0
+			}
+		}
+	]
+}

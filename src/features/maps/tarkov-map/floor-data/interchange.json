@@ -1,0 +1,42 @@
+{
+	"map": "interchange",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "8pi0ju3s",
+			"zone": "mall",
+			"floor": "3rd Floor",
+			"height": [
+				34,
+				null
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|8lboij",
+			"rect": {
+				"x": -51,
+				"z": -54.5,
+				"width": 342,
+				"depth": 545,
+				"angle": 0
+			}
+		},
+		{
+			"id": "f561okiq",
+			"zone": "mall",
+			"floor": "2nd Floor",
+			"height": [
+				25,
+				34
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|8lboij",
+			"rect": {
+				"x": -51,
+				"z": -54.5,
+				"width": 342,
+				"depth": 545,
+				"angle": 0
+			}
+		}
+	]
+}

@@ -3,6 +3,49 @@
 The shared [MapViewer](../src/features/maps/MapViewer.tsx) powers Raid Planner
 and embedded quest details. [Quest domain behavior](quests.md) owns active/visited
 objective selection; this document owns geometry, projection, and asset delivery.
+The [Maps explorer](#maps-explorer) at `/maps` is a separate map stack ported from
+tarkov-mappinator; the two do not share code yet.
+
+## Maps explorer
+
+`/maps` lists the explorer maps from [map-explorer config](../src/lib/cfg/map-explorer.ts),
+which also feeds the Maps nav menu. Its visibility presets (Standard, Documents,
+Extracts & spawns, Loot, Bosses & hazards, Keys & switches) are links: the chosen
+preset rides on each map link as `?preset=`, is applied once the map's layers are
+known, and is then dropped from the URL. The same presets sit under the layers
+panel bar on the map. A preset lists the layers it shows; every other layer, including
+groups that only exist in a map's data, is switched off.
+
+`/maps/[mapKey]` renders the client-only [MapExplorer](../src/features/maps/explorer/MapExplorer.tsx)
+full-screen below the site nav, without the footer. It keeps mappinator's controls:
+tiered layers panel with three saved filter slots, floor picker, split floors,
+vector/tile art, zoom, valuable-loot icons, hover/pinned marker cards and the map
+switcher. Raid tracking (positions, follow, scrubber, group members) and dev tools
+were left out. Preferences live in `tarkov-map-explorer-preferences-v1`
+(see [user state](user-state.md)).
+
+The map library is vendored in [tarkov-map](../src/features/maps/tarkov-map/) and
+kept close to upstream so it can be re-synced (it is excluded from lint). Local changes:
+SVGs and icons are served from `public/maps/`, floor data and document JSON are
+static imports, the browser tarkov.dev source was removed, and document photos point
+at this app's battle-pass previews instead of vendored copies. Floor data, document
+links and lock flags are curated in mappinator; copy updates from there. See its
+[attribution](../src/features/maps/tarkov-map/ATTRIBUTION.md) for licenses.
+
+Marker data comes from [the explorer route](../src/app/api/maps/explorer/[mapKey]/route.ts)
+(`?mode=`), served by [map-explorer-data](../src/server/services/map-explorer-data.ts).
+It fetches `/<mode>/maps` and `maps_en` from json.tarkov.dev, translates, validates
+(an empty or malformed set throws instead of publishing), and splits per map with only
+the containers, guns and mobs that map refers to. Each instance reuses a mode's split
+for six hours and keeps serving the previous good set if a refresh fails. Responses
+are browser-cached for an hour and CDN-cached for six; the browser query is keyed by
+mode in the game-data scope.
+
+Loose loot spawns get handbook categories (two levels, posters split out) from the
+committed [loot category table](../src/lib/data/map-loot-categories.json), refreshed with
+`npm run pull-map-loot-categories`; items missing from it stay uncategorised. Item names
+come from the search manifest. Prices load only while valuable-loot icons are on, as
+one shared price request for that map's loose loot items.
 
 ## Data and service boundary
 
@@ -149,7 +192,7 @@ including their document types, key requirements, and individual photo previews.
 Groups whose displayed artwork grids overlap by more than 25% of the smaller
 bubble merge, including overlaps introduced by a newly enlarged group. Each merge
 keeps a member source anchor. Grouping is rebuilt from source positions on zoom,
-so zooming in separates the groups. At 6.6× zoom (the last 20% of the 1×–8×
+so zooming in separates the groups. At 6.6ï¿½ zoom (the last 20% of the 1×–8ï¿½
 range), all groups split into individual anchored markers, including coincident
 locations. Zooming back out enables grouping again.
 Ungrouped markers always show their document artwork, even when overlapping;

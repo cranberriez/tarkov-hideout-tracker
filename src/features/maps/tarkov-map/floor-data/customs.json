@@ -1,0 +1,552 @@
+{
+	"map": "customs",
+	"samples": [
+		{
+			"id": "2026-10-13[23-18]_50.33, 5.91, -50.51_-0.00010, -0.99342, 0.00251, -0.11451_11.16 (0).png",
+			"x": 50.33,
+			"y": 5.91,
+			"z": -50.51,
+			"floor": "2nd Floor",
+			"zone": "warehouse 17",
+			"guess": {
+				"floor": "ground",
+				"zone": "warehouse 17"
+			},
+			"at": "2026-10-14T06:19:44.233Z"
+		},
+		{
+			"id": "2026-10-13[23-18]_51.50, 5.92, -51.93_-0.04811, 0.87744, -0.09113, -0.46848_11.16 (0).png",
+			"x": 51.5,
+			"y": 5.92,
+			"z": -51.93,
+			"floor": "2nd Floor",
+			"zone": "warehouse 17",
+			"guess": {
+				"floor": "ground",
+				"zone": "warehouse 17"
+			},
+			"at": "2026-10-14T06:19:40.912Z"
+		}
+	],
+	"rooms": [
+		{
+			"id": "0ly73iqh",
+			"zone": "crackhouse",
+			"floor": "2nd Floor",
+			"height": [
+				4.3,
+				7
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|eogkgv",
+			"rect": {
+				"x": 84.14,
+				"z": -155.19,
+				"width": 20.48,
+				"depth": 28.09,
+				"angle": 10.5
+			}
+		},
+		{
+			"id": "10ehfrso",
+			"zone": "dorms 2story",
+			"floor": "2nd Floor",
+			"height": [
+				2.7,
+				6.5
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|wlyjd4",
+			"rect": {
+				"x": 230.37,
+				"z": 148.02,
+				"width": 21.17,
+				"depth": 47.1,
+				"angle": -7.5
+			}
+		},
+		{
+			"id": "11wrzvtq",
+			"zone": "boiler",
+			"floor": "2nd Floor",
+			"height": [
+				4.4,
+				6.5
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|l81fuh",
+			"rect": {
+				"x": 109.6,
+				"z": -50.34,
+				"width": 19.11,
+				"depth": 13.3,
+				"angle": 10.5
+			}
+		},
+		{
+			"id": "2kfffd36",
+			"zone": "chemical warehouse sniper scav",
+			"floor": "2nd Floor",
+			"height": [
+				14,
+				15
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1jrweqx",
+			"rect": {
+				"x": 474.84,
+				"z": -66.79,
+				"width": 43.87,
+				"depth": 51.72,
+				"angle": -8.5
+			}
+		},
+		{
+			"id": "3kwsrzx5",
+			"zone": "boiler",
+			"floor": "3rd Floor",
+			"height": [
+				6.7,
+				11.6
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|1y1vz2u",
+			"rect": {
+				"x": 106.66,
+				"z": -50.64,
+				"width": 37.98,
+				"depth": 26.21,
+				"angle": 11.5
+			}
+		},
+		{
+			"id": "7taq94hi",
+			"zone": "switch basement",
+			"floor": "Underground",
+			"height": [
+				null,
+				0.5
+			],
+			"heightSource": "data",
+			"source": "Underground|box|pmbz9k",
+			"rect": {
+				"x": 335.84,
+				"z": -59.96,
+				"width": 20.08,
+				"depth": 55.96,
+				"angle": -8
+			}
+		},
+		{
+			"id": "7ww4ipbt",
+			"zone": "construction 2nd",
+			"floor": "2nd Floor",
+			"height": [
+				5.7,
+				null
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1xs949l",
+			"rect": {
+				"x": 79.37,
+				"z": -11.61,
+				"width": 28,
+				"depth": 22,
+				"angle": -4
+			}
+		},
+		{
+			"id": "96oz1de1",
+			"zone": "oilrig & panda",
+			"floor": "2nd Floor",
+			"height": [
+				5,
+				7.9
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|6qguu4",
+			"rect": {
+				"x": 262.32,
+				"z": -41.75,
+				"width": 33.12,
+				"depth": 74.78,
+				"angle": -11.5
+			}
+		},
+		{
+			"id": "a22hdmgz",
+			"zone": "dead scav warehouse",
+			"floor": "2nd Floor",
+			"height": [
+				4.2,
+				12
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|2j659b",
+			"rect": {
+				"x": 556.28,
+				"z": -120.08,
+				"width": 44.23,
+				"depth": 26.13,
+				"angle": -6.5
+			}
+		},
+		{
+			"id": "ar4mo27h",
+			"zone": "switch 2nd",
+			"floor": "2nd Floor",
+			"height": [
+				4,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|b3oe5c",
+			"rect": {
+				"x": 348.03,
+				"z": -57.25,
+				"width": 9.93,
+				"depth": 54.62,
+				"angle": -8
+			}
+		},
+		{
+			"id": "btzg47tl",
+			"zone": "stronghold",
+			"floor": "2nd Floor",
+			"height": [
+				7.4,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 203.1,
+				"z": -127.5,
+				"width": 30.69,
+				"depth": 65.47,
+				"angle": 10
+			}
+		},
+		{
+			"id": "cz6c0lkv",
+			"zone": "warehouse 17",
+			"floor": "2nd Floor",
+			"height": [
+				4.7,
+				7.6
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1lfulsj",
+			"rect": {
+				"x": 47.48,
+				"z": -59.23,
+				"width": 49.21,
+				"depth": 35.48,
+				"angle": 11.5
+			}
+		},
+		{
+			"id": "fw63b818",
+			"zone": "switch snipe",
+			"floor": "2nd Floor",
+			"height": [
+				6,
+				null
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|bf41ii",
+			"rect": {
+				"x": 325.55,
+				"z": -78.15,
+				"width": 14.58,
+				"depth": 38.83,
+				"angle": -8
+			}
+		},
+		{
+			"id": "gh7oyfym",
+			"zone": "old gas",
+			"floor": "Underground",
+			"height": [
+				null,
+				0.5
+			],
+			"heightSource": "data",
+			"source": "Underground|box|kvk92e",
+			"rect": {
+				"x": 311,
+				"z": -178.5,
+				"width": 6,
+				"depth": 11,
+				"angle": 14
+			}
+		},
+		{
+			"id": "gju425k6",
+			"zone": "pump 2nd",
+			"floor": "2nd Floor",
+			"height": [
+				4.4,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1dxsx3j",
+			"rect": {
+				"x": 611.86,
+				"z": -130,
+				"width": 26,
+				"depth": 19,
+				"angle": -5.5
+			}
+		},
+		{
+			"id": "jc8vfja4",
+			"zone": "oilrig & panda",
+			"floor": "4th Floor",
+			"height": [
+				11.2,
+				54.7
+			],
+			"heightSource": "data",
+			"source": "4th Floor|box|6qguu4",
+			"rect": {
+				"x": 262.12,
+				"z": -41.82,
+				"width": 33.08,
+				"depth": 75.33,
+				"angle": -12
+			}
+		},
+		{
+			"id": "k6o6zbjm",
+			"zone": "dorms 3story",
+			"floor": "3rd Floor",
+			"height": [
+				5.7,
+				null
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|wlyjd4",
+			"rect": {
+				"x": 182.72,
+				"z": 164.51,
+				"width": 34.04,
+				"depth": 48.7,
+				"angle": -7
+			}
+		},
+		{
+			"id": "l19fsa2e",
+			"zone": "warehouse 17",
+			"floor": "3rd Floor",
+			"height": [
+				7.7,
+				11.3
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|fo7s5a",
+			"rect": {
+				"x": 61.37,
+				"z": -61.35,
+				"width": 22.26,
+				"depth": 19.17,
+				"angle": 11
+			}
+		},
+		{
+			"id": "lc19g3ks",
+			"zone": "scav checkpoint",
+			"floor": "2nd Floor",
+			"height": [
+				2.7,
+				6.5
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1i8sw3t",
+			"rect": {
+				"x": 582.41,
+				"z": 4.43,
+				"width": 11.16,
+				"depth": 9.9,
+				"angle": -38.5
+			}
+		},
+		{
+			"id": "lfch52jb",
+			"zone": "switch 2nd",
+			"floor": "2nd Floor",
+			"height": [
+				3.5,
+				8.5
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1r7h7uo",
+			"rect": {
+				"x": 328.32,
+				"z": -55.29,
+				"width": 13,
+				"depth": 7,
+				"angle": -7.5
+			}
+		},
+		{
+			"id": "mnjmfg5p",
+			"zone": "skeleton",
+			"floor": "2nd Floor",
+			"height": [
+				7,
+				null
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1lg7yc6",
+			"rect": {
+				"x": 203.42,
+				"z": -14.3,
+				"width": 66.26,
+				"depth": 28.96,
+				"angle": 10
+			}
+		},
+		{
+			"id": "nwh7ykgg",
+			"zone": "mechanical",
+			"floor": "2nd Floor",
+			"height": [
+				3.5,
+				7
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 108.06,
+				"z": -91.65,
+				"width": 21.81,
+				"depth": 14.41,
+				"angle": 11.5
+			}
+		},
+		{
+			"id": "p35rohzj",
+			"zone": "zb-1012",
+			"floor": "Underground",
+			"height": [
+				null,
+				0.7
+			],
+			"heightSource": "data",
+			"source": "Underground|box|ey7vhd",
+			"rect": {
+				"x": 464.9,
+				"z": -115.82,
+				"width": 15.14,
+				"depth": 11.23,
+				"angle": -6
+			}
+		},
+		{
+			"id": "q8tmxmmm",
+			"zone": "USEC 2nd",
+			"floor": "2nd Floor",
+			"height": [
+				6,
+				null
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|107t72p",
+			"rect": {
+				"x": 570.35,
+				"z": -69.95,
+				"width": 23.19,
+				"depth": 45.34,
+				"angle": -7.5
+			}
+		},
+		{
+			"id": "s7sk49lc",
+			"zone": "oilrig & panda",
+			"floor": "3rd Floor",
+			"height": [
+				8,
+				11.1
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|6qguu4",
+			"rect": {
+				"x": 262.18,
+				"z": -41.85,
+				"width": 32.96,
+				"depth": 75.31,
+				"angle": -12
+			}
+		},
+		{
+			"id": "t6m4kuca",
+			"zone": "dorms 3story",
+			"floor": "2nd Floor",
+			"height": [
+				2.7,
+				5.6
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 182.72,
+				"z": 164.51,
+				"width": 34.04,
+				"depth": 48.7,
+				"angle": -7
+			}
+		},
+		{
+			"id": "tneb5l60",
+			"zone": "boiler room",
+			"floor": "Underground",
+			"height": [
+				null,
+				0.5
+			],
+			"heightSource": "data",
+			"source": "Underground|box|r27c2z",
+			"rect": {
+				"x": 112.41,
+				"z": -51.52,
+				"width": 17.2,
+				"depth": 20.93,
+				"angle": 11.5
+			}
+		},
+		{
+			"id": "tqhshu5n",
+			"zone": "zb-1011",
+			"floor": "Underground",
+			"height": [
+				null,
+				0.5
+			],
+			"heightSource": "data",
+			"source": "Underground|box|smx6v8",
+			"rect": {
+				"x": 627.77,
+				"z": -130.88,
+				"width": 16.07,
+				"depth": 12.27,
+				"angle": -6.5
+			}
+		},
+		{
+			"id": "wv8sp3qu",
+			"zone": "zb-013",
+			"floor": "Underground",
+			"height": [
+				null,
+				1
+			],
+			"heightSource": "data",
+			"source": "Underground|box|1exhtrh",
+			"rect": {
+				"x": 207.44,
+				"z": -151.01,
+				"width": 25.23,
+				"depth": 33.66,
+				"angle": 10.5
+			}
+		}
+	]
+}

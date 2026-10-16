@@ -1,0 +1,93 @@
+{
+	"map": "shoreline",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "1nf4d8me",
+			"zone": "west wing",
+			"floor": "Underground",
+			"height": [
+				null,
+				-4
+			],
+			"heightSource": "data",
+			"source": "Underground|box|63247j",
+			"rect": {
+				"x": -187,
+				"z": -86,
+				"width": 100,
+				"depth": 36,
+				"angle": 0
+			}
+		},
+		{
+			"id": "bpkeyu1h",
+			"zone": "Sanitorium",
+			"floor": "3rd Floor",
+			"height": [
+				null,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -252.38,
+				"z": -89.13,
+				"width": 228.18,
+				"depth": 40.25,
+				"angle": 0
+			}
+		},
+		{
+			"id": "brf2zze5",
+			"zone": "Admin",
+			"floor": "2nd Floor",
+			"height": [
+				-1,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -252.16,
+				"z": -138.99,
+				"width": 51.34,
+				"depth": 34.6,
+				"angle": 0
+			}
+		},
+		{
+			"id": "s3mabg0i",
+			"zone": "Sanitorium",
+			"floor": "2nd Floor",
+			"height": [
+				-1,
+				1.8
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -252.65,
+				"z": -89.81,
+				"width": 228.13,
+				"depth": 39.15,
+				"angle": 0
+			}
+		},
+		{
+			"id": "xs23uu0o",
+			"zone": "admin",
+			"floor": "Underground",
+			"height": [
+				null,
+				-4
+			],
+			"heightSource": "data",
+			"source": "Underground|box|h0ejsw",
+			"rect": {
+				"x": -251,
+				"z": -148.5,
+				"width": 34,
+				"depth": 29,
+				"angle": 0
+			}
+		}
+	]
+}

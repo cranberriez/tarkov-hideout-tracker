@@ -9,7 +9,8 @@ export function RouteAwareFooter() {
 		pathname === "/uploader" ||
 		pathname === "/quests" ||
 		pathname.startsWith("/quests/") ||
-		pathname.startsWith("/games/")
+		pathname.startsWith("/games/") ||
+		pathname.startsWith("/maps/")
 	)
 		return null;
 	return <Footer />;

@@ -20,6 +20,7 @@ import {
 	Wrench,
 } from "lucide-react";
 import { questViewHref } from "@/lib/entity-routes";
+import { MAP_EXPLORER_MAPS } from "@/lib/cfg/map-explorer";
 
 export interface NavItem {
 	name: string;
@@ -88,6 +89,12 @@ export const navMenus: NavMenu[] = [
 			{ name: "Raid Planner", href: questViewHref("planner"), icon: Compass },
 			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
+	},
+	{
+		name: "Maps",
+		href: "/maps",
+		icon: Map,
+		children: MAP_EXPLORER_MAPS.map((map) => ({ name: map.name, href: `/maps/${map.key}` })),
 	},
 	{
 		name: "Season 1",

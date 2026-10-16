@@ -1,0 +1,858 @@
+/* Maps explorer, ported from tarkov-mappinator's map page. Everything is scoped under .map-explorer (and
+   .map-explorer-menu for the portalled preset menu) so the dark map chrome never leaks into the site. */
+.map-explorer,
+.map-explorer-menu {
+	--me-bg: #131416;
+	--me-panel: rgb(15 16 17 / 82%);
+	--me-surface-hover: #232428;
+	--me-text: #e7e5e0;
+	--me-muted: #a09d97;
+	--me-faint: #6f6d69;
+	--me-accent: var(--brand, #cdb68b);
+	--me-accent-soft: color-mix(in oklab, var(--me-accent) 14%, transparent);
+	--me-bad: #e37b6c;
+	--me-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+	font: 13px/1.45 var(--font-sans), system-ui, sans-serif;
+	color: var(--me-text);
+	color-scheme: dark;
+}
+.map-explorer button,
+.map-explorer-menu button {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+.map-explorer button:disabled {
+	cursor: default;
+	opacity: 0.4;
+}
+.map-explorer :focus-visible {
+	outline: 2px solid var(--me-accent);
+	outline-offset: 2px;
+}
+/* Tailwind's preflight caps images at max-width: 100%; markers sit in a zero-width overlay layer, so that cap
+   squeezes unlabelled icons to nothing (and documents into ovals). Icons keep their own sizes. */
+.map-explorer img {
+	max-width: none;
+}
+.map-explorer .overlay-marker {
+	width: max-content;
+}
+.map-explorer .faint {
+	color: var(--me-faint);
+}
+
+.map-explorer {
+	position: relative;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--me-bg);
+	container: map / size;
+}
+.map-explorer .map-canvas {
+	position: absolute;
+	inset: 0;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	background-color: var(--me-bg);
+	background-image:
+		linear-gradient(to right, rgb(255 255 255 / 5.5%) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(255 255 255 / 5.5%) 1px, transparent 1px),
+		linear-gradient(to right, rgb(255 255 255 / 2.5%) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(255 255 255 / 2.5%) 1px, transparent 1px);
+	background-size:
+		var(--major) var(--major),
+		var(--major) var(--major),
+		var(--minor) var(--minor),
+		var(--minor) var(--minor);
+	background-position: var(--ox) var(--oy);
+}
+.map-explorer .map-canvas:active {
+	cursor: grabbing;
+}
+.map-explorer .map-canvas.calibrated {
+	background-image: none;
+}
+.map-explorer .map-art {
+	position: absolute;
+	left: 0;
+	top: 0;
+	pointer-events: none;
+	will-change: transform;
+}
+.map-explorer .map-axis {
+	position: absolute;
+	background: rgb(205 182 139 / 12%);
+	pointer-events: none;
+}
+.map-explorer .map-axis.x {
+	left: 0;
+	right: 0;
+	height: 1px;
+}
+.map-explorer .map-axis.y {
+	top: 0;
+	bottom: 0;
+	width: 1px;
+}
+.map-explorer .map-status {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	color: var(--me-muted);
+	pointer-events: none;
+	z-index: 2;
+}
+.map-explorer .map-status > div {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border-radius: 9px;
+	background: var(--me-panel);
+	pointer-events: auto;
+}
+.map-explorer .map-status button {
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+
+/* Top right: map pill and its list. */
+.map-explorer .map-switch {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 6px;
+	max-height: calc(100% - 28px);
+}
+.map-explorer .map-chip {
+	display: flex;
+	align-items: center;
+	height: 28px;
+	border-radius: 14px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	font-size: 12px;
+	font-weight: 500;
+}
+.map-explorer .map-chip-part {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 100%;
+	padding: 0 12px;
+	border-radius: 14px;
+}
+.map-explorer .map-caret {
+	display: grid;
+	color: var(--me-muted);
+}
+.map-explorer .map-switch.open .map-caret {
+	color: var(--me-accent);
+}
+.map-explorer .map-switch-list,
+.map-explorer .map-floors,
+.map-explorer .map-presets {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+	min-width: 150px;
+	min-height: 0;
+	overflow: hidden auto;
+	scrollbar-width: thin;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-switch-list a.floor-row {
+	display: flex;
+	align-items: center;
+}
+
+/* Left column: layers panel at the top, floor picker and toolbar at the bottom; the panels shrink before overlapping. */
+.map-explorer .map-left {
+	position: absolute;
+	left: 14px;
+	right: 14px;
+	top: 14px;
+	bottom: 14px;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	pointer-events: none;
+}
+.map-explorer .map-left > *,
+.map-explorer .map-left-bottom > * {
+	pointer-events: auto;
+}
+.map-explorer .map-left-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	min-height: 0;
+	flex-shrink: 1;
+	align-self: stretch;
+}
+.map-explorer .map-tools {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px;
+	flex-shrink: 0;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-tools .icon-button:disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.map-explorer .map-floor-chip {
+	height: 26px;
+	padding: 0 10px;
+	border-radius: 13px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--me-muted);
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-floor-chip:hover {
+	color: var(--me-text);
+}
+.map-explorer .floor-row {
+	height: 26px;
+	flex-shrink: 0;
+	padding: 0 10px;
+	border-radius: 6px;
+	text-align: left;
+	font-size: 12px;
+	color: var(--me-muted);
+}
+.map-explorer .floor-row:hover {
+	background: var(--me-surface-hover);
+	color: var(--me-text);
+}
+.map-explorer .floor-row.active {
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .icon-button {
+	width: 30px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border-radius: 6px;
+	color: var(--me-muted);
+}
+.map-explorer .icon-button:hover {
+	background: var(--me-surface-hover);
+	color: var(--me-text);
+}
+.map-explorer .icon-button.active {
+	color: var(--me-accent);
+	background: var(--me-accent-soft);
+}
+
+/* Built-in visibility presets, beside the layers panel's own preset slots. */
+.map-explorer .preset-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 2px 4px 4px;
+}
+.map-explorer .preset-chip {
+	height: 22px;
+	padding: 0 8px;
+	border-radius: 11px;
+	font-size: 11px;
+	color: var(--me-muted);
+	background: rgb(255 255 255 / 4%);
+}
+.map-explorer .preset-chip:hover {
+	color: var(--me-text);
+}
+.map-explorer .preset-chip.active {
+	color: var(--me-accent);
+	background: var(--me-accent-soft);
+}
+
+/* Map overlay markers */
+.map-explorer .overlay-marker {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	transform: translate(-11px, -50%);
+	pointer-events: auto;
+}
+.map-explorer .overlay-marker img {
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 85%));
+}
+.map-explorer .overlay-marker.spawns {
+	transform: translate(-7px, -50%);
+}
+.map-explorer .overlay-marker.spawns img {
+	width: 14px;
+	height: 14px;
+}
+.map-explorer .overlay-marker.containers,
+.map-explorer .overlay-marker.access,
+.map-explorer .overlay-marker.other {
+	transform: translate(-8px, -50%);
+}
+.map-explorer .overlay-marker.containers img,
+.map-explorer .overlay-marker.access img,
+.map-explorer .overlay-marker.other img {
+	width: 16px;
+	height: 16px;
+}
+/* Item icons that need to stand out sit on an opaque dark disc ringed in their colour. */
+.map-explorer img.tinted {
+	border-radius: 50%;
+	padding: 2px;
+	box-sizing: border-box;
+	object-fit: contain;
+	background: var(--me-bg);
+	box-shadow: 0 0 0 1.5px var(--tint);
+}
+/* Markers sharing a spot (two document types) sit side by side around it. */
+.map-explorer .overlay-marker.documents {
+	transform: translate(calc(-10px + var(--slot, 0) * 22px), -50%);
+}
+.map-explorer .overlay-marker.documents img {
+	width: 20px;
+	height: 20px;
+}
+.map-explorer .overlay-marker.loose {
+	transform: translate(-5px, -50%);
+}
+.map-explorer .overlay-marker.loose img {
+	width: 10px;
+	height: 10px;
+	filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 3px rgb(0 0 0 / 90%));
+}
+.map-explorer .overlay-marker.loose.valuable {
+	transform: translate(-9px, -50%);
+}
+.map-explorer .overlay-marker.loose.valuable img {
+	width: 18px;
+	height: 18px;
+	object-fit: contain;
+}
+.map-explorer .overlay-marker.hazards img {
+	width: 18px;
+	height: 18px;
+}
+.map-explorer .overlay-marker.hazards {
+	transform: translate(-9px, -50%);
+}
+.map-explorer .split-label {
+	position: absolute;
+	transform: translate(-50%, -100%);
+	padding-bottom: 4px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--me-muted);
+	text-shadow:
+		0 0 3px #000,
+		0 1px 2px #000;
+	pointer-events: none;
+}
+.map-explorer .overlay-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	will-change: transform;
+}
+.map-explorer .map-canvas.dragging .overlay-marker {
+	pointer-events: none;
+}
+.map-explorer .overlay-zones {
+	position: absolute;
+	left: 0;
+	top: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+.map-explorer .overlay-zones-scale {
+	transform: scale(var(--s));
+}
+.map-explorer .zone {
+	fill: rgb(227 123 108 / 14%);
+	stroke: rgb(227 123 108 / 70%);
+	stroke-width: 1.5;
+	stroke-dasharray: 5 4;
+	vector-effect: non-scaling-stroke;
+}
+.map-explorer .zone.sniper {
+	fill: rgb(236 190 100 / 12%);
+	stroke: rgb(236 190 100 / 70%);
+}
+.map-explorer .zone.artillery {
+	fill: rgb(240 140 60 / 14%);
+	stroke: rgb(240 140 60 / 75%);
+}
+.map-explorer .zone.other {
+	fill: rgb(170 140 230 / 12%);
+	stroke: rgb(170 140 230 / 65%);
+}
+.map-explorer .zone.other-floor {
+	opacity: 0.35;
+}
+.map-explorer .overlay-marker.other-floor img {
+	scale: 0.75;
+}
+.map-explorer .floor-caret {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	filter: drop-shadow(0 1px 1px rgb(0 0 0 / 85%));
+	pointer-events: none;
+}
+.map-explorer .overlay-marker.above .floor-caret {
+	border-bottom: 5px solid var(--me-text);
+}
+.map-explorer .overlay-marker.below .floor-caret {
+	border-top: 5px solid var(--me-text);
+}
+.map-explorer .overlay-marker:hover {
+	z-index: 5;
+}
+.map-explorer .overlay-hover {
+	display: none;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: rgb(15 16 17 / 88%);
+	text-shadow: none;
+}
+.map-explorer .overlay-marker:hover .overlay-hover {
+	display: block;
+}
+.map-explorer .overlay-marker:hover .overlay-label:not(.overlay-hover):has(+ .replaces) {
+	display: none;
+}
+.map-explorer .overlay-label {
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--me-text);
+	text-shadow:
+		0 0 3px #000,
+		0 1px 2px #000;
+	pointer-events: none;
+}
+.map-explorer .overlay-marker.selected img {
+	border-radius: 50%;
+	outline: 1.5px solid var(--me-accent);
+	outline-offset: 1px;
+}
+
+/* Layer panel */
+.map-explorer .map-layers {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+	min-height: 0;
+	flex-shrink: 1;
+	overflow: hidden;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-layers.open {
+	min-width: 220px;
+	max-width: 260px;
+}
+.map-explorer .layers-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+.map-explorer .layers-list {
+	min-height: 0;
+	overflow: hidden auto;
+	scrollbar-width: thin;
+}
+.map-explorer .layers-bar .icon-button:disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.map-explorer .presets {
+	display: flex;
+	gap: 4px;
+	margin-left: auto;
+}
+.map-explorer .preset {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	border: 1.5px dashed var(--me-faint);
+	color: transparent;
+	font: 600 11px var(--me-mono);
+	display: grid;
+	place-items: center;
+}
+.map-explorer .preset:hover {
+	border-color: var(--me-muted);
+	color: var(--me-faint);
+}
+.map-explorer .preset.saved {
+	border-style: solid;
+	border-color: var(--me-muted);
+	color: var(--me-muted);
+}
+.map-explorer .preset.saved:hover {
+	color: var(--me-text);
+	border-color: var(--me-text);
+}
+.map-explorer .preset.active {
+	border-color: var(--me-accent);
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .layer-head {
+	display: flex;
+	align-items: center;
+}
+.map-explorer .caret {
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	border-radius: 5px;
+	color: var(--me-faint);
+}
+.map-explorer .caret svg {
+	display: block;
+	transition: transform 0.15s;
+}
+.map-explorer .caret:hover {
+	color: var(--me-text);
+}
+.map-explorer .caret.folded svg {
+	transform: rotate(-90deg);
+}
+.map-explorer .layer-head .layer-row {
+	padding-left: 4px;
+}
+.map-explorer .layer-floors {
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	border-radius: 5px;
+	color: var(--me-faint);
+	visibility: hidden;
+}
+.map-explorer .layer-head:hover .layer-floors,
+.map-explorer .layer-floors.on,
+.map-explorer .layer-floors:focus-visible {
+	visibility: visible;
+}
+.map-explorer .layer-floors.on,
+.map-explorer .layer-floors:hover {
+	color: var(--me-text);
+}
+.map-explorer .map-layers .layer + .layer {
+	margin-top: 6px;
+}
+.map-explorer .layer-row {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 26px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--me-text);
+	text-align: left;
+}
+.map-explorer .layer-row:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .layer-row .faint {
+	margin-left: auto;
+	font: 11px var(--me-mono);
+}
+.map-explorer .layer-name {
+	font-weight: 600;
+}
+.map-explorer .group-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.map-explorer .layer-row.group {
+	padding-left: 22px;
+	color: var(--me-muted);
+}
+.map-explorer .layer-row.group img {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+.map-explorer .layer-row.group img.portrait {
+	border-radius: 50%;
+	object-fit: cover;
+}
+.map-explorer .layer-row.group.sub {
+	padding-left: 42px;
+}
+.map-explorer .layer-row.group.off {
+	opacity: 0.4;
+}
+.map-explorer .layer-head.cat {
+	padding-left: 10px;
+}
+.map-explorer .layer-head.cat .layer-row.group {
+	padding-left: 4px;
+	color: var(--me-text);
+}
+.map-explorer .layer-head.cat.mixed .layer-row.group {
+	color: var(--me-muted);
+}
+.map-explorer .layer-head.cat.off .layer-row.group {
+	color: var(--me-faint);
+}
+.map-explorer .layer-types.folded {
+	display: none;
+}
+.map-explorer .layer.off .layer-head .layer-name {
+	color: var(--me-faint);
+}
+.map-explorer .layer.mixed .layer-head .layer-name {
+	color: var(--me-muted);
+}
+.map-explorer .layer-empty {
+	margin: 4px 8px 6px;
+	font-size: 12px;
+}
+
+.map-explorer-menu.context-menu {
+	position: fixed;
+	z-index: 60;
+	min-width: 150px;
+	display: flex;
+	flex-direction: column;
+	padding: 4px;
+	border-radius: 8px;
+	background: rgb(35 36 40 / 96%);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 40%);
+}
+.map-explorer-menu button {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 5px;
+	text-align: left;
+	font-size: 12px;
+	color: var(--me-text);
+}
+.map-explorer-menu button:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer-menu button.danger {
+	color: var(--me-bad);
+}
+.map-explorer-menu .context-title {
+	padding: 4px 10px 2px;
+	font-size: 11px;
+	color: var(--me-faint);
+}
+
+/* Short map: groups sit beside each other as icon + count. */
+@container map (max-height: 440px) {
+	.map-explorer .layer-groups {
+		display: flex;
+		gap: 2px;
+	}
+	.map-explorer .layer-row.group {
+		width: auto;
+		padding: 0 6px;
+	}
+	.map-explorer .layer-row.group .group-name {
+		display: none;
+	}
+	.map-explorer .layer-cat,
+	.map-explorer .layer-types,
+	.map-explorer .layer-types.folded {
+		display: contents;
+	}
+	.map-explorer .layer-head.cat {
+		display: none;
+	}
+	.map-explorer .layer-row.group.sub {
+		padding: 0 6px;
+	}
+}
+
+/* Detail card for the hovered or pinned overlay marker. */
+.map-explorer .marker-cards {
+	position: absolute;
+	right: 14px;
+	bottom: 14px;
+	z-index: 3;
+	width: 260px;
+	max-height: calc(100% - 58px);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	pointer-events: auto;
+}
+.map-explorer .marker-card {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px 12px;
+	border-radius: 10px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	font-size: 12px;
+}
+.map-explorer .marker-card-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+/* A document's reference photo widens the card so the spot reads at a glance. */
+.map-explorer .marker-cards.document {
+	width: 510px;
+	max-width: calc(100% - 28px);
+}
+.map-explorer .marker-card-photo {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	object-fit: contain;
+	border-radius: 6px;
+	background: var(--me-bg);
+}
+.map-explorer .marker-card-head > img {
+	width: 24px;
+	height: 24px;
+	flex-shrink: 0;
+}
+.map-explorer .marker-card-head .icon-button {
+	width: 24px;
+	height: 24px;
+	margin: -4px -6px -4px 0;
+	flex-shrink: 0;
+}
+.map-explorer .marker-card-title {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+	font-weight: 500;
+}
+.map-explorer .marker-card-sub,
+.map-explorer .marker-card-label {
+	color: var(--me-muted);
+	font-weight: 400;
+}
+.map-explorer .marker-card-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.map-explorer .marker-card-row {
+	display: grid;
+	grid-template-columns: 84px 1fr;
+	gap: 8px;
+	align-items: start;
+	overflow-wrap: anywhere;
+}
+.map-explorer .marker-card-boss {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+.map-explorer .marker-card-boss > img {
+	width: 44px;
+	height: 44px;
+	flex-shrink: 0;
+	border-radius: 6px;
+	object-fit: cover;
+}
+.map-explorer .marker-card-id {
+	font-family: var(--me-mono);
+	font-size: 11px;
+	color: var(--me-muted);
+}
+.map-explorer .marker-card-items {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+}
+.map-explorer .marker-card-item {
+	position: relative;
+	display: block;
+	width: 28px;
+	height: 28px;
+}
+.map-explorer .marker-card-item img {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+}
+.map-explorer .marker-card-item .count {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	padding: 0 3px;
+	border-radius: 6px;
+	background: rgb(15 16 17 / 90%);
+	font-size: 10px;
+	line-height: 13px;
+}
+
+/* The map fills the viewport under the site nav; the page itself does not scroll. */
+body.map-explorer-active {
+	height: 100dvh;
+	min-height: 0;
+	overflow: hidden;
+}
+body.map-explorer-active [data-main-nav] {
+	flex-shrink: 0;
+}

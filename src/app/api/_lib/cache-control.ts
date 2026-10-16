@@ -18,6 +18,8 @@ export const CacheControl = {
 	catalogMiss: "public, max-age=3600, s-maxage=86400",
 	/** Browser 1 hour with day-long background revalidation (map overlays and render data). */
 	mapData: "public, max-age=3600, stale-while-revalidate=86400",
+	/** Browser 1 hour, CDN 6 hours, day-long background revalidation (Maps explorer tarkov.dev documents). */
+	mapExplorerData: "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400",
 	/** Browser 1 day with week-long background revalidation (rendered map SVG). */
 	mapSvg: "public, max-age=86400, stale-while-revalidate=604800",
 } as const;
