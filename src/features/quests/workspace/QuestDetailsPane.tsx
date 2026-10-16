@@ -102,7 +102,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 		detailScrollRef,
 		detailSplitRef,
 		selectedDetailMap,
-		focusedObjectiveId,
+		highlightedObjectiveId,
 		showObjectiveOnMap,
 		openCompactMap,
 		handleDetailScroll,
@@ -192,7 +192,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 								objectiveCount={quest.objectives.length}
 								objectivePresentation={objectivePresentation}
 								completedObjectiveIds={completedObjectiveIds}
-								focusedObjectiveId={focusedObjectiveId}
+								focusedObjectiveId={highlightedObjectiveId}
 								onHoverObjective={setHoveredObjectiveId}
 								onShowObjectiveOnMap={showObjectiveOnMap}
 								onToggleObjectiveCompletion={toggleQuestObjectiveCompletion}

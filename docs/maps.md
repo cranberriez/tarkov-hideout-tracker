@@ -68,8 +68,9 @@ The quest details pane shows [QuestObjectivesMap](../src/features/maps/explorer/
 beside (wide screens) or over (compact) the quest. It is the explorer's map reduced to
 one quest's objective markers: the same `TarkovMap`, quest marker builder
 ([buildQuestMarkers](../src/features/maps/explorer/quests/quest-map-markers.ts)), glyphs
-and marker card, with only a floor picker and zoom buttons. There is no legend, map
-switcher, nav or full-screen toggle, layers panel or quest drawer, and no saved map
+and marker card, with only a floor picker (opened by a floors button) and zoom buttons at the bottom left.
+It opens fitted to its objective markers, and pinning a marker by hand highlights its objective in the list.
+There is no legend, map switcher, nav or full-screen toggle, layers panel or quest drawer, and no saved map
 preferences. It fetches no map or quest data: markers derive from the quest already in
 the details pane (objectives marked done are left out) and only the art and tiles load.
 Quests on several maps switch between them in the pane header; the map remounts per quest
@@ -89,10 +90,8 @@ Maps index cards use local scenic WebP thumbnails in
 [public/images/maps](../public/images/maps/README.md), at most 480 × 288. The asset
 directory records sources and attribution.
 
-[pull-map-overlays.mjs](../scripts/pull-map-overlays.mjs) reduces upstream regular
-map data into committed [map-overlays](../src/lib/data/map-overlays/) chunks. Only the
-manifest is read at runtime (by [sync-model](../src/features/sync/sync-model.ts), to match
-raid maps). Refreshes are explicit maintenance operations; see [operations](operations.md).
+The committed [map manifest](../src/lib/data/map-overlays/manifest.json) is a static list
+of map names that [sync-model](../src/features/sync/sync-model.ts) uses to match raid maps.
 
 ## Projection, floors, and markers
 
@@ -123,7 +122,6 @@ Location photos stay bundled under
 
 ```bash
 node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts
-node --test scripts/pull-map-overlays.test.mjs
 ```
 
 For visible changes, verify rotated maps, multi-floor maps, unsupported maps,

@@ -10,7 +10,7 @@ import { freshness, type PlayerPosition, type PlayerTrack } from "./players";
 import { artRect, metricProjection, projectionFor } from "./projection";
 import { tileBounds } from "./tiles";
 import type { MapCalibration, PlaneRect, WorldPoint } from "./types";
-import { initialView, useMapViewport } from "./useMapViewport";
+import { clampScale, initialView, useMapViewport } from "./useMapViewport";
 import { useSplitLayout, type ArtStyle } from "./useSplitLayout";
 
 export type { ArtStyle };
@@ -80,6 +80,8 @@ export type TarkovMapProps = {
   follow?: string | null;
   /** A point to centre on once, again whenever `key` changes; for jumping to something without following it. */
   centre?: { key: string; point: PlayerPosition } | null;
+  /** World points to fit in view when the map first shows (as close as the room-fit zoom allows); without them the whole map shows. */
+  fit?: WorldPoint[] | null;
   onUserPan?: () => void;
   /** Overlay markers already filtered for display, with the filters they were filtered by (they pick icons). */
   markers?: MapMarker[];
@@ -116,7 +118,7 @@ const noFilters: Filters = {};
  * A pannable, zoomable Tarkov map: vector art or tiles by floor, data markers, and player positions.
  * Positions are world coordinates in the map's own space, so only pass players who are on this map.
  */
-export function TarkovMap({ map, art: preferred = "svg", floor, split = false, levels = false, autoZoom = false, players = [], follow = null, centre = null, onUserPan,
+export function TarkovMap({ map, art: preferred = "svg", floor, split = false, levels = false, autoZoom = false, players = [], follow = null, centre = null, fit = null, onUserPan,
   markers = noMarkers, filters = noFilters, preset, lootIcons, selected, dimmed, markerGlyph, onMarkerHover, onMarkerTap, onMapTap, className, children, draw, ref }: TarkovMapProps) {
   const projection = useMemo(() => map ? projectionFor(map) : metricProjection, [map]);
   const style = artStyleOf(map, preferred, floor);
@@ -153,7 +155,16 @@ export function TarkovMap({ map, art: preferred = "svg", floor, split = false, l
     if (!size.width || shownMapKey.current === mapKey) return;
     shownMapKey.current = mapKey;
     roomFit.current = null;
-    viewport.reset(initialView(projection, art, anyNewest ? toPlane(anyNewest) : null, size));
+    const start = initialView(projection, art, anyNewest ? toPlane(anyNewest) : null, size);
+    const planes = fit?.map(toPlane);
+    if (planes?.length) {
+      const xs = planes.map((point) => point.x), ys = planes.map((point) => point.y);
+      const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+      const fits = Math.min(size.width / Math.max(maxX - minX, 1e-6), size.height / Math.max(maxY - minY, 1e-6)) * ROOM_FILL;
+      start.cx = (minX + maxX) / 2; start.cy = (minY + maxY) / 2;
+      start.scale = clampScale(Math.min(fits, ROOM_MAX_PX_PER_M / projection.unitsPerMetre), projection.unitsPerMetre);
+    }
+    viewport.reset(start);
   }, [mapKey, size.width > 0]);
 
   useEffect(() => {

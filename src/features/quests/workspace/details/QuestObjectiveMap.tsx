@@ -39,6 +39,7 @@ export function QuestObjectiveMap({
 		selectedDetailMap,
 		focusedObjectiveId,
 		focusRequestKey,
+		selectMarkerObjective,
 		selectDetailMap,
 		resizeMapFromPointer,
 	} = controller;
@@ -145,6 +146,7 @@ export function QuestObjectiveMap({
 					hoveredObjectiveId={hoveredObjectiveId}
 					focusedObjectiveId={focusedObjectiveId}
 					focusRequestKey={focusRequestKey}
+					onObjectiveSelect={selectMarkerObjective}
 				/>
 			</div>
 		</aside>

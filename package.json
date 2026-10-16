@@ -20,7 +20,6 @@
 		"test:reusable-reads": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/reusable-reads.test.ts",
 		"db:status": "node db-scripts/status.mjs",
 		"db:prices:refresh": "node db-scripts/refresh-prices.mjs",
-		"pull-map-overlays": "node scripts/pull-map-overlays.mjs",
 		"pull-map-loot-categories": "node scripts/pull-map-loot-categories.mjs",
 		"quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
 		"quest-data-compare": "node scripts/compare-quest-data.mjs",

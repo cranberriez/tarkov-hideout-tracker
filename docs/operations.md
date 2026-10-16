@@ -357,8 +357,7 @@ summaries; --storage adds PostgreSQL relation sizes. Inspect
 [price store](../src/server/prices/price-store.ts) for the corresponding failures.
 Do not treat content_version as a restore point.
 
-Map/quest-content utilities remain independent: npm run pull-map-overlays,
-pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
+Map/quest-content utilities remain independent: npm run pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
 and [data layer](data-layer.md) for their source policies.
 
 ## Seasonal rollover rehearsal

@@ -19,7 +19,7 @@ import {
 	type MapMarker,
 	type TarkovMapHandle,
 } from "../../tarkov-map";
-import { MinusIcon, PlusIcon } from "../icons";
+import { LayersIcon, MinusIcon, PlusIcon } from "../icons";
 import { MapMarkerCard } from "../MapMarkerCard";
 import { MapFloorPanel } from "../MapPanels";
 import { FIRST_QUEST_COLOR, QuestMarkerGlyph } from "./QuestMarkerGlyph";
@@ -38,6 +38,7 @@ export function QuestObjectivesMap({
 	hoveredObjectiveId,
 	focusedObjectiveId,
 	focusRequestKey,
+	onObjectiveSelect,
 }: {
 	quest: FullQuest;
 	mapKey: string;
@@ -46,11 +47,14 @@ export function QuestObjectivesMap({
 	/** An objective asked to be shown: its marker is pinned and centred, the next one on each further request. */
 	focusedObjectiveId: string | null;
 	focusRequestKey: number | null;
+	/** The objective of the marker pinned by hand, or null once it is unpinned. */
+	onObjectiveSelect: (objectiveId: string | null) => void;
 }) {
 	const visited = useUserStore((state) => state.completedQuestObjectives);
 	const calibration = useMemo(() => resolveMap(mapKey), [mapKey]);
 	const map = useRef<TarkovMapHandle>(null);
 	const markers = useMemo(() => buildQuestMarkers([quest], mapKey, visited), [quest, mapKey, visited]);
+	const fit = useMemo(() => markers.flatMap((marker) => [marker.position, ...(marker.outline ?? [])]), [markers]);
 	const markersById = useMemo(() => new Map(markers.map((marker) => [marker.id, marker])), [markers]);
 
 	const [hovered, setHovered] = useState<string | null>(null);
@@ -117,6 +121,7 @@ export function QuestObjectivesMap({
 					map={calibration}
 					floor={floor}
 					centre={centre}
+					fit={fit}
 					markers={markers}
 					filters={filters}
 					preset={explorerPreset}
@@ -124,9 +129,13 @@ export function QuestObjectivesMap({
 					dimmed={dimmed}
 					markerGlyph={markerGlyph}
 					onMarkerHover={setHovered}
-					onMarkerTap={(id) => setPinned(pinned === id ? null : id)}
+					onMarkerTap={(id) => {
+						const unpinning = pinned === id;
+						setPinned(unpinning ? null : id);
+						onObjectiveSelect(unpinning ? null : (markersById.get(id)?.quest?.objectiveId ?? null));
+					}}
 				/>
-				<div className="map-left">
+				<div className="map-left" style={{ justifyContent: "flex-end" }}>
 					<div className="map-left-bottom">
 						{floors.length > 0 && (
 							<MapFloorPanel
@@ -138,6 +147,16 @@ export function QuestObjectivesMap({
 							/>
 						)}
 						<div className="map-tools">
+							<button
+								type="button"
+								className={`icon-button ${floorsOpen && floors.length ? "active" : ""}`}
+								aria-pressed={floorsOpen}
+								disabled={!floors.length}
+								title={floors.length ? (floorsOpen ? "Hide floors" : "Show floors") : "This map has one floor"}
+								onClick={() => setFloorsOpen(!floorsOpen)}
+							>
+								<LayersIcon />
+							</button>
 							<button type="button" className="icon-button" title="Zoom in" onClick={() => map.current?.zoomBy(1.5)}>
 								<PlusIcon />
 							</button>
