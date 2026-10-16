@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- map and item art come from several hosts at fixed sizes */
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
 	documentPhoto,
 	groupOn,
@@ -117,15 +117,23 @@ export function MapMarkerCard({
 	}
 	const document = marker.document;
 	const photo = document && documentPhoto(document);
+	const type = document && preset.documents.find((candidate) => candidate.key === document.type);
 	// A known Battle Pass document location is just what it is: its name, photo and description.
 	if (document)
 		return (
 			<div className="marker-cards document">
-				<div className="marker-card">
+				<div className={`marker-card ${photo ? "has-photo" : ""}`}>
 					<div className="marker-card-head">
+						{type && (
+							<span className={`document-icon ${document.locked ? "locked" : ""}`} data-type={type.key} style={{ "--tint": type.tint } as CSSProperties}>
+								<img src={iconSrc(`item:${type.item}`)} alt="" draggable={false} onError={hide} />
+							</span>
+						)}
 						<div className="marker-card-title">
 							<span>{document.title}</span>
-							{document.key && <span className="marker-card-sub">Requires {document.key}</span>}
+							<span className="marker-card-sub">
+								{[type && `${type.label} document`, document.key && `Requires ${document.key}`].filter(Boolean).join(" · ")}
+							</span>
 						</div>
 						{close}
 					</div>

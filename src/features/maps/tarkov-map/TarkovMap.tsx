@@ -295,7 +295,7 @@ export function TarkovMap({ map, art: preferred = "svg", floor, split = false, l
       <div className="map-axis y" style={{ left: origin.left }} />
     </>}
     <div className="overlay-layer" style={{
-      transform: `translate(${size.width / 2 - view.cx * view.scale}px, ${size.height / 2 - view.cy * view.scale}px)`,
+      transform: `translate(${Math.round(size.width / 2 - view.cx * view.scale)}px, ${Math.round(size.height / 2 - view.cy * view.scale)}px)`,
       "--s": view.scale,
     } as CSSProperties}>
       <MapOverlay markers={markers} filters={filters} preset={preset} projection={projection}

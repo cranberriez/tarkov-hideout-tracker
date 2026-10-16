@@ -331,11 +331,55 @@
 }
 /* Markers sharing a spot (two document types) sit side by side around it. */
 .map-explorer .overlay-marker.documents {
-	transform: translate(calc(-10px + var(--slot, 0) * 22px), -50%);
+	transform: translate(calc(-13px + var(--slot, 0) * 30px), -50%);
 }
-.map-explorer .overlay-marker.documents img {
-	width: 20px;
-	height: 20px;
+/* A document is a round disc ringed in its colour, like the other markers; its (tall) item art is centred over it, larger than
+   the disc so it overlaps the edge, and absolutely positioned so it never sizes or stretches the disc. */
+.map-explorer .document-icon {
+	--size: 26px;
+	position: relative;
+	flex-shrink: 0;
+	width: var(--size);
+	height: var(--size);
+	border-radius: 50%;
+	box-sizing: border-box;
+	border: 2px solid var(--tint);
+	background: var(--me-bg);
+	box-shadow: 0 1px 3px rgb(0 0 0 / 70%);
+}
+.map-explorer .document-icon img {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: auto;
+	height: 145%;
+	max-width: none;
+	transform: translate(-50%, -50%);
+	object-fit: contain;
+	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 85%));
+}
+.map-explorer .overlay-marker.selected .document-icon {
+	outline: 1.5px solid var(--me-accent);
+	outline-offset: 2px;
+}
+/* A document behind a lock: a small padlock on the disc's top-right corner. */
+.map-explorer .document-icon.locked::after {
+	content: "";
+	position: absolute;
+	top: -5px;
+	right: -5px;
+	width: 13px;
+	height: 13px;
+	border-radius: 50%;
+	background:
+		center / 8px 8px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10zm2.5 0h5V7a2.5 2.5 0 0 0-5 0z'/%3E%3C/svg%3E"),
+		var(--me-bg);
+	box-shadow: 0 0 0 1px var(--tint);
+	z-index: 1;
+}
+/* Blueprint art is a wide sheet, so it needs less height than the other documents to read the same size. */
+.map-explorer .document-icon[data-type="blueprints"] img {
+	height: 110%;
 }
 .map-explorer .overlay-marker.loose {
 	transform: translate(-5px, -50%);
@@ -465,7 +509,7 @@
 		0 1px 2px #000;
 	pointer-events: none;
 }
-.map-explorer .overlay-marker.selected img {
+.map-explorer .overlay-marker.selected img:not(.document-icon img) {
 	border-radius: 50%;
 	outline: 1.5px solid var(--me-accent);
 	outline-offset: 1px;
@@ -749,8 +793,46 @@
 }
 /* A document's reference photo widens the card so the spot reads at a glance. */
 .map-explorer .marker-cards.document {
-	width: 510px;
+	width: 760px;
 	max-width: calc(100% - 28px);
+}
+/* With a photo the card is the photo: full bleed, spilling a hair over the card's border, with the text laid over it. */
+.map-explorer .marker-cards.document {
+	padding: 2px;
+}
+.map-explorer .marker-card.has-photo {
+	position: relative;
+	padding: 0;
+	gap: 0;
+	border: 1px solid rgb(255 255 255 / 14%);
+	overflow: visible;
+}
+.map-explorer .marker-card.has-photo .marker-card-photo {
+	display: block;
+	margin: -2px;
+	width: calc(100% + 4px);
+	max-width: none;
+	border-radius: 11px;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 55%);
+}
+.map-explorer .marker-card.has-photo .marker-card-head,
+.map-explorer .marker-card.has-photo > .marker-card-sub {
+	position: absolute;
+	left: 0;
+	right: 0;
+	padding: 10px 12px;
+	color: #fff;
+	text-shadow: 0 1px 3px #000;
+}
+.map-explorer .marker-card.has-photo .marker-card-head {
+	top: 0;
+	border-radius: 10px 10px 0 0;
+	background: linear-gradient(rgb(0 0 0 / 70%), transparent);
+}
+.map-explorer .marker-card.has-photo > .marker-card-sub {
+	bottom: 0;
+	border-radius: 0 0 10px 10px;
+	background: linear-gradient(transparent, rgb(0 0 0 / 75%));
 }
 .map-explorer .marker-card-photo {
 	width: 100%;
@@ -763,6 +845,10 @@
 	width: 24px;
 	height: 24px;
 	flex-shrink: 0;
+}
+.map-explorer .marker-card-head > .document-icon {
+	--size: 34px;
+	margin: 4px;
 }
 .map-explorer .marker-card-head .icon-button {
 	width: 24px;

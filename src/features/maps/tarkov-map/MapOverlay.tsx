@@ -87,10 +87,12 @@ export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = 
       const rank = order?.get(floors.get(marker.id) ?? ""), shown = order?.get(floor ?? "");
       const side = otherFloor(marker) && rank !== undefined && shown !== undefined ? rank > shown ? "above" : "below" : undefined;
       return <div key={marker.id} className={`overlay-marker ${marker.layer} ${lootItem ? "valuable" : ""} ${otherFloor(marker) ? "other-floor" : ""} ${side ?? ""} ${marker.id === selected ? "selected" : ""} ${dimmed?.has(marker.id) ? "dimmed" : ""}`}
-        data-marker={marker.id} style={{ left: `calc(${x}px * var(--s))`, top: `calc(${y}px * var(--s))`,
+        data-marker={marker.id} style={{ left: `round(calc(${x}px * var(--s)), 1px)`, top: `round(calc(${y}px * var(--s)), 1px)`,
           ...marker.slot ? { "--slot": marker.slot.index - (marker.slot.of - 1) / 2 } : {} } as CSSProperties}>
-        {markerGlyph?.(marker) ?? <img src={icon(lootItem ? `item:${lootItem}` : markerIcon(marker, filters, preset)) ?? mapIcons.container_crate} alt="" draggable={false}
-          className={tint ? "tinted" : undefined} style={tint ? { "--tint": tint } as CSSProperties : undefined} />}
+        {markerGlyph?.(marker) ?? (art => marker.layer === "documents" && tint
+          ? <span className={`document-icon ${marker.document?.locked ? "locked" : ""}`} data-type={marker.groups[0]} style={{ "--tint": tint } as CSSProperties}>{art}</span> : art)(
+          <img src={icon(lootItem ? `item:${lootItem}` : markerIcon(marker, filters, preset)) ?? mapIcons.container_crate} alt="" draggable={false}
+            className={tint && marker.layer !== "documents" ? "tinted" : undefined} style={tint && marker.layer !== "documents" ? { "--tint": tint } as CSSProperties : undefined} />)}
         {side && <span className="floor-caret" aria-hidden="true" />}
         {named && <span className="overlay-label">{marker.label}</span>}
         {hover && <span className={`overlay-label overlay-hover ${named ? "replaces" : ""}`}>{hover}</span>}
