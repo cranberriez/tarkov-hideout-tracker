@@ -64,7 +64,7 @@ Required variables:
 DATABASE_URL="postgresql://user:password@localhost:5432/tarkov"
 ```
 
-`CRON_SECRET` protects scheduled price refreshes. [Operations](docs/operations.md)
+The market analyzer owns scheduled catalog and price refreshes. [Operations](docs/operations.md)
 covers connection settings, catalog updates, and independent price maintenance.
 
 ### 3. Run the Development Server

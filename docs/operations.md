@@ -15,7 +15,6 @@ PostgreSQL; production switching follows the separate
 | PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
 | PG_QUERY_LOG                   | Opt-in SQL logging: 1 for summaries, verbose for SQL (default off) |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
-| CRON_SECRET                    | Bearer secret for the scheduled catalog route     |
 | APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
 | APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
@@ -276,25 +275,26 @@ plus derived analytics. Manual price refreshes share its per-mode lease.
 
 ### Scheduled catalog updates
 
-[vercel.json](../vercel.json) schedules one daily request at 00:15 UTC to
-[/api/cron/catalog](../src/app/api/cron/catalog/route.ts). It requires the existing
-`CRON_SECRET` bearer token and `DATABASE_URL`. No current-patch variable is needed.
-The former price cron endpoints are removed; prices are handled by the worker or
-`db:prices:refresh`.
+The [market analyzer](../market-analyzer/README.md) runs the shared
+[full catalog updater](../src/server/catalog/refresh-catalog.ts) on startup when due
+and every two hours after success. It always prepares all three modes, regardless
+of the configured price modes, and uses the same validated atomic writer as
+`db:update`. Prices and discovery are preserved; migrations and local discovery
+imports remain explicit CLI operations.
 
-The route bundles the same adapters and catalog preparation as `db:update`, fetches
-all three modes, prepares item details, and uses the same validated atomic writer.
-It preserves prices and existing discovery. It does not run migrations or import a
-local discovery file; use the CLI for explicit discovery imports and dry runs.
-Missing secrets return 503, unauthorized requests 401, and update failures 500;
-success reports changed/no-op status and per-mode counts. A competing catalog write
-invalidates a stale preparation baseline instead of allowing it to overwrite data.
+The worker saves attempt/success timestamps in `/data/catalog.json`; failed runs
+retry after 15 minutes without advancing success. Catalog failures are logged as
+`catalog-failed` and do not prevent the per-mode price/analytics steps from running.
+`catalog-started` and `catalog-completed` identify successful passes. The volume
+lock and heartbeat remain refreshed during long catalog runs. `status` reports
+catalog timestamps alongside mode state. Use `npm run db:status` for database
+freshness and `npm run db:update` for an immediate manual recovery.
 
-Deploy to activate the changed schedule. The route requests a 300-second execution
-budget; verify that the hosting configuration permits it and monitor the first run's
-duration and catalog freshness with `db:status`. If a run times out or fails before
-commit, no partial catalog is published. Vercel does not automatically retry failed
-cron invocations; an authenticated retry or `db:update` can recover a failed run.
+[vercel.json](../vercel.json) has no cron schedules and the catalog cron endpoint
+is removed. Deploy the rebuilt worker first, verify `catalog-completed`, then
+deploy the website to remove its old schedule. `CRON_SECRET` is no longer needed.
+The website's catalog-version cache revalidates every two hours (plus its
+60-second process memo) to discover external commits without a callback.
 
 ### Flea stability evidence and validation
 

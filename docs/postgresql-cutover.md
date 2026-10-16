@@ -65,8 +65,8 @@ The target is a fresh catalog; the only imported business data is item discovery
    outside Git). If preserving historical discovery, capture a final consistent
    export and reconcile it into PostgreSQL. Conflicting discoveries require
    investigation before traffic. Starting with unknown dates needs no SQLite export.
-2. Recheck target readiness and deploy the PostgreSQL readers, CLI, and cron
-   configuration together. Keep `CRON_SECRET` and the checked-in Vercel schedules.
+2. Recheck target readiness and deploy the PostgreSQL readers, CLI, and market analyzer
+   together. The analyzer owns scheduled catalog and price updates.
    Ensure no legacy and PostgreSQL writers are running simultaneously.
 3. Smoke-test all modes, known missing IDs, price status, search stale-token 409,
    and trader unlock offers. Resume only the PostgreSQL writers. Monitor errors,
@@ -95,7 +95,7 @@ against the target.
 - All external schedulers/manual writers paused before switching traffic.
 - Full upstream bootstrap and successful pricing/reference-offer refresh on the
   production target, followed by route and browser checks.
-- Hosting duration limits for refresh/catalog jobs and cron authentication.
+- Worker health, catalog completion logs, and catalog/discovery write permissions.
 - Agreed rollback window and a reviewed reverse discovery reconciliation method.
 
 Local fixture tests do not certify any of these production conditions.

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import type { CatalogState } from "./catalog";
 import type { TarkovDataMode } from "../../src/types/common";
 import type { PriceHistoryPoint } from "../../src/types/prices";
 
@@ -95,6 +96,16 @@ function readJson<T>(file: string): T | null {
  */
 export class WorkerStateStore {
 	constructor(readonly directory: string) {}
+
+	loadCatalog(): CatalogState {
+		return (
+			readJson<CatalogState>(path.join(this.directory, "catalog.json")) ?? { lastSuccessAt: null, lastAttemptAt: null }
+		);
+	}
+
+	saveCatalog(state: CatalogState) {
+		writeAtomic(path.join(this.directory, "catalog.json"), JSON.stringify(state));
+	}
 
 	private modeFile(mode: TarkovDataMode) {
 		return path.join(this.directory, "modes", `${mode}.json`);

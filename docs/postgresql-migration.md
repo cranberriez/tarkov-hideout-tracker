@@ -240,8 +240,8 @@ policies remain authoritative. This writer never overwrites existing prices.
 
 ### Prices: update the item price relation separately
 
-Keep `npm run db:prices:refresh`, selected-mode options, and the authenticated cron
-routes. Reuse current normalization, conditional requests, concurrency/chunking,
+Keep `npm run db:prices:refresh`, selected-mode options, and the market analyzer
+scheduler. Reuse current normalization, conditional requests, concurrency/chunking,
 and effective-price calculations behind the PostgreSQL PriceRefreshStore.
 
 The existing job only refreshes flea observations; other reference values used to
@@ -347,9 +347,9 @@ to match across different upstream fetch times.
 
 Routine commands become db:migrate (schema changes), db:update (catalog),
 db:prices:refresh (prices), and db:status. The seen-at exporter/importer is a
-one-time migration tool. Keep the existing Vercel cron schedules/authentication
-unless a separate operational change is requested. No `.github` workflows exist
-in this checkout; verify platform/manual jobs outside the repository at cutover.
+one-time migration tool. The market analyzer now owns scheduled catalog and price
+updates; Vercel has no cron schedules. Verify deployed workers and manual jobs
+at cutover.
 Map/quest-content utilities without SQL remain independent.
 
 ## Implementation, validation, and deployment
@@ -375,14 +375,13 @@ Map/quest-content utilities without SQL remain independent.
    capture the final discovery export and reconcile it into the prepared target.
    Apply target migrations before import or bootstrap;
    finish catalog/price bootstrap before enabling traffic. Deploy all readers,
-   CLI, and cron configuration together. Verify readiness before resuming writers.
+   CLI, and market analyzer configuration together. Verify readiness before resuming writers.
 7. After the agreed rollback window, remove `@libsql/client`, old schemas/scripts,
    Turso configuration, and SQLite fixtures. The application and routine operations
    must run with only PostgreSQL. No ongoing synchronization with SQLite.
 
 Use DATABASE_URL for runtime and a direct migration connection when the hosting
-provider requires it. Validate pool/timeouts/TLS settings; keep CRON_SECRET and
-upstream timeout settings. Do not run schema migrations implicitly during page
+provider requires it. Validate pool/timeouts/TLS settings; keep upstream timeout settings. Do not run schema migrations implicitly during page
 requests or builds. Use a distinct disposable database for integration tests.
 
 Retain the old deployment/source temporarily for rollback, not as a permanent

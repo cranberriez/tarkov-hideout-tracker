@@ -16,9 +16,18 @@ identical inputs.
 | --------- | ----------------------- | ------------- | ------------------------------------------- |
 | Poll      | every 30 min            | every 6 h     | No (upstream + local cache only)            |
 | Push      | hourly                  | hourly        | Only if something changed                   |
-| Catalog   | every 6 h               | every 6 h     | Reference prices / trader offers, at a push |
+| Catalog prices | every 6 h               | every 6 h     | Reference prices / trader offers, at a push |
 | Analytics | 00:00 / 12:00 UTC       | 00:00 UTC     | One row per item with new upstream data     |
 
+- **Full catalog**: on startup when due, then every two hours after success,
+  rebuilds all three modes using the site's validated atomic catalog updater.
+  This replaces the Vercel nightly cron and is separate from catalog prices above.
+  Failed attempts retry after 15 minutes; prices and analytics still run after a
+  catalog failure. `/data/catalog.json` preserves attempt/success timestamps across
+  restarts. Logs use `catalog-started`, `catalog-completed`, and `catalog-failed`.
+  The `run` scheduler owns this job; `once` and `run-now` retain their price/analytics
+  scope. For an immediate full update use `npm run db:update` from the repository.
+  The existing `DATABASE_URL` role must have catalog/discovery write permissions.
 - **Poll**: conditional (ETag) requests to `json.tarkov.dev/{mode}/prices/{id}`. A full
   304 pass takes a few seconds. Full histories are cached on the `/data` volume, never
   in PostgreSQL; Tarkov.dev stays the canonical raw history.
@@ -192,7 +201,7 @@ With the deployment filename, use
 | `run` (default)                | Long-running scheduler                                               |
 | `run-now <spec>`               | Ask the running worker to run steps now (picked up within ~5 s)      |
 | `once [spec]`                  | Run steps once and exit (default `all`); refused while a worker runs |
-| `status [--modes …]`           | Local cache/state summary (no database access)                       |
+| `status [--modes …]`           | Catalog timestamps and mode cache/state summary (no database access)                       |
 | `recheck-excluded [--modes …]` | Check excluded items again on the next poll                          |
 
 A spec is `mode:steps`, comma-separated: `pvp-season:analyze`, `pvp-season:poll+push`,

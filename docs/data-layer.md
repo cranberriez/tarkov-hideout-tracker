@@ -294,11 +294,13 @@ than mixing datasets or reporting a missing entity.
 
 ### Server read caching
 
-The catalog content_version only changes through the nightly
-[catalog cron](../src/app/api/cron/catalog/route.ts). [postgres-read](../src/server/db/postgres-read.ts)
-serves the current version from a 60-second per-instance memo backed by the Next data
-cache under the `postgres-catalog-version` tag; the cron invalidates that tag after a
-committed change, and any read that observes a newer version clears it too. Next rejects
+The catalog content_version changes through the
+[market analyzer](../market-analyzer/README.md) or `db:update`.
+[postgres-read](../src/server/db/postgres-read.ts) serves the current version from
+a 60-second per-instance memo backed by a Next data cache that revalidates every
+two hours under the `postgres-catalog-version` tag. This discovers external
+commits without a web callback; any read that observes a newer version clears the
+tag too. Next rejects
 tag revalidation during render and inside cached functions (where closing checks usually
 run), so a mismatch seen there marks the mode stale: its version reads bypass the data
 cache and read PostgreSQL until a request scope that allows revalidation clears the tag.
@@ -354,7 +356,6 @@ parameter parsing, database error responses, and the named
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, Market, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
 | [map APIs](../src/app/api/maps/)                                                                                                                                 | Per-map marker data for the maps explorer; see [maps](maps.md)                                                                                    |
-| [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
 
 Complete item-view responses use the same browser 300s / CDN 3600s policy as page data, which embeds the same hourly-refreshed trader offers; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable

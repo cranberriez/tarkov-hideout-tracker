@@ -8,6 +8,7 @@ COPY market-analyzer/package.json market-analyzer/package-lock.json market-analy
 RUN cd market-analyzer && npm ci --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
+COPY db-scripts/lib ./db-scripts/lib
 COPY market-analyzer ./market-analyzer
 RUN cd market-analyzer && node build.mjs
 

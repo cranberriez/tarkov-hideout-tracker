@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import { refreshCatalog } from "../../src/server/catalog/refresh-catalog";
+import { runCatalogIfDue, CATALOG_RETRY_MS } from "./catalog";
 import type { TarkovDataMode } from "../../src/types/common";
 import { closePostgresPool, getPostgresDb, getPostgresPool } from "../../src/server/postgres/connection";
 import { PostgresPriceRefreshStore } from "../../src/server/prices/price-store";
@@ -168,6 +170,7 @@ class MarketWorker {
 		// Keep running when the database is down: modes back off and recover on their own.
 		await this.checkDatabase();
 		while (!this.stopping) {
+			await this.refreshFullCatalog();
 			this.collectRunRequests();
 			for (const mode of this.config.modes) {
 				if (this.stopping) break;
@@ -194,6 +197,40 @@ class MarketWorker {
 			await this.sleep(TICK_MS);
 		}
 		log("worker-stopped");
+	}
+
+	private async refreshFullCatalog() {
+		// Catalog preparation can exceed a serverless request budget. Keep the
+		// volume lock and health heartbeat alive while this serial job runs.
+		const pulse = () => {
+			this.keepStateDirectory();
+			this.local.heartbeat({ modes: this.config.modes, failing: this.failing });
+		};
+		pulse();
+		const timer = setInterval(pulse, TICK_MS);
+		try {
+			const result = await runCatalogIfDue({
+				load: () => this.local.loadCatalog(),
+				save: (state) => this.local.saveCatalog(state),
+				now: Date.now,
+				refresh: async () => {
+					log("catalog-started");
+					return refreshCatalog();
+				},
+			});
+			if (result) {
+				log("catalog-completed", result);
+				for (const mode of this.config.modes) {
+					const state = this.state(mode);
+					state.eligibleAt = null;
+					this.local.saveMode(mode, state);
+				}
+			}
+		} catch (error) {
+			log("catalog-failed", { error: describeError(error), retryInSeconds: CATALOG_RETRY_MS / 1000 });
+		} finally {
+			clearInterval(timer);
+		}
 	}
 
 	/** Runs whichever steps are due for a mode, plus any forced steps regardless of schedule. */
@@ -348,7 +385,7 @@ async function main() {
 		return;
 	}
 	if (command === "status") {
-		console.log(JSON.stringify(statusReport(config, local), null, 2));
+		console.log(JSON.stringify({ catalog: local.loadCatalog(), modes: statusReport(config, local) }, null, 2));
 		return;
 	}
 	if (command === "recheck-excluded") {
