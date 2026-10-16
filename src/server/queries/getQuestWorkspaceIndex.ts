@@ -2,6 +2,7 @@ import type { TarkovDataMode } from "@/types/common";
 import type { QuestWorkspaceIndexData } from "@/types/quest-workspace";
 import type { TarkovDataRepository } from "@/server/repositories/tarkov-data/types";
 import { toQuestSummary } from "../../lib/quests/quest-summary";
+import { compactQuestSummary } from "../../lib/quests/quest-summary-payload";
 import { prepareQuestDataForMode } from "../../lib/quests/quest-preparation";
 import { prepareQuestsForDisplay } from "../../lib/quests/removed-quests";
 import { orderQuestsByPrerequisites } from "../../lib/quests/quest-ordering";
@@ -22,7 +23,7 @@ export async function getQuestWorkspaceIndex(
 			...prepareQuestsForDisplay(prepareQuestDataForMode(source.data, mode), options.showRemovedQuests ?? false),
 			...(options.displayQuestAdditions ?? []),
 		]);
-		return { quests: quests.map(toQuestSummary), updatedAt: source.updatedAt, error: null };
+		return { quests: quests.map((quest) => compactQuestSummary(toQuestSummary(quest))), updatedAt: source.updatedAt, error: null };
 	} catch {
 		return { quests: null, updatedAt: null, error: "Quest index could not be loaded." };
 	}

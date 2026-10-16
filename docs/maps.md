@@ -47,6 +47,20 @@ committed [loot category table](../src/lib/data/map-loot-categories.json), refre
 come from the search manifest. Prices load only while valuable-loot icons are on, as
 one shared price request for that map's loose loot items.
 
+Quest objectives are the explorer's own layer, added to the library preset in
+[quest-map-markers](../src/features/maps/explorer/quests/quest-map-markers.ts), with one group
+per objective type present on the map. [useMapQuests](../src/features/maps/explorer/quests/useMapQuests.ts)
+derives the profile's active, non-ignored quests on the map from the shared quest index
+(status is computed, never stored) and loads full details only for those. Each positioned
+objective location becomes a marker (zones keep their outline); objectives marked done are
+left out. The right-edge [quest drawer](../src/features/maps/explorer/quests/MapQuestDrawer.tsx)
+lists those quests by trader (filterable by objective type, with a kill summary for Kill)
+or shows one quest. Markers draw the objective type's icon on a disc in the quest's colour,
+which the list repeats. Hovering a quest or objective there dims other quest markers,
+hovering a quest marker marks and scrolls to its row, and clicking either opens its
+details; the open quest's markers show even when the quest layer's filters hide them, and unpinning one returns to the list. Clicking a placed objective
+pins and pans to its marker, cycling through its locations. Drawer state is session-only.
+
 ## Data and service boundary
 
 [quest-objective-locations](../src/server/services/quest-objective-locations.ts)

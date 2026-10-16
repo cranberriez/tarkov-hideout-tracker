@@ -1,4 +1,4 @@
-import { memo, useMemo, type CSSProperties } from "react";
+import { memo, useMemo, type CSSProperties, type ReactNode } from "react";
 import { useMapAssets } from "./assets";
 import type { FloorSelection } from "./floors";
 import { mapIcons } from "./icons";
@@ -26,7 +26,7 @@ export type OverlayArea = { x: number; y: number; width: number; height: number;
  * already holds its cell: others first, then containers before loose loot.
  * Cells are fixed to the plane, so panning never changes which marker wins one.
  */
-export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = tarkovPreset, projection, floors, floor, order, shift, labelled, area, selected, lootIcons }: {
+export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = tarkovPreset, projection, floors, floor, order, shift, labelled, area, selected, dimmed, markerGlyph, lootIcons }: {
   markers: MapMarker[]; filters: Filters; preset?: MarkerPreset; projection: MapProjection;
   /** Floor id per marker id, and the floor shown (null for every floor). */
   floors: Map<string, string>; floor: FloorSelection;
@@ -37,6 +37,10 @@ export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = 
   labelled: boolean; area: OverlayArea | null;
   /** Id of the pinned marker, ringed. Markers carry `data-marker` so the parent can handle pointer events by delegation. */
   selected?: string | null;
+  /** Marker ids drawn faded, zones included. */
+  dimmed?: ReadonlySet<string>;
+  /** Drawn in place of a marker's icon image when it returns something. */
+  markerGlyph?: (marker: MapMarker) => ReactNode;
   /** Item id to show in place of the loose loot dot, by marker id. Keep referentially stable. */
   lootIcons?: Map<string, string>;
 }) {
@@ -71,7 +75,7 @@ export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = 
   return <>
     {zones.length > 0 && <svg className="overlay-zones" width="1" height="1"><g className="overlay-zones-scale">
       {zones.map((marker) => <polygon key={marker.id}
-        className={`zone ${marker.groups[0]} ${otherFloor(marker) ? "other-floor" : ""}`}
+        className={`zone ${marker.layer} ${marker.groups[0]} ${otherFloor(marker) ? "other-floor" : ""} ${dimmed?.has(marker.id) ? "dimmed" : ""}`}
         points={marker.outline!.map((point) => { const { x, y } = at(point, shiftOf(marker)); return `${x},${y}`; }).join(" ")} />)}
     </g></svg>}
     {placed.map(({ marker, x, y }) => {
@@ -82,11 +86,11 @@ export const MapOverlay = memo(function MapOverlay({ markers, filters, preset = 
       const lootItem = lootIcons?.get(marker.id);
       const rank = order?.get(floors.get(marker.id) ?? ""), shown = order?.get(floor ?? "");
       const side = otherFloor(marker) && rank !== undefined && shown !== undefined ? rank > shown ? "above" : "below" : undefined;
-      return <div key={marker.id} className={`overlay-marker ${marker.layer} ${lootItem ? "valuable" : ""} ${otherFloor(marker) ? "other-floor" : ""} ${side ?? ""} ${marker.id === selected ? "selected" : ""}`}
+      return <div key={marker.id} className={`overlay-marker ${marker.layer} ${lootItem ? "valuable" : ""} ${otherFloor(marker) ? "other-floor" : ""} ${side ?? ""} ${marker.id === selected ? "selected" : ""} ${dimmed?.has(marker.id) ? "dimmed" : ""}`}
         data-marker={marker.id} style={{ left: `calc(${x}px * var(--s))`, top: `calc(${y}px * var(--s))`,
           ...marker.slot ? { "--slot": marker.slot.index - (marker.slot.of - 1) / 2 } : {} } as CSSProperties}>
-        <img src={icon(lootItem ? `item:${lootItem}` : markerIcon(marker, filters, preset)) ?? mapIcons.container_crate} alt="" draggable={false}
-          className={tint ? "tinted" : undefined} style={tint ? { "--tint": tint } as CSSProperties : undefined} />
+        {markerGlyph?.(marker) ?? <img src={icon(lootItem ? `item:${lootItem}` : markerIcon(marker, filters, preset)) ?? mapIcons.container_crate} alt="" draggable={false}
+          className={tint ? "tinted" : undefined} style={tint ? { "--tint": tint } as CSSProperties : undefined} />}
         {side && <span className="floor-caret" aria-hidden="true" />}
         {named && <span className="overlay-label">{marker.label}</span>}
         {hover && <span className={`overlay-label overlay-hover ${named ? "replaces" : ""}`}>{hover}</span>}

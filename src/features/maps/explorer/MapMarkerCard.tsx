@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- map and item art come from several hosts at fixed sizes */
+import type { ReactNode } from "react";
 import {
 	documentPhoto,
 	groupOn,
@@ -36,6 +37,7 @@ export function MapMarkerCard({
 	pinned,
 	onClose,
 	get,
+	glyph,
 }: {
 	marker: MapMarker;
 	filters: Filters;
@@ -45,6 +47,8 @@ export function MapMarkerCard({
 	get: MapItemGet;
 	pinned: boolean;
 	onClose: () => void;
+	/** Drawn in place of the marker's icon image. */
+	glyph?: ReactNode;
 }) {
 	const { icon: iconSrc, link: assetUrl } = useMapAssets();
 	const [title, ...rest] = [marker.label, ...marker.tags].filter(Boolean) as string[];
@@ -134,7 +138,7 @@ export function MapMarkerCard({
 		<div className="marker-cards">
 			<div className="marker-card">
 				<div className="marker-card-head">
-					<img src={iconSrc(markerIcon(marker, filters, preset))} alt="" draggable={false} />
+					{glyph ?? <img src={iconSrc(markerIcon(marker, filters, preset))} alt="" draggable={false} />}
 					<div className="marker-card-title">
 						<span>{title}</span>
 						{rest.length > 0 && <span className="marker-card-sub">{rest.join(" · ")}</span>}

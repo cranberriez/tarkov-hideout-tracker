@@ -54,6 +54,8 @@ test("workspace index uses metadata source without item, price or full quest rea
 		assert.equal("items" in data, false);
 		assert.equal(summary.objectiveSearchText, "Find this location");
 		assert.equal(summary.objectiveCount, 1);
+		assert.equal(summary.traderId, "trader");
+		assert.equal("trader" in summary, false);
 		assert.deepEqual(summary.keyedObjectiveTypes, ["visit"]);
 	}
 });

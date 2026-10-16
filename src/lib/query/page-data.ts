@@ -99,14 +99,14 @@ export function itemChecklistPageQueryOptions(mode: TarkovJsonGameMode) {
 }
 
 export function questWorkspacePageQueryOptions(mode: TarkovJsonGameMode, devQuery: string | null = null) {
-	const params = new URLSearchParams({ mode, format: "index-v1" });
+	const params = new URLSearchParams({ mode, format: "index-v2" });
 	if (devQuery) params.set("q", devQuery);
 	return pageQueryOptions<QuestWorkspaceIndexData>(
 		mode,
 		"quests-page",
 		`/api/page-data/quests?${params}`,
 		isCompleteQuestWorkspaceIndex,
-		[devQuery, "index-v1"],
+		[devQuery, "index-v2"],
 	);
 }
 

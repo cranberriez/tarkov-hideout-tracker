@@ -199,8 +199,11 @@ which still select mode from the cookie and prefetch queries directly. Explicit 
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
-Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v1`
-deliver only the quest index (unversioned requests also return the index).
+Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v2`
+deliver only the quest index (unversioned requests also return the index). Summaries
+carry trader IDs only (`traderId`, and `traderId` on trader requirements); readers expand
+them through [quest-summary-payload](../src/lib/quests/quest-summary-payload.ts) against the
+bundled [trader list](../src/lib/data/traders.ts), never by reading the raw cache entry.
 The SQL index projection excludes objective details, geometry and reward groups;
 the query performs no item reads. The format is part of the URL/query key to avoid
 reusing earlier full-workspace caches. [Quest contracts](../src/types/quest-workspace.ts)

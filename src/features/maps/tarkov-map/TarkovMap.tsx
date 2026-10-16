@@ -45,6 +45,8 @@ function gridStep(scale: number, minPx: number) {
 
 export type TarkovMapHandle = {
   panTo(x: number, y: number): void;
+  /** Pans to a world point, on its floor's column while floors are split. */
+  panToWorld(point: WorldPoint): void;
   zoomBy(factor: number): void;
   /** Pans to a floor's column while floors are split (null: the whole map). */
   focusFloor(floor: string | null): void;
@@ -87,6 +89,10 @@ export type TarkovMapProps = {
   lootIcons?: Map<string, string>;
   /** Marker drawn as selected. */
   selected?: string | null;
+  /** Marker ids drawn faded, zones included. Keep referentially stable. */
+  dimmed?: ReadonlySet<string>;
+  /** Drawn in place of a marker's icon image when it returns something. Keep referentially stable. */
+  markerGlyph?: (marker: MapMarker) => ReactNode;
   onMarkerHover?: (id: string | null) => void;
   onMarkerTap?: (id: string) => void;
   /** A tap off the markers, at its world x/z. Floors split apart are not accounted for. */
@@ -111,7 +117,7 @@ const noFilters: Filters = {};
  * Positions are world coordinates in the map's own space, so only pass players who are on this map.
  */
 export function TarkovMap({ map, art: preferred = "svg", floor, split = false, levels = false, autoZoom = false, players = [], follow = null, centre = null, onUserPan,
-  markers = noMarkers, filters = noFilters, preset, lootIcons, selected, onMarkerHover, onMarkerTap, onMapTap, className, children, draw, ref }: TarkovMapProps) {
+  markers = noMarkers, filters = noFilters, preset, lootIcons, selected, dimmed, markerGlyph, onMarkerHover, onMarkerTap, onMapTap, className, children, draw, ref }: TarkovMapProps) {
   const projection = useMemo(() => map ? projectionFor(map) : metricProjection, [map]);
   const style = artStyleOf(map, preferred, floor);
   const art = useMemo((): PlaneRect | null => style === "svg" ? artRect(map!, projection) : style === "tiles" ? tileBounds(map!) : null, [map, style, projection]);
@@ -120,7 +126,7 @@ export function TarkovMap({ map, art: preferred = "svg", floor, split = false, l
   const { shift } = layout;
 
   const markerFloors = useMemo(() => new Map(map ? markers.map((marker) => [marker.id, floorOf(map, marker).id]) : []), [markers, map]);
-  const toPlane = (point: PlayerPosition) => {
+  const toPlane = (point: WorldPoint) => {
     const plane = projection.toPlane(point);
     return { x: plane.x + (map && shift ? shift(floorAt(map, point).id, plane.x, plane.y) : 0), y: plane.y };
   };
@@ -186,9 +192,10 @@ export function TarkovMap({ map, art: preferred = "svg", floor, split = false, l
 
   useImperativeHandle(ref, () => ({
     panTo: (x, y) => panTo(x, y),
+    panToWorld: (point) => { const plane = toPlane(point); panTo(plane.x, plane.y); },
     zoomBy: (factor) => { onUserZoom(); zoomAt(factor); },
     focusFloor: (id) => { const point = layout.focus(id); if (point) panTo(point.x, point.y); },
-  }), [panTo, zoomAt, layout.focus]);
+  }), [panTo, zoomAt, layout.focus, projection, shift, map]);
 
   // Overlay markers are drawn a frame either side of the centre snapped to half frames, thinned for the zoom step;
   // panning or zooming only re-renders them when the snapped centre or the step changes.
@@ -282,7 +289,7 @@ export function TarkovMap({ map, art: preferred = "svg", floor, split = false, l
     } as CSSProperties}>
       <MapOverlay markers={markers} filters={filters} preset={preset} projection={projection}
         floors={markerFloors} floor={splitOn ? null : floor} order={map ? floorOrder(map) : undefined} shift={shift} labelled={pxPerMetre >= LABEL_PX_PER_M} area={overlayArea}
-        selected={selected} lootIcons={lootIcons} />
+        selected={selected} dimmed={dimmed} markerGlyph={markerGlyph} lootIcons={lootIcons} />
       {layout.labels.length > 0 && <div className="split-labels">
         {layout.labels.map((label) => label.width * view.scale >= SPLIT_LABEL_MIN_PX && <span key={label.floor} className="split-label"
           style={{ left: `calc(${label.x}px * var(--s))`, top: `calc(${label.y}px * var(--s))`, maxWidth: label.width * view.scale }}>

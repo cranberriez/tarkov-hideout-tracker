@@ -40,6 +40,8 @@ export type MapMarker = {
   details?: Detail[];
   /** Boss spawn points: one entry per boss type, shown as stacked cards instead of `details`. */
   bosses?: BossInfo[];
+  /** Quest objective spots: the quest and objective they belong to. */
+  quest?: { questId: string; objectiveId: string; /** tarkov.dev objective type, e.g. `shoot`. */ type: string };
   /** Battle Pass document spots: the known location here, with its reference photo. */
   document?: DocumentLocation;
   /** Floor id it is on, when set by hand rather than found from its position (see `floorOf`). */

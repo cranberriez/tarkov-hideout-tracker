@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
 	allFloorsOn,
@@ -37,6 +37,7 @@ export function MapLayersPanel({
 	presets: stored,
 	onPresets,
 	preset: markerPreset = tarkovPreset,
+	groupGlyph,
 }: {
 	layers: LayerDef[];
 	filters: Filters;
@@ -50,6 +51,8 @@ export function MapLayersPanel({
 	presets: (Filters | null)[];
 	onPresets: (presets: (Filters | null)[]) => void;
 	preset?: MarkerPreset;
+	/** Drawn in place of a group's icon image when it returns something. */
+	groupGlyph?: (layer: string, group: string) => ReactNode;
 }) {
 	const { icon: iconSrc, link: assetUrl } = useMapAssets();
 	const [menu, setMenu] = useState<{ slot: number; x: number; y: number } | null>(null);
@@ -74,7 +77,8 @@ export function MapLayersPanel({
 				title={group.label}
 				onClick={() => setGroup(layerKey, group.key, !on)}
 			>
-				{group.image ? (
+				{groupGlyph?.(layerKey, group.key) ??
+					(group.image ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
 						src={assetUrl(group.image)}
@@ -95,7 +99,7 @@ export function MapLayersPanel({
 						className={group.tint ? "tinted" : undefined}
 						style={group.tint ? ({ "--tint": group.tint } as CSSProperties) : undefined}
 					/>
-				)}
+				))}
 				<span className="group-name">{group.label}</span>
 				<span className="faint">{counts[`${layerKey}.${group.key}`]}</span>
 			</button>

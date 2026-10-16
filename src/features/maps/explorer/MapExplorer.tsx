@@ -3,11 +3,7 @@
 import "./map-explorer.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import {
-	MAP_VISIBILITY_PRESETS,
-	type MapExplorerMapKey,
-	type MapVisibilityPresetKey,
-} from "@/lib/cfg/map-explorer";
+import { MAP_VISIBILITY_PRESETS, type MapExplorerMapKey, type MapVisibilityPresetKey } from "@/lib/cfg/map-explorer";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled } from "@/lib/query/game-data";
 import { gameDataKey } from "@/lib/query/scope";
@@ -31,13 +27,13 @@ import {
 	mapName,
 	resolveMap,
 	TarkovMap,
-	tarkovPreset,
 	webAssets,
 	withDefaults,
 	type FloorSelection,
 	type GameMapData,
 	type Lookups,
 	type MapAssets,
+	type MapMarker,
 	type TarkovMapHandle,
 } from "../tarkov-map";
 import { CoinIcon, LayersIcon, MinusIcon, PlusIcon, SplitIcon, TerrainIcon } from "./icons";
@@ -47,6 +43,10 @@ import { MapFloorPanel, MapSwitcher } from "./MapPanels";
 import { bestLooseItems, looseItemIds, useMapItems } from "./useMapItems";
 import { useMapExplorerPreferences } from "./useMapExplorerPreferences";
 import { presetFilters } from "./visibility-presets";
+import { MapQuestDrawer, type QuestFocus } from "./quests/MapQuestDrawer";
+import { CATEGORY_TYPES, explorerPreset, questLayerFor, QUEST_LAYER } from "./quests/quest-map-markers";
+import { QuestMarkerGlyph, questColors } from "./quests/QuestMarkerGlyph";
+import { useMapQuests } from "./quests/useMapQuests";
 
 type MapExplorerData = { map: GameMapData; lookups: Lookups };
 
@@ -71,6 +71,12 @@ function mapExplorerQueryOptions(mode: TarkovJsonGameMode, mapKey: string) {
 
 /** Item art at 512px: transparent and square, unlike the `icon` variant whose baked-in background frame is off-centre for non-square items. */
 const explorerAssets: MapAssets = { ...webAssets, item: (id) => standardItemImageUrl(id, "512") };
+
+/** Legend rows of the quest layer show the objective type's icon on a neutral disc. */
+const legendGlyph = (layer: string, group: string) =>
+	layer === QUEST_LAYER ? (
+		<QuestMarkerGlyph type={CATEGORY_TYPES[group as keyof typeof CATEGORY_TYPES] ?? "other"} color="#4a4845" />
+	) : undefined;
 
 /**
  * Full-screen interactive map (ported from tarkov-mappinator's map page, without raid tracking): vector art or tiles
@@ -102,10 +108,12 @@ export function MapExplorer({
 	const split = preferences.split && style !== null;
 
 	const documents = useMemo(() => documentLocations(mapKey), [mapKey]);
-	const overlay = useMemo(
-		() => (data ? buildMarkers(data.map, data.lookups, tarkovPreset, documents) : []),
+	const quests = useMapQuests(mode, mapKey);
+	const mapMarkers = useMemo(
+		() => (data ? buildMarkers(data.map, data.lookups, explorerPreset, documents) : []),
 		[data, documents],
 	);
+	const overlay = useMemo(() => [...quests.markers, ...mapMarkers], [quests.markers, mapMarkers]);
 	const overlayById = useMemo(() => new Map(overlay.map((marker) => [marker.id, marker])), [overlay]);
 	const priced = useMemo(
 		() => (preferences.valuableLoot ? looseItemIds(overlay) : []),
@@ -118,11 +126,28 @@ export function MapExplorer({
 	);
 
 	const counts = useMemo(() => countMarkers(overlay), [overlay]);
-	const layerDefs = useMemo(() => layersFor(overlay, data?.map.looseCategories), [overlay, data]);
-	const defaults = useMemo(() => defaultFilters("unknown"), []);
-	const filters = useMemo(() => withDefaults(preferences.filters ?? undefined, "unknown"), [preferences.filters]);
+	const layerDefs = useMemo(
+		() => questLayerFor(layersFor(overlay, data?.map.looseCategories, explorerPreset), overlay),
+		[overlay, data],
+	);
+	const defaults = useMemo(() => defaultFilters("unknown", explorerPreset), []);
+	const filters = useMemo(
+		() => withDefaults(preferences.filters ?? undefined, "unknown", explorerPreset),
+		[preferences.filters],
+	);
 	const setFilters = useCallback((next: typeof filters) => setPreferences({ filters: next }), [setPreferences]);
-	const shownOverlay = useMemo(() => overlay.filter((marker) => isVisible(marker, filters)), [overlay, filters]);
+	// The quest open in the drawer shows all its markers, whatever the quest layer's filters say.
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [selectedQuest, setSelectedQuest] = useState<string | null>(null);
+	const forcedQuest = drawerOpen ? selectedQuest : null;
+	const shownOverlay = useMemo(
+		() =>
+			overlay.filter(
+				(marker) =>
+					(forcedQuest !== null && marker.quest?.questId === forcedQuest) || isVisible(marker, filters, explorerPreset),
+			),
+		[overlay, filters, forcedQuest],
+	);
 
 	// A preset from the link applies once this map's layers are known (its data-only groups need them), then leaves the URL.
 	const pendingPreset = useRef(initialPreset);
@@ -155,6 +180,71 @@ export function MapExplorer({
 	}, [pinned]);
 	const cardMarker = overlayById.get(pinned ?? hovered ?? "");
 
+	// Quest drawer: a quest hovered there dims every other quest's markers (an objective, every other objective);
+	// a quest marker hovered on the map marks its row; clicking either opens that quest's details.
+	const [questFocus, setQuestFocus] = useState<QuestFocus>(null);
+	const focusQuest = questFocus?.questId ?? (drawerOpen ? selectedQuest : null);
+	const focusObjective = questFocus?.objectiveId;
+	const dimmed = useMemo(() => {
+		if (!focusQuest) return undefined;
+		return new Set(
+			overlay
+				.filter(
+					(marker) =>
+						marker.layer === QUEST_LAYER &&
+						(marker.quest?.questId !== focusQuest ||
+							(focusObjective !== undefined && marker.quest.objectiveId !== focusObjective)),
+				)
+				.map((marker) => marker.id),
+		);
+	}, [overlay, focusQuest, focusObjective]);
+	const hoveredQuest = hovered ? (overlayById.get(hovered)?.quest?.questId ?? null) : null;
+	const pinnedQuest = pinned ? (overlayById.get(pinned)?.quest?.questId ?? null) : null;
+	// Unpinning a marker of the open quest (clicking it again, X, Escape) takes the drawer back to the list.
+	const [lastPinnedQuest, setLastPinnedQuest] = useState(pinnedQuest);
+	if (lastPinnedQuest !== pinnedQuest) {
+		setLastPinnedQuest(pinnedQuest);
+		if (!pinned && lastPinnedQuest && lastPinnedQuest === selectedQuest) {
+			setSelectedQuest(null);
+			setQuestFocus(null);
+		}
+	}
+	/** From the drawer; leaving a quest also unpins its marker. */
+	const selectQuest = (questId: string | null) => {
+		if (pinnedQuest && pinnedQuest !== questId) setPinned(null);
+		setSelectedQuest(questId);
+		setQuestFocus(null);
+	};
+	const tapMarker = (id: string) => {
+		const unpinning = pinned === id;
+		setPinned(unpinning ? null : id);
+		const questId = overlayById.get(id)?.quest?.questId;
+		if (questId && !unpinning) {
+			setDrawerOpen(true);
+			setSelectedQuest(questId);
+			setQuestFocus(null);
+		}
+	};
+	// Showing an objective pins its marker (switching to its floor) and pans to it; again, to its next location.
+	const showObjective = (questId: string, objectiveId: string) => {
+		const spots = overlay.filter(
+			(marker) => marker.quest?.questId === questId && marker.quest.objectiveId === objectiveId,
+		);
+		if (!spots.length) return;
+		const current = spots.findIndex((marker) => marker.id === pinned);
+		const next = spots[(current + 1) % spots.length];
+		setPinned(next.id);
+		map.current?.panToWorld(next.position);
+	};
+	const colors = useMemo(() => questColors(quests.active.map((quest) => quest.id)), [quests.active]);
+	const markerGlyph = useCallback(
+		(marker: MapMarker) =>
+			marker.quest ? (
+				<QuestMarkerGlyph type={marker.quest.type} color={colors.get(marker.quest.questId) ?? "var(--me-faint)"} />
+			) : undefined,
+		[colors],
+	);
+
 	// Floors: the chosen floor, or all floors (null). A pinned marker shows its own floor until unpinned.
 	const floors = useMemo(() => (calibration?.layers.length ? floorsOf(calibration) : []), [calibration]);
 	const [chosenFloor, setChosenFloor] = useState<FloorSelection>(null);
@@ -177,7 +267,7 @@ export function MapExplorer({
 
 	return (
 		<MapAssetsContext.Provider value={explorerAssets}>
-			<main className="map-explorer" aria-label={`${label} map`}>
+			<main className={`map-explorer ${drawerOpen ? "quests-open" : ""}`} aria-label={`${label} map`}>
 				<TarkovMap
 					ref={map}
 					map={calibration}
@@ -186,10 +276,13 @@ export function MapExplorer({
 					split={split}
 					markers={shownOverlay}
 					filters={filters}
+					preset={explorerPreset}
 					lootIcons={lootIcons}
 					selected={pinned}
+					dimmed={dimmed}
+					markerGlyph={markerGlyph}
 					onMarkerHover={setHovered}
-					onMarkerTap={(id) => setPinned((current) => (current === id ? null : id))}
+					onMarkerTap={tapMarker}
 				/>
 				{(loading || query.isError) && (
 					<div className="map-status" role="status">
@@ -221,6 +314,8 @@ export function MapExplorer({
 						onCollapse={(collapsed) => setPreferences({ collapsed })}
 						presets={preferences.slots}
 						onPresets={(slots) => setPreferences({ slots })}
+						preset={explorerPreset}
+						groupGlyph={legendGlyph}
 					/>
 					<div className="map-left-bottom">
 						{floors.length > 0 && (
@@ -303,6 +398,8 @@ export function MapExplorer({
 					<MapMarkerCard
 						marker={cardMarker}
 						filters={filters}
+						preset={explorerPreset}
+						glyph={markerGlyph(cardMarker)}
 						get={items.get}
 						pinned={!!pinned}
 						onClose={() => setPinned(null)}
@@ -310,7 +407,30 @@ export function MapExplorer({
 					/>
 				)}
 
-				<MapSwitcher current={mapKey} label={label} floor={shownFloor && !shownFloor.base ? shownFloor.name : undefined} />
+				<MapQuestDrawer
+					open={drawerOpen}
+					onOpen={setDrawerOpen}
+					mapKey={mapKey}
+					mapLabel={label}
+					quests={quests.active}
+					detailsById={quests.detailsById}
+					items={quests.items}
+					colors={colors}
+					selected={selectedQuest}
+					onSelect={selectQuest}
+					highlighted={hoveredQuest}
+					onHover={setQuestFocus}
+					onShowObjective={showObjective}
+					pending={quests.pending}
+					error={quests.error}
+					onRetry={quests.retry}
+				/>
+
+				<MapSwitcher
+					current={mapKey}
+					label={label}
+					floor={shownFloor && !shownFloor.base ? shownFloor.name : undefined}
+				/>
 			</main>
 		</MapAssetsContext.Provider>
 	);

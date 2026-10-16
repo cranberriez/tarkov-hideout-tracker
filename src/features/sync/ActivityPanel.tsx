@@ -7,6 +7,7 @@ import { QuestLink } from "@/components/entities/quest-link";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
+import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
 import { useCompanionSyncStore } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,7 @@ function useQuestFinder(profiles: readonly (ProfileKey | null)[]): QuestFinder {
 	const stamp = results.map((result) => result.dataUpdatedAt).join();
 	return useMemo(() => {
 		const byMode = new Map(
-			modes.map((mode, index) => [mode, new Map((results[index]?.data?.quests ?? []).map((quest) => [quest.id, quest]))]),
+			modes.map((mode, index) => [mode, new Map(expandQuestSummaries(results[index]?.data?.quests ?? []).map((quest) => [quest.id, quest]))]),
 		);
 		return (profile, questId) => {
 			if (profile) return byMode.get(dataModeForProfile(profile))?.get(questId);

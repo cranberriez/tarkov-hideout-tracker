@@ -388,15 +388,15 @@
 	stroke-dasharray: 5 4;
 	vector-effect: non-scaling-stroke;
 }
-.map-explorer .zone.sniper {
+.map-explorer .zone.hazards.sniper {
 	fill: rgb(236 190 100 / 12%);
 	stroke: rgb(236 190 100 / 70%);
 }
-.map-explorer .zone.artillery {
+.map-explorer .zone.hazards.artillery {
 	fill: rgb(240 140 60 / 14%);
 	stroke: rgb(240 140 60 / 75%);
 }
-.map-explorer .zone.other {
+.map-explorer .zone.hazards.other {
 	fill: rgb(170 140 230 / 12%);
 	stroke: rgb(170 140 230 / 65%);
 }
@@ -832,4 +832,438 @@ body.map-explorer-active {
 }
 body.map-explorer-active [data-main-nav] {
 	flex-shrink: 0;
+}
+
+/* Quest objectives: zones in the accent colour; markers and zones outside the hovered quest fade. */
+.map-explorer .zone.quests {
+	fill: color-mix(in oklab, var(--me-accent) 12%, transparent);
+	stroke: color-mix(in oklab, var(--me-accent) 75%, transparent);
+}
+.map-explorer .zone.dimmed {
+	opacity: 0.12;
+}
+.map-explorer .overlay-marker.dimmed {
+	opacity: 0.22;
+}
+.map-explorer .overlay-marker.quests {
+	transform: translate(-10px, -50%);
+}
+
+/* Right edge: the Quests tab, and the drawer it opens. Top-right and bottom-right chrome moves aside for it. */
+.map-explorer {
+	--quest-drawer-w: 340px;
+}
+.map-explorer.quests-open .map-switch,
+.map-explorer.quests-open .marker-cards {
+	right: calc(var(--quest-drawer-w) + 14px);
+}
+.map-explorer .quest-drawer-tab {
+	position: absolute;
+	right: 0;
+	top: 50%;
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 6px;
+	/* Rotated half a turn below, so these are the outer (left) corners on screen. */
+	border-radius: 0 8px 8px 0;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	writing-mode: vertical-rl;
+	transform: translateY(-50%) rotate(180deg);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+.map-explorer.quests-open .quest-drawer-tab {
+	right: var(--quest-drawer-w);
+}
+.map-explorer .quest-drawer-tab.active,
+.map-explorer .quest-drawer-tab:hover {
+	color: var(--me-accent);
+}
+.map-explorer .quest-drawer-count {
+	padding: 4px 2px;
+	border-radius: 8px;
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+	font-size: 10px;
+}
+.map-explorer .quest-drawer {
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	z-index: 4;
+	display: flex;
+	flex-direction: column;
+	width: var(--quest-drawer-w);
+	background: rgb(15 16 17 / 92%);
+	backdrop-filter: blur(10px);
+}
+.map-explorer .quest-drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 12px 12px 10px 14px;
+}
+.map-explorer .quest-drawer-head h2 {
+	font-size: 14px;
+	font-weight: 600;
+}
+.map-explorer .quest-drawer-head p {
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-back {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px 4px 4px;
+	border-radius: 6px;
+	color: var(--me-muted);
+	font-weight: 500;
+}
+.map-explorer .quest-back:hover {
+	color: var(--me-accent);
+	background: var(--me-accent-soft);
+}
+.map-explorer .quest-drawer-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	padding: 0 8px 16px;
+}
+.map-explorer .quest-drawer-note {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 6px;
+	color: var(--me-muted);
+	font-size: 12px;
+}
+.map-explorer .quest-drawer-note button {
+	color: var(--me-accent);
+	text-decoration: underline;
+}
+.map-explorer .quest-trader + .quest-trader {
+	margin-top: 10px;
+}
+.map-explorer .quest-trader-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px;
+	color: var(--me-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.map-explorer .quest-trader-head img {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+}
+.map-explorer .quest-trader-count {
+	color: var(--me-faint);
+}
+.map-explorer .quest-row {
+	display: flex;
+	gap: 10px;
+	width: 100%;
+	padding: 6px;
+	border-radius: 7px;
+	text-align: left;
+}
+.map-explorer .quest-row:hover,
+.map-explorer .quest-row:focus-visible {
+	background: var(--me-surface-hover);
+}
+.map-explorer .quest-row.highlighted {
+	background: var(--me-accent-soft);
+}
+.map-explorer .quest-row-art {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 64px;
+	height: 44px;
+	overflow: hidden;
+	border-radius: 5px;
+	background: var(--me-bg);
+	color: var(--me-faint);
+	font-weight: 600;
+}
+.map-explorer .quest-row-art img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.map-explorer .quest-row-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+.map-explorer .quest-row-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 600;
+}
+.map-explorer .quest-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	color: var(--me-muted);
+	font-size: 10px;
+}
+.map-explorer .quest-row-unplaced {
+	color: var(--me-faint);
+	font-size: 10px;
+	font-style: italic;
+}
+.map-explorer .quest-kappa {
+	color: var(--me-accent);
+}
+.map-explorer .quest-detail {
+	padding: 0 14px 20px;
+}
+.map-explorer .quest-detail-art {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	border-radius: 7px;
+}
+.map-explorer .quest-detail-name {
+	margin-top: 10px;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+.map-explorer .quest-detail-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	margin-top: 4px;
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-detail-meta img {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+}
+.map-explorer .quest-detail-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 8px;
+	color: var(--me-accent);
+	font-size: 11px;
+}
+.map-explorer .quest-detail-link:hover {
+	text-decoration: underline;
+}
+.map-explorer .quest-detail-section {
+	margin: 16px 0 6px;
+	color: var(--me-muted);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.map-explorer .quest-objectives {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.map-explorer .quest-objective {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 7px 6px;
+	border-radius: 6px;
+	font-size: 12px;
+}
+.map-explorer .quest-objective:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .quest-objective.done .quest-objective-text {
+	color: var(--me-faint);
+	text-decoration: line-through;
+}
+.map-explorer .quest-objective-icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--me-accent);
+}
+.map-explorer .quest-objective-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+.map-explorer .quest-objective-text em {
+	color: var(--me-faint);
+}
+.map-explorer .quest-objective-keys {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--me-muted);
+	font-size: 10px;
+}
+.map-explorer .quest-objective-visit {
+	flex-shrink: 0;
+	color: var(--me-muted);
+}
+.map-explorer .quest-objective-visit[aria-pressed="true"] {
+	color: #7cc39a;
+}
+.map-explorer .quest-objective-visit:hover {
+	color: var(--me-accent);
+}
+.map-explorer .quest-objective-elsewhere {
+	flex-shrink: 0;
+	margin-top: 3px;
+	color: var(--me-faint);
+	opacity: 0.6;
+}
+.map-explorer .quest-prerequisites {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	color: var(--me-muted);
+	font-size: 12px;
+}
+
+/* Quest objective glyph: the objective type's icon on a disc in the quest's colour (markers, legend, drawer). */
+.map-explorer .quest-glyph {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--quest-color);
+	box-shadow:
+		0 0 0 1.5px rgb(15 16 17 / 85%),
+		0 1px 3px rgb(0 0 0 / 70%);
+}
+.map-explorer .layer-row .quest-glyph {
+	width: 18px;
+	height: 18px;
+}
+.map-explorer .overlay-marker.selected .quest-glyph {
+	box-shadow:
+		0 0 0 2px var(--me-text),
+		0 1px 3px rgb(0 0 0 / 70%);
+}
+/* The quest's marker colour as a short rounded bar at the row's left. */
+.map-explorer .quest-row {
+	position: relative;
+	padding-left: 12px;
+}
+.map-explorer .quest-row::before {
+	content: "";
+	position: absolute;
+	left: 3px;
+	top: 20%;
+	height: 60%;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--quest-color, transparent);
+}
+.map-explorer .quest-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 0 12px 10px 14px;
+}
+.map-explorer .quest-filter {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 12px;
+	background: rgb(255 255 255 / 5%);
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-filter:hover {
+	color: var(--me-text);
+}
+.map-explorer .quest-filter.active {
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .kill-summary {
+	margin: 0 6px 12px;
+}
+.map-explorer .kill-summary .quest-detail-section {
+	margin-top: 4px;
+}
+.map-explorer .kill-totals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: var(--me-muted);
+}
+.map-explorer .kill-totals strong {
+	color: var(--me-text);
+}
+.map-explorer .kill-list button {
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	padding: 6px;
+	border-radius: 6px;
+	text-align: left;
+	font-size: 12px;
+}
+.map-explorer .kill-list button:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .kill-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.map-explorer .kill-quest {
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .kill-description {
+	color: var(--me-faint);
+	font-size: 11px;
+}
+.map-explorer .quest-objective {
+	padding: 0;
+}
+.map-explorer .quest-objective-main {
+	display: flex;
+	flex: 1;
+	align-items: flex-start;
+	gap: 8px;
+	min-width: 0;
+	padding: 7px 6px;
+	border-radius: 6px;
+	text-align: left;
+}
+.map-explorer .quest-objective-visit,
+.map-explorer .quest-objective-elsewhere {
+	margin: 7px 6px 0 0;
+}
+.map-explorer .quest-objective.placed .quest-objective-main:hover .quest-objective-text > span:first-child {
+	color: var(--me-accent);
 }
