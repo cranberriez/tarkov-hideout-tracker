@@ -147,6 +147,22 @@
 	font-size: 12px;
 	font-weight: 500;
 }
+.map-explorer .map-chip-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.map-explorer .map-chip-round {
+	width: 28px;
+	justify-content: center;
+	color: var(--me-muted);
+}
+.map-explorer .map-chip-round:hover {
+	color: var(--me-text);
+}
+.map-explorer .map-caret.flipped {
+	transform: rotate(180deg);
+}
 .map-explorer .map-chip-part {
 	display: flex;
 	align-items: center;

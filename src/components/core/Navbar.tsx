@@ -109,7 +109,8 @@ function NavbarContent() {
 		currentPage === "/games" ||
 		currentPage.startsWith("/games/");
 
-	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
+	const hidesNav = ["/quests", "/maps"].some((root) => currentPage === root || currentPage.startsWith(`${root}/`));
+	if (hidesNav && isMainNavHidden) return null;
 
 	return (
 		<>

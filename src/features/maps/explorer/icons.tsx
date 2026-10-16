@@ -89,3 +89,13 @@ export const CoinIcon = () => (
 		<path d="M14.5 9.5c-.5-1-1.4-1.5-2.5-1.5-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2c-1.1 0-2-.5-2.5-1.5M12 6.5v1.5M12 16v1.5" />
 	</Icon>
 );
+export const FullscreenIcon = () => (
+	<Icon size={14}>
+		<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+	</Icon>
+);
+export const ExitFullscreenIcon = () => (
+	<Icon size={14}>
+		<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+	</Icon>
+);

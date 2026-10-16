@@ -9,6 +9,7 @@ import { useGameDataEnabled } from "@/lib/query/game-data";
 import { gameDataKey } from "@/lib/query/scope";
 import { fetchJson, ResponseValidationError } from "@/lib/query/request";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useUIStore } from "@/lib/stores/useUIStore";
 import { standardItemImageUrl } from "@/lib/utils/item-images";
 import {
 	artStyleOf,
@@ -165,21 +166,50 @@ export function MapExplorer({
 	// Hovering previews a marker's card; clicking pins it until closed (X, Escape, clicking it again) or another is clicked.
 	const [hovered, setHovered] = useState<string | null>(null);
 	const [pinned, setPinned] = useState<string | null>(null);
+	// A hovered Battle Pass document keeps its preview until another marker is hovered or clicked, or it is closed.
+	const [stickyDoc, setStickyDoc] = useState<string | null>(null);
 	const [shownData, setShownData] = useState(data);
 	if (shownData !== data) {
 		setShownData(data);
 		setHovered(null);
 		setPinned(null);
+		setStickyDoc(null);
 	}
+	const hoverMarker = (id: string | null) => {
+		setHovered(id);
+		if (id) setStickyDoc(overlayById.get(id)?.document ? id : null);
+	};
+	const closeCard = () => {
+		setPinned(null);
+		setHovered(null);
+		setStickyDoc(null);
+	};
+	const stickyShown = !pinned && !hovered && !!overlayById.get(stickyDoc ?? "");
 	useEffect(() => {
-		if (!pinned) return;
+		if (!pinned && !stickyShown) return;
 		const onKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape") setPinned(null);
+			if (event.key === "Escape") closeCard();
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [pinned]);
-	const cardMarker = overlayById.get(pinned ?? hovered ?? "");
+	}, [pinned, stickyShown]);
+	const cardMarker = overlayById.get(pinned ?? hovered ?? stickyDoc ?? "");
+
+	// Nav and full screen (like F11) controls; the nav's hidden flag is shared with the quest workspace.
+	const navHidden = useUIStore((state) => state.isMainNavHidden);
+	const setNavHidden = useUIStore((state) => state.setMainNavHidden);
+	useEffect(() => () => setNavHidden(false), [setNavHidden]);
+	const [fullscreen, setFullscreen] = useState(false);
+	useEffect(() => {
+		const sync = () => setFullscreen(!!document.fullscreenElement);
+		sync();
+		document.addEventListener("fullscreenchange", sync);
+		return () => document.removeEventListener("fullscreenchange", sync);
+	}, []);
+	const toggleFullscreen = () => {
+		if (document.fullscreenElement) void document.exitFullscreen();
+		else void document.documentElement.requestFullscreen().catch(() => {});
+	};
 
 	// Quest drawer: a quest hovered there dims every other quest's markers (an objective, every other objective);
 	// a quest marker hovered on the map marks its row; clicking either opens that quest's details.
@@ -217,6 +247,7 @@ export function MapExplorer({
 		setQuestFocus(null);
 	};
 	const tapMarker = (id: string) => {
+		setStickyDoc(null);
 		const unpinning = pinned === id;
 		setPinned(unpinning ? null : id);
 		const questId = overlayById.get(id)?.quest?.questId;
@@ -304,7 +335,7 @@ export function MapExplorer({
 					selected={pinned}
 					dimmed={dimmed}
 					markerGlyph={markerGlyph}
-					onMarkerHover={setHovered}
+					onMarkerHover={hoverMarker}
 					onMarkerTap={tapMarker}
 				/>
 				{(loading || query.isError) && (
@@ -464,6 +495,10 @@ export function MapExplorer({
 					current={mapKey}
 					label={label}
 					floor={shownFloor && !shownFloor.base ? shownFloor.name : undefined}
+					navHidden={navHidden}
+					onToggleNav={() => setNavHidden(!navHidden)}
+					fullscreen={fullscreen}
+					onToggleFullscreen={toggleFullscreen}
 				/>
 			</main>
 		</MapAssetsContext.Provider>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { MAP_EXPLORER_MAPS } from "@/lib/cfg/map-explorer";
-import { CaretIcon } from "./icons";
+import { CaretIcon, ExitFullscreenIcon, FullscreenIcon } from "./icons";
 
 export type FloorOption = { key: string; label: string };
 
@@ -56,24 +56,65 @@ export function MapFloorPanel({
 }
 
 /** Top-right pill naming the map and floor shown, with a list of the other maps to switch to. */
-export function MapSwitcher({ current, label, floor }: { current: string; label: string; floor?: string }) {
+export function MapSwitcher({
+	current,
+	label,
+	floor,
+	navHidden,
+	onToggleNav,
+	fullscreen,
+	onToggleFullscreen,
+}: {
+	current: string;
+	label: string;
+	floor?: string;
+	navHidden: boolean;
+	onToggleNav: () => void;
+	fullscreen: boolean;
+	onToggleFullscreen: () => void;
+}) {
 	const [open, setOpen] = useState(false);
 	return (
 		<div className={`map-switch ${open ? "open" : ""}`}>
-			<div className="map-chip">
+			<div className="map-chip-row">
+				<div className="map-chip">
+					<button
+						type="button"
+						className="map-chip-part"
+						aria-pressed={navHidden}
+						title={navHidden ? "Show navigation" : "Hide navigation"}
+						onClick={onToggleNav}
+					>
+						Nav
+						<span className={`map-caret ${navHidden ? "" : "flipped"}`}>
+							<CaretIcon />
+						</span>
+					</button>
+				</div>
 				<button
 					type="button"
-					className="map-chip-part"
-					aria-expanded={open}
-					title={open ? "Hide maps" : "Browse maps"}
-					onClick={() => setOpen(!open)}
+					className="map-chip map-chip-round"
+					aria-pressed={fullscreen}
+					title={fullscreen ? "Exit full screen" : "Full screen"}
+					onClick={onToggleFullscreen}
 				>
-					{label}
-					{floor && <span className="faint">{floor}</span>}
-					<span className="map-caret">
-						<CaretIcon />
-					</span>
+					{fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
 				</button>
+				<div className="map-chip">
+					<button
+						type="button"
+						className="map-chip-part"
+						aria-expanded={open}
+						title={open ? "Hide maps" : "Browse maps"}
+						onClick={() => setOpen(!open)}
+					>
+						{label}
+						{floor && <span className="faint">{floor}</span>}
+						<span className="map-caret">
+							<CaretIcon />
+						</span>
+					</button>
+				</div>
 			</div>
 			{open && (
 				<nav className="map-switch-list" aria-label="Maps">
