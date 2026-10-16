@@ -16,12 +16,10 @@ import type { QuestDataIndex } from "../quest-data-index";
 import { useUserStore, type QuestSortMode, type QuestWorkspaceLockedFilterSettings } from "@/lib/stores/useUserStore";
 import {
 	getAvailableObjectiveCategories,
-	getQuestMapKeys,
 	type QuestObjectiveCategory,
 	type QuestWorkspaceStatus,
 	type QuestWorkspaceStatusInfo,
 } from "./quest-workspace-utils";
-import { createQuestMarkerStyles, type QuestMarkerStyle } from "./raid-planner-markers";
 import { buildQuestBranchLines, type QuestBranchLine } from "./quest-branch-graph";
 import { selectWorkspaceQuests } from "./quest-workspace-selector";
 import { STORY_CHAPTERS, STORY_DECISIONS } from "@/lib/data/story";
@@ -52,7 +50,6 @@ interface QuestWorkspaceContextValue {
 	maps: QuestDataIndex["maps"];
 	objectiveCategories: QuestObjectiveCategory[];
 	statusByQuestId: Map<string, QuestWorkspaceStatusInfo>;
-	markerByQuestId: Map<string, QuestMarkerStyle>;
 	branchLines: QuestBranchLine[];
 	branchLineByQuestId: Map<string, QuestBranchLine>;
 	branchLinesByQuestId: Map<string, QuestBranchLine[]>;
@@ -74,7 +71,6 @@ interface QuestWorkspaceContextValue {
 	searchQuery: string;
 	mode: QuestWorkspaceMode;
 	listMode: QuestListMode;
-	plannerMapKey: string | null;
 	highlightedQuestId: string | null;
 	visualizerLineId: string | null;
 	visualizerFocusQuestId: string | null;
@@ -82,7 +78,7 @@ interface QuestWorkspaceContextValue {
 	setSelectedQuestId: (questId: string | null) => void;
 	questHref: (questId: string) => string;
 	indexHref: string;
-	/** Marks a workspace-initiated link so the route change keeps the current planner/visualizer mode. */
+	/** Marks a workspace-initiated link so the route change keeps the current visualizer mode. */
 	markInternalSelection: (questId: string | null) => void;
 	/** True once for a selection started inside the workspace; false for Back/Forward and external links. */
 	consumeInternalSelection: (questId: string | null) => boolean;
@@ -106,8 +102,6 @@ interface QuestWorkspaceContextValue {
 	setMode: (mode: QuestWorkspaceMode) => void;
 	setListMode: (mode: QuestListMode) => void;
 	retainQuestAfterCompletion: (questId: string) => void;
-	selectPlannerMap: (mapKey: string) => void;
-	clearPlannerMap: () => void;
 	setHighlightedQuestId: (questId: string | null) => void;
 	openQuestVisualizer: (lineId: string, focusQuestId?: string | null) => void;
 	showQuestVisualizerIndex: () => void;
@@ -160,7 +154,6 @@ export function QuestWorkspaceProvider({
 	const [groupByTrader, setGroupByTrader] = useState(true);
 	const [groupByLoyaltyLevel, setGroupByLoyaltyLevel] = useState(true);
 	const [retainedCompletedQuestIds, setRetainedCompletedQuestIds] = useState<Set<string>>(() => new Set());
-	const [plannerMapKey, setPlannerMapKey] = useState<string | null>(null);
 	const [highlightedQuestId, setHighlightedQuestId] = useState<string | null>(null);
 	const [visualizerLineId, setVisualizerLineId] = useState<string | null>(null);
 	const [visualizerFocusQuestId, setVisualizerFocusQuestId] = useState<string | null>(null);
@@ -216,11 +209,7 @@ export function QuestWorkspaceProvider({
 		],
 	);
 	const selectedTraderIds = useMemo(() => new Set(store.selectedTraderIds), [store.selectedTraderIds]);
-	const externalSelectedMapKeys = useMemo(() => new Set(store.selectedMapKeys), [store.selectedMapKeys]);
-	const selectedMapKeys = useMemo(
-		() => (mode === "planner" && plannerMapKey ? new Set([plannerMapKey]) : externalSelectedMapKeys),
-		[externalSelectedMapKeys, mode, plannerMapKey],
-	);
+	const selectedMapKeys = useMemo(() => new Set(store.selectedMapKeys), [store.selectedMapKeys]);
 	const selectedStatuses = useMemo(() => new Set(store.selectedStatuses), [store.selectedStatuses]);
 	const selectedObjectiveCategories = useMemo(
 		() => new Set(store.selectedObjectiveCategories),
@@ -291,18 +280,6 @@ export function QuestWorkspaceProvider({
 		() => selection.filteredQuestIds.flatMap((questId) => questsById.get(questId) ?? []),
 		[questsById, selection.filteredQuestIds],
 	);
-	const markerByQuestId = useMemo(
-		() =>
-			createQuestMarkerStyles(
-				plannerMapKey
-					? quests.filter(
-							(quest) =>
-								statusByQuestId.get(quest.id)?.status === "active" && getQuestMapKeys(quest).has(plannerMapKey),
-						)
-					: [],
-			),
-		[plannerMapKey, quests, statusByQuestId],
-	);
 
 	useEffect(() => {
 		const previous = previousCompletedQuests.current;
@@ -337,14 +314,7 @@ export function QuestWorkspaceProvider({
 		if (questId === selectedQuestId) return;
 		markInternalSelection(questId);
 		const href = questId ? questHref(questId) : indexHref;
-		// Planner marker focus should not fill browser history; detail selection should.
-		if (mode === "planner") router.replace(href, { scroll: false });
-		else router.push(href, { scroll: false });
-	};
-
-	const selectPlannerMap = (mapKey: string) => {
-		setPlannerMapKey(mapKey);
-		setMode("planner");
+		router.push(href, { scroll: false });
 	};
 
 	const openQuestVisualizer = (lineId: string, focusQuestId: string | null = null) => {
@@ -396,7 +366,6 @@ export function QuestWorkspaceProvider({
 				maps,
 				objectiveCategories,
 				statusByQuestId,
-				markerByQuestId,
 				branchLines,
 				branchLineByQuestId,
 				branchLinesByQuestId,
@@ -418,7 +387,6 @@ export function QuestWorkspaceProvider({
 				searchQuery,
 				mode,
 				listMode,
-				plannerMapKey,
 				highlightedQuestId,
 				visualizerLineId,
 				visualizerFocusQuestId,
@@ -446,18 +414,10 @@ export function QuestWorkspaceProvider({
 				},
 				toggleMap: (key) => {
 					clearRetainedCompletedQuests();
-					if (mode === "planner") {
-						setPlannerMapKey(plannerMapKey === key ? null : key);
-						return;
-					}
-					store.setSelectedMapKeys([...toggleSetValue(externalSelectedMapKeys, key)]);
+					store.setSelectedMapKeys([...toggleSetValue(selectedMapKeys, key)]);
 				},
 				clearMaps: () => {
 					clearRetainedCompletedQuests();
-					if (mode === "planner") {
-						setPlannerMapKey(null);
-						return;
-					}
 					store.setSelectedMapKeys([]);
 				},
 				toggleStatus: (status) => {
@@ -493,10 +453,6 @@ export function QuestWorkspaceProvider({
 				setMode,
 				setListMode,
 				retainQuestAfterCompletion,
-				selectPlannerMap,
-				clearPlannerMap: () => {
-					setPlannerMapKey(null);
-				},
 				setHighlightedQuestId,
 				openQuestVisualizer,
 				showQuestVisualizerIndex,

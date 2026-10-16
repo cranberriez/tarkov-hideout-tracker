@@ -69,9 +69,8 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 				maps,
 				branchLines: branchLinesByQuestId.get(quest.id) ?? [],
 				multipleChoiceQuestIds: multipleChoiceGroups.get(quest.id) ?? [],
-				completedObjectiveIds,
 			}),
-		[branchLinesByQuestId, completedObjectiveIds, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById],
+		[branchLinesByQuestId, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById],
 	);
 	const controller = useQuestDetailsController(quest.id, questDetailsModel.mapData);
 
@@ -89,7 +88,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 		objectivePresentation,
 		visualizerLines,
 		multipleChoiceQuests,
-		mapData: questMapData,
 	} = questDetailsModel;
 	const {
 		showDebug,
@@ -103,7 +101,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 		setHoveredObjectiveId,
 		detailScrollRef,
 		detailSplitRef,
-		selectedDetailMapKey,
 		selectedDetailMap,
 		focusedObjectiveId,
 		showObjectiveOnMap,
@@ -195,8 +192,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 								objectiveCount={quest.objectives.length}
 								objectivePresentation={objectivePresentation}
 								completedObjectiveIds={completedObjectiveIds}
-								mapData={questMapData}
-								selectedMapKey={selectedDetailMapKey}
 								focusedObjectiveId={focusedObjectiveId}
 								onHoverObjective={setHoveredObjectiveId}
 								onShowObjectiveOnMap={showObjectiveOnMap}
@@ -213,7 +208,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 				<QuestObjectiveMap
 					quest={quest}
 					controller={controller}
-					onToggleObjectiveCompletion={toggleQuestObjectiveCompletion}
 				/>
 			</div>
 

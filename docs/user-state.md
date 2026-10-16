@@ -350,8 +350,8 @@ everything after kept items adds only the remainder; a new scan starts fresh.
 Unknown FIR quantities block the corresponding send. No schema, storage key,
 migration, or reset behavior changes.
 
-[useUIStore](../src/lib/stores/useUIStore.ts) is not persisted. Dialog navigation,
-draft inputs, and Raid Planner viewport state are session state. Fetched entities,
+[useUIStore](../src/lib/stores/useUIStore.ts) is not persisted. Dialog navigation
+and draft inputs are session state. Fetched entities,
 prices, and item relations come from route contracts/lazy requests; they do not
 belong in the persisted progress store.
 The item dialog adds same-URL browser-history entries containing only a session

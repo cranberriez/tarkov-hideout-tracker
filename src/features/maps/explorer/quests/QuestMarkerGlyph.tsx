@@ -21,6 +21,9 @@ const QUEST_COLORS = [
 	"#8a9a3a", // olive
 ];
 
+/** The colour of a quest shown alone. */
+export const FIRST_QUEST_COLOR = QUEST_COLORS[0];
+
 /** Quest colour by its place in the drawer list; colours repeat only past twelve quests. */
 export function questColors(questIds: readonly string[]) {
 	return new Map(questIds.map((id, index) => [id, QUEST_COLORS[index % QUEST_COLORS.length]]));

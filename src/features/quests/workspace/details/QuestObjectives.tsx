@@ -5,8 +5,8 @@ import { SectionLabel } from "@/components/ui/detail-section";
 import { cn } from "@/lib/utils";
 import { QuestObjectiveIcon } from "../../objectives/QuestObjectiveIcon";
 import { ObjectiveRow } from "../../objectives/QuestObjectiveRows";
+import { FIRST_QUEST_COLOR } from "@/features/maps/explorer/quests/QuestMarkerGlyph";
 import { getPositionedObjectiveMaps } from "../quest-detail-markers";
-import type { QuestDetailMapData } from "../quest-details-model";
 import type { ObjectivePresentation } from "../quest-objective-presentation";
 
 export function QuestObjectives({
@@ -14,8 +14,6 @@ export function QuestObjectives({
 	objectiveCount,
 	objectivePresentation,
 	completedObjectiveIds,
-	mapData,
-	selectedMapKey,
 	focusedObjectiveId,
 	onHoverObjective,
 	onShowObjectiveOnMap,
@@ -25,8 +23,6 @@ export function QuestObjectives({
 	objectiveCount: number;
 	objectivePresentation: ObjectivePresentation[];
 	completedObjectiveIds: ReadonlySet<string>;
-	mapData: QuestDetailMapData;
-	selectedMapKey: string | null;
 	focusedObjectiveId: string | null;
 	onHoverObjective: (objectiveId: string | null) => void;
 	onShowObjectiveOnMap: (mapKey: string, objectiveId: string) => void;
@@ -45,8 +41,6 @@ export function QuestObjectives({
 							presentation={presentation}
 							isCompleted={completedObjectiveIds.has(presentation.objective.id)}
 							isFocused={focusedObjectiveId === presentation.objective.id}
-							mapData={mapData}
-							selectedMapKey={selectedMapKey}
 							onHoverObjective={onHoverObjective}
 							onShowObjectiveOnMap={onShowObjectiveOnMap}
 							onToggleObjectiveCompletion={onToggleObjectiveCompletion}
@@ -66,8 +60,6 @@ function QuestObjectiveDisplay({
 	presentation: { objective, showItems },
 	isCompleted,
 	isFocused,
-	mapData,
-	selectedMapKey,
 	onHoverObjective,
 	onShowObjectiveOnMap,
 	onToggleObjectiveCompletion,
@@ -77,18 +69,11 @@ function QuestObjectiveDisplay({
 	presentation: ObjectivePresentation;
 	isCompleted: boolean;
 	isFocused: boolean;
-	mapData: QuestDetailMapData;
-	selectedMapKey: string | null;
 	onHoverObjective: (objectiveId: string | null) => void;
 	onShowObjectiveOnMap: (mapKey: string, objectiveId: string) => void;
 	onToggleObjectiveCompletion: (questId: string, objectiveId: string) => void;
 }) {
 	const positionedMaps = getPositionedObjectiveMaps(objective);
-	const cueMapKey = positionedMaps.some((map) => map.key === selectedMapKey) ? selectedMapKey : positionedMaps[0]?.key;
-	const markers = cueMapKey
-		? (mapData.markersByMap.get(cueMapKey) ?? []).filter((marker) => marker.objectiveIds?.includes(objective.id))
-		: [];
-	const markerStyle = mapData.styles.get(objective.id);
 	const positionedLocationCount = positionedMaps.reduce((count, map) => count + map.locationCount, 0);
 	const multipleLocationLabel =
 		positionedLocationCount > 1
@@ -101,21 +86,19 @@ function QuestObjectiveDisplay({
 	return (
 		<div
 			onMouseEnter={() => {
-				if (!isCompleted && markers.length > 0) onHoverObjective(objective.id);
+				if (!isCompleted && positionedMaps.length > 0) onHoverObjective(objective.id);
 			}}
 			onMouseLeave={() => onHoverObjective(null)}
 			className={cn("rounded-md bg-highlight/[0.035] p-3", isFocused && "bg-highlight/[0.065]")}
 		>
 			{positionedMaps.length > 0 && (
 				<div className="mb-3 flex w-full flex-wrap items-center gap-x-3 gap-y-2">
-					{markerStyle && (
-						<span
-							className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-shadow/70"
-							style={{ backgroundColor: markerStyle.color }}
-						>
-							<QuestObjectiveIcon type={objective.type} size={11} className="text-inverse" />
-						</span>
-					)}
+					<span
+						className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-shadow/70"
+						style={{ backgroundColor: FIRST_QUEST_COLOR }}
+					>
+						<QuestObjectiveIcon type={objective.type} size={11} className="text-white" />
+					</span>
 					<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 						{positionedMaps.map((map) => (
 							<button

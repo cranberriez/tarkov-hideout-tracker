@@ -5,7 +5,7 @@ import {
 	OBJECTIVE_CATEGORY_SHORT_LABELS,
 	type QuestObjectiveCategory,
 } from "../../../quests/workspace/quest-workspace-utils";
-import { isLocationOnRaidPlannerMap } from "../../../quests/workspace/raid-planner-maps";
+import { isObjectiveLocationOnMap } from "../../../quests/quest-map-match";
 import { tarkovPreset, type LayerDef, type MapMarker, type MarkerPreset, type Vec3 } from "../../tarkov-map";
 
 export const QUEST_LAYER = "quests";
@@ -79,7 +79,7 @@ export function buildQuestMarkers(
 			const category = getObjectiveCategory(objective.type);
 			const seen = new Set<string>();
 			(objective.locations ?? []).forEach((location, index) => {
-				if (!isLocationOnRaidPlannerMap(location, mapKey)) return;
+				if (!isObjectiveLocationOnMap(location, mapKey)) return;
 				const position = locationPosition(location);
 				if (!position) return;
 				const key = `${position.x.toFixed(1)}|${position.y.toFixed(1)}|${position.z.toFixed(1)}`;

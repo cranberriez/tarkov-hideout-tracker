@@ -4,7 +4,6 @@ import {
 	ChevronUp,
 	CircleDot,
 	Columns3,
-	Compass,
 	GitBranch,
 	History,
 	List,
@@ -27,14 +26,13 @@ import { cn } from "@/lib/utils";
 import { useQuestWorkspace, type QuestFilterSection } from "./QuestWorkspaceContext";
 
 type FilterSection = Exclude<QuestFilterSection, null>;
-type MenuView = "log" | "history" | "board" | "visualizer" | "planner";
+type MenuView = "log" | "history" | "board" | "visualizer";
 
 const VIEWS: { view: MenuView; label: string; icon: LucideIcon }[] = [
 	{ view: "log", label: "Quest log", icon: List },
 	{ view: "history", label: "History", icon: History },
 	{ view: "board", label: "Trader board", icon: Columns3 },
 	{ view: "visualizer", label: "Visualizer", icon: GitBranch },
-	{ view: "planner", label: "Raid planner", icon: Compass },
 ];
 
 const FILTERS: { section: FilterSection; label: string; icon: LucideIcon }[] = [

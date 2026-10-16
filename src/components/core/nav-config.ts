@@ -4,7 +4,6 @@ import {
 	Boxes,
 	ChartCandlestick,
 	Columns3,
-	Compass,
 	Factory,
 	Gamepad2,
 	GitBranch,
@@ -86,7 +85,6 @@ export const navMenus: NavMenu[] = [
 		children: [
 			{ name: "Trader Board", href: questViewHref("board"), icon: Columns3 },
 			{ name: "Visualizer", href: questViewHref("visualizer"), icon: GitBranch },
-			{ name: "Raid Planner", href: questViewHref("planner"), icon: Compass },
 			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
 	},

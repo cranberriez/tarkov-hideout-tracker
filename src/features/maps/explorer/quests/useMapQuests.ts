@@ -11,7 +11,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useQuestDetails } from "../../../quests/useQuestDetails";
 import { getQuestWorkspaceStatus } from "../../../quests/workspace/quest-workspace-utils";
-import { isQuestOnRaidPlannerMap } from "../../../quests/workspace/raid-planner-maps";
+import { isQuestOnMap } from "../../../quests/quest-map-match";
 import { buildQuestMarkers } from "./quest-map-markers";
 
 /**
@@ -43,7 +43,7 @@ export function useMapQuests(mode: TarkovJsonGameMode, mapKey: string) {
 		return quests.filter(
 			(quest) =>
 				!ignored[quest.id] &&
-				isQuestOnRaidPlannerMap(quest, mapKey) &&
+				isQuestOnMap(quest, mapKey) &&
 				getQuestWorkspaceStatus(quest, profile, byId).status === "active",
 		);
 	}, [summaries, ignored, mapKey, profile]);

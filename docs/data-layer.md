@@ -215,7 +215,7 @@ errors. Complete single-ID responses use public page caching; batches and partia
 responses use `no-store`. Batch combinations are transport only: the browser caches
 individual mode/quest entries, and server catalog caching uses mode/content-version/
 quest-ID entries. Concurrent cold server misses coalesce into bounded SQL batches.
-The planner requests active quests for the selected map; sustained hover previews
+The maps explorer requests active quests for its map; sustained hover previews
 and direct quest routes use the same per-quest cache. No player profile data enters
 the endpoint or its cache key.
 
@@ -353,7 +353,7 @@ parameter parsing, database error responses, and the named
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
 | [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, Market, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
-| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
+| [map APIs](../src/app/api/maps/)                                                                                                                                 | Per-map marker data for the maps explorer; see [maps](maps.md)                                                                                    |
 | [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
 
 Complete item-view responses use the same browser 300s / CDN 3600s policy as page data, which embeds the same hourly-refreshed trader offers; the item-detail queries expose their

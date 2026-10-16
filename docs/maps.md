@@ -1,10 +1,9 @@
 # Maps
 
-The shared [MapViewer](../src/features/maps/MapViewer.tsx) powers Raid Planner
-and embedded quest details. [Quest domain behavior](quests.md) owns active/visited
+The [maps explorer](#maps-explorer) at `/maps` and the condensed
+[quest objective map](#quest-objective-map) share one map stack, ported from
+tarkov-mappinator. [Quest domain behavior](quests.md) owns active/visited
 objective selection; this document owns geometry, projection, and asset delivery.
-The [Maps explorer](#maps-explorer) at `/maps` is a separate map stack ported from
-tarkov-mappinator; the two do not share code yet.
 
 ## Maps explorer
 
@@ -63,6 +62,21 @@ hovering a quest marker marks and scrolls to its row, and clicking either opens 
 details; the open quest's markers show even when the quest layer's filters hide them, and unpinning one returns to the list. Clicking a placed objective
 pins and pans to its marker, cycling through its locations. Drawer state is session-only.
 
+## Quest objective map
+
+The quest details pane shows [QuestObjectivesMap](../src/features/maps/explorer/quests/QuestObjectivesMap.tsx)
+beside (wide screens) or over (compact) the quest. It is the explorer's map reduced to
+one quest's objective markers: the same `TarkovMap`, quest marker builder
+([buildQuestMarkers](../src/features/maps/explorer/quests/quest-map-markers.ts)), glyphs
+and marker card, with only a floor picker and zoom buttons. There is no legend, map
+switcher, nav or full-screen toggle, layers panel or quest drawer, and no saved map
+preferences. It fetches no map or quest data: markers derive from the quest already in
+the details pane (objectives marked done are left out) and only the art and tiles load.
+Quests on several maps switch between them in the pane header; the map remounts per quest
+and map. Hovering an objective in the list fades the other objectives' markers; "Show on
+map" pins the objective's marker, switching to its floor and centring on it, and again moves to
+its next location. Objectives without coordinates stay textual.
+
 ## Data and service boundary
 
 [quest-objective-locations](../src/server/services/quest-objective-locations.ts)
@@ -71,86 +85,31 @@ and [quest objectives](../src/types/quests.ts) during release generation. Locati
 may carry a map, XYZ position, outline, heights, and `zone`/`possibleLocation`
 source. Omit invalid optional points; never fabricate a position from an outline.
 
-[maps.json](../src/lib/data/maps.json) is reduced by
-[map-render-definitions](../src/server/services/map-render-definitions.ts) into
-one compact selected-map definition via the [render API](../src/app/api/maps/render/[mapKey]/route.ts).
-The browser receives the selected definition and SVG, not the complete source
-metadata or raster tile paths. This static map service is an explicit exception
-to the Tarkov repository; it is not a model for general page data access.
-
-Raid Planner selection cards use local scenic WebP thumbnails in
-[public/images/maps](../public/images/maps/README.md), not the render API or full
-SVGs. Thumbnails are at most 480 × 288. The Lab and The Lab (Dark) share one planner
-card and Lab geometry; their quest counts, keys, and markers are combined without
-changing source IDs or the quest workspace's map filters.
-The asset directory records sources and attribution. The interactive map still
-loads its detailed SVG only after selection.
+Maps index cards use local scenic WebP thumbnails in
+[public/images/maps](../public/images/maps/README.md), at most 480 × 288. The asset
+directory records sources and attribution.
 
 [pull-map-overlays.mjs](../scripts/pull-map-overlays.mjs) reduces upstream regular
-map data into committed [map-overlays](../src/lib/data/map-overlays/) chunks.
-[map-navigation-overlays](../src/server/services/map-navigation-overlays.ts) and
-the [overlay API](../src/app/api/maps/overlays/[mapKey]/route.ts) return only the
-selected map's PMC extracts and transits. Boss chunks are retained for future
-work but are not displayed. Refreshes are explicit maintenance operations;
-see [operations](operations.md).
+map data into committed [map-overlays](../src/lib/data/map-overlays/) chunks. Only the
+manifest is read at runtime (by [sync-model](../src/features/sync/sync-model.ts), to match
+raid maps). Refreshes are explicit maintenance operations; see [operations](operations.md).
 
 ## Projection, floors, and markers
 
-[map-projection](../src/features/maps/map-projection.ts) projects world X/Z as the
-horizontal plane and Y as elevation: rotate by `coordinateRotation`, apply the
-configured transform with inverted SVG vertical axis, then normalize to `svgBounds`
-when supplied or projected gameplay bounds otherwise. This handles Factory rotation
-and Reserve's artwork extent through metadata rather than ad hoc offsets.
+The `tarkov-map` library owns projection and floors: world X/Z are the horizontal
+plane and Y is elevation, calibrated per map (rotation, transform, art bounds), and
+[floors](../src/features/maps/tarkov-map/floors.ts) are resolved from Y extents and
+optional local bounds, falling back to the base floor. A pinned marker shows its own floor
+until unpinned. Quest marker colours are mid-bright per quest
+([QuestMarkerGlyph](../src/features/maps/explorer/quests/QuestMarkerGlyph.tsx)); the
+objective type's icon sits on the disc. Factory and Night Factory share artwork.
+Objectives without coordinates stay textual.
 
-[map-floor-resolution](../src/features/maps/map-floor-resolution.ts) checks Y
-extents and optional local X/Z bounds, prefers spatially specific matches, preserves
-overlap, and falls back to Ground. Only validated named SVG groups are selectable.
-Ground stays present; optional layers toggle independently. Below-ground treatment
-uses numeric heights, not names. [map-svg-layers](../src/server/services/map-svg-layers.ts)
-controls visibility and paint order. Hover/focus can temporarily preview an objective's
-floor without overwriting the manual selection; markers remain visible across layers.
+## Assets
 
-[quest-detail-markers](../src/features/quests/workspace/quest-detail-markers.ts)
-and [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts)
-group positioned objectives. Coincident locations are merged with their objective
-IDs and distinct outlines; possible spawns retain a shared objective/quest color.
-Group colors cycle through the documented chart palette in
-[globals.css](../src/app/globals.css), referenced by
-[visualization colors](../src/lib/cfg/visualization-colors.ts). Extract/transit
-payloads carry CSS references to the separate `map-extract` and `map-transit`
-roles. The viewer resolves these roles in the application theme; upstream map
-artwork keeps its original colors.
-Filtering visited objectives precedes grouping so shared markers retain only the
-remaining objectives. Factory and Night Factory share artwork. Objectives without
-coordinates stay textual.
-
-[map-view-transform](../src/features/maps/map-view-transform.ts) owns pan/zoom
-constraints and fitting. The viewer supports cursor-anchored zoom, drag, marker
-focus/popups, outlines, optional floors, and visible attribution. Planner viewport
-state is remembered per map in session state, with drag updates kept local until
-completion. Extract/transit zones have optional persistent labels. Clicking a quest
-marker navigates to its quest; hover does not scroll the quest list.
-
-## Assets, unsupported maps, and caching
-
-The [SVG route](../src/app/api/maps/render/[mapKey]/svg/route.ts) derives upstream
-URLs from validated configuration; it must not become an arbitrary URL proxy.
-It applies [SVG layer processing](../src/server/services/map-svg-layers.ts), uses
-the project user agent, and caches upstream fetches for seven days. Its browser
-response uses one-day freshness and seven-day stale-while-revalidate. Render and
-overlay JSON use one-hour freshness and one-day stale-while-revalidate.
-
-[MapViewer](../src/features/maps/MapViewer.tsx) reads the compact render definition
-through a map-keyed TanStack query with one-hour freshness, 24-hour inactive
-retention, and no automatic retry. Raid Planner reads its committed overlay chunk
-through a second map-keyed Query with the same policy. The processed SVG remains
-an ordinary browser asset request; these mode-independent map queries do not enter
-the game-data cache.
-
-Unsupported or unvalidated SVG definitions return an intentional unsupported
-state. Icebreaker, The Lab, and The Labyrinth currently lack validated interactive
-SVG paths. Keep author attribution and the configured CC BY-NC-SA 4.0 license
-visible when changing the viewer.
+Vector art and icons are served from `public/maps/`; tiles come from the configured tile
+host. A map without art draws a plain metric grid. Keep author attribution and licenses
+visible (see the library's [attribution](../src/features/maps/tarkov-map/ATTRIBUTION.md)).
 
 ## Battle-pass document maps
 
@@ -163,13 +122,12 @@ Location photos stay bundled under
 ## Validation
 
 ```bash
-node --test --import jiti/register src/features/maps/map-projection.test.ts src/features/maps/map-floor-resolution.test.ts src/features/maps/map-view-transform.test.ts src/server/services/map-render-definitions.test.ts src/server/services/map-svg-layers.test.ts src/server/services/map-navigation-overlays.test.ts
-node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts src/features/quests/workspace/raid-planner-markers.test.ts
+node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts
 node --test scripts/pull-map-overlays.test.mjs
 ```
 
 For visible changes, verify rotated maps, multi-floor maps, unsupported maps,
-coincident objectives, visited-objective undo, and narrow/wide layouts as relevant.
+visited-objective undo, and narrow/wide layouts as relevant.
 
 ## Seasonal document ownership
 

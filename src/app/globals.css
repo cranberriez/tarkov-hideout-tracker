@@ -104,11 +104,6 @@
 	--chart-4: var(--special);
 	--chart-5: var(--danger);
 
-	/* Map roles: objective fallback, extracts and transits; independent aliases allow map-only adjustments. */
-	--map-objective: var(--chart-1);
-	--map-extract: var(--success);
-	--map-transit: var(--warning);
-
 	/* Faction insignia stripes: blue/red reuse the information/danger pigments without tying their identity to brand. */
 	--faction-blue: var(--info);
 	--faction-red: var(--danger);
@@ -242,9 +237,6 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-4: var(--chart-4);
 	--color-chart-5: var(--chart-5);
-	--color-map-objective: var(--map-objective);
-	--color-map-extract: var(--map-extract);
-	--color-map-transit: var(--map-transit);
 	--color-faction-blue: var(--faction-blue);
 	--color-faction-red: var(--faction-red);
 	--color-sidebar: var(--sidebar);
@@ -299,27 +291,7 @@ body.uploader-workspace-active [data-main-nav] {
 	flex-shrink: 0;
 }
 
-@media (width >= 64rem) {
-	body.quest-raid-planner-fullscreen [data-main-nav],
-	body.quest-raid-planner-fullscreen [data-quest-list-pane],
-	body.quest-raid-planner-fullscreen [data-quest-action-bar] {
-		display: none;
-	}
-
-	body.quest-raid-planner-fullscreen [data-quest-workspace] {
-		height: 100dvh;
-	}
-
-	body.quest-raid-planner-fullscreen [data-quest-workspace-grid] {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-
 @media (width < 64rem) {
-	body.quest-raid-planner-active [data-main-nav] {
-		display: none;
-	}
-
 	body.quest-objective-map-active [data-quest-mobile-back-bar] {
 		display: none;
 	}

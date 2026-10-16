@@ -29,7 +29,7 @@ does not 404. Missing quests/items and independent read errors remain explicit.
 
 [Detail queries](../src/lib/query/quest-details.ts) cache each quest by mode and ID,
 coalescing simultaneous misses into requests of at most 50 IDs. Details, sustained
-hover previews and the planner reuse those entries. List/board links disable route
+hover previews reuse those entries. List/board links disable route
 prefetch so displaying a list does not eagerly fetch every quest's details. The
 earlier dictionary packing layer is no longer needed.
 
@@ -63,10 +63,10 @@ which uses the selected quest's scoped detail query (independent of list filters
 with loading/retry and in-pane not-found states. The route parameter is the only
 selection source: list rows are real links, so search, filters, group collapse, and
 list scroll persist across quest navigation, and Back/Forward select the matching
-quest. Workspace-initiated selection keeps an open planner or visualizer; Back/Forward,
+quest. Workspace-initiated selection keeps an open visualizer; Back/Forward,
 search, and shared links switch to Details. Completing a quest does not navigate.
-Workspace mode (Details, Trader board, Visualizer, Raid planner) is session state. The
-Quests nav entries link to `/quests?view=board|visualizer|planner`; the provider applies
+Workspace mode (Details, Trader board, Visualizer) is session state. The
+Quests nav entries link to `/quests?view=board|visualizer`; the provider applies
 the parameter to the mode once and strips it with `history.replaceState`, deferred a task
 so Next's history patch is installed on a full page load.
 On mobile the list hides while a quest route is active and "Back to quests" links to
@@ -93,21 +93,8 @@ components that remain in the feature directory.
 | Detail selection/actions and objectives                 | [useQuestDetailsController](../src/features/quests/workspace/useQuestDetailsController.ts), [quest-details-model](../src/features/quests/workspace/quest-details-model.ts), [QuestDetailsPane](../src/features/quests/workspace/QuestDetailsPane.tsx)                            |
 | Trader board                                            | [quest-trader-board-model](../src/features/quests/workspace/quest-trader-board-model.ts), [QuestTraderBoardPane](../src/features/quests/workspace/QuestTraderBoardPane.tsx)                                                                                                      |
 | Prerequisite visualizer                                 | [quest-branch-graph](../src/features/quests/workspace/quest-branch-graph.ts), [quest-graph-layout](../src/features/quests/workspace/quest-graph-layout.ts), [QuestVisualizerPane](../src/features/quests/workspace/QuestVisualizerPane.tsx)                                      |
-| Raid Planner                                            | [RaidPlannerPane](../src/features/quests/workspace/RaidPlannerPane.tsx), [raid-planner-summary](../src/features/quests/workspace/raid-planner-summary.ts), [raid-planner-markers](../src/features/quests/workspace/raid-planner-markers.ts); geometry belongs to [maps](maps.md) |
+| Objective map | [QuestObjectiveMap](../src/features/quests/workspace/details/QuestObjectiveMap.tsx), [QuestObjectivesMap](../src/features/maps/explorer/quests/QuestObjectivesMap.tsx); see [maps](maps.md#quest-objective-map) |
 
-The planner uses profile-active quests independently of the workspace's other
-status filters. Its map-selection cards use summary counts/categories. Selecting
-a map requests full details only for active quests associated with that map;
-required key presentations and geometry load then. The selected map's Keys button
-lists deduplicated keys for its active quests, including quests without positioned
-markers, and opens item details. Map cards retain key requirement counts; marker
-previews retain objective-specific keys. Unresolved keys remain visible by ID.
-The Keys button hides when a complete read has no required keys. The floating
-mobile quest menu hides while a planner map is open; Back and Exit remain available.
-Loading, missing data, and
-partial failures are shown explicitly rather than appearing as an empty plan.
-Visited positioned objectives are profile state and are filtered
-before marker grouping; whole-quest completion clears that quest's visited records.
 The trader board is a full-width overview (the list pane hides): trader columns with
 loyalty-level and Essential sections, completed and failed quests folded behind an
 expandable count. Essential quests are grouped into the same series as the list, in chain
@@ -117,10 +104,10 @@ between History and Search limits both the list and trader board to the active
 profile's pinned quests, using the existing shared `questShowPinnedOnly` preference.
 The list still applies its other filters; the board still folds resolved quests.
 Mobile exposes the same toggle as Pinned only in the quest menu.
-The workspace loads board, planner, and visualizer component code on demand, with a
+The workspace loads board and visualizer component code on demand, with a
 loading indicator in the selected pane. Shared quest indexes remain available
 for complete prerequisite and filter derivation.
-Pan/zoom and temporary map expansion stay in session memory. Standard items link
+Standard items link
 open the [item-detail dialog](architecture.md#shared-ui-vocabulary-and-entity-links); quest-only pickups are
 informational. Persistent filter additions must follow [user-state](user-state.md).
 

@@ -2,7 +2,6 @@
 
 import {
 	Columns3,
-	Compass,
 	GitBranch,
 	History,
 	PanelTopClose,
@@ -104,14 +103,6 @@ export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
 					className={mode === "visualizer" ? undefined : "text-foreground"}
 				>
 					<GitBranch size={15} /> Visualizer
-				</Button>
-				<Button
-					selected={mode === "planner"}
-					aria-pressed={mode === "planner"}
-					onClick={() => setMode(mode === "planner" ? "details" : "planner")}
-					className={mode === "planner" ? undefined : "text-foreground"}
-				>
-					<Compass size={15} /> Raid planner
 				</Button>
 			</div>
 			<QuestLogImportDialog open={importOpen} onOpenChange={setImportOpen} quests={quests} />

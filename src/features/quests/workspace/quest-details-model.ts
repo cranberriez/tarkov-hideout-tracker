@@ -1,4 +1,3 @@
-import type { MapOverlayMarker } from "@/types/maps";
 import {
 	getTraderTierCompletionGate,
 	type TraderTierCompletionGate,
@@ -8,14 +7,12 @@ import { formatQuestUnlockTiming } from "../../../lib/quests/quest-relations";
 import type { FullQuest, QuestOtherRequirement, QuestWorkspaceQuest } from "@/types/quests";
 import { formatQuestMapSummary, type QuestMapGroup } from "../quest-map-groups";
 import type { QuestBranchLine } from "./quest-branch-graph";
-import { buildQuestDetailMarkers, createQuestDetailObjectiveStyles, getQuestDetailMaps } from "./quest-detail-markers";
+import { getQuestDetailMaps } from "./quest-detail-markers";
 import { buildObjectivePresentation } from "./quest-objective-presentation";
 
 export interface QuestDetailMapData {
 	questId: string;
 	maps: ReturnType<typeof getQuestDetailMaps>;
-	styles: ReturnType<typeof createQuestDetailObjectiveStyles>;
-	markersByMap: Map<string, MapOverlayMarker[]>;
 }
 
 interface BuildQuestDetailsModelOptions {
@@ -25,23 +22,10 @@ interface BuildQuestDetailsModelOptions {
 	maps: readonly QuestMapGroup[];
 	branchLines: readonly QuestBranchLine[];
 	multipleChoiceQuestIds: readonly string[];
-	completedObjectiveIds: ReadonlySet<string>;
 }
 
-export function buildQuestDetailMapData(
-	quest: FullQuest,
-	completedObjectiveIds: ReadonlySet<string>,
-): QuestDetailMapData {
-	const maps = getQuestDetailMaps(quest);
-	const styles = createQuestDetailObjectiveStyles(quest);
-	return {
-		questId: quest.id,
-		maps,
-		styles,
-		markersByMap: new Map(
-			maps.map((map) => [map.key, buildQuestDetailMarkers(quest, map.key, styles, completedObjectiveIds)]),
-		),
-	};
+export function buildQuestDetailMapData(quest: FullQuest): QuestDetailMapData {
+	return { questId: quest.id, maps: getQuestDetailMaps(quest) };
 }
 
 export function buildQuestDetailsModel({
@@ -51,7 +35,6 @@ export function buildQuestDetailsModel({
 	maps,
 	branchLines,
 	multipleChoiceQuestIds,
-	completedObjectiveIds,
 }: BuildQuestDetailsModelOptions) {
 	const essential = isEssentialQuest(quest.id);
 	const traderTierCompletionGates = quest.otherRequirements
@@ -92,7 +75,7 @@ export function buildQuestDetailsModel({
 			(left, right) => Number(left.kind === "special") - Number(right.kind === "special"),
 		),
 		multipleChoiceQuests: multipleChoiceQuestIds.flatMap((id) => questsById.get(id) ?? []),
-		mapData: buildQuestDetailMapData(quest, completedObjectiveIds),
+		mapData: buildQuestDetailMapData(quest),
 	};
 }
 

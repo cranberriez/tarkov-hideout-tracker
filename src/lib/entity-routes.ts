@@ -12,7 +12,7 @@ export function questHref(questId: string, devQuery: string | null = null) {
 
 /** Opens a quest workspace panel on arrival; the workspace strips the parameter once applied. */
 export const QUEST_VIEW_PARAM = "view";
-export const QUEST_VIEWS = ["board", "visualizer", "planner"] as const;
+export const QUEST_VIEWS = ["board", "visualizer"] as const;
 export type QuestView = (typeof QUEST_VIEWS)[number];
 
 export function questViewHref(view: QuestView) {

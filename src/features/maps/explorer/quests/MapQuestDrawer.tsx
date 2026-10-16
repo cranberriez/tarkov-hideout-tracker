@@ -18,7 +18,7 @@ import {
 	type QuestObjectiveCategory,
 } from "../../../quests/workspace/quest-workspace-utils";
 import { QuestObjectiveTypeTag } from "../../../quests/workspace/QuestObjectiveTypeTag";
-import { getRaidPlannerMapKey, isLocationOnRaidPlannerMap } from "../../../quests/workspace/raid-planner-maps";
+import { getCombinedMapKey, isObjectiveLocationOnMap } from "../../../quests/quest-map-match";
 import { CATEGORY_TYPES } from "./quest-map-markers";
 import { QuestMarkerGlyph } from "./QuestMarkerGlyph";
 
@@ -277,10 +277,10 @@ function QuestList({
 
 /** Whether an objective counts here: no map restriction, or this map among its maps. */
 function objectiveOnMap(objective: FullQuestObjective, mapKey: string) {
-	const key = getRaidPlannerMapKey(mapKey);
+	const key = getCombinedMapKey(mapKey);
 	return (
 		!objective.maps?.length ||
-		objective.maps.some((map) => [map.normalizedName, map.name].some((value) => getRaidPlannerMapKey(value) === key))
+		objective.maps.some((map) => [map.normalizedName, map.name].some((value) => getCombinedMapKey(value) === key))
 	);
 }
 
@@ -414,7 +414,7 @@ function QuestDetail({
 						{quest.objectives.map((objective) => {
 							const here = (objective.locations ?? []).some(
 								(location) =>
-									isLocationOnRaidPlannerMap(location, mapKey) && (location.position || location.outline.length),
+									isObjectiveLocationOnMap(location, mapKey) && (location.position || location.outline.length),
 							);
 							const done = !!visited?.[objective.id];
 							const keys = (objective.requiredKeyIds ?? []).map((group) =>
