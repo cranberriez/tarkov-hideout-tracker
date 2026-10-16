@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { CurrentRaid, Position, StatusResponse } from "@/features/sync/companion-contract";
+import type { CurrentRaid, GroupMember, Position, StatusResponse } from "@/features/sync/companion-contract";
 import {
 	appendTrail,
+	assignMemberColors,
 	BATCH_LIMIT,
 	FEED_LIMIT,
 	type BatchRecord,
@@ -73,6 +74,10 @@ interface CompanionSyncState extends PersistedSync {
 	raid: CurrentRaid | null;
 	/** Latest position, the recent trail (oldest first, current session) and how many position events arrived. */
 	position: { latest: Position | null; trail: Position[]; count: number };
+	/** Group members on the player's raid map, from the latest poll. Session only. */
+	group: GroupMember[];
+	/** Marker colour per member id, stable while they stay in the group. */
+	memberColors: Record<string, string>;
 	/** From `GET /v1/status`, fetched while the Sync page is open. */
 	companionStatus: StatusResponse | null;
 	/** Newest first. */
@@ -86,6 +91,7 @@ interface CompanionSyncState extends PersistedSync {
 	/** A raid entering `loading` starts a fresh trail. */
 	setRaid: (raid: CurrentRaid | null) => void;
 	setPosition: (latest: Position | null, added: readonly Position[]) => void;
+	setGroup: (group: GroupMember[]) => void;
 	setCompanionStatus: (status: StatusResponse | null) => void;
 	recordExchange: (exchange: Exchange) => void;
 	showNotice: (batchId: string) => void;
@@ -232,6 +238,8 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 			pairing: null,
 			raid: null,
 			position: { latest: null, trail: [], count: 0 },
+			group: [],
+			memberColors: {},
 			companionStatus: null,
 			exchanges: [],
 			notice: null,
@@ -252,6 +260,14 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 						count: state.position.count + added.length,
 					},
 				})),
+			setGroup: (group) =>
+				set((state) => ({
+					group,
+					memberColors: assignMemberColors(
+						group.map((member) => member.id),
+						state.memberColors,
+					),
+				})),
 			setCompanionStatus: (companionStatus) => set({ companionStatus }),
 			recordExchange: (exchange) => set((state) => ({ exchanges: [exchange, ...state.exchanges].slice(0, EXCHANGE_LIMIT) })),
 			showNotice: (batchId) =>
@@ -268,6 +284,8 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 					raid: null,
 					lastSyncAt: null,
 					position: { latest: null, trail: [], count: 0 },
+					group: [],
+					memberColors: {},
 					companionStatus: null,
 				}),
 			disconnect: () =>
@@ -286,6 +304,8 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 					pairing: null,
 					raid: null,
 					position: { latest: null, trail: [], count: 0 },
+					group: [],
+					memberColors: {},
 					companionStatus: null,
 					lastSyncAt: null,
 					notice: null,

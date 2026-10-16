@@ -5,6 +5,8 @@ import {
 	activeProfileKey,
 	addHandled,
 	appendTrail,
+	assignMemberColors,
+	MEMBER_COLORS,
 	buildFeedEntries,
 	capBatches,
 	describeNotice,
@@ -234,4 +236,10 @@ test("findRaidStart picks the newest live loading raid", () => {
 	});
 	assert.equal(findRaidStart([raid("a", "loading"), raid("b", "loading"), raid("c", "ended")])?.id, "b");
 	assert.equal(findRaidStart([raid("a", "loading", true)]), undefined);
+});
+
+test("assignMemberColors keeps colours while members stay and reuses freed ones", () => {
+	const first = assignMemberColors(["a", "b"], {});
+	assert.deepEqual(first, { a: MEMBER_COLORS[0], b: MEMBER_COLORS[1] });
+	assert.deepEqual(assignMemberColors(["b", "c"], first), { b: MEMBER_COLORS[1], c: MEMBER_COLORS[0] });
 });

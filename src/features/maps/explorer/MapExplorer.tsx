@@ -248,7 +248,7 @@ export function MapExplorer({
 
 	// Synced player (Mappinator): shown on its raid map; following centres on it and picks its floor.
 	const synced = useSyncedPlayer(mapKey);
-	const newestPosition = synced.players?.[0]?.positions.at(-1);
+	const newestPosition = synced.players?.find((track) => track.id === SELF_TRACK)?.positions.at(-1);
 	const [follow, setFollow] = useState(false);
 	const following = follow && synced.active;
 

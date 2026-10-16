@@ -29,10 +29,19 @@ export interface CurrentRaid {
 	recovered: boolean;
 }
 
+/** A group member on the player's raid map (latest position only). */
+export interface GroupMember {
+	id: string;
+	name: string;
+	position: Position;
+}
+
 export interface CurrentState {
 	scanner_running: boolean;
 	raid: CurrentRaid | null;
 	position: Position | null;
+	/** Other group members on the player's raid map. Absent from older Mappinator versions. */
+	group?: GroupMember[];
 }
 
 interface CompanionEventBase {

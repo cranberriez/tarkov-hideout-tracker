@@ -241,6 +241,21 @@ export function buildFeedEntries(
 	return entries;
 }
 
+/** Colours for group members in join order; the player's own marker keeps the theme accent. */
+export const MEMBER_COLORS = ["#5fb3f5", "#e57373", "#b39ddb", "#4dd0c4"] as const;
+
+/** Colour per member id, stable while they stay: kept colours stay, newcomers take the first free one. */
+export function assignMemberColors(ids: readonly string[], previous: Readonly<Record<string, string>>): Record<string, string> {
+	const next: Record<string, string> = {};
+	for (const id of ids) if (previous[id]) next[id] = previous[id];
+	for (const id of ids) {
+		if (next[id]) continue;
+		const used = Object.values(next);
+		next[id] = MEMBER_COLORS.find((color) => !used.includes(color)) ?? MEMBER_COLORS[used.length % MEMBER_COLORS.length];
+	}
+	return next;
+}
+
 export const TRAIL_LIMIT = 20;
 
 const positionKey = (position: Position) => `${position.captured_at}|${position.x}|${position.y}|${position.z}`;

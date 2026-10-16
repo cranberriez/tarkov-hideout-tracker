@@ -24,7 +24,7 @@ switcher. Raid tracking (positions, follow, scrubber, group members) and dev too
 were left out. Preferences live in `tarkov-map-explorer-preferences-v1`
 (see [user state](user-state.md)).
 
-While Mappinator sync is connected, the explorer draws the synced player (position trail, newest as a heading pointer, only positions taken on the shown map) through [useSyncedPlayer](../src/features/maps/explorer/useSyncedPlayer.ts). A crosshair button, shown only while sync is connected, follows the newest position and picks its floor; panning or choosing a floor stops following. Follow is off by default and is session state.
+While Mappinator sync is connected, the explorer draws the synced player (position trail, newest as a heading pointer, only positions taken on the shown map) through [useSyncedPlayer](../src/features/maps/explorer/useSyncedPlayer.ts). Group members Mappinator reports on the player's raid map (`state.group`, latest position only, session-only store state) are drawn as coloured peer markers with an initial badge; colours stay stable while a member stays in the group. A crosshair button, shown only while sync is connected, follows the newest position and picks its floor; panning or choosing a floor stops following. Follow is off by default and is session state.
 
 The map library is vendored in [tarkov-map](../src/features/maps/tarkov-map/) and
 kept close to upstream so it can be re-synced (it is excluded from lint). Local changes:

@@ -162,6 +162,7 @@ export async function runSyncOnce(): Promise<{ stop: boolean; fast: boolean }> {
 			store.setStatus("connected");
 			store.setLastSyncAt(Date.now());
 			store.setRaid(result.data.state.raid);
+			store.setGroup(result.data.state.group ?? []);
 			const phase = result.data.state.raid?.phase;
 			return { stop: false, fast: phase === "loading" || phase === "in_raid" };
 		}
