@@ -69,8 +69,8 @@ function mapExplorerQueryOptions(mode: TarkovJsonGameMode, mapKey: string) {
 	});
 }
 
-/** Item icons at icon size: loot dots and card rows never draw them larger than 28px. */
-const explorerAssets: MapAssets = { ...webAssets, item: (id) => standardItemImageUrl(id, "icon") };
+/** Item art at 512px: transparent and square, unlike the `icon` variant whose baked-in background frame is off-centre for non-square items. */
+const explorerAssets: MapAssets = { ...webAssets, item: (id) => standardItemImageUrl(id, "512") };
 
 /**
  * Full-screen interactive map (ported from tarkov-mappinator's map page, without raid tracking): vector art or tiles
