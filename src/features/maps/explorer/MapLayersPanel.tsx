@@ -18,13 +18,11 @@ import {
 import { AllFloorsIcon, CaretIcon, PinIcon, ResetIcon } from "./icons";
 import { PRESET_SLOTS } from "./useMapExplorerPreferences";
 
-export type BuiltInPreset = { key: string; label: string; description: string };
-
 /**
  * Tiered marker filter (ported from tarkov-mappinator): each layer row switches the whole layer, the rows under it
  * switch its groups; the floors button beside a layer keeps its markers visible on other floors. Groups the map has
  * no markers for are left out. Layers fold behind a caret; three slots save and restore the switches (right click a
- * saved slot to overwrite or clear it). Built-in visibility presets sit under the bar.
+ * saved slot to overwrite or clear it).
  */
 export function MapLayersPanel({
 	layers,
@@ -38,9 +36,6 @@ export function MapLayersPanel({
 	onCollapse,
 	presets: stored,
 	onPresets,
-	builtIns,
-	activeBuiltIn,
-	onBuiltIn,
 	preset: markerPreset = tarkovPreset,
 }: {
 	layers: LayerDef[];
@@ -54,9 +49,6 @@ export function MapLayersPanel({
 	onCollapse: (collapsed: Record<string, boolean>) => void;
 	presets: (Filters | null)[];
 	onPresets: (presets: (Filters | null)[]) => void;
-	builtIns: readonly BuiltInPreset[];
-	activeBuiltIn: string | undefined;
-	onBuiltIn: (key: string) => void;
 	preset?: MarkerPreset;
 }) {
 	const { icon: iconSrc, link: assetUrl } = useMapAssets();
@@ -158,22 +150,6 @@ export function MapLayersPanel({
 					</>
 				)}
 			</div>
-			{open && (
-				<div className="preset-chips" role="group" aria-label="Visibility presets">
-					{builtIns.map((builtIn) => (
-						<button
-							key={builtIn.key}
-							type="button"
-							className={`preset-chip ${builtIn.key === activeBuiltIn ? "active" : ""}`}
-							aria-pressed={builtIn.key === activeBuiltIn}
-							title={builtIn.description}
-							onClick={() => onBuiltIn(builtIn.key)}
-						>
-							{builtIn.label}
-						</button>
-					))}
-				</div>
-			)}
 			{open && (
 				<div className="layers-list">
 					{shown.length ? (

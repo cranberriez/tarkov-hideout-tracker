@@ -46,7 +46,7 @@ import { MapMarkerCard } from "./MapMarkerCard";
 import { MapFloorPanel, MapSwitcher } from "./MapPanels";
 import { bestLooseItems, looseItemIds, useMapItems } from "./useMapItems";
 import { useMapExplorerPreferences } from "./useMapExplorerPreferences";
-import { matchingPreset, presetFilters } from "./visibility-presets";
+import { presetFilters } from "./visibility-presets";
 
 type MapExplorerData = { map: GameMapData; lookups: Lookups };
 
@@ -71,7 +71,6 @@ function mapExplorerQueryOptions(mode: TarkovJsonGameMode, mapKey: string) {
 
 /** Item icons at icon size: loot dots and card rows never draw them larger than 28px. */
 const explorerAssets: MapAssets = { ...webAssets, item: (id) => standardItemImageUrl(id, "icon") };
-const builtIns = MAP_VISIBILITY_PRESETS.map(({ key, label, description }) => ({ key, label, description }));
 
 /**
  * Full-screen interactive map (ported from tarkov-mappinator's map page, without raid tracking): vector art or tiles
@@ -136,11 +135,6 @@ export function MapExplorer({
 		url.searchParams.delete("preset");
 		window.history.replaceState(window.history.state, "", url);
 	}, [data, layerDefs, setFilters]);
-	const activeBuiltIn = data ? matchingPreset(MAP_VISIBILITY_PRESETS, filters, layerDefs)?.key : undefined;
-	const applyBuiltIn = (key: string) => {
-		const preset = MAP_VISIBILITY_PRESETS.find((candidate) => candidate.key === key);
-		if (preset) setFilters(presetFilters(preset, layerDefs));
-	};
 
 	// Hovering previews a marker's card; clicking pins it until closed (X, Escape, clicking it again) or another is clicked.
 	const [hovered, setHovered] = useState<string | null>(null);
@@ -227,9 +221,6 @@ export function MapExplorer({
 						onCollapse={(collapsed) => setPreferences({ collapsed })}
 						presets={preferences.slots}
 						onPresets={(slots) => setPreferences({ slots })}
-						builtIns={builtIns}
-						activeBuiltIn={activeBuiltIn}
-						onBuiltIn={applyBuiltIn}
 					/>
 					<div className="map-left-bottom">
 						{floors.length > 0 && (

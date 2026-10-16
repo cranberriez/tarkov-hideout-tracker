@@ -50,12 +50,6 @@ maintain a copied interface in documentation.
 
 ### Battle pass progress
 
-Document-map navigation is independent of player progress. The `map` URL query
-selects the shared map; a namespaced browser-history snapshot stores the view's
-zoom, pan, hidden document types, and map color preference per entry. It merges with
-existing Next.js history metadata and is validated on restore. This transient
-state adds no local-storage key, profile field, migration, backup, or reset behavior.
-
 [useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
 `tarkov-battle-pass-{seasonId}-v1`, an independent account-wide save for each
 season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
@@ -119,7 +113,7 @@ PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
 (displaying Everything when no goals exist). Reads normalize invalid fields
 without writing, edits preserve unknown preferences, and the external-store
 helper synchronizes open consumers and browser tabs. Page navigation position
-and the separate document-map history state remain transient. No profile
+remains transient. No profile
 migration, backup, or reset scope changes.
 The **Possible progress** toggle previews
 the current plan in page and slot order with one shared owned-document pool,

@@ -30,8 +30,6 @@ import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 export function Navbar() {
 	const gameMode = useUserStore((state) => state.gameMode);
 	const profileScope = useProfileStorageScope(gameMode);
-	const currentPage = usePathname();
-	if (currentPage === "/battle-pass/map") return null;
 	return <NavbarContent key={profileScope} />;
 }
 

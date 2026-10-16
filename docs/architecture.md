@@ -31,23 +31,21 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
 | `/season-1`                                        | [Season 1 overview](../src/app/season-1/page.tsx): estimated season countdown, saved battle pass completion/goals and document coverage; static data and existing client progress only, no server reads |
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; under the available season main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
-| `/battle-pass/map`                                 | [Document map](../src/app/battle-pass/map/page.tsx): full-viewport interactive document spawn maps without site navigation; lazy client rendering and native browser history |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
 Maps follows Quests in the main navigation, with one link per explorer map.
-The available season follows Maps, with Overview, Battle Pass and
-Docs Maps links. It is available in every mode before and after setup, including
-a compact direct overview link on mobile. Battle Pass routes activate this menu;
-the full-viewport document map still hides site navigation.
+The available season follows Maps, with Overview and Battle Pass links.
+It is available in every mode before and after setup, including a compact direct overview link on mobile.
+Battle Pass routes activate this menu.
 Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
-is at `/season-2`. Battlepass and map links carry `?season=season-1` or
+is at `/season-2`. Battlepass links carry `?season=season-1` or
 `?season=season-2`. Without an explicit season, KORD uses its selected character
 and permanent profiles use the available season. Test content is clearly labeled
 as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
 
 Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
-is at `/season-2`. Battlepass and map links carry `?season=season-1` or
+is at `/season-2`. Battlepass links carry `?season=season-1` or
 `?season=season-2`. Without an explicit season, KORD uses its selected character
 and permanent profiles use the available season. Test content is clearly labeled
 as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
@@ -92,13 +90,8 @@ consumption toggle aligned right and retained in list view. The same toggle also
 appears below Total in the document panel. Reward document costs turn green with
 a checkmark when the effective owned balance covers that displayed cost.
 Locations expands below the overview with map columns and an optional comparison table.
-The overview's Document map link opens the lazily loaded
-[/battle-pass/map route](../src/app/battle-pass/map/page.tsx), filling the viewport
-without site navigation. Native browser Back and Forward leave and return to the
-map. Close and Escape navigate to `/battle-pass`, retaining the map history entry, including
-when the map URL was opened directly. Saved progress is shared with the Battle
-Pass page; page-local display controls initialize when that page mounts.
-Document-map rendering and source data are described in [maps](maps.md).
+The overview's Document map link opens the [maps explorer](maps.md#battle-pass-document-maps)
+with the Documents preset.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)

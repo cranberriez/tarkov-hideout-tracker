@@ -1,8 +1,5 @@
 import snapshot from "./data/season-1-battle-pass.json";
 import locationSummary from "./data/season-1-document-locations.json";
-import mapSnapshot from "./data/battle-pass-map-data.json";
-import backgrounds from "./data/battle-pass-map-backgrounds.json";
-import imagePaths from "./data/battle-pass-map-images.json";
 import { documentItemIds } from "../features/battle-pass/lib/battle-pass-inventory";
 import { documentLocationArtwork } from "../features/battle-pass/lib/battle-pass-document-artwork";
 import { documentMarks, mapOrder, tileSpans } from "../features/battle-pass/lib/battle-pass-display";
@@ -13,7 +10,6 @@ import {
 	type CostSwaps,
 	type PassPage,
 } from "../features/battle-pass/lib/battle-pass-model";
-import type { BattlePassDocumentMap, BattlePassDocumentLocation, BattlePassMapSource } from "./battle-pass-map-data";
 function createData(seasonId: SeasonId) {
 	const pass = structuredClone(snapshot.battlePass);
 	const pages: PassPage[] = pass.pages.map((page) => ({
@@ -50,15 +46,13 @@ function createData(seasonId: SeasonId) {
 			Object.entries(tileSpans).map(([id, span]) => [id.replace("season-1", seasonId), span]),
 		),
 		mapThumbnails: Object.fromEntries(
-			mapSnapshot.maps.map((map) => [map.slug, `/images/battle-pass/maps/${map.slug}.webp`]),
+			mapOrder.map((name) => {
+				const slug = name.toLowerCase().replaceAll(" ", "-");
+				return [slug, `/images/battle-pass/maps/${slug}.webp`];
+			}),
 		),
 		locations: summary,
 		mapNames: summary.mapsByDocumentKey as Record<string, string[]>,
-		documentMaps: structuredClone(mapSnapshot.maps) as BattlePassDocumentMap[],
-		documentLocations: structuredClone(mapSnapshot.locations) as BattlePassDocumentLocation[],
-		mapSource: structuredClone(mapSnapshot.source) as BattlePassMapSource,
-		backgrounds: structuredClone(backgrounds),
-		imagePaths: { ...imagePaths } as Record<string, string>,
 	};
 }
 export type BattlePassData = ReturnType<typeof createData>;

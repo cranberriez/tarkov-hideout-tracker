@@ -271,29 +271,6 @@
 	background: var(--me-accent-soft);
 }
 
-/* Built-in visibility presets, beside the layers panel's own preset slots. */
-.map-explorer .preset-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-	padding: 2px 4px 4px;
-}
-.map-explorer .preset-chip {
-	height: 22px;
-	padding: 0 8px;
-	border-radius: 11px;
-	font-size: 11px;
-	color: var(--me-muted);
-	background: rgb(255 255 255 / 4%);
-}
-.map-explorer .preset-chip:hover {
-	color: var(--me-text);
-}
-.map-explorer .preset-chip.active {
-	color: var(--me-accent);
-	background: var(--me-accent-soft);
-}
-
 /* Map overlay markers */
 .map-explorer .overlay-marker {
 	position: absolute;

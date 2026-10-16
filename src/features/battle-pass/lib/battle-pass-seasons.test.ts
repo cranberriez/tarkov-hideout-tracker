@@ -18,11 +18,7 @@ test("season registries retain Season 1 IDs/key and independently own placeholde
 	for (const key of [
 		"pages",
 		"documents",
-		"documentMaps",
-		"documentLocations",
 		"locations",
-		"backgrounds",
-		"imagePaths",
 		"documentLocationArtwork",
 	] as const)
 		assert.notEqual(one[key], two[key]);

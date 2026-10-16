@@ -27,6 +27,9 @@ export function isMapExplorerMapKey(value: string): value is MapExplorerMapKey {
 	return MAP_EXPLORER_MAPS.some((map) => map.key === value);
 }
 
+/** The maps index opened with only Battle Pass documents and extracts showing. */
+export const DOCUMENT_MAPS_HREF = "/maps?preset=documents";
+
 export function mapExplorerHref(key: MapExplorerMapKey, preset?: MapVisibilityPresetKey | null): string {
 	return `/maps/${key}${preset && preset !== DEFAULT_MAP_VISIBILITY_PRESET ? `?preset=${preset}` : ""}`;
 }
@@ -71,13 +74,6 @@ export const MAP_VISIBILITY_PRESETS = [
 		description: "Boss spawns, hazards and stationary weapons",
 		layers: ["bosses", "hazards", "other", "extracts"],
 		allGroups: ["bosses", "hazards"],
-	},
-	{
-		key: "keys",
-		label: "Keys & switches",
-		description: "Locked doors, trunks and switches",
-		layers: ["access", "extracts"],
-		allGroups: ["access"],
 	},
 ] as const satisfies readonly MapVisibilityPreset[];
 

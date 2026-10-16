@@ -10,10 +10,10 @@ tarkov-mappinator; the two do not share code yet.
 
 `/maps` lists the explorer maps from [map-explorer config](../src/lib/cfg/map-explorer.ts),
 which also feeds the Maps nav menu. Its visibility presets (Standard, Documents,
-Extracts & spawns, Loot, Bosses & hazards, Keys & switches) are links: the chosen
+Extracts & spawns, Loot, Bosses & hazards) are links: the chosen
 preset rides on each map link as `?preset=`, is applied once the map's layers are
-known, and is then dropped from the URL. The same presets sit under the layers
-panel bar on the map. A preset lists the layers it shows; every other layer, including
+known, and is then dropped from the URL. They are only offered on `/maps`, not on
+the map itself. A preset lists the layers it shows; every other layer, including
 groups that only exist in a map's data, is switched off.
 
 `/maps/[mapKey]` renders the client-only [MapExplorer](../src/features/maps/explorer/MapExplorer.tsx)
@@ -138,141 +138,15 @@ visible when changing the viewer.
 
 ## Battle-pass document maps
 
-The battle-pass overview opens a separate, lazily loaded
-[document map view](../src/features/battle-pass/components/BattlePassMapView.tsx)
-at `/battle-pass/map`, without site navigation. Browser back and forward navigate
-between the overview and the map. The `map` query parameter selects a map by slug
-(for example, `/battle-pass/map?map=reserve`). Each history entry retains zoom,
-pan, document filters, and the grayscale/color setting; changing maps creates an entry, while
-changing the view or filters updates the current entry. Shared links select the
-map with default view and filters, and unknown slugs fall back to Factory.
-Grayscale fades smoothly when toggled or adjusted (unless reduced motion is enabled).
-While active, a vertical slider below the color button sets its intensity from 100% at
-the top to 0% at the bottom. Intensity starts at 10% and stays local to the open
-map view, including map switches; it is not saved in browser history or player data.
-This view uses the document palette and artwork,
-with a scenic map switcher floating across the top and each map's two document icons.
-The switcher fits the viewport, wrapping on narrow screens without horizontal scrolling.
-The selector has no background panel, and the map extends behind it. A permanent
-vertical icon stack below the selector at the right offers a prominent red Close,
-Hide/Show maps, and Documents, matching the map controls at the left. Hide collapses
-only the selector and keeps focus on its toggle; both control stacks move upward.
-Documents opens an interactive floating panel beside the controls using the
-overview's remaining-cost and inventory model:
-saved reward goals when present, otherwise all remaining rewards. Owned balances
-and collection preferences use the existing battle-pass actions and active-profile
-inventory; opening the panel does not write saves. Its toggle or a click outside
-dismisses it. Escape dismisses the panel and restores focus to Documents before
-Escape can close the map. Location previews stay hidden while the panel is open.
-Selector document artwork is enlarged with a
-dark shadow for contrast against the scenic backgrounds.
-Document-type filters and source-reported per-raid counts float over the map at the bottom
-center. Locations on all floors remain visible, including unspecified floors; separate
-floor panels remain part of the map artwork. Legacy floor filters in browser history
-are ignored. Possible location counts are separate from per-raid
-document counts. Lock badges identify source records with a required key.
-Above the grayscale button, the lock toggle hides locations requiring a key and
-the group toggle disables clustering at every zoom, leaving each icon at its source
-position. Both toggles start off and stay local to the open map view across map
-switches. Reset filters also turns off the lock filter. Document marker and type-filter
-borders are 2px; grouped markers have a 3px outline.
-Hover or keyboard focus opens a large location-photo preview; clicking pins it.
-The preview header groups the document icon with its type and location name.
-Closing the map returns to the battle-pass overview without changing saved
-progress. View state is stored in a namespaced browser-history field, preserving
-Next.js history metadata; it does not write player saves or local storage.
-Document markers use rounded silhouettes and shrink smoothly to 75% size at fit zoom.
-Grouping uses the larger displayed footprints so crowded bubbles combine sooner.
-Markers may overlap, but never shift away from their source anchors or clamp to
-viewport edges. Tightly packed locations at lower zoom share a white-outlined artwork grid at
-one member's source position. Each contained location contributes its document
-artwork, in up to two columns for two to four locations and three columns for five
-or more. Selecting the group opens a list of all member locations,
-including their document types, key requirements, and individual photo previews.
-Groups whose displayed artwork grids overlap by more than 25% of the smaller
-bubble merge, including overlaps introduced by a newly enlarged group. Each merge
-keeps a member source anchor. Grouping is rebuilt from source positions on zoom,
-so zooming in separates the groups. At 6.6� zoom (the last 20% of the 1ז8�
-range), all groups split into individual anchored markers, including coincident
-locations. Zooming back out enables grouping again.
-Ungrouped markers always show their document artwork, even when overlapping;
-compact symbol substitutes are never used.
-The document map allows panning up to half the scaled artwork's
-width or height beyond the usual edge limits; other map viewers retain their
-existing pan bounds. Basemaps start in grayscale, with a color toggle beside the
-zoom and reset controls. The color choice carries across map switches and is
-restored with its history entry. Document colors and location photos remain in color.
-
-Document locations use native image-pixel coordinates and their matching source
-map layers. They are not world-space quest coordinates and must not be passed
-through the quest map projection or plotted on a replacement basemap without a
-verified transform. The shared pan/zoom utilities can still be reused.
-
-The [background registry](../src/lib/data/battle-pass-map-backgrounds.json) records
-verified Tarkov.dev raster replacements, dimensions, registrations, and landmark
-evidence. Ground Zero, Icebreaker, Lighthouse, Reserve, Shoreline, Streets, and
-Woods currently use same-canvas originals with their full colors and labels;
-these have the same resolution as the source backgrounds. Factory uses re3mr's
-6720 × 3328 full-color sheet with separate top, middle, ground, and tunnels panels.
-Its source overview combines these floors, so every document has a manually
-registered target position keyed by ID and its original coordinates, floor, and
-layer. Wall corners, stairs, corridor bends, and reactor centers provide the
-recorded artwork correspondences; this does not independently verify in-game
-spawns or resolve source room/title inconsistencies. The five source-unconfirmed
-Factory locations remain unconfirmed. The basement body anchor outside the
-source's drawn basement inset retains its position relative to the shared ground
-geometry, as recorded in its calibration note. Customs uses monkimonkimonk's
-7680 × 4025 full-color sheet, modified by GBchaosmaster, in place of its
-4097 × 2142 source overview. All 30 source anchors have individual registrations:
-local building and road geometry locates overview anchors, and matched room walls,
-stairs, and corridor partitions locate inset anchors. The industrial plant, Fortress, and
-Crackhouse floor plans exchange sides; the three-story dorm's third-floor plan
-moves from the left to the right. These local registrations preserve the source
-room-relative positions without applying a whole-image scale. Changed room labels,
-source title inconsistencies, and source verification statuses remain source data;
-artwork matching does not independently verify in-game spawns. Calibration notes
-record local visual uncertainty rather than claiming zero registration error.
-Interchange, The Lab, and The Labyrinth retain their source images because their
-alternate artwork or floor layouts do not have verified registrations. The
-[background resolver](../src/features/battle-pass/lib/battle-pass-map-background.ts)
-validates registrations before projecting markers. Manual registrations require
-complete unique source coverage, matching source image and dimensions, unchanged
-coordinates/floors/layers, and target positions within the replacement canvas.
-Incomplete or stale calibrations restore the complete original view; manual
-projection requires a calibrated document ID. Image failures or unexpected
-replacement dimensions restore the original image and coordinates together.
-Document IDs, lock metadata, and location photos are unchanged by projection.
-
-The committed source snapshot is refreshed explicitly from the structured public
-map-page data at [TarkovDoc](https://tarkovdoc.com/maps/), with typed exports in
-[battle-pass-map-data](../src/lib/battle-pass-map-data.ts). Source links and asset
-attribution remain visible in the map view. Source verification status is retained;
-unconfirmed locations and missing photos must remain explicit. Backgrounds and
-location photos are bundled under `public/images/battle-pass/map-assets`, with a
-[local image manifest](../src/lib/data/battle-pass-map-images.json) mapping source
-URLs to files. Source records remain intact for registration validation and attribution.
-The viewer uses lazy-loaded Next.js `Image` for backgrounds, photos, and local map
-thumbnails, retaining loading, failure, and original-background fallback states.
-Basemaps use `unoptimized` to preserve full-resolution zoom and native-dimension
-checks; photos and thumbnails use responsive optimization.
-
-Refresh with `node scripts/extract-battle-pass-map-data.mjs --download`.
-The extractor validates the complete map set, document keys, unique location IDs,
-layer dimensions, and coordinate bounds before replacing the generated snapshot.
-Failed or incomplete pulls leave the previous snapshot intact.
-After refreshing source data or background registrations, run
-`node scripts/pull-battle-pass-map-images.mjs` to bundle the referenced images.
-It reuses existing files, validates image headers and replacement canvas sizes,
-and publishes the manifest only after all assets succeed. To refresh an existing
-image, remove only its bundled file before running the command again.
+Battle Pass document locations are a layer of the [maps explorer](#maps-explorer).
+The Battle Pass overview and Season overview link to
+`/maps?preset=documents`, which opens maps with only documents and extracts shown.
+Location photos stay bundled under
+`public/images/battle-pass/map-assets/tarkovdoc.com/assets/previews`.
 
 ## Validation
 
 ```bash
-node --test scripts/extract-battle-pass-map-data.test.mjs
-node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-layout.test.ts
-node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-background.test.ts src/features/battle-pass/lib/battle-pass-map-controls.test.ts
-node --test --import jiti/register src/features/battle-pass/lib/battle-pass-map-navigation.test.ts
 node --test --import jiti/register src/features/maps/map-projection.test.ts src/features/maps/map-floor-resolution.test.ts src/features/maps/map-view-transform.test.ts src/server/services/map-render-definitions.test.ts src/server/services/map-svg-layers.test.ts src/server/services/map-navigation-overlays.test.ts
 node --test --import jiti/register src/features/quests/workspace/quest-detail-markers.test.ts src/features/quests/workspace/raid-planner-markers.test.ts
 node --test scripts/pull-map-overlays.test.mjs
@@ -281,17 +155,14 @@ node --test scripts/pull-map-overlays.test.mjs
 For visible changes, verify rotated maps, multi-floor maps, unsupported maps,
 coincident objectives, visited-objective undo, and narrow/wide layouts as relevant.
 
-## Seasonal document map ownership
+## Seasonal document ownership
 
 [battle-pass-seasons.ts](../src/lib/battle-pass-seasons.ts) associates each season
-with its pass rewards, document IDs, location summaries, marker records, map
-background registrations, image paths, thumbnails and artwork. Test currently
-uses an independent clone of the Season 1 snapshot and is labeled as placeholder
-data. Replace Test's registry data when reviewed Season 2 data is available;
-retain Season 1's snapshot and stable entity IDs.
-
-The document map accepts an explicit `season` query parameter. Map selection,
-loading/close links and battlepass navigation retain that parameter, so opening
-an old season does not silently switch its map to the current pass. Character
-inventory and account-wide pass progress follow the season scopes documented in
+with its pass rewards, document IDs, location summaries, thumbnails and artwork.
+Test currently uses an independent clone of the Season 1 snapshot and is labeled
+as placeholder data. Replace Test's registry data when reviewed Season 2 data is
+available; retain Season 1's snapshot and stable entity IDs. Map document
+locations in [documents.ts](../src/features/maps/tarkov-map/documents.ts) are
+season-specific and not yet keyed by season. Character inventory and
+account-wide pass progress follow the season scopes documented in
 [user state](user-state.md#battle-pass-progress).

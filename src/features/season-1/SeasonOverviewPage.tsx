@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight, FileText, Map, Trophy } from "lucide-react";
 import { Artwork } from "@/features/battle-pass/components/ui/Artwork";
 import { BattlePassSeason, useBattlePassData } from "@/features/battle-pass/BattlePassSeason";
+import { DOCUMENT_MAPS_HREF } from "@/lib/cfg/map-explorer";
 import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
 import { battlePassPageHref } from "@/features/battle-pass/lib/battle-pass-page-link";
 import { useBattlePass } from "@/features/battle-pass/useBattlePass";
@@ -82,7 +83,7 @@ function SeasonOverviewContent() {
 						<Trophy size={16} />
 						Battle Pass
 					</Link>
-					<Link href={"/battle-pass/map?season=" + seasonId} className={linkStyle}>
+					<Link href={DOCUMENT_MAPS_HREF} className={linkStyle}>
 						<Map size={16} />
 						Docs Maps
 					</Link>

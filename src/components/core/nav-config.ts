@@ -103,7 +103,6 @@ export const navMenus: NavMenu[] = [
 		children: [
 			{ name: "Overview", href: "/season-1", icon: House },
 			{ name: "Battle Pass", href: "/battle-pass", icon: Goal },
-			{ name: "Docs Maps", href: "/battle-pass/map", icon: Map },
 		],
 	},
 ];

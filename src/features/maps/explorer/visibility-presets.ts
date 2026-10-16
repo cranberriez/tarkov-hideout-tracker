@@ -1,5 +1,5 @@
 import type { MapVisibilityPreset } from "@/lib/cfg/map-explorer";
-import { defaultFilters, groupOn, sameFilters, type Filters, type LayerDef } from "../tarkov-map";
+import { defaultFilters, groupOn, type Filters, type LayerDef } from "../tarkov-map";
 
 /**
  * The filters a built-in visibility preset stands for on one map. `layers` are the map's layer definitions
@@ -22,11 +22,3 @@ export function presetFilters(preset: MapVisibilityPreset, layers: LayerDef[]): 
 	);
 }
 
-/** The built-in preset the filters match on this map, if any. */
-export function matchingPreset<T extends MapVisibilityPreset>(
-	presets: readonly T[],
-	filters: Filters,
-	layers: LayerDef[],
-): T | undefined {
-	return presets.find((preset) => sameFilters(presetFilters(preset, layers), filters));
-}
