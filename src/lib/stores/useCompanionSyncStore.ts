@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { CurrentRaid, Position, StatusResponse } from "@/features/sync/companion-contract";
 import {
+	appendTrail,
 	BATCH_LIMIT,
 	FEED_LIMIT,
 	type BatchRecord,
@@ -47,6 +48,13 @@ export interface Exchange {
 	body: string;
 }
 
+export type RaidNoticeMap = { raw: string; normalizedName: string | null };
+
+export type SyncNoticeState = { nonce: number } & (
+	| { kind: "quest"; batchId: string }
+	| { kind: "raid"; profile: ProfileKey | null; map: RaidNoticeMap | null }
+);
+
 interface PersistedSync {
 	connection: CompanionConnection | null;
 	cursor: SyncCursor | null;
@@ -63,23 +71,25 @@ interface CompanionSyncState extends PersistedSync {
 	lastSyncAt: number | null;
 	pairing: PairingProgress | null;
 	raid: CurrentRaid | null;
-	/** Latest position and how many position events arrived this session. */
-	position: { latest: Position | null; count: number };
+	/** Latest position, the recent trail (oldest first, current session) and how many position events arrived. */
+	position: { latest: Position | null; trail: Position[]; count: number };
 	/** From `GET /v1/status`, fetched while the Sync page is open. */
 	companionStatus: StatusResponse | null;
 	/** Newest first. */
 	exchanges: Exchange[];
-	/** Batch to announce in the corner notice. */
-	notice: { batchId: string; nonce: number } | null;
+	/** What the corner notice announces: an applied quest batch or a raid starting. */
+	notice: SyncNoticeState | null;
 	commit: (update: (state: PersistedSync) => Partial<PersistedSync>) => void;
 	setStatus: (status: SyncStatus) => void;
 	setLastSyncAt: (at: number | null) => void;
 	setPairing: (pairing: PairingProgress | null) => void;
+	/** A raid entering `loading` starts a fresh trail. */
 	setRaid: (raid: CurrentRaid | null) => void;
-	setPosition: (latest: Position | null, added: number) => void;
+	setPosition: (latest: Position | null, added: readonly Position[]) => void;
 	setCompanionStatus: (status: StatusResponse | null) => void;
 	recordExchange: (exchange: Exchange) => void;
 	showNotice: (batchId: string) => void;
+	showRaidNotice: (raid: { profile: ProfileKey | null; map: RaidNoticeMap | null }) => void;
 	clearNotice: () => void;
 	connect: (connection: CompanionConnection) => void;
 	/** Clears connection, cursor and queues; keeps handled ids, the feed and batches. */
@@ -221,7 +231,7 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 			lastSyncAt: null,
 			pairing: null,
 			raid: null,
-			position: { latest: null, count: 0 },
+			position: { latest: null, trail: [], count: 0 },
 			companionStatus: null,
 			exchanges: [],
 			notice: null,
@@ -229,12 +239,25 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 			setStatus: (status) => set({ status }),
 			setLastSyncAt: (lastSyncAt) => set({ lastSyncAt }),
 			setPairing: (pairing) => set({ pairing }),
-			setRaid: (raid) => set({ raid }),
+			setRaid: (raid) =>
+				set((state) => {
+					const starting = raid?.phase === "loading" && state.raid?.phase !== "loading";
+					return starting ? { raid, position: { ...state.position, trail: [] } } : { raid };
+				}),
 			setPosition: (latest, added) =>
-				set((state) => ({ position: { latest: latest ?? state.position.latest, count: state.position.count + added } })),
+				set((state) => ({
+					position: {
+						latest: latest ?? state.position.latest,
+						trail: appendTrail(state.position.trail, latest ? [...added, latest] : added),
+						count: state.position.count + added.length,
+					},
+				})),
 			setCompanionStatus: (companionStatus) => set({ companionStatus }),
 			recordExchange: (exchange) => set((state) => ({ exchanges: [exchange, ...state.exchanges].slice(0, EXCHANGE_LIMIT) })),
-			showNotice: (batchId) => set((state) => ({ notice: { batchId, nonce: (state.notice?.nonce ?? 0) + 1 } })),
+			showNotice: (batchId) =>
+				set((state) => ({ notice: { kind: "quest", batchId, nonce: (state.notice?.nonce ?? 0) + 1 } })),
+			showRaidNotice: ({ profile, map }) =>
+				set((state) => ({ notice: { kind: "raid", profile, map, nonce: (state.notice?.nonce ?? 0) + 1 } })),
 			clearNotice: () => set({ notice: null }),
 			connect: (connection) =>
 				set({
@@ -244,7 +267,7 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 					pairing: null,
 					raid: null,
 					lastSyncAt: null,
-					position: { latest: null, count: 0 },
+					position: { latest: null, trail: [], count: 0 },
 					companionStatus: null,
 				}),
 			disconnect: () =>
@@ -262,7 +285,7 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 					status: "idle",
 					pairing: null,
 					raid: null,
-					position: { latest: null, count: 0 },
+					position: { latest: null, trail: [], count: 0 },
 					companionStatus: null,
 					lastSyncAt: null,
 					notice: null,

@@ -36,12 +36,13 @@ import {
 	type MapMarker,
 	type TarkovMapHandle,
 } from "../tarkov-map";
-import { CoinIcon, LayersIcon, MinusIcon, PlusIcon, SplitIcon, TerrainIcon } from "./icons";
+import { CoinIcon, CrosshairIcon, LayersIcon, MinusIcon, PlusIcon, SplitIcon, TerrainIcon } from "./icons";
 import { MapLayersPanel } from "./MapLayersPanel";
 import { MapMarkerCard } from "./MapMarkerCard";
 import { MapFloorPanel, MapSwitcher } from "./MapPanels";
 import { bestLooseItems, looseItemIds, useMapItems } from "./useMapItems";
 import { useMapExplorerPreferences } from "./useMapExplorerPreferences";
+import { SELF_TRACK, useSyncedPlayer } from "./useSyncedPlayer";
 import { presetFilters } from "./visibility-presets";
 import { MapQuestDrawer, type QuestFocus } from "./quests/MapQuestDrawer";
 import { CATEGORY_TYPES, explorerPreset, questLayerFor, QUEST_LAYER } from "./quests/quest-map-markers";
@@ -245,21 +246,40 @@ export function MapExplorer({
 		[colors],
 	);
 
-	// Floors: the chosen floor, or all floors (null). A pinned marker shows its own floor until unpinned.
+	// Synced player (Mappinator): shown on its raid map; following centres on it and picks its floor.
+	const synced = useSyncedPlayer(mapKey);
+	const newestPosition = synced.players?.[0]?.positions.at(-1);
+	const [follow, setFollow] = useState(false);
+	const following = follow && synced.active;
+
+	// Floors: the followed player's, else the chosen floor, or all floors (null). A pinned marker shows its own floor until unpinned.
 	const floors = useMemo(() => (calibration?.layers.length ? floorsOf(calibration) : []), [calibration]);
 	const [chosenFloor, setChosenFloor] = useState<FloorSelection>(null);
+	const followedFloor = calibration && floors.length && newestPosition ? floorAt(calibration, newestPosition).id : null;
 	const pinnedMarker = pinned ? overlayById.get(pinned) : undefined;
 	const pinFloor =
 		pinned && calibration && floors.length
 			? (pinnedMarker ? floorOf(calibration, pinnedMarker) : baseFloor(calibration)).id
 			: undefined;
-	const shownFloor = calibration ? floorById(calibration, pinFloor ?? chosenFloor) : null;
+	const shownFloor = calibration ? floorById(calibration, pinFloor ?? (following ? followedFloor : chosenFloor)) : null;
 	const floor: FloorSelection = shownFloor?.id ?? null;
-	/** Picking a floor takes over from a pinned marker's floor; while split, it goes to the floor's column. */
+	/** Picking a floor takes over from following and from a pinned marker's floor; while split, it goes to the floor's column. */
 	const chooseFloor = (id: FloorSelection) => {
 		setPinned(null);
+		setFollow(false);
 		if (split) map.current?.focusFloor(id);
 		else setChosenFloor(id);
+	};
+	/** Turning follow off by hand goes back to all floors. */
+	const toggleFollow = () => {
+		if (following) setChosenFloor(null);
+		setFollow(!following);
+	};
+	/** Panning stops following but keeps the floor it was showing. */
+	const onUserPan = () => {
+		if (!following) return;
+		setChosenFloor(followedFloor);
+		setFollow(false);
 	};
 
 	const label = mapName(mapKey) ?? mapKey;
@@ -274,6 +294,9 @@ export function MapExplorer({
 					art={preferences.art}
 					floor={floor}
 					split={split}
+					players={synced.players}
+					follow={following ? SELF_TRACK : null}
+					onUserPan={onUserPan}
 					markers={shownOverlay}
 					filters={filters}
 					preset={explorerPreset}
@@ -328,6 +351,17 @@ export function MapExplorer({
 							/>
 						)}
 						<div className="map-tools">
+							{synced.active && (
+								<button
+									type="button"
+									className={`icon-button ${following ? "active" : ""}`}
+									aria-pressed={following}
+									title={newestPosition ? "Follow newest position" : "Follow newest position (none on this map yet)"}
+									onClick={toggleFollow}
+								>
+									<CrosshairIcon />
+								</button>
+							)}
 							<button
 								type="button"
 								className={`icon-button ${preferences.floorsOpen && floors.length ? "active" : ""}`}

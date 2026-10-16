@@ -26,6 +26,12 @@ export const SplitIcon = () => (
 		<rect x="16.5" y="6" width="5" height="12" rx="1" />
 	</Icon>
 );
+export const CrosshairIcon = () => (
+	<Icon size={16}>
+		<circle cx="12" cy="12" r="7" />
+		<path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+	</Icon>
+);
 export const PlusIcon = () => (
 	<Icon size={16}>
 		<path d="M12 5v14M5 12h14" />

@@ -1,4 +1,5 @@
-import { getCurrentSeason } from "@/lib/cfg/seasons";
+import { getCurrentSeason, type SeasonId } from "@/lib/cfg/seasons";
+import type { GameMode } from "@/lib/game-mode";
 import { useCompanionSyncStore } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { findCompanion, pairingState, requestPairing, sync, unpair } from "./companion-client";
@@ -8,6 +9,7 @@ import {
 	addHandled,
 	buildFeedEntries,
 	capBatches,
+	findRaidStart,
 	isEmptyChange,
 	mergeFeed,
 	patchFeed,
@@ -110,9 +112,12 @@ function processSyncResponse(response: SyncResponse): void {
 	});
 	store.setPosition(
 		response.state.position,
-		response.events.filter((event) => event.kind === "position").length,
+		response.events.filter((event) => event.kind === "position"),
 	);
 	if (announced) store.showNotice(announced);
+		// Announced after quest changes, so a raid starting is what the user sees when both arrive together.
+		const raidStart = findRaidStart(entries);
+		if (raidStart) store.showRaidNotice({ profile: raidStart.profile, map: raidStart.map ?? null });
 }
 
 let inFlight = false;
@@ -296,4 +301,24 @@ export async function disconnectCompanion(): Promise<void> {
 	const connection = store.connection;
 	store.disconnect();
 	if (connection) void unpair(connection.port, connection.token);
+}
+
+
+/** Whether `profile` is the active one or can be switched to (a KORD season must already be activated). */
+export function canSwitchToProfile(profile: ProfileKey): boolean {
+	if (profile === activeProfile() || !profile.startsWith("KORD:")) return true;
+	return !!useUserStore.getState().seasonalProfiles[profile.slice("KORD:".length) as SeasonId];
+}
+
+/**
+ * Makes `profile` the active profile. Only for an explicit user action (the raid notice's button); polling never
+ * switches profiles. Returns false, changing nothing, when it can't switch.
+ */
+export function switchToProfile(profile: ProfileKey): boolean {
+	if (profile === activeProfile()) return true;
+	if (!canSwitchToProfile(profile)) return false;
+	const user = useUserStore.getState();
+	if (profile.startsWith("KORD:")) user.selectSeason(profile.slice("KORD:".length) as SeasonId);
+	else user.setGameMode(profile as GameMode);
+	return true;
 }

@@ -1,6 +1,6 @@
 import type { GameMode, TarkovJsonGameMode } from "@/lib/game-mode";
 import mapManifest from "../../lib/data/map-overlays/manifest.json";
-import type { CompanionEvent, QuestAction, RaidPhase } from "./companion-contract";
+import type { CompanionEvent, Position, QuestAction, RaidPhase } from "./companion-contract";
 
 export const HANDLED_LIMIT = 2000;
 
@@ -239,6 +239,24 @@ export function buildFeedEntries(
 		entries.push({ ...quest, status: !profile ? "unknown_mode" : event.recovered ? "review" : "waiting" });
 	}
 	return entries;
+}
+
+export const TRAIL_LIMIT = 20;
+
+const positionKey = (position: Position) => `${position.captured_at}|${position.x}|${position.y}|${position.z}`;
+
+/** `trail` with new positions merged in by capture time (deduped), keeping the newest `limit`. */
+export function appendTrail(trail: readonly Position[], added: readonly Position[], limit = TRAIL_LIMIT): Position[] {
+	const keys = new Set(trail.map(positionKey));
+	const fresh = added.filter((position) => !keys.has(positionKey(position)) && keys.add(positionKey(position)));
+	if (!fresh.length) return trail as Position[];
+	const time = (position: Position) => Date.parse(position.captured_at) || 0;
+	return [...trail, ...fresh].sort((a, b) => time(a) - time(b)).slice(-limit);
+}
+
+/** The newest live (not recovered) raid that is starting to load, if any; `entries` are in journal order. */
+export function findRaidStart(entries: readonly FeedEntry[]): FeedEntry | undefined {
+	return entries.findLast((entry) => entry.kind === "raid" && entry.phase === "loading" && !entry.recovered);
 }
 
 /** Per-event result of applying a batch: later events for a quest supersede earlier ones. */

@@ -4,9 +4,11 @@ import type { CompanionEvent } from "./companion-contract";
 import {
 	activeProfileKey,
 	addHandled,
+	appendTrail,
 	buildFeedEntries,
 	capBatches,
 	describeNotice,
+	findRaidStart,
 	mapDisplayName,
 	mergeFeed,
 	patchFeed,
@@ -216,4 +218,20 @@ test("mapDisplayName and describeNotice", () => {
 		"Completed 3 PVE quests",
 	);
 	assert.equal(describeNotice([{ action: "failed", name: null }], "PVP"), "Failed 1 PVP quest");
+});
+
+test("appendTrail dedupes, orders by capture time and caps", () => {
+	const at = (n: number) => ({ map: null, x: n, y: 0, z: n, yaw: null, captured_at: new Date(n * 1000).toISOString() });
+	const trail = appendTrail([at(2)], [at(3), at(1), at(2)], 3);
+	assert.deepEqual(trail.map((position) => position.x), [1, 2, 3]);
+	assert.deepEqual(appendTrail(trail, [at(4)], 3).map((position) => position.x), [2, 3, 4]);
+	assert.equal(appendTrail(trail, [at(3)]), trail);
+});
+
+test("findRaidStart picks the newest live loading raid", () => {
+	const raid = (id: string, phase: "loading" | "ended", recovered = false): FeedEntry => ({
+		id, at: "", receivedAt: "", profile: "PVE", kind: "raid", phase, recovered, status: "info",
+	});
+	assert.equal(findRaidStart([raid("a", "loading"), raid("b", "loading"), raid("c", "ended")])?.id, "b");
+	assert.equal(findRaidStart([raid("a", "loading", true)]), undefined);
 });
