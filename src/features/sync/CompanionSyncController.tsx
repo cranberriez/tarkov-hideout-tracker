@@ -42,6 +42,11 @@ export function CompanionSyncController() {
 			try {
 				const { stop, fast } = await runSyncOnce();
 				if (!stop) schedule(fast ? RAID_MS : IDLE_MS);
+			} catch (error) {
+				// A bug in applying a response must not end polling: report it and try again.
+				console.error("Mappinator sync failed", error);
+				useCompanionSyncStore.getState().setSyncError(error instanceof Error ? error.message : String(error));
+				schedule(IDLE_MS);
 			} finally {
 				running = false;
 			}

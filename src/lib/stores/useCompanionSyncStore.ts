@@ -70,6 +70,8 @@ interface PersistedSync {
 interface CompanionSyncState extends PersistedSync {
 	status: SyncStatus;
 	lastSyncAt: number | null;
+	/** Why the last poll failed unexpectedly (a bug, not an unreachable app); cleared by the next good poll. */
+	syncError: string | null;
 	pairing: PairingProgress | null;
 	raid: CurrentRaid | null;
 	/** Latest position, the recent trail (oldest first, current session) and how many position events arrived. */
@@ -87,6 +89,7 @@ interface CompanionSyncState extends PersistedSync {
 	commit: (update: (state: PersistedSync) => Partial<PersistedSync>) => void;
 	setStatus: (status: SyncStatus) => void;
 	setLastSyncAt: (at: number | null) => void;
+	setSyncError: (error: string | null) => void;
 	setPairing: (pairing: PairingProgress | null) => void;
 	/** A raid entering `loading` starts a fresh trail. */
 	setRaid: (raid: CurrentRaid | null) => void;
@@ -235,6 +238,7 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 			...emptyPersisted(),
 			status: "idle",
 			lastSyncAt: null,
+			syncError: null,
 			pairing: null,
 			raid: null,
 			position: { latest: null, trail: [], count: 0 },
@@ -246,6 +250,7 @@ export const useCompanionSyncStore = create<CompanionSyncState>()(
 			commit: (update) => set((state) => update(state)),
 			setStatus: (status) => set({ status }),
 			setLastSyncAt: (lastSyncAt) => set({ lastSyncAt }),
+			setSyncError: (syncError) => set({ syncError }),
 			setPairing: (pairing) => set({ pairing }),
 			setRaid: (raid) =>
 				set((state) => {

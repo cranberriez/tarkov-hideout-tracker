@@ -161,6 +161,7 @@ export async function runSyncOnce(): Promise<{ stop: boolean; fast: boolean }> {
 			processSyncResponse(result.data);
 			store.setStatus("connected");
 			store.setLastSyncAt(Date.now());
+			store.setSyncError(null);
 			store.setRaid(result.data.state.raid);
 			store.setGroup(result.data.state.group ?? []);
 			const phase = result.data.state.raid?.phase;

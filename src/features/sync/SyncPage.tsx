@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { getCurrentSeason } from "@/lib/cfg/seasons";
 import { Badge } from "@/components/ui/badge";
 import { useCompanionSyncStore, type PairingProgress } from "@/lib/stores/useCompanionSyncStore";
 import { cn } from "@/lib/utils";
 import { ActivityPanel } from "./ActivityPanel";
 import { connectCompanion, disconnectCompanion, runSyncOnce } from "./companion-actions";
 import { getStatus } from "./companion-client";
-import type { SourceState } from "./companion-contract";
+import type { CurrentRaid, SourceState } from "./companion-contract";
 import { describeProfile, mapDisplayName, profileForMode } from "./sync-model";
 import { relativeAge, useNow } from "./sync-view-utils";
+import { useRaidMapAction } from "./useRaidMapAction";
 import { useSyncHydrated } from "./useSyncHydrated";
 
 const SECTION_TITLE = "text-[10px] font-semibold uppercase tracking-[0.25em] text-subtle-foreground";
@@ -72,6 +74,30 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 	);
 }
 
+/** In a raid right now: the raid's map and profile, with the one button that switches profile and opens the map. */
+function RaidBanner({ raid }: { raid: CurrentRaid }) {
+	const profile = profileForMode(raid.mode, getCurrentSeason().id);
+	const map = raid.map ? { raw: raid.map.raw, normalizedName: raid.map.normalized_name } : null;
+	const action = useRaidMapAction(profile, map);
+	return (
+		<div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-md bg-brand/10 px-3 py-2 text-xs">
+			<span className="text-foreground">
+				{raid.phase === "loading" ? "Loading into" : "In raid on"} {map ? mapDisplayName(map) : "an unknown map"}
+				{action.profileLabel ? ` (${action.profileLabel})` : ""}
+			</span>
+			{action.blocked ? (
+				<span className="text-subtle-foreground">activate {action.profileLabel} to switch</span>
+			) : (
+				action.label && (
+					<button type="button" onClick={action.go} className={LINK_BUTTON}>
+						{action.label}
+					</button>
+				)
+			)}
+		</div>
+	);
+}
+
 function ConnectionCard() {
 	const hydrated = useSyncHydrated();
 	const connection = useCompanionSyncStore((state) => state.connection);
@@ -79,6 +105,7 @@ function ConnectionCard() {
 	const pairing = useCompanionSyncStore((state) => state.pairing);
 	const lastSyncAt = useCompanionSyncStore((state) => state.lastSyncAt);
 	const raid = useCompanionSyncStore((state) => state.raid);
+	const syncError = useCompanionSyncStore((state) => state.syncError);
 	const position = useCompanionSyncStore((state) => state.position.latest);
 	const companion = useCompanionSyncStore((state) => state.companionStatus);
 	const now = useNow(1000);
@@ -135,6 +162,11 @@ function ConnectionCard() {
 					<p className="ml-auto text-xs text-subtle-foreground">synced {relativeAge(lastSyncAt, now)}</p>
 				)}
 			</div>
+
+			{connected && syncError && (
+				<p className="mt-2 text-xs text-danger">Last sync failed: {syncError}. Retrying.</p>
+			)}
+			{connected && status === "connected" && raid && raid.phase !== "ended" && <RaidBanner raid={raid} />}
 
 			{connected && (
 				<dl className="mt-3 space-y-1.5">

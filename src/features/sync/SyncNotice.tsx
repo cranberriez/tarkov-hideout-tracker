@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { isMapExplorerMapKey } from "@/lib/cfg/map-explorer";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { useCompanionSyncStore, type RaidNoticeMap } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { canSwitchToProfile, switchToProfile, undoBatch } from "./companion-actions";
+import { undoBatch } from "./companion-actions";
 import { activeProfileKey, dataModeForProfile, describeNotice, describeProfile, mapDisplayName, type ProfileKey } from "./sync-model";
+import { useRaidMapAction } from "./useRaidMapAction";
 
 const NOTICE_MS = 8_000;
 /** A raid notice stays longer: the player is usually loading in and alt-tabs back to it. */
@@ -85,10 +84,7 @@ function QuestBatchBody({ batchId }: { batchId: string }) {
 	);
 }
 
-/**
- * "Raid started" with one button that does everything the player would otherwise do by hand: switch to the raid's
- * profile when it differs, then open its map unless that map is already showing. Nothing happens before the press.
- */
+/** "Raid started" with the one button that takes the player to their raid (see `useRaidMapAction`). */
 function RaidStartedBody({
 	profile,
 	map,
@@ -98,37 +94,20 @@ function RaidStartedBody({
 	map: RaidNoticeMap | null;
 	onDone: () => void;
 }) {
-	const router = useRouter();
-	const pathname = usePathname();
-	const gameMode = useUserStore((state) => state.gameMode);
-	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
-
-	const mapKey = map?.normalizedName && isMapExplorerMapKey(map.normalizedName) ? map.normalizedName : null;
-	const mapHref = mapKey ? `/maps/${mapKey}` : null;
-	const target = profile && profile !== activeProfileKey(gameMode, selectedSeasonId) ? profile : null;
-	const needsMap = !!mapHref && pathname !== mapHref;
-	const blocked = target !== null && !canSwitchToProfile(target);
-	const label = profile ? describeProfile(profile) : null;
-
-	const go = () => {
-		if (target && !switchToProfile(target)) return;
-		if (needsMap) router.push(mapHref);
-		onDone();
-	};
-
+	const action = useRaidMapAction(profile, map, onDone);
 	return (
 		<>
 			<span>
 				<span className="text-subtle-foreground">Mappinator · </span>
 				Raid started{map ? ` on ${mapDisplayName(map)}` : ""}
-				{label ? ` (${label})` : ""}
+				{action.profileLabel ? ` (${action.profileLabel})` : ""}
 			</span>
-			{blocked ? (
-				<span className="text-subtle-foreground">activate {label} to switch</span>
+			{action.blocked ? (
+				<span className="text-subtle-foreground">activate {action.profileLabel} to switch</span>
 			) : (
-				(target || needsMap) && (
-					<button type="button" onClick={go} className="font-medium text-brand hover:underline">
-						{needsMap ? "Go to map" : `Switch to ${label}`}
+				action.label && (
+					<button type="button" onClick={action.go} className="font-medium text-brand hover:underline">
+						{action.label}
 					</button>
 				)
 			)}
