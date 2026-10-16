@@ -466,8 +466,8 @@ export function MapExplorer({
 						preset={explorerPreset}
 						glyph={markerGlyph(cardMarker)}
 						get={items.get}
-						pinned={!!pinned}
-						onClose={() => setPinned(null)}
+						pinned={!!pinned || stickyShown}
+						onClose={closeCard}
 						floorName={calibration && floors.length ? floorAt(calibration, cardMarker.position).name : undefined}
 					/>
 				)}
