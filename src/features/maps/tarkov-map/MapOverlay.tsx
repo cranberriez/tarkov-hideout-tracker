@@ -19,7 +19,7 @@ export type OverlayArea = { x: number; y: number; width: number; height: number;
  * for panning and sets `--s` (pixels per plane unit) on it for zooming, so neither re-renders the markers;
  * only filtering, a floor change or crossing the label zoom does.
  * With one floor shown, markers and zones on other floors are hidden unless their layer is kept on all floors
- * (`allFloors`); then markers are drawn smaller with a caret pointing to the floor's side, and zones faded.
+ * (`allFloors`); then marker glyphs shrink to 75% with an overlaid floor caret, and zones are faded.
  * Zones draw their outline underneath their icon. Extract names show when `labelled`; hovering any marker
  * shows its name and what it is.
  * With `area`, only markers inside it are drawn, and a dense marker is left out where something drawn before it

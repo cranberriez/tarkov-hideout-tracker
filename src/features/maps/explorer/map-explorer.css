@@ -464,11 +464,15 @@
 .map-explorer .zone.other-floor {
 	opacity: 0.35;
 }
-.map-explorer .overlay-marker.other-floor img {
+/* Scale the whole glyph (including document discs), keeping its centre and layout footprint fixed. */
+.map-explorer .overlay-marker.other-floor > :first-child {
 	scale: 0.75;
+	transform-origin: center;
 }
+/* Floor indicators overlay the marker without changing its artwork or layout. */
 .map-explorer .floor-caret {
 	position: absolute;
+	z-index: 2;
 	left: 0;
 	top: 0;
 	width: 0;

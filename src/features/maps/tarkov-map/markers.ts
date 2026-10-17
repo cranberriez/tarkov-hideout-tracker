@@ -50,7 +50,7 @@ export type MapMarker = {
   slot?: { index: number; of: number };
 };
 
-export type LayerFilter = { groups: Record<string, boolean>; /** Markers on floors other than the one shown stay, smaller and with a caret. */ allFloors?: boolean };
+export type LayerFilter = { groups: Record<string, boolean>; /** Markers on floors other than the one shown stay at 75% size with an overlaid caret. */ allFloors?: boolean };
 export type Filters = Record<string, LayerFilter>;
 export type Role = "pmc" | "scav" | "unknown";
 

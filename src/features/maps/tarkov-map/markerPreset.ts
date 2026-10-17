@@ -13,7 +13,7 @@ export type LayerDef = {
   /** Groups are listed under these, in this order, by their `parent`. */ categories?: CategoryDef[];
   /** All groups hidden until switched on. */ off?: boolean;
   /** Folded in the panel until opened. */ folded?: boolean;
-  /** Kept on every floor by default: markers on other floors stay, smaller and with a caret. */ allFloors?: boolean;
+  /** Kept on every floor by default: markers on other floors stay at 75% size with an overlaid caret. */ allFloors?: boolean;
 };
 
 /** A layer whose groups come from the map's data, so its `LayerDef` can't list them. */
