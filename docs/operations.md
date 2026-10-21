@@ -15,9 +15,16 @@ PostgreSQL; production switching follows the separate
 | PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
 | PG_QUERY_LOG                   | Opt-in SQL logging: 1 for summaries, verbose for SQL (default off) |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
+| syncEnabled                    | Companion sync tooling outside development: only `true` enables it; unset defaults to false |
 | APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
 | APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
+
+Companion sync is always available under `npm run dev`. In production, set
+`syncEnabled=true` to enable `/sync`, its navigation/status indicator, background
+companion polling and queued updates, and `/api/group/auth`. Otherwise the page
+and group auth endpoint return 404 and the controller stays unmounted. Disabling
+the feature preserves saved pairing and sync history.
 
 Only the optional one-time `db:discovery:export -- --turso discovery.json` command
 uses `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. These source credentials are not

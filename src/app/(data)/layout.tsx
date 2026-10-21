@@ -3,6 +3,7 @@ import { LegacyProfileConversionBanner } from "@/features/profile-conversion/Leg
 import { LegacyProfileConversionDialog } from "@/features/profile-conversion/LegacyProfileConversionDialog";
 import { RouteAwareFooter } from "@/components/core/RouteAwareFooter";
 import { CompanionSyncController } from "@/features/sync/CompanionSyncController";
+import { isSyncEnabled } from "@/server/sync-enabled";
 
 interface DataLayoutProps {
 	children: ReactNode;
@@ -20,7 +21,7 @@ export default function DataLayout({ children }: DataLayoutProps) {
 			</div>
 			<RouteAwareFooter />
 			<LegacyProfileConversionDialog />
-			<CompanionSyncController />
+			{isSyncEnabled() && <CompanionSyncController />}
 		</>
 	);
 }

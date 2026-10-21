@@ -35,7 +35,9 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 
 Maps follows Quests in the main navigation as a direct link without map submenus.
 The secondary menu groups Battle Pass and Games, then News, then Settings,
-Setup, Sync, and Feedback. Every entry has an icon. Development builds add Dev
+Setup, Sync, and Feedback. Sync (including its status indicator and background
+controller) is available only in development or when `syncEnabled=true`; otherwise
+`/sync` and `/api/group/auth` return 404. Every entry has an icon. Development builds add Dev
 in a final separate section. Mobile also lists the main navigation pages in this menu.
 Seasonal overview routes have been removed; Battle Pass remains available in every mode.
 Without an explicit `?season=season-1` or `?season=season-2`, Battle Pass uses the

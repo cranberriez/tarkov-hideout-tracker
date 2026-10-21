@@ -26,13 +26,13 @@ import { PlayerProfileMenu } from "./PlayerProfileMenu";
 import { SyncStatusPill } from "./SyncStatusPill";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
-export function Navbar() {
+export function Navbar({ syncEnabled }: { syncEnabled: boolean }) {
 	const gameMode = useUserStore((state) => state.gameMode);
 	const profileScope = useProfileStorageScope(gameMode);
-	return <NavbarContent key={profileScope} />;
+	return <NavbarContent key={profileScope} syncEnabled={syncEnabled} />;
 }
 
-function NavbarContent() {
+function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchTrigger = useRef<HTMLElement | null>(null);
@@ -151,7 +151,7 @@ function NavbarContent() {
 
 								<PlayerProfileMenu />
 
-								<SyncStatusPill />
+								{syncEnabled && <SyncStatusPill />}
 
 								{!hasCompletedSetup && (
 									<div className="hidden sm:block">
@@ -174,7 +174,11 @@ function NavbarContent() {
 											<MobileNavSection key={menu.name} menu={menu} currentPage={currentPage} separated={index > 0} />
 										))}
 										<DropdownMenuSeparator />
-										<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
+										<SecondaryMenuItems
+											currentPage={currentPage}
+											onSetup={() => setSetupOpen(true)}
+											syncEnabled={syncEnabled}
+										/>
 									</DropdownMenuContent>
 								</DropdownMenu>
 								{searchButton}
@@ -198,7 +202,7 @@ function NavbarContent() {
 
 							<PlayerProfileMenu />
 
-							<SyncStatusPill />
+							{syncEnabled && <SyncStatusPill />}
 
 							{!hasCompletedSetup && <SetupButton onClick={() => setSetupOpen(true)} />}
 
@@ -213,7 +217,11 @@ function NavbarContent() {
 									<Menu size={18} />
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end" sideOffset={8}>
-									<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
+									<SecondaryMenuItems
+										currentPage={currentPage}
+										onSetup={() => setSetupOpen(true)}
+										syncEnabled={syncEnabled}
+									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
 							{searchButton}
@@ -358,7 +366,15 @@ function MobileNavSection({
 	);
 }
 
-function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
+function SecondaryMenuItems({
+	currentPage,
+	onSetup,
+	syncEnabled,
+}: {
+	currentPage: string;
+	onSetup: () => void;
+	syncEnabled: boolean;
+}) {
 	const renderLink = (item: NavItem) => (
 		<DropdownMenuItem
 			key={item.href}
@@ -384,7 +400,7 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 				<Settings2 size={16} />
 				Setup
 			</DropdownMenuItem>
-			{renderLink({ name: "Sync", href: "/sync", icon: RefreshCw })}
+			{syncEnabled && renderLink({ name: "Sync", href: "/sync", icon: RefreshCw })}
 			{FEEDBACK_FORM_URL && (
 				<DropdownMenuItem asChild>
 					<a

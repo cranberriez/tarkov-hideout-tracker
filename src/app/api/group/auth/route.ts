@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSyncEnabled } from "@/server/sync-enabled";
 import {
 	accessAllowed,
 	corsHeaders,
@@ -29,6 +30,7 @@ function reply(request: NextRequest, body: unknown, status = 200) {
 
 /** Shared checks; a response when the request can't go on. */
 function gate(request: NextRequest) {
+	if (!isSyncEnabled()) return { response: reply(request, { error: "not-found" }, 404) };
 	if (!allow(clientOf(request))) return { response: reply(request, { error: "rate-limited" }, 429) };
 	const config = readGroupAuthConfig();
 	if (!config) return { response: reply(request, { error: "unavailable" }, 503) };
@@ -39,6 +41,7 @@ function gate(request: NextRequest) {
 }
 
 export function OPTIONS(request: NextRequest) {
+	if (!isSyncEnabled()) return reply(request, { error: "not-found" }, 404);
 	return new NextResponse(null, { status: 204, headers: corsHeaders(request.headers.get("origin")) });
 }
 
