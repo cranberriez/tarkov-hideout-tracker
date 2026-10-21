@@ -19,7 +19,6 @@ import {
 	Wrench,
 } from "lucide-react";
 import { questViewHref } from "@/lib/entity-routes";
-import { MAP_EXPLORER_MAPS } from "@/lib/cfg/map-explorer";
 
 export interface NavItem {
 	name: string;
@@ -92,20 +91,10 @@ export const navMenus: NavMenu[] = [
 		name: "Maps",
 		href: "/maps",
 		icon: Map,
-		children: MAP_EXPLORER_MAPS.map((map) => ({ name: map.name, href: `/maps/${map.key}` })),
-	},
-	{
-		name: "Season 1",
-		href: "/season-1",
-		icon: Goal,
-		children: [
-			{ name: "Overview", href: "/season-1", icon: House },
-			{ name: "Battle Pass", href: "/battle-pass", icon: Goal },
-		],
 	},
 ];
 
-/** The games hub; listed only near the bottom of the secondary (☰) menu. */
+/** The games hub, listed in the secondary (☰) menu. */
 export const gamesNavItem: NavItem = {
 	name: "Games",
 	href: "/games",
@@ -118,18 +107,8 @@ export const devNavItem: NavItem = {
 	icon: Wrench,
 };
 
-export function seasonNavMenus(season: { id: string; name: string }): NavMenu[] {
-	return navMenus.map((menu) =>
-		menu.href === "/season-1"
-			? {
-					...menu,
-					name: season.name,
-					href: "/" + season.id,
-					children: menu.children?.map((child) => ({
-						...child,
-						href: child.href === "/season-1" ? "/" + season.id : child.href + "?season=" + season.id,
-					})),
-				}
-			: menu,
-	);
-}
+export const battlePassNavItem: NavItem = {
+	name: "Battle Pass",
+	href: "/battle-pass",
+	icon: Goal,
+};

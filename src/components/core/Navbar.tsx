@@ -1,15 +1,14 @@
 "use client";
 
-import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Coffee, Menu, MessageSquare, Plus, Search, Settings2 } from "lucide-react";
+import { ChevronDown, Menu, MessageSquare, Newspaper, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
 import { isDev } from "@/lib/is-dev";
-import { FEEDBACK_FORM_URL, KOFI_URL } from "@/lib/cfg/support-links";
+import { FEEDBACK_FORM_URL } from "@/lib/cfg/support-links";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -22,7 +21,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { devNavItem, gamesNavItem, seasonNavMenus, type NavItem, type NavMenu } from "./nav-config";
+import { battlePassNavItem, devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 import { SyncStatusPill } from "./SyncStatusPill";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
@@ -34,8 +33,6 @@ export function Navbar() {
 }
 
 function NavbarContent() {
-	const season = useCurrentSeason();
-	const navMenus = seasonNavMenus(season);
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchTrigger = useRef<HTMLElement | null>(null);
@@ -103,6 +100,8 @@ function NavbarContent() {
 	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const isSecondaryRoute =
+		currentPage === "/battle-pass" ||
+		currentPage === "/sync" ||
 		currentPage === "/settings" ||
 		currentPage === "/news" ||
 		currentPage === "/dev" ||
@@ -134,23 +133,11 @@ function NavbarContent() {
 										<span className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg sm:tracking-wide">
 											TARKOV HIDEOUT
 										</span>
-										<span className="text-[10px] tracking-wide text-subtle-foreground sm:text-xs">STATION MANAGER</span>
 									</div>
 								</div>
 							</Link>
 
 							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
-								<Link
-									href={"/" + season.id}
-									className={cn(
-										"shrink-0 whitespace-nowrap rounded px-2 py-2 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-brand",
-										currentPage === "/" + season.id || currentPage.startsWith("/battle-pass")
-											? "bg-brand text-inverse"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									{season.name}
-								</Link>
 								<button
 									onClick={() => setQuickAddOpen(true)}
 									className={cn(
@@ -256,10 +243,7 @@ function isNavItemActive(currentPage: string, item: NavItem) {
 }
 
 function isNavMenuActive(currentPage: string, menu: NavMenu) {
-	return (
-		isNavItemActive(currentPage, menu) ||
-		(menu.href.startsWith("/season-") && !!menu.children?.some((item) => isNavItemActive(currentPage, item)))
-	);
+	return isNavItemActive(currentPage, menu);
 }
 
 function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
@@ -375,42 +359,32 @@ function MobileNavSection({
 }
 
 function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
-	const items: NavItem[] = [
-		{ name: "News", href: "/news" },
-		{ name: "Settings", href: "/settings" },
-		{ name: "Sync", href: "/sync" },
-		...(isDev ? [devNavItem] : []),
-	];
+	const renderLink = (item: NavItem) => (
+		<DropdownMenuItem
+			key={item.href}
+			asChild
+			className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
+		>
+			<Link href={item.href} className="flex w-full items-center gap-2">
+				<NavItemIcon item={item} />
+				{item.name}
+			</Link>
+		</DropdownMenuItem>
+	);
 
 	return (
 		<>
-			{items.map((item) => (
-				<DropdownMenuItem
-					key={item.href}
-					asChild
-					className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
-				>
-					<Link href={item.href} className="flex w-full items-center gap-2">
-						<NavItemIcon item={item} />
-						{item.name}
-					</Link>
-				</DropdownMenuItem>
-			))}
+			{renderLink(battlePassNavItem)}
+			{renderLink(gamesNavItem)}
 			<DropdownMenuSeparator />
-			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
-			{[gamesNavItem].map((item) => (
-				<DropdownMenuItem
-					key={item.href}
-					asChild
-					className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
-				>
-					<Link href={item.href} className="flex w-full items-center gap-2">
-						<NavItemIcon item={item} />
-						{item.name}
-					</Link>
-				</DropdownMenuItem>
-			))}
-			{(FEEDBACK_FORM_URL || KOFI_URL) && <DropdownMenuSeparator />}
+			{renderLink({ name: "News", href: "/news", icon: Newspaper })}
+			<DropdownMenuSeparator />
+			{renderLink({ name: "Settings", href: "/settings", icon: Settings2 })}
+			<DropdownMenuItem onSelect={onSetup} className="flex items-center gap-2">
+				<Settings2 size={16} />
+				Setup
+			</DropdownMenuItem>
+			{renderLink({ name: "Sync", href: "/sync", icon: RefreshCw })}
 			{FEEDBACK_FORM_URL && (
 				<DropdownMenuItem asChild>
 					<a
@@ -420,17 +394,15 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 						className="flex w-full items-center gap-2"
 					>
 						<MessageSquare size={16} />
-						Send feedback
+						Feedback
 					</a>
 				</DropdownMenuItem>
 			)}
-			{KOFI_URL && (
-				<DropdownMenuItem asChild>
-					<a href={KOFI_URL} target="_blank" rel="noopener noreferrer" className="flex w-full items-center gap-2">
-						<Coffee size={16} />
-						Support on Ko-fi
-					</a>
-				</DropdownMenuItem>
+			{isDev && (
+				<>
+					<DropdownMenuSeparator />
+					{renderLink(devNavItem)}
+				</>
 			)}
 		</>
 	);

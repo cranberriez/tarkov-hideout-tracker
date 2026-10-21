@@ -18,7 +18,7 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
 | `/items/market`                                   | [Market analysis](<../src/app/(data)/items/market/page.tsx>): whole-market flea swings for flea-sellable items from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
-| `/games`                                          | [Games hub](<../src/app/(data)/games/page.tsx>): links to each game with its saved best score; listed near the bottom of the secondary (☰) menu, after Setup. Game routes (`/games/*`) hide the footer and refuse the navbar search (button and Ctrl/⌘ K shake red) |
+| `/games`                                          | [Games hub](<../src/app/(data)/games/page.tsx>): links to each game with its saved best score; listed with Battle Pass at the top of the secondary (☰) menu. Game routes (`/games/*`) hide the footer and refuse the navbar search (button and Ctrl/⌘ K shake red) |
 | `/games/higher-lower`                             | [Higher or Lower](<../src/app/(data)/games/higher-lower/page.tsx>): item value guessing from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
 | `/games/do-i-need-it`                             | [Do I Need It?](<../src/app/(data)/games/do-i-need-it/page.tsx>): pick an item the active profile still needs (the Loot Scanner's demand model over uploader requirements, minus owned inventory) among same-category decoys from the search manifest. After setup each visit asks whether to use that progress or play without it (a fresh profile, always used before setup); a header button reopens the choice |
 | `/games/trader-alibi`                             | [Trader Alibi](<../src/app/(data)/games/trader-alibi/page.tsx>): ask for quest objective, barter or sold-item clues and guess the trader; [clue data](../src/server/db/trader-alibi.ts) for the core traders, item names from the search manifest |
@@ -29,42 +29,24 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/sync`                                            | [Desktop companion sync](<../src/app/(data)/sync/page.tsx>): pair with the Mappinator app, view the quest/raid activity feed, raw protocol log and review log-recovered events; see [user state](user-state.md#companion-sync) |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
-| `/season-1`                                        | [Season 1 overview](../src/app/season-1/page.tsx): estimated season countdown, saved battle pass completion/goals and document coverage; static data and existing client progress only, no server reads |
-| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; under the available season main navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
+| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
-Maps follows Quests in the main navigation, with one link per explorer map.
-The available season follows Maps, with Overview and Battle Pass links.
-It is available in every mode before and after setup, including a compact direct overview link on mobile.
-Battle Pass routes activate this menu.
-Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
-is at `/season-2`. Battlepass links carry `?season=season-1` or
-`?season=season-2`. Without an explicit season, KORD uses its selected character
-and permanent profiles use the available season. Test content is clearly labeled
-as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
+Maps follows Quests in the main navigation as a direct link without map submenus.
+The secondary menu groups Battle Pass and Games, then News, then Settings,
+Setup, Sync, and Feedback. Every entry has an icon. Development builds add Dev
+in a final separate section. Mobile also lists the main navigation pages in this menu.
+Seasonal overview routes have been removed; Battle Pass remains available in every mode.
+Without an explicit `?season=season-1` or `?season=season-2`, Battle Pass uses the
+selected KORD character's season or the available season for permanent profiles.
+Test content is clearly labeled as placeholder data. Profile activation/history is
+described in [user state](user-state.md#seasonal-activation-and-history).
 
-Season 1 remains addressable at `/season-1`; [Test](../src/app/season-2/page.tsx)
-is at `/season-2`. Battlepass links carry `?season=season-1` or
-`?season=season-2`. Without an explicit season, KORD uses its selected character
-and permanent profiles use the available season. Test content is clearly labeled
-as placeholder data. Profile activation/history is described in [user state](user-state.md#seasonal-activation-and-history).
-
-The [overview](../src/features/season-1/SeasonOverviewPage.tsx) reads the existing
-battle pass progress and classified preference without writes. Its selected goal
-estimates share one sequential preview across the combined prerequisite plan,
-so document stock is allocated once and locked pages remain blocked until enough
-prerequisite rewards are fully covered. Ordinary document coverage uses the active
-profile's inventory; completion, goals and classified stock remain account-wide.
-Unknown saved goal IDs are reported. The countdown reuses the seasonal config's
-final date as an explicitly estimated UTC calendar-day count; the end date is not
-presented as an officially confirmed announcement.
-The flat overview prioritizes reward artwork and remaining document types; its
-calculation notes and season sources are collapsed under About this season.
-Each reward goal links to `/battle-pass?page=N#pass-page-N`. The pass validates
-the one-based query page, selects a responsive spread containing it, and scrolls
-to that page's existing heading in gallery or saved list view. This navigation is
-transient and does not change preferences, completion, inventory, or goals.
+Battle Pass supports `/battle-pass?page=N#pass-page-N`: it validates the one-based
+query page, selects a responsive spread containing it, and scrolls to that page's
+heading in gallery or saved list view. This navigation is transient and does not
+change preferences, completion, inventory, or goals.
 
 The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) composes
 its panels and reward views from `components/`, reusable presentation elements
