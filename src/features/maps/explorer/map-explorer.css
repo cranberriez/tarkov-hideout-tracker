@@ -1,0 +1,1448 @@
+/* Maps explorer, ported from tarkov-mappinator's map page. Everything is scoped under .map-explorer (and
+   .map-explorer-menu for the portalled preset menu) so the dark map chrome never leaks into the site. */
+.map-explorer,
+.map-explorer-menu {
+	--me-bg: #131416;
+	--me-panel: rgb(15 16 17 / 82%);
+	--me-surface-hover: #232428;
+	--me-text: #e7e5e0;
+	--me-muted: #a09d97;
+	--me-faint: #6f6d69;
+	--me-accent: var(--brand, #cdb68b);
+	--me-accent-soft: color-mix(in oklab, var(--me-accent) 14%, transparent);
+	--me-bad: #e37b6c;
+	--me-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+	font: 13px/1.45 var(--font-sans), system-ui, sans-serif;
+	color: var(--me-text);
+	color-scheme: dark;
+}
+.map-explorer button,
+.map-explorer-menu button {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+.map-explorer button:disabled {
+	cursor: default;
+	opacity: 0.4;
+}
+.map-explorer :focus-visible {
+	outline: 2px solid var(--me-accent);
+	outline-offset: 2px;
+}
+/* Tailwind's preflight caps images at max-width: 100%; markers sit in a zero-width overlay layer, so that cap
+   squeezes unlabelled icons to nothing (and documents into ovals). Icons keep their own sizes. */
+.map-explorer img {
+	max-width: none;
+}
+.map-explorer .overlay-marker {
+	width: max-content;
+}
+.map-explorer .faint {
+	color: var(--me-faint);
+}
+
+.map-explorer {
+	position: relative;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: hidden;
+	background: var(--me-bg);
+	container: map / size;
+}
+.map-explorer .map-canvas {
+	position: absolute;
+	inset: 0;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+	background-color: var(--me-bg);
+	background-image:
+		linear-gradient(to right, rgb(255 255 255 / 5.5%) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(255 255 255 / 5.5%) 1px, transparent 1px),
+		linear-gradient(to right, rgb(255 255 255 / 2.5%) 1px, transparent 1px),
+		linear-gradient(to bottom, rgb(255 255 255 / 2.5%) 1px, transparent 1px);
+	background-size:
+		var(--major) var(--major),
+		var(--major) var(--major),
+		var(--minor) var(--minor),
+		var(--minor) var(--minor);
+	background-position: var(--ox) var(--oy);
+}
+.map-explorer .map-canvas:active {
+	cursor: grabbing;
+}
+.map-explorer .map-canvas.calibrated {
+	background-image: none;
+}
+.map-explorer .map-art {
+	position: absolute;
+	left: 0;
+	top: 0;
+	pointer-events: none;
+	will-change: transform;
+}
+.map-explorer .map-axis {
+	position: absolute;
+	background: rgb(205 182 139 / 12%);
+	pointer-events: none;
+}
+.map-explorer .map-axis.x {
+	left: 0;
+	right: 0;
+	height: 1px;
+}
+.map-explorer .map-axis.y {
+	top: 0;
+	bottom: 0;
+	width: 1px;
+}
+.map-explorer .map-status {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	color: var(--me-muted);
+	pointer-events: none;
+	z-index: 2;
+}
+.map-explorer .map-status > div {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border-radius: 9px;
+	background: var(--me-panel);
+	pointer-events: auto;
+}
+.map-explorer .map-status button {
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+
+/* Top right: map pill and its list. */
+.map-explorer .map-switch {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 6px;
+	max-height: calc(100% - 28px);
+}
+.map-explorer .map-chip {
+	display: flex;
+	align-items: center;
+	height: 28px;
+	border-radius: 14px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	font-size: 12px;
+	font-weight: 500;
+}
+.map-explorer .map-chip-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.map-explorer .map-chip-round {
+	width: 28px;
+	justify-content: center;
+	color: var(--me-muted);
+}
+.map-explorer .map-chip-round:hover {
+	color: var(--me-text);
+}
+.map-explorer .map-caret.flipped {
+	transform: rotate(180deg);
+}
+.map-explorer .map-chip-part {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 100%;
+	padding: 0 12px;
+	border-radius: 14px;
+}
+.map-explorer .map-caret {
+	display: grid;
+	color: var(--me-muted);
+}
+.map-explorer .map-switch.open .map-caret {
+	color: var(--me-accent);
+}
+.map-explorer .map-switch-list,
+.map-explorer .map-floors,
+.map-explorer .map-presets {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+	min-width: 150px;
+	min-height: 0;
+	overflow: hidden auto;
+	scrollbar-width: thin;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-switch-list a.floor-row {
+	display: flex;
+	align-items: center;
+}
+
+/* Left column: layers panel at the top, floor picker and toolbar at the bottom; the panels shrink before overlapping. */
+.map-explorer .map-left {
+	position: absolute;
+	left: 14px;
+	right: 14px;
+	top: 14px;
+	bottom: 14px;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	pointer-events: none;
+}
+.map-explorer .map-left > *,
+.map-explorer .map-left-bottom > * {
+	pointer-events: auto;
+}
+.map-explorer .map-left-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	min-height: 0;
+	flex-shrink: 1;
+	align-self: stretch;
+}
+.map-explorer .map-tools {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px;
+	flex-shrink: 0;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-tools .icon-button:disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.map-explorer .map-floor-chip {
+	height: 26px;
+	padding: 0 10px;
+	border-radius: 13px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--me-muted);
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-floor-chip:hover {
+	color: var(--me-text);
+}
+.map-explorer .floor-row {
+	height: 26px;
+	flex-shrink: 0;
+	padding: 0 10px;
+	border-radius: 6px;
+	text-align: left;
+	font-size: 12px;
+	color: var(--me-muted);
+}
+.map-explorer .floor-row:hover {
+	background: var(--me-surface-hover);
+	color: var(--me-text);
+}
+.map-explorer .floor-row.active {
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .icon-button {
+	width: 30px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border-radius: 6px;
+	color: var(--me-muted);
+}
+.map-explorer .icon-button:hover {
+	background: var(--me-surface-hover);
+	color: var(--me-text);
+}
+.map-explorer .icon-button.active {
+	color: var(--me-accent);
+	background: var(--me-accent-soft);
+}
+
+/* Map overlay markers */
+.map-explorer .overlay-marker {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	transform: translate(-11px, -50%);
+	pointer-events: auto;
+}
+.map-explorer .overlay-marker img {
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 85%));
+}
+.map-explorer .overlay-marker.spawns {
+	transform: translate(-7px, -50%);
+}
+.map-explorer .overlay-marker.spawns img {
+	width: 14px;
+	height: 14px;
+}
+.map-explorer .overlay-marker.containers,
+.map-explorer .overlay-marker.access,
+.map-explorer .overlay-marker.other {
+	transform: translate(-8px, -50%);
+}
+.map-explorer .overlay-marker.containers img,
+.map-explorer .overlay-marker.access img,
+.map-explorer .overlay-marker.other img {
+	width: 16px;
+	height: 16px;
+}
+/* Item icons that need to stand out sit on an opaque dark disc ringed in their colour. */
+.map-explorer img.tinted {
+	border-radius: 50%;
+	padding: 2px;
+	box-sizing: border-box;
+	object-fit: contain;
+	background: var(--me-bg);
+	box-shadow: 0 0 0 1.5px var(--tint);
+}
+/* Markers sharing a spot (two document types) sit side by side around it. */
+.map-explorer .overlay-marker.documents {
+	transform: translate(calc(-13px + var(--slot, 0) * 30px), -50%);
+}
+/* A document is a round disc ringed in its colour, like the other markers; its (tall) item art is centred over it, larger than
+   the disc so it overlaps the edge, and absolutely positioned so it never sizes or stretches the disc. */
+.map-explorer .document-icon {
+	--size: 26px;
+	position: relative;
+	flex-shrink: 0;
+	width: var(--size);
+	height: var(--size);
+	border-radius: 50%;
+	box-sizing: border-box;
+	border: 2px solid var(--tint);
+	/* A tinted disc lifts the (dark grey) item art off the map; the dark halo keeps the ring readable on light tiles. */
+	background: color-mix(in srgb, var(--tint) 22%, #111);
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 60%), 0 1px 3px rgb(0 0 0 / 70%);
+}
+.map-explorer .document-icon img {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: auto;
+	height: 145%;
+	max-width: none;
+	transform: translate(-50%, -50%);
+	object-fit: contain;
+	filter: brightness(1.25) drop-shadow(0 1px 2px rgb(0 0 0 / 85%));
+}
+.map-explorer .overlay-marker.selected .document-icon {
+	outline: 1.5px solid var(--me-accent);
+	outline-offset: 2px;
+}
+/* A document behind a lock: a solid off-white chip with a dark padlock on the disc's top-right corner, the same for every type. */
+.map-explorer .document-icon.locked::after {
+	content: "";
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background:
+		center / 9px 9px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23161616'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10zm2.5 0h5V7a2.5 2.5 0 0 0-5 0z'/%3E%3C/svg%3E"),
+		#f2f2f2;
+	box-shadow: 0 0 0 1px rgb(0 0 0 / 70%);
+	z-index: 1;
+}
+/* Blueprint art is a wide sheet, so it needs less height than the other documents to read the same size. */
+.map-explorer .document-icon[data-type="blueprints"] img {
+	height: 110%;
+}
+.map-explorer .overlay-marker.loose {
+	transform: translate(-5px, -50%);
+}
+.map-explorer .overlay-marker.loose img {
+	width: 10px;
+	height: 10px;
+	filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 3px rgb(0 0 0 / 90%));
+}
+.map-explorer .overlay-marker.loose.valuable {
+	transform: translate(-9px, -50%);
+}
+.map-explorer .overlay-marker.loose.valuable img {
+	width: 18px;
+	height: 18px;
+	object-fit: contain;
+}
+.map-explorer .overlay-marker.hazards img {
+	width: 18px;
+	height: 18px;
+}
+.map-explorer .overlay-marker.hazards {
+	transform: translate(-9px, -50%);
+}
+.map-explorer .split-label {
+	position: absolute;
+	transform: translate(-50%, -100%);
+	padding-bottom: 4px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--me-muted);
+	text-shadow:
+		0 0 3px #000,
+		0 1px 2px #000;
+	pointer-events: none;
+}
+.map-explorer .overlay-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	will-change: transform;
+}
+.map-explorer .map-canvas.dragging .overlay-marker {
+	pointer-events: none;
+}
+.map-explorer .overlay-zones {
+	position: absolute;
+	left: 0;
+	top: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+.map-explorer .overlay-zones-scale {
+	transform: scale(var(--s));
+}
+.map-explorer .zone {
+	fill: rgb(227 123 108 / 14%);
+	stroke: rgb(227 123 108 / 70%);
+	stroke-width: 1.5;
+	stroke-dasharray: 5 4;
+	vector-effect: non-scaling-stroke;
+}
+.map-explorer .zone.hazards.sniper {
+	fill: rgb(236 190 100 / 12%);
+	stroke: rgb(236 190 100 / 70%);
+}
+.map-explorer .zone.hazards.artillery {
+	fill: rgb(240 140 60 / 14%);
+	stroke: rgb(240 140 60 / 75%);
+}
+.map-explorer .zone.hazards.other {
+	fill: rgb(170 140 230 / 12%);
+	stroke: rgb(170 140 230 / 65%);
+}
+.map-explorer .zone.other-floor {
+	opacity: 0.35;
+}
+/* Scale the whole glyph (including document discs), keeping its centre and layout footprint fixed. */
+.map-explorer .overlay-marker.other-floor > :first-child {
+	scale: 0.75;
+	transform-origin: center;
+}
+/* Floor indicators overlay the marker without changing its artwork or layout. */
+.map-explorer .floor-caret {
+	position: absolute;
+	z-index: 2;
+	left: 0;
+	top: 0;
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	filter: drop-shadow(0 1px 1px rgb(0 0 0 / 85%));
+	pointer-events: none;
+}
+.map-explorer .overlay-marker.above .floor-caret {
+	border-bottom: 5px solid var(--me-text);
+}
+.map-explorer .overlay-marker.below .floor-caret {
+	border-top: 5px solid var(--me-text);
+}
+.map-explorer .overlay-marker:hover {
+	z-index: 5;
+}
+.map-explorer .overlay-hover {
+	display: none;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: rgb(15 16 17 / 88%);
+	text-shadow: none;
+}
+.map-explorer .overlay-marker:hover .overlay-hover {
+	display: block;
+}
+.map-explorer .overlay-marker:hover .overlay-label:not(.overlay-hover):has(+ .replaces) {
+	display: none;
+}
+.map-explorer .overlay-label {
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--me-text);
+	text-shadow:
+		0 0 3px #000,
+		0 1px 2px #000;
+	pointer-events: none;
+}
+.map-explorer .overlay-marker.selected img:not(.document-icon img) {
+	border-radius: 50%;
+	outline: 1.5px solid var(--me-accent);
+	outline-offset: 1px;
+}
+
+/* Layer panel */
+.map-explorer .map-layers {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 4px;
+	min-height: 0;
+	flex-shrink: 1;
+	overflow: hidden;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+}
+.map-explorer .map-layers.open {
+	min-width: 220px;
+	max-width: 260px;
+}
+.map-explorer .layers-bar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+.map-explorer .layers-list {
+	min-height: 0;
+	overflow: hidden auto;
+	scrollbar-width: thin;
+}
+.map-explorer .layers-bar .icon-button:disabled {
+	opacity: 0.3;
+	pointer-events: none;
+}
+.map-explorer .presets {
+	display: flex;
+	gap: 4px;
+	margin-left: auto;
+}
+.map-explorer .preset {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	border: 1.5px dashed var(--me-faint);
+	color: transparent;
+	font: 600 11px var(--me-mono);
+	display: grid;
+	place-items: center;
+}
+.map-explorer .preset:hover {
+	border-color: var(--me-muted);
+	color: var(--me-faint);
+}
+.map-explorer .preset.saved {
+	border-style: solid;
+	border-color: var(--me-muted);
+	color: var(--me-muted);
+}
+.map-explorer .preset.saved:hover {
+	color: var(--me-text);
+	border-color: var(--me-text);
+}
+.map-explorer .preset.active {
+	border-color: var(--me-accent);
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .layer-head {
+	display: flex;
+	align-items: center;
+}
+.map-explorer .caret {
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	border-radius: 5px;
+	color: var(--me-faint);
+}
+.map-explorer .caret svg {
+	display: block;
+	transition: transform 0.15s;
+}
+.map-explorer .caret:hover {
+	color: var(--me-text);
+}
+.map-explorer .caret.folded svg {
+	transform: rotate(-90deg);
+}
+.map-explorer .layer-head .layer-row {
+	padding-left: 4px;
+}
+.map-explorer .layer-floors {
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	flex-shrink: 0;
+	display: grid;
+	place-items: center;
+	border-radius: 5px;
+	color: var(--me-faint);
+	visibility: hidden;
+}
+.map-explorer .layer-head:hover .layer-floors,
+.map-explorer .layer-floors.on,
+.map-explorer .layer-floors:focus-visible {
+	visibility: visible;
+}
+.map-explorer .layer-floors.on,
+.map-explorer .layer-floors:hover {
+	color: var(--me-text);
+}
+.map-explorer .map-layers .layer + .layer {
+	margin-top: 6px;
+}
+.map-explorer .layer-row {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 26px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--me-text);
+	text-align: left;
+}
+.map-explorer .layer-row:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .layer-row .faint {
+	margin-left: auto;
+	font: 11px var(--me-mono);
+}
+.map-explorer .layer-name {
+	font-weight: 600;
+}
+.map-explorer .group-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.map-explorer .layer-row.group {
+	padding-left: 22px;
+	color: var(--me-muted);
+}
+.map-explorer .layer-row.group img {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
+.map-explorer .layer-row.group img.portrait {
+	border-radius: 50%;
+	object-fit: cover;
+}
+.map-explorer .layer-row.group.sub {
+	padding-left: 42px;
+}
+.map-explorer .layer-row.group.off {
+	opacity: 0.4;
+}
+.map-explorer .layer-head.cat {
+	padding-left: 10px;
+}
+.map-explorer .layer-head.cat .layer-row.group {
+	padding-left: 4px;
+	color: var(--me-text);
+}
+.map-explorer .layer-head.cat.mixed .layer-row.group {
+	color: var(--me-muted);
+}
+.map-explorer .layer-head.cat.off .layer-row.group {
+	color: var(--me-faint);
+}
+.map-explorer .layer-types.folded {
+	display: none;
+}
+.map-explorer .layer.off .layer-head .layer-name {
+	color: var(--me-faint);
+}
+.map-explorer .layer.mixed .layer-head .layer-name {
+	color: var(--me-muted);
+}
+.map-explorer .layer-empty {
+	margin: 4px 8px 6px;
+	font-size: 12px;
+}
+
+.map-explorer-menu.context-menu {
+	position: fixed;
+	z-index: 60;
+	min-width: 150px;
+	display: flex;
+	flex-direction: column;
+	padding: 4px;
+	border-radius: 8px;
+	background: rgb(35 36 40 / 96%);
+	box-shadow: 0 8px 24px rgb(0 0 0 / 40%);
+}
+.map-explorer-menu button {
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 5px;
+	text-align: left;
+	font-size: 12px;
+	color: var(--me-text);
+}
+.map-explorer-menu button:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer-menu button.danger {
+	color: var(--me-bad);
+}
+.map-explorer-menu .context-title {
+	padding: 4px 10px 2px;
+	font-size: 11px;
+	color: var(--me-faint);
+}
+
+/* Short map: groups sit beside each other as icon + count. */
+@container map (max-height: 440px) {
+	.map-explorer .layer-groups {
+		display: flex;
+		gap: 2px;
+	}
+	.map-explorer .layer-row.group {
+		width: auto;
+		padding: 0 6px;
+	}
+	.map-explorer .layer-row.group .group-name {
+		display: none;
+	}
+	.map-explorer .layer-cat,
+	.map-explorer .layer-types,
+	.map-explorer .layer-types.folded {
+		display: contents;
+	}
+	.map-explorer .layer-head.cat {
+		display: none;
+	}
+	.map-explorer .layer-row.group.sub {
+		padding: 0 6px;
+	}
+}
+
+/* Detail card for the hovered or pinned overlay marker. */
+.map-explorer .marker-cards {
+	position: absolute;
+	right: 14px;
+	bottom: 14px;
+	z-index: 3;
+	width: 260px;
+	max-height: calc(100% - 58px);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	pointer-events: auto;
+}
+.map-explorer .marker-card {
+	flex-shrink: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px 12px;
+	border-radius: 10px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	font-size: 12px;
+}
+.map-explorer .marker-card-head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+/* A document's reference photo widens the card so the spot reads at a glance. */
+.map-explorer .marker-cards.document {
+	width: 760px;
+	max-width: calc(100% - 28px);
+}
+/* With a photo the card is the photo: full bleed, spilling a hair over the card's border, with the text laid over it. */
+.map-explorer .marker-cards.document {
+	padding: 2px;
+}
+.map-explorer .marker-card.has-photo {
+	position: relative;
+	padding: 0;
+	gap: 0;
+	border: 1px solid rgb(255 255 255 / 14%);
+	overflow: visible;
+}
+.map-explorer .marker-card.has-photo .marker-card-photo {
+	display: block;
+	margin: -2px;
+	width: calc(100% + 4px);
+	max-width: none;
+	border-radius: 11px;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 55%);
+}
+.map-explorer .marker-card.has-photo .marker-card-head,
+.map-explorer .marker-card.has-photo > .marker-card-sub {
+	position: absolute;
+	left: 0;
+	right: 0;
+	padding: 10px 12px;
+	color: #fff;
+	text-shadow: 0 1px 3px #000;
+}
+.map-explorer .marker-card.has-photo .marker-card-head {
+	top: 0;
+	border-radius: 10px 10px 0 0;
+	background: linear-gradient(rgb(0 0 0 / 70%), transparent);
+}
+.map-explorer .marker-card.has-photo > .marker-card-sub {
+	bottom: 0;
+	border-radius: 0 0 10px 10px;
+	background: linear-gradient(transparent, rgb(0 0 0 / 75%));
+}
+.map-explorer .marker-card-photo {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	object-fit: contain;
+	border-radius: 6px;
+	background: var(--me-bg);
+}
+.map-explorer .marker-card-head > img {
+	width: 24px;
+	height: 24px;
+	flex-shrink: 0;
+}
+.map-explorer .marker-card-head > .document-icon {
+	--size: 34px;
+	margin: 4px;
+}
+.map-explorer .marker-card-head .icon-button {
+	width: 24px;
+	height: 24px;
+	margin: -4px -6px -4px 0;
+	flex-shrink: 0;
+}
+.map-explorer .marker-card-title {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+	font-weight: 500;
+}
+.map-explorer .marker-card-sub,
+.map-explorer .marker-card-label {
+	color: var(--me-muted);
+	font-weight: 400;
+}
+.map-explorer .marker-card-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.map-explorer .marker-card-row {
+	display: grid;
+	grid-template-columns: 84px 1fr;
+	gap: 8px;
+	align-items: start;
+	overflow-wrap: anywhere;
+}
+.map-explorer .marker-card-boss {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+.map-explorer .marker-card-boss > img {
+	width: 44px;
+	height: 44px;
+	flex-shrink: 0;
+	border-radius: 6px;
+	object-fit: cover;
+}
+.map-explorer .marker-card-id {
+	font-family: var(--me-mono);
+	font-size: 11px;
+	color: var(--me-muted);
+}
+.map-explorer .marker-card-items {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+}
+.map-explorer .marker-card-item {
+	position: relative;
+	display: block;
+	width: 28px;
+	height: 28px;
+}
+.map-explorer .marker-card-item img {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+}
+.map-explorer .marker-card-item .count {
+	position: absolute;
+	right: -2px;
+	bottom: -2px;
+	padding: 0 3px;
+	border-radius: 6px;
+	background: rgb(15 16 17 / 90%);
+	font-size: 10px;
+	line-height: 13px;
+}
+
+/* The map fills the viewport under the site nav; the page itself does not scroll. */
+body.map-explorer-active {
+	height: 100dvh;
+	min-height: 0;
+	overflow: hidden;
+}
+body.map-explorer-active [data-main-nav] {
+	flex-shrink: 0;
+}
+
+/* Quest objectives: zones in the accent colour; markers and zones outside the hovered quest fade. */
+.map-explorer .zone.quests {
+	fill: color-mix(in oklab, var(--me-accent) 12%, transparent);
+	stroke: color-mix(in oklab, var(--me-accent) 75%, transparent);
+}
+.map-explorer .zone.dimmed {
+	opacity: 0.12;
+}
+.map-explorer .overlay-marker.dimmed {
+	opacity: 0.22;
+}
+.map-explorer .overlay-marker.quests {
+	transform: translate(-10px, -50%);
+}
+
+/* Right edge: the Quests tab, and the drawer it opens. Top-right and bottom-right chrome moves aside for it. */
+.map-explorer {
+	--quest-drawer-w: 340px;
+}
+.map-explorer.quests-open .map-switch,
+.map-explorer.quests-open .marker-cards {
+	right: calc(var(--quest-drawer-w) + 14px);
+}
+.map-explorer .quest-drawer-tab {
+	position: absolute;
+	right: 0;
+	top: 50%;
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 6px;
+	/* Rotated half a turn below, so these are the outer (left) corners on screen. */
+	border-radius: 0 8px 8px 0;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	writing-mode: vertical-rl;
+	transform: translateY(-50%) rotate(180deg);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+.map-explorer.quests-open .quest-drawer-tab {
+	right: var(--quest-drawer-w);
+}
+.map-explorer .quest-drawer-tab.active,
+.map-explorer .quest-drawer-tab:hover {
+	color: var(--me-accent);
+}
+.map-explorer .quest-drawer-count {
+	padding: 4px 2px;
+	border-radius: 8px;
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+	font-size: 10px;
+}
+.map-explorer .quest-drawer {
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	z-index: 4;
+	display: flex;
+	flex-direction: column;
+	width: var(--quest-drawer-w);
+	background: rgb(15 16 17 / 92%);
+	backdrop-filter: blur(10px);
+}
+.map-explorer .quest-drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 12px 12px 10px 14px;
+}
+.map-explorer .quest-drawer-head h2 {
+	font-size: 14px;
+	font-weight: 600;
+}
+.map-explorer .quest-drawer-head p {
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-back {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px 4px 4px;
+	border-radius: 6px;
+	color: var(--me-muted);
+	font-weight: 500;
+}
+.map-explorer .quest-back:hover {
+	color: var(--me-accent);
+	background: var(--me-accent-soft);
+}
+.map-explorer .quest-drawer-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	padding: 0 8px 16px;
+}
+.map-explorer .quest-drawer-note {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 6px;
+	color: var(--me-muted);
+	font-size: 12px;
+}
+.map-explorer .quest-drawer-note button {
+	color: var(--me-accent);
+	text-decoration: underline;
+}
+.map-explorer .quest-trader + .quest-trader {
+	margin-top: 10px;
+}
+.map-explorer .quest-trader-head {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px;
+	color: var(--me-muted);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.map-explorer .quest-trader-head img {
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+}
+.map-explorer .quest-trader-count {
+	color: var(--me-faint);
+}
+.map-explorer .quest-row {
+	display: flex;
+	gap: 10px;
+	width: 100%;
+	padding: 6px;
+	border-radius: 7px;
+	text-align: left;
+}
+.map-explorer .quest-row:hover,
+.map-explorer .quest-row:focus-visible {
+	background: var(--me-surface-hover);
+}
+.map-explorer .quest-row.highlighted {
+	background: var(--me-accent-soft);
+}
+.map-explorer .quest-row-art {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 64px;
+	height: 44px;
+	overflow: hidden;
+	border-radius: 5px;
+	background: var(--me-bg);
+	color: var(--me-faint);
+	font-weight: 600;
+}
+.map-explorer .quest-row-art img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.map-explorer .quest-row-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+.map-explorer .quest-row-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 600;
+}
+.map-explorer .quest-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	color: var(--me-muted);
+	font-size: 10px;
+}
+.map-explorer .quest-row-unplaced {
+	color: var(--me-faint);
+	font-size: 10px;
+	font-style: italic;
+}
+.map-explorer .quest-kappa {
+	color: var(--me-accent);
+}
+.map-explorer .quest-detail {
+	padding: 0 14px 20px;
+}
+.map-explorer .quest-detail-art {
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	border-radius: 7px;
+}
+.map-explorer .quest-detail-name {
+	margin-top: 10px;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+.map-explorer .quest-detail-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	margin-top: 4px;
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-detail-meta img {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+}
+.map-explorer .quest-detail-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 8px;
+	color: var(--me-accent);
+	font-size: 11px;
+}
+.map-explorer .quest-detail-link:hover {
+	text-decoration: underline;
+}
+.map-explorer .quest-detail-section {
+	margin: 16px 0 6px;
+	color: var(--me-muted);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.map-explorer .quest-objectives {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.map-explorer .quest-objective {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 7px 6px;
+	border-radius: 6px;
+	font-size: 12px;
+}
+.map-explorer .quest-objective:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .quest-objective.done .quest-objective-text {
+	color: var(--me-faint);
+	text-decoration: line-through;
+}
+.map-explorer .quest-objective-icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--me-accent);
+}
+.map-explorer .quest-objective-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+.map-explorer .quest-objective-text em {
+	color: var(--me-faint);
+}
+.map-explorer .quest-objective-keys {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--me-muted);
+	font-size: 10px;
+}
+.map-explorer .quest-objective-visit {
+	flex-shrink: 0;
+	color: var(--me-muted);
+}
+.map-explorer .quest-objective-visit[aria-pressed="true"] {
+	color: #7cc39a;
+}
+.map-explorer .quest-objective-visit:hover {
+	color: var(--me-accent);
+}
+.map-explorer .quest-objective-elsewhere {
+	flex-shrink: 0;
+	margin-top: 3px;
+	color: var(--me-faint);
+	opacity: 0.6;
+}
+.map-explorer .quest-prerequisites {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	color: var(--me-muted);
+	font-size: 12px;
+}
+
+/* Quest objective glyph: the objective type's icon on a disc in the quest's colour (markers, legend, drawer). */
+.map-explorer .quest-glyph {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--quest-color);
+	box-shadow:
+		0 0 0 1.5px rgb(15 16 17 / 85%),
+		0 1px 3px rgb(0 0 0 / 70%);
+}
+.map-explorer .layer-row .quest-glyph {
+	width: 18px;
+	height: 18px;
+}
+.map-explorer .overlay-marker.selected .quest-glyph {
+	box-shadow:
+		0 0 0 2px var(--me-text),
+		0 1px 3px rgb(0 0 0 / 70%);
+}
+/* The quest's marker colour as a short rounded bar at the row's left. */
+.map-explorer .quest-row {
+	position: relative;
+	padding-left: 12px;
+}
+.map-explorer .quest-row::before {
+	content: "";
+	position: absolute;
+	left: 3px;
+	top: 20%;
+	height: 60%;
+	width: 3px;
+	border-radius: 2px;
+	background: var(--quest-color, transparent);
+}
+.map-explorer .quest-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 0 12px 10px 14px;
+}
+.map-explorer .quest-filter {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 12px;
+	background: rgb(255 255 255 / 5%);
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .quest-filter:hover {
+	color: var(--me-text);
+}
+.map-explorer .quest-filter.active {
+	background: var(--me-accent-soft);
+	color: var(--me-accent);
+}
+.map-explorer .kill-summary {
+	margin: 0 6px 12px;
+}
+.map-explorer .kill-summary .quest-detail-section {
+	margin-top: 4px;
+}
+.map-explorer .kill-totals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: var(--me-muted);
+}
+.map-explorer .kill-totals strong {
+	color: var(--me-text);
+}
+.map-explorer .kill-list button {
+	display: flex;
+	gap: 8px;
+	width: 100%;
+	padding: 6px;
+	border-radius: 6px;
+	text-align: left;
+	font-size: 12px;
+}
+.map-explorer .kill-list button:hover {
+	background: var(--me-surface-hover);
+}
+.map-explorer .kill-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+.map-explorer .kill-quest {
+	color: var(--me-muted);
+	font-size: 11px;
+}
+.map-explorer .kill-description {
+	color: var(--me-faint);
+	font-size: 11px;
+}
+.map-explorer .quest-objective {
+	padding: 0;
+}
+.map-explorer .quest-objective-main {
+	display: flex;
+	flex: 1;
+	align-items: flex-start;
+	gap: 8px;
+	min-width: 0;
+	padding: 7px 6px;
+	border-radius: 6px;
+	text-align: left;
+}
+.map-explorer .quest-objective-visit,
+.map-explorer .quest-objective-elsewhere {
+	margin: 7px 6px 0 0;
+}
+.map-explorer .quest-objective.placed .quest-objective-main:hover .quest-objective-text > span:first-child {
+	color: var(--me-accent);
+}
+
+/* Synced player (Mappinator): older positions fade, the newest is a pointer that glows while the raid is live. */
+.map-explorer .player-track .marker {
+	position: absolute;
+	border-radius: 50%;
+	transform: translate(-50%, -50%) rotate(var(--rot));
+	pointer-events: auto;
+}
+.map-explorer .player-track .marker.pointer {
+	border-radius: 0 50% 50% 50%;
+}
+.map-explorer .player-track .marker.old {
+	width: 9px;
+	height: 9px;
+	background: var(--me-faint);
+}
+.map-explorer .player-track .marker.newest {
+	--fresh: 0;
+	width: 20px;
+	height: 20px;
+	z-index: 2;
+	background: color-mix(in oklab, var(--player, var(--me-accent)) calc(var(--fresh) * 100%), var(--me-muted));
+	box-shadow:
+		0 0 0 2px var(--me-bg),
+		0 0 0 calc(3px + var(--fresh) * 7px) color-mix(in srgb, var(--me-accent) calc(var(--fresh) * 22%), transparent),
+		0 2px 10px rgb(0 0 0 / 50%);
+}
+.map-explorer .player-track .marker.newest::after {
+	content: "";
+	position: absolute;
+	inset: -6px;
+	border-radius: 50%;
+	border: 1.5px solid var(--player, var(--me-accent));
+	opacity: 0;
+	animation: me-player-ping 2.2s ease-out infinite;
+}
+@keyframes me-player-ping {
+	0% {
+		transform: scale(0.7);
+		opacity: calc(var(--fresh) * 0.8);
+	}
+	100% {
+		transform: scale(2.1);
+		opacity: 0;
+	}
+}
+/* Other group members: their colour always, no glow or ping. */
+.map-explorer .player-track.peer .marker.newest {
+	z-index: 1;
+	width: 16px;
+	height: 16px;
+	background: var(--player);
+	box-shadow:
+		0 0 0 2px var(--me-bg),
+		0 2px 10px rgb(0 0 0 / 50%);
+}
+.map-explorer .player-track.peer .marker.newest::after {
+	content: none;
+}
+/* Upright inside a rotated marker. */
+.map-explorer .player-track .marker-badge {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	transform: rotate(calc(-1 * var(--rot)));
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--me-bg);
+	pointer-events: none;
+}

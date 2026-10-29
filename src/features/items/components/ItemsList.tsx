@@ -1,12 +1,15 @@
 "use client";
 
 import { ItemLink } from "@/components/entities/item-link";
+import { ClearSearchAndFilters } from "@/components/ui/active-filters";
+import { useActiveItemFilters } from "../useActiveItemFilters";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { ItemRow } from "./ItemRow";
 import { ItemAnyOfGroupCard } from "./ItemAnyOfGroupCard";
 import { poolItems } from "@/lib/utils/item-pooling";
+import { useStationGoals } from "@/features/hideout/useStationGoals";
 import type { ItemSummary } from "@/types/items";
 import type {
 	DerivedQuestAnyOfGroup,
@@ -41,6 +44,7 @@ function categorySection(item: ItemSummary): string {
 interface ItemsListProps {
 	sort: ChecklistSort;
 	searchQuery: string;
+	onSearchQueryChange: (value: string) => void;
 	stations: Station[];
 	itemById: Readonly<Record<string, ItemSummary>>;
 	questItemIndex: QuestItemIndexEntry[];
@@ -69,6 +73,7 @@ type DisplayEntry =
 	{ type: "item"; key: string; item: DisplayItem } | { type: "group"; key: string; group: DerivedQuestAnyOfGroup };
 
 export function ItemsList({
+	onSearchQueryChange,
 	sort,
 	searchQuery,
 	stations,
@@ -77,6 +82,7 @@ export function ItemsList({
 	questAnyOfGroups,
 	questAvailabilityQuests,
 }: ItemsListProps) {
+	const { filters, clearSearchAndFilters } = useActiveItemFilters(searchQuery, onSearchQueryChange);
 	const [expandedGroupIds, setExpandedGroupIds] = useState<Record<string, boolean>>({});
 
 	const {
@@ -107,11 +113,13 @@ export function ItemsList({
 		itemQuestCustomLevelLookahead,
 		itemShowFutureFir,
 		itemShowIgnored,
+		itemIgnoreStationGoals,
 	} = useUserStore(
 		useShallow((state) => ({
 			itemCounts: state.itemCounts,
 			stationLevels: state.stationLevels,
 			hiddenStations: state.hiddenStations,
+			itemIgnoreStationGoals: state.itemIgnoreStationGoals,
 			checklistViewMode: state.checklistViewMode,
 			showHidden: state.showHidden,
 			hideCheap: state.hideCheap,
@@ -138,6 +146,7 @@ export function ItemsList({
 			itemShowIgnored: state.itemShowIgnored,
 		})),
 	);
+	const { caps: goalCaps } = useStationGoals(stations, { ignore: itemIgnoreStationGoals });
 
 	const deriveOptions = useMemo(
 		() => ({
@@ -234,8 +243,9 @@ export function ItemsList({
 			showHidden,
 			viewMode: checklistViewMode,
 			completedRequirements,
+			goalCaps,
 		});
-	}, [checklistViewMode, completedRequirements, hiddenStations, showHidden, stationLevels, stations]);
+	}, [checklistViewMode, completedRequirements, goalCaps, hiddenStations, showHidden, stationLevels, stations]);
 
 	const mergedPool = useMemo(() => {
 		const merged = new Map<string, MergedItem>(
@@ -494,9 +504,7 @@ export function ItemsList({
 					<div key={key}>
 						<h2 className="mb-4 border-b border-highlight/10 pb-2 text-xl font-bold text-brand">
 							{label}{" "}
-							<span className="ml-2 text-sm font-normal text-subtle-foreground">
-								({categoryGroups[key].length})
-							</span>
+							<span className="ml-2 text-sm font-normal text-subtle-foreground">({categoryGroups[key].length})</span>
 						</h2>
 						<div className={`grid gap-4 ${gridClasses}`}>
 							{categoryGroups[key].map(({ id, count, firCount, isHideout, isQuest, details }) => (
@@ -524,6 +532,7 @@ export function ItemsList({
 				<div className="text-sm">
 					You might have maxed out your hideout, completed your visible quests, or filtered everything out.
 				</div>
+				{filters.length > 0 && <ClearSearchAndFilters onClick={clearSearchAndFilters} />}
 			</div>
 		);
 	}
@@ -539,7 +548,10 @@ export function ItemsList({
 			{matchingItems.length + matchingGroups.length > 0 ? (
 				renderItems(matchingItems, matchingGroups)
 			) : (
-				<p className="py-8 text-center text-muted-foreground">No matching items in the current filtered list.</p>
+				<div className="py-8 text-center text-muted-foreground">
+					<p>No matching items in the current filtered list.</p>
+					<ClearSearchAndFilters onClick={clearSearchAndFilters} />
+				</div>
 			)}
 			{outsideMatches.items.length > 0 && (
 				<section aria-labelledby="outside-filter-results">

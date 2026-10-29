@@ -15,5 +15,22 @@ await build({
 	format: "cjs",
 	sourcemap: "linked",
 	external: ["pg-native"],
+	plugins: [
+		{
+			name: "catalog-memory-repository-only",
+			setup(build) {
+				// Preparation supplies its own in-memory repository. Do not bundle the
+				// web-only fallback (Next caches and server-only) into this Node worker.
+				build.onResolve({ filter: /^@\/server\/repositories\/tarkov-data\/postgres-repository$/ }, () => ({
+					path: "web-repository",
+					namespace: "worker-guard",
+				}));
+				build.onLoad({ filter: /.*/, namespace: "worker-guard" }, () => ({
+					contents:
+						'export function createPostgresRepository() { throw new Error("Catalog preparation must supply its in-memory repository"); }',
+				}));
+			},
+		},
+	],
 	logLevel: "warning",
 });

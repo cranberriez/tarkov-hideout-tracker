@@ -8,7 +8,7 @@ import type { DerivedQuestAnyOfGroup } from "@/lib/quests/quest-item-index";
 import { cn } from "@/lib/utils";
 import { ItemLink } from "@/components/entities/item-link";
 import { QuestLink } from "@/components/entities/quest-link";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 
 const MAX_PREVIEW_ITEMS = 3;
 
@@ -43,10 +43,6 @@ interface GroupItemsGridProps {
 	previewItems: boolean;
 }
 
-function ItemImage({ item, className }: { item: AnyOfGroupItem; className: string }) {
-	return <img src={itemImageUrl(item)} alt={item.name} className={cn("object-contain", className)} />;
-}
-
 function ItemPreviewStack({ items, previewIndex, expanded, isIconMode, isFirRequired }: ItemPreviewStackProps) {
 	return (
 		<div className={cn("relative flex shrink-0 items-center justify-center", isIconMode ? "h-12 w-16" : "h-10 w-14")}>
@@ -68,7 +64,7 @@ function ItemPreviewStack({ items, previewIndex, expanded, isIconMode, isFirRequ
 							isActive ? "opacity-100" : "opacity-35",
 						)}
 					>
-						<ItemImage item={item} className={isIconMode ? "size-11" : "size-9"} />
+						<ItemImage item={item} size={isIconMode ? 44 : 36} />
 					</div>
 				);
 			})}
@@ -174,7 +170,7 @@ function GroupItemsGrid({ items, isFirRequired, previewItems }: GroupItemsGridPr
 							isFirRequired ? "border-fir/35" : "border-highlight/10",
 						)}
 					>
-						<ItemImage item={item} className="size-8" />
+						<ItemImage item={item} size={32} />
 					</div>
 
 					<div className="min-w-0">

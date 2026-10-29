@@ -1,8 +1,14 @@
-import type { FullQuest, QuestSummary } from "./quests";
+import type { FullQuest, QuestSummary, QuestTraderRequirement } from "./quests";
 import type { ItemSummary } from "./items";
 
+/** Wire form of a quest summary: traders are IDs, expanded with `expandQuestSummaries`. */
+export type QuestSummaryPayload = Omit<QuestSummary, "trader" | "traderRequirements"> & {
+	traderId: string;
+	traderRequirements: (Omit<QuestTraderRequirement, "trader"> & { traderId: string })[];
+};
+
 export interface QuestWorkspaceIndexData {
-	quests: QuestSummary[] | null;
+	quests: QuestSummaryPayload[] | null;
 	updatedAt: number | null;
 	error: string | null;
 }

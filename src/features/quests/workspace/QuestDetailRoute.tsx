@@ -6,8 +6,7 @@ import { useQuestWorkspace } from "./QuestWorkspaceContext";
 import { useQuestDetails } from "../useQuestDetails";
 import { QuestItemsProvider } from "../QuestActionsContext";
 import type { QuestDetailData } from "@/lib/query/quest-details";
-import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
-import { useUserStore } from "@/lib/stores/useUserStore";
+import type { TarkovJsonGameMode } from "@/lib/game-mode";
 
 /**
  * `/quests/[questId]` content. Loads only the selected quest and its item presentations;
@@ -23,8 +22,7 @@ export function QuestDetailRoute({
 	fallbackMode?: TarkovJsonGameMode;
 }) {
 	const { questsById } = useQuestWorkspace();
-	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
-	const details = useQuestDetails([questId], questsById.has(questId), fallbackMode === mode ? fallbackData : null);
+	const details = useQuestDetails([questId], questsById.has(questId), fallbackData, fallbackMode);
 	const quest = details.quests[0];
 	if (!questsById.has(questId) || details.missingQuestIds.includes(questId)) {
 		return <QuestNotFound message="This quest is not part of the loaded quest data for the current game mode." />;

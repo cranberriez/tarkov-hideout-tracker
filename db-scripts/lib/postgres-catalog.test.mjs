@@ -1,6 +1,7 @@
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { applyCatalogUpdate, readCatalogBaseline } from "./postgres-catalog.mjs";
+import { applyCatalogUpdate, prepareCatalogRows, readCatalogBaseline } from "./postgres-catalog.mjs";
 import { createDiscoveryExport } from "./discovery.mjs";
 import { postgresFixture } from "./test-postgres.mjs";
 
@@ -550,3 +551,119 @@ test("malformed required catalog input is rejected before opening a write transa
 		/regular item detail projections are incomplete/,
 	);
 });
+
+test("recipe input rows preserve duplicates, tools, quest references, order and mode", () => {
+	const data = modeData("pve");
+	data.crafts[0].requiredItems = [
+		{ itemId: "synthetic-dogtag", count: 2 },
+		{ itemId: "synthetic-dogtag", count: 1, isTool: true },
+	];
+	data.crafts[0].requiredQuestItems = [{ itemId: "quest-item", count: 1, isTool: false }];
+	data.barters[0].requiredItems = [{ itemId: "missing-item", count: 0.5 }];
+	const rows = prepareCatalogRows("pve", data);
+	assert.deepEqual(rows.craft_inputs, [
+		{
+			craft_id: "craft-stable",
+			mode: "pve",
+			input_kind: "item",
+			position: 0,
+			item_id: "synthetic-dogtag",
+			count: 2,
+			is_tool: null,
+		},
+		{
+			craft_id: "craft-stable",
+			mode: "pve",
+			input_kind: "item",
+			position: 1,
+			item_id: "synthetic-dogtag",
+			count: 1,
+			is_tool: true,
+		},
+		{
+			craft_id: "craft-stable",
+			mode: "pve",
+			input_kind: "quest",
+			position: 0,
+			item_id: "quest-item",
+			count: 1,
+			is_tool: false,
+		},
+	]);
+	assert.deepEqual(rows.barter_inputs, [
+		{ barter_id: "barter-stable", mode: "pve", position: 0, item_id: "missing-item", count: 0.5, is_tool: null },
+	]);
+	assert.deepEqual(rows.crafts[0].required_items, data.crafts[0].requiredItems);
+});
+
+test("malformed recipe inputs abort before acquiring a writer connection", async () => {
+	for (const input of [
+		null,
+		{ itemId: "", count: 1 },
+		{ itemId: "x", count: 0 },
+		{ itemId: "x", count: Infinity },
+		{ itemId: "x", count: 1, isTool: "true" },
+	]) {
+		const data = completeData();
+		data.regular.crafts[0].requiredQuestItems = [input];
+		await assert.rejects(
+			applyCatalogUpdate(
+				{
+					connect() {
+						assert.fail("must validate before connecting");
+					},
+				},
+				data,
+			),
+			/malformed requirements/,
+		);
+	}
+});
+
+test(
+	"recipe input writes reconcile removed positions and retain mode isolation",
+	{ skip: !process.env.TEST_DATABASE_URL },
+	async () => {
+		const fixture = await postgresFixture();
+		try {
+			const data = completeData();
+			data.regular.crafts[0].requiredItems.push({ itemId: "tool", count: 1, isTool: true });
+			data.regular.crafts[0].requiredQuestItems = [{ itemId: "quest-item", count: 1 }];
+			data.regular.barters[0].requiredItems = [{ itemId: "synthetic", count: 2 }];
+			await applyCatalogUpdate(fixture.pool, data, 1000);
+			assert.equal(
+				(await fixture.pool.query("SELECT * FROM craft_inputs WHERE mode='regular' AND item_id='tool'")).rowCount,
+				1,
+			);
+			const before = (await fixture.pool.query("SELECT * FROM craft_inputs ORDER BY mode, input_kind, position")).rows;
+			await fixture.pool.query("DROP TABLE craft_inputs, barter_inputs");
+			await fixture.pool.query(
+				await readFile(new URL("../migrations/0005_recipe_inputs.sql", import.meta.url), "utf8"),
+			);
+			assert.deepEqual(
+				(await fixture.pool.query("SELECT * FROM craft_inputs ORDER BY mode, input_kind, position")).rows,
+				before,
+			);
+			assert.equal((await fixture.pool.query("SELECT * FROM barter_inputs WHERE item_id='synthetic'")).rowCount, 1);
+			assert.equal((await applyCatalogUpdate(fixture.pool, data, 2000)).changed, false);
+			data.regular.crafts[0].requiredItems = [];
+			data.regular.crafts[0].requiredQuestItems = [];
+			data.regular.barters[0].requiredItems = [];
+			await applyCatalogUpdate(fixture.pool, data, 3000);
+			assert.equal((await fixture.pool.query("SELECT * FROM craft_inputs WHERE mode='regular'")).rowCount, 0);
+			assert.equal((await fixture.pool.query("SELECT * FROM barter_inputs WHERE mode='regular'")).rowCount, 0);
+			assert.equal((await fixture.pool.query("SELECT * FROM craft_inputs WHERE mode='pve'")).rowCount, 1);
+			await assert.rejects(
+				fixture.pool.query(
+					"INSERT INTO craft_inputs(craft_id,mode,input_kind,position,item_id,count) VALUES('unknown','pve','item',0,'x',1)",
+				),
+				/foreign key/,
+			);
+			await fixture.pool.query("DELETE FROM crafts WHERE mode='pve'");
+			assert.equal((await fixture.pool.query("SELECT * FROM craft_inputs WHERE mode='pve'")).rowCount, 0);
+			assert.equal((await fixture.pool.query("SELECT * FROM craft_inputs WHERE mode='pvp-season'")).rowCount, 1);
+		} finally {
+			await fixture.close();
+		}
+	},
+);

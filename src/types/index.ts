@@ -52,12 +52,7 @@ export type {
 	QuestTraderStandingReward,
 } from "./quests";
 export type {
-	MapFloorDefinition,
-	MapFloorExtent,
-	MapOverlayMarker,
 	MapPoint3D,
-	MapRenderDefinition,
-	ProjectedMapPoint,
 } from "./maps";
 export type {
 	BartersPayload,

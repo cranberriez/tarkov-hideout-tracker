@@ -8,6 +8,7 @@ import { StationLink } from "@/components/entities/station-link";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled } from "@/lib/query/game-data";
 import { hideoutPageQueryOptions, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
+import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 
@@ -77,7 +78,7 @@ export function HoverOverlayGallery() {
 	const enabled = useGameDataEnabled(mode);
 	const quests = useQuery({ ...questWorkspacePageQueryOptions(mode), enabled });
 	const hideout = useQuery({ ...hideoutPageQueryOptions(mode), enabled });
-	const questExamples = (quests.data?.quests ?? []).slice(0, 3);
+	const questExamples = expandQuestSummaries(quests.data?.quests ?? []).slice(0, 3);
 	const stationExamples = (hideout.data?.stations ?? []).filter((station) =>
 		["medstation", "workbench", "generator"].includes(station.normalizedName),
 	);

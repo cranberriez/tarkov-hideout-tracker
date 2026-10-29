@@ -3,7 +3,7 @@ import "server-only";
 import { resolveItemRelease } from "@/lib/utils/game-releases";
 import { compactItemLinks } from "@/lib/utils/item-images";
 
-import { asc, eq, inArray, and, getTableColumns, sql } from "drizzle-orm";
+import { asc, eq, inArray, and, or, getTableColumns, sql } from "drizzle-orm";
 import type { DataResult, TarkovDataMode } from "@/types/common";
 import type { ItemSummary } from "@/types/items";
 import type { Station, StationBonus, StationLevel } from "@/types/hideout";
@@ -25,11 +25,15 @@ import {
 	traderModes,
 	crafts,
 	barters,
+	craftInputs,
+	barterInputs,
 	catalogStatus,
 } from "@/server/postgres/schema";
 import type { PostgresDatabase } from "@/server/postgres/connection";
 import { DatabaseDataIntegrityError } from "./errors";
 import { withStableCatalogRead } from "./postgres-read";
+
+import { craftSelection, barterSelection } from "./recipe-selection";
 
 type FreshDomain = "items" | "stations" | "quests" | "traders" | "crafts" | "barters";
 function updatedAt(freshness: unknown, domain: FreshDomain): number {
@@ -491,7 +495,12 @@ export async function getTraders(
 	return { data: result.data.traders, updatedAt: updatedAt(result.data.freshness, "traders") };
 }
 
-export async function getRecipes(mode: TarkovDataMode, db: PostgresDatabase, expectedVersion?: string) {
+export async function getRecipes(
+	mode: TarkovDataMode,
+	db: PostgresDatabase,
+	expectedVersion?: string,
+	itemId?: string,
+) {
 	const result = await withStableCatalogRead(
 		mode,
 		async (conn) => {
@@ -500,8 +509,48 @@ export async function getRecipes(mode: TarkovDataMode, db: PostgresDatabase, exp
 				.from(catalogStatus)
 				.where(eq(catalogStatus.mode, mode))
 				.limit(1);
-			const craftRows = await conn.select().from(crafts).where(eq(crafts.mode, mode)).orderBy(asc(crafts.id));
-			const barterRows = await conn.select().from(barters).where(eq(barters.mode, mode)).orderBy(asc(barters.id));
+			const craftRows = await conn
+				.select(craftSelection)
+				.from(crafts)
+				.where(
+					and(
+						eq(crafts.mode, mode),
+						itemId === undefined
+							? undefined
+							: or(
+									eq(crafts.productItemId, itemId),
+									inArray(
+										crafts.id,
+										conn
+											.select({ id: craftInputs.craftId })
+											.from(craftInputs)
+											.where(and(eq(craftInputs.mode, mode), eq(craftInputs.itemId, itemId))),
+									),
+								),
+					),
+				)
+				.orderBy(asc(crafts.id));
+			const barterRows = await conn
+				.select(barterSelection)
+				.from(barters)
+				.where(
+					and(
+						eq(barters.mode, mode),
+						itemId === undefined
+							? undefined
+							: or(
+									eq(barters.offeredItemId, itemId),
+									inArray(
+										barters.id,
+										conn
+											.select({ id: barterInputs.barterId })
+											.from(barterInputs)
+											.where(and(eq(barterInputs.mode, mode), eq(barterInputs.itemId, itemId))),
+									),
+								),
+					),
+				)
+				.orderBy(asc(barters.id));
 			const craftRecords: CraftRecord[] = craftRows.map((row) => ({
 				id: row.id,
 				productItemId: row.productItemId,

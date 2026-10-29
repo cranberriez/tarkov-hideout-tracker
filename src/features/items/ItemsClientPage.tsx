@@ -13,6 +13,7 @@ import { DataLastUpdated } from "@/components/computed/DataLastUpdated";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import type { ItemChecklistPageData } from "@/types/contracts";
 import { PROFILE_BASE_COLORS } from "@/lib/cfg/profile-colors";
+import { getSeason } from "@/lib/cfg/seasons";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStoreHydrated } from "@/lib/query/game-data";
@@ -23,6 +24,7 @@ interface ItemsClientPageProps {
 }
 
 export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
+	const seasonId = useUserStore((state) => state.selectedSeasonId);
 	const {
 		stations,
 		items: initialItems,
@@ -45,7 +47,7 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 		if (hydrated && toTarkovJsonGameMode(gameMode) === dataMode && stations && stations.length > 0) {
 			initializeDefaults(stations);
 		}
-	}, [dataMode, gameMode, hydrated, stations, freshness.stationsUpdatedAt, initializeDefaults]);
+	}, [dataMode, gameMode, seasonId, hydrated, stations, freshness.stationsUpdatedAt, initializeDefaults]);
 
 	const itemById = useMemo(() => Object.fromEntries((items ?? []).map((item) => [item.id, item])), [items]);
 
@@ -60,10 +62,14 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 				<div className="flex items-center gap-3 self-start rounded-sm border border-highlight/10 bg-shadow/20 px-3 py-2 text-xs text-muted-foreground sm:self-auto">
 					<span>Active profile prices</span>
 					<span
-						style={{ "--profile-color": PROFILE_BASE_COLORS[gameMode] } as CSSProperties}
+						style={
+							{
+								"--profile-color": gameMode === "KORD" ? getSeason(seasonId).color : PROFILE_BASE_COLORS[gameMode],
+							} as CSSProperties
+						}
 						className="inline-flex items-center gap-2 rounded-sm border border-[color-mix(in_srgb,var(--profile-color)_80%,transparent)] bg-[color-mix(in_srgb,var(--profile-color)_18%,var(--background))] px-3 py-1.5 font-mono font-semibold tracking-wide text-[color-mix(in_srgb,var(--profile-color)_55%,var(--foreground))] shadow-md shadow-[color-mix(in_srgb,var(--profile-color)_45%,transparent)] transition-all"
 					>
-						<span>{gameMode}</span>
+						<span>{gameMode === "KORD" ? getSeason(seasonId).name : gameMode}</span>
 					</span>
 				</div>
 			</div>
@@ -100,6 +106,7 @@ export function ItemsClientPage({ data, dataMode }: ItemsClientPageProps) {
 								questAvailabilityQuests={questAvailabilityQuestList}
 							/> */}
 							<ItemsList
+								onSearchQueryChange={setSearchQuery}
 								sort={sort}
 								searchQuery={searchQuery}
 								stations={stations}

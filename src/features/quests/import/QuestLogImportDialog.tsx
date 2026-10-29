@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { IMPORT_GAME_MODES, type ImportGameMode, type QuestImportBuckets } from "@/lib/quests/quest-log-import";
 import { type ParsedQuestEvent, type QuestLogParseResult } from "@/lib/quests/quest-log-parser";
 import { buildQuestAvailabilityMap, isQuestAvailableForProfile } from "@/lib/quests/quest-availability";
+import { buildCompletedTraderTierQuestCounts } from "@/lib/quests/quest-trader-completion-gates";
 import { getSensitiveBackfillQuest, getSensitiveBackfillQuestName } from "@/lib/quests/sensitive-quest-backfill";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QuestListByTrader } from "../components/QuestListByTrader";
@@ -47,6 +48,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 
 		for (const mode of IMPORT_GAME_MODES) {
 			const profile = profiles[mode];
+			const completedCounts = buildCompletedTraderTierQuestCounts(quests, profile.completedQuests);
 			const availableIds = new Set<string>();
 			const availabilityProfile = {
 				playerLevel: profile.playerLevel,
@@ -58,7 +60,7 @@ export function QuestLogImportDialog({ open, onOpenChange, quests }: QuestLogImp
 			};
 
 			for (const quest of quests) {
-				if (isQuestAvailableForProfile(quest, availabilityProfile, availabilityMap)) {
+				if (isQuestAvailableForProfile(quest, availabilityProfile, availabilityMap, undefined, completedCounts)) {
 					availableIds.add(quest.id);
 				}
 			}

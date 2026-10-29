@@ -49,6 +49,7 @@ docs/notes.txt
 
 # codex and my random notes and shit
 .codex-analysis/
+.claude/
 plans/
 
 # Large data sources for comparisons

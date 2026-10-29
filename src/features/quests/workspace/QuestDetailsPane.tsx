@@ -22,6 +22,7 @@ import { QuestFailureConditions, QuestMultipleChoiceBanner, QuestUnlocks } from 
 import { QuestRequirements } from "./details/QuestRequirements";
 import { hasQuestRewards, QuestRewards } from "./details/QuestRewards";
 import { QuestMobileMenuSpacer } from "./QuestMobileMenu";
+import { QuestEndingBanner, QuestEndingFailureBanner } from "./QuestEndingMarkers";
 
 /** Workspace adapter: store/action wiring around the reusable quest detail sections. */
 export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
@@ -68,9 +69,8 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 				maps,
 				branchLines: branchLinesByQuestId.get(quest.id) ?? [],
 				multipleChoiceQuestIds: multipleChoiceGroups.get(quest.id) ?? [],
-				completedObjectiveIds,
 			}),
-		[branchLinesByQuestId, completedObjectiveIds, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById],
+		[branchLinesByQuestId, leadsToByQuestId, maps, multipleChoiceGroups, quest, questsById],
 	);
 	const controller = useQuestDetailsController(quest.id, questDetailsModel.mapData);
 
@@ -88,7 +88,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 		objectivePresentation,
 		visualizerLines,
 		multipleChoiceQuests,
-		mapData: questMapData,
 	} = questDetailsModel;
 	const {
 		showDebug,
@@ -102,9 +101,8 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 		setHoveredObjectiveId,
 		detailScrollRef,
 		detailSplitRef,
-		selectedDetailMapKey,
 		selectedDetailMap,
-		focusedObjectiveId,
+		highlightedObjectiveId,
 		showObjectiveOnMap,
 		openCompactMap,
 		handleDetailScroll,
@@ -165,6 +163,8 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 					)}
 					<div className="max-w-6xl px-6 py-10 sm:px-9">
 						<section>
+							<QuestEndingBanner questId={quest.id} />
+							<QuestEndingFailureBanner questId={quest.id} />
 							{(hasRequirements || leadsTo.length > 0 || hasFailureDetails) && (
 								<div className="mb-12 flex flex-wrap gap-x-10 gap-y-8">
 									{hasRequirements && (
@@ -192,9 +192,7 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 								objectiveCount={quest.objectives.length}
 								objectivePresentation={objectivePresentation}
 								completedObjectiveIds={completedObjectiveIds}
-								mapData={questMapData}
-								selectedMapKey={selectedDetailMapKey}
-								focusedObjectiveId={focusedObjectiveId}
+								focusedObjectiveId={highlightedObjectiveId}
 								onHoverObjective={setHoveredObjectiveId}
 								onShowObjectiveOnMap={showObjectiveOnMap}
 								onToggleObjectiveCompletion={toggleQuestObjectiveCompletion}
@@ -210,7 +208,6 @@ export function QuestDetailsPane({ quest }: { quest: FullQuest }) {
 				<QuestObjectiveMap
 					quest={quest}
 					controller={controller}
-					onToggleObjectiveCompletion={toggleQuestObjectiveCompletion}
 				/>
 			</div>
 

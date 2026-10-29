@@ -1,0 +1,266 @@
+import snapshot from "../../../lib/data/season-1-battle-pass.json";
+
+export interface Reward {
+	type: string;
+	name?: string;
+	value?: number;
+	kind?: string;
+	side?: string[];
+	bsgId?: string;
+	url?: string;
+	trader?: string;
+	level?: number;
+}
+export interface Tile {
+	id: string;
+	slot: number;
+	displayName: string;
+	img: string;
+	bigImg: string;
+	cost: Record<string, number>;
+	totalDocumentCost: number;
+	rewards: Reward[];
+}
+export interface PassPage {
+	num: number;
+	req: number;
+	cells: Tile[];
+}
+export const pages: PassPage[] = snapshot.battlePass.pages.map((page) => ({
+	...page,
+	cells: page.cells.map((tile) => ({
+		...tile,
+		cost: Object.fromEntries(Object.entries(tile.cost).filter(([, amount]) => typeof amount === "number")),
+	})),
+}));
+export const documents = snapshot.battlePass.documents;
+export const tiles = pages.flatMap((page) => page.cells);
+export const documentKeys = documents.map((doc) => doc.key);
+export type Costs = Record<string, number>;
+export const totalCost = (costs: Costs) => Object.values(costs).reduce((sum, amount) => sum + amount, 0);
+
+export interface Progress {
+	completed: string[];
+	goals: string[];
+	inventory: Costs;
+	classified: number;
+	avoidedDocuments: string[];
+	/** Per-player document types: tile ID -> baseline document key -> replacement key. */
+	costSwaps: CostSwaps;
+}
+export type CostSwaps = Record<string, Record<string, string>>;
+export const emptyProgress = (): Progress => ({
+	completed: [],
+	goals: [],
+	inventory: {},
+	classified: 0,
+	avoidedDocuments: [],
+	costSwaps: {},
+});
+export function normalizeCount(value: unknown): number {
+	return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(99999, Math.floor(value))) : 0;
+}
+export function parseProgress(raw: string | null): Progress {
+	const result = emptyProgress();
+	try {
+		const value = JSON.parse(raw ?? "null");
+		if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+		for (const field of ["completed", "goals", "avoidedDocuments"] as const) {
+			if (Array.isArray(value[field]))
+				result[field] = [...new Set<string>(value[field].filter((id: unknown) => typeof id === "string"))];
+		}
+		if (value.inventory && typeof value.inventory === "object" && !Array.isArray(value.inventory)) {
+			result.inventory = Object.fromEntries(
+				Object.entries(value.inventory).map(([key, amount]) => [key, normalizeCount(amount)]),
+			);
+		}
+		result.classified = normalizeCount(value.classified);
+		result.costSwaps = parseCostSwaps(value.costSwaps);
+	} catch {
+		/* A corrupt save is not rewritten on read. */
+	}
+	return result;
+}
+function parseCostSwaps(value: unknown): CostSwaps {
+	const result: CostSwaps = {};
+	if (!value || typeof value !== "object" || Array.isArray(value)) return result;
+	for (const [tileId, swaps] of Object.entries(value)) {
+		if (!swaps || typeof swaps !== "object" || Array.isArray(swaps)) continue;
+		const valid = Object.entries(swaps).filter(
+			(entry): entry is [string, string] => typeof entry[1] === "string" && entry[1] !== entry[0],
+		);
+		if (valid.length > 0) result[tileId] = Object.fromEntries(valid);
+	}
+	return result;
+}
+/** Swaps keep each baseline quantity; unknown sources or targets are ignored but stay saved. */
+export function applyCostSwaps(cost: Costs, swaps: Record<string, string> | undefined, keys: string[] = documentKeys) {
+	if (!swaps) return cost;
+	const result: Costs = {};
+	for (const [key, amount] of Object.entries(cost)) {
+		const target = swappedKey(key, swaps, keys);
+		result[target] = (result[target] ?? 0) + amount;
+	}
+	return result;
+}
+/** The document type a baseline line currently uses. */
+export function swappedKey(key: string, swaps: Record<string, string> | undefined, keys: string[] = documentKeys) {
+	return swaps && keys.includes(swaps[key]) ? swaps[key] : key;
+}
+/** Setting a line back to its baseline type removes the swap. */
+export function setCostSwap(swaps: CostSwaps, tileId: string, from: string, to: string): CostSwaps {
+	const tile = { ...swaps[tileId] };
+	if (to === from) delete tile[from];
+	else tile[from] = to;
+	const result = { ...swaps };
+	if (Object.keys(tile).length > 0) result[tileId] = tile;
+	else delete result[tileId];
+	return result;
+}
+export function toggleId(ids: string[], id: string) {
+	return ids.includes(id) ? ids.filter((entry) => entry !== id) : [...ids, id];
+}
+export function sumCosts(selected: Tile[]): Costs {
+	const costs: Costs = {};
+	for (const tile of selected)
+		for (const [key, amount] of Object.entries(tile.cost)) costs[key] = (costs[key] ?? 0) + amount;
+	return costs;
+}
+
+/** Minimum total document count; inventory does not alter the optimization objective.
+ * Each page is independent: keep explicit goals, then buy its cheapest remaining tiles
+ * until the next page's count is met. A bundled reward still counts as one tile.
+ */
+export function planGoals(
+	goalIds: string[],
+	completedIds: string[],
+	passPages = pages,
+	avoidedDocuments: string[] = [],
+) {
+	const avoided = new Set(avoidedDocuments);
+	const avoidedCost = (tile: Tile) =>
+		Object.entries(tile.cost).reduce((sum, [key, amount]) => sum + (avoided.has(key) ? amount : 0), 0);
+	const known = new Set(passPages.flatMap((page) => page.cells.map((tile) => tile.id)));
+	const completed = new Set(completedIds.filter((id) => known.has(id)));
+	const goals = new Set(goalIds.filter((id) => known.has(id) && !completed.has(id)));
+	const lastPage = passPages.findLastIndex((page) => page.cells.some((tile) => goals.has(tile.id)));
+	const selected: Tile[] = [];
+	const fillerIds: string[] = [];
+	for (let i = 0; i <= lastPage; i++) {
+		const page = passPages[i];
+		const chosen = page.cells.filter((tile) => goals.has(tile.id));
+		const done = page.cells.filter((tile) => completed.has(tile.id)).length;
+		const required = i < lastPage ? passPages[i + 1].req : 0;
+		const candidates = page.cells
+			.filter((tile) => !completed.has(tile.id) && !goals.has(tile.id))
+			.sort((a, b) => totalCost(a.cost) - totalCost(b.cost) || avoidedCost(a) - avoidedCost(b) || a.slot - b.slot);
+		const fillers = candidates.slice(0, Math.max(0, required - done - chosen.length));
+		selected.push(...chosen, ...fillers);
+		fillerIds.push(...fillers.map((tile) => tile.id));
+	}
+	const costs = sumCosts(selected);
+	return { selected, fillerIds, costs, total: totalCost(costs), unresolvedIds: goalIds.filter((id) => !known.has(id)) };
+}
+
+/** Allocate owned stock once to the entire plan, then a shared 1:1 wildcard pool. */
+export function coverCosts(
+	costs: Costs,
+	inventory: Costs,
+	classified: number,
+	useClassified: boolean,
+	avoidedDocuments: string[] = [],
+	keys: string[] = documentKeys,
+) {
+	let pool = useClassified ? normalizeCount(classified) : 0;
+	const avoided = new Set(avoidedDocuments);
+	// Reserve owned wildcards for avoided types first; every wildcard is used only once.
+	const allocations = [...keys]
+		.sort((a, b) => Number(avoided.has(b)) - Number(avoided.has(a)))
+		.map((key) => {
+			const required = costs[key] ?? 0;
+			const owned = normalizeCount(inventory[key]);
+			const used = Math.min(required, owned);
+			const wildcard = Math.min(pool, required - used);
+			pool -= wildcard;
+			const deficit = required - used - wildcard;
+			return {
+				key,
+				required,
+				owned,
+				used,
+				classified: wildcard,
+				missing: avoided.has(key) ? 0 : deficit,
+				classifiedMissing: avoided.has(key) ? deficit : 0,
+			};
+		});
+	const rows = keys.map((key) => allocations.find((row) => row.key === key)!);
+	const classifiedMissing = rows.reduce((n, row) => n + row.classifiedMissing, 0);
+	return {
+		rows,
+		classifiedMissing,
+		missing: rows.reduce((n, row) => n + row.missing, classifiedMissing),
+		classifiedUsed: rows.reduce((n, row) => n + row.classified, 0),
+		ownedUsed: rows.reduce((n, row) => n + row.used, 0),
+	};
+}
+
+export function unlockedPages(completed: string[], passPages = pages) {
+	const done = new Set(completed);
+	let open = true;
+	return passPages.map((page, i) => {
+		if (i > 0) open = open && passPages[i - 1].cells.filter((tile) => done.has(tile.id)).length >= page.req;
+		return open;
+	});
+}
+
+/** A read-only, sequential purchase preview. Partial rewards never unlock pages. */
+export function previewProgress(
+	selected: Tile[],
+	completedIds: string[],
+	inventory: Costs,
+	classified: number,
+	useClassified: boolean,
+	avoidedDocuments: string[] = [],
+	passPages = pages,
+) {
+	const completed = new Set(completedIds);
+	const selectedIds = new Set(selected.map((tile) => tile.id));
+	const ordinary = Object.fromEntries(Object.entries(inventory).map(([key, amount]) => [key, normalizeCount(amount)]));
+	let wildcardPool = useClassified ? normalizeCount(classified) : 0;
+	const avoided = new Set(avoidedDocuments);
+	const fractions = new Map<string, number>();
+	const allocations = new Map<string, Costs>();
+	const pageProgress: number[] = [];
+	let open = true;
+	let previousClaimed = 0;
+	for (const [index, page] of passPages.entries()) {
+		if (index > 0) open = open && previousClaimed >= page.req;
+		let claimed = page.cells.filter((tile) => completed.has(tile.id)).length;
+		let possible = 0;
+		if (open) {
+			for (const tile of [...page.cells].sort((a, b) => a.slot - b.slot)) {
+				if (!selectedIds.has(tile.id) || completed.has(tile.id)) continue;
+				let covered = 0;
+				const allocated: Costs = {};
+				const costs = Object.entries(tile.cost).sort(([a], [b]) => Number(avoided.has(b)) - Number(avoided.has(a)));
+				for (const [key, amount] of costs) {
+					const owned = Math.min(amount, ordinary[key] ?? 0);
+					ordinary[key] = (ordinary[key] ?? 0) - owned;
+					const wildcard = Math.min(amount - owned, wildcardPool);
+					wildcardPool -= wildcard;
+					covered += owned + wildcard;
+					allocated[key] = owned + wildcard;
+				}
+				const cost = totalCost(tile.cost);
+				const fraction = cost > 0 ? covered / cost : 1;
+				if (fraction > 0) fractions.set(tile.id, fraction);
+				allocations.set(tile.id, allocated);
+				possible += fraction;
+				if (fraction === 1) claimed++;
+			}
+		}
+		pageProgress.push(possible);
+		previousClaimed = claimed;
+	}
+	return { fractions, allocations, pageProgress, total: pageProgress.reduce((sum, amount) => sum + amount, 0) };
+}

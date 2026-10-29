@@ -13,9 +13,18 @@ PostgreSQL; production switching follows the separate
 | DATABASE_MIGRATION_URL         | Optional direct migration connection for pooled hosting |
 | PG_POOL_MAX                    | Connection pool limit (default 10)                      |
 | PG_STATEMENT_TIMEOUT_MS        | Statement timeout (default 30000 ms)                    |
+| PG_QUERY_LOG                   | Opt-in SQL logging: 1 for summaries, verbose for SQL (default off) |
 | TEST_DATABASE_URL              | Separate disposable PostgreSQL test database            |
-| CRON_SECRET                    | Bearer secret for the scheduled catalog route     |
+| syncEnabled                    | Companion sync tooling outside development: only `true` enables it; unset defaults to false |
+| APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
+| APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
+
+Companion sync is always available under `npm run dev`. In production, set
+`syncEnabled=true` to enable `/sync`, its navigation/status indicator, background
+companion polling and queued updates, and `/api/group/auth`. Otherwise the page
+and group auth endpoint return 404 and the controller stays unmounted. Disabling
+the feature preserves saved pairing and sync history.
 
 Only the optional one-time `db:discovery:export -- --turso discovery.json` command
 uses `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. These source credentials are not
@@ -28,6 +37,15 @@ verified TLS configuration; migration/build operations do not disable certificat
 validation. Apply schema explicitly with npm run db:migrate. Runtime and builds
 never run migrations.
 
+Before deploying database-backed site ratings, run `npm run db:migrate` to apply
+[0007_feedback.sql](../db-scripts/migrations/0007_feedback.sql). It adds and seeds
+the singleton `feedback` aggregate without changing catalog or player data. The
+runtime database role needs SELECT/INSERT/UPDATE access to this table. Existing
+successful rating cookies are preserved; votes accepted by the former logging stub
+cannot be reconstructed from the new counters. Verify recorder behavior with
+`node --test --import jiti/register src/server/site-rating/record-site-rating.test.ts`;
+database cases require `TEST_DATABASE_URL` and use disposable isolated schemas.
+
 Run `npm run db:update` to bootstrap the catalog and discovery directly in PostgreSQL,
 then `npm run db:prices:refresh`. No SQLite backup or discovery import is required.
 If a verified `discovery.json` exists in the project root, the update imports it
@@ -37,6 +55,44 @@ later updates timestamp genuinely new items. See the [CLI guide](../db-scripts/R
 Run npm run dev and open [localhost:3000](http://localhost:3000). A production
 build uses npm run build followed by npm start. Database routes require initialized
 catalog data and bootstrapped offers/prices for every served mode.
+
+## Measuring database activity locally
+
+Start a fresh server from PowerShell with logging enabled:
+
+```powershell
+$env:PG_QUERY_LOG = '1'
+npm run dev
+```
+
+Browse normally and watch `[postgres]` lines next to Next.js request logs. Each
+completed driver query reports its start timestamp, process ID, cumulative count,
+query fingerprint, operation, table names, duration, status, and `quietMs` since
+the latest observed query completion (null for the first query). Concurrent work
+can produce out-of-order start timestamps; overlapping queries report zero quiet
+time. Counts and gaps are per server process/pool and reset on restart. Timings
+include driver execution/transport, but exclude pool acquisition and connection
+setup. Table extraction is a best-effort SQL summary, not a full SQL parser.
+
+Repeat the same navigation after warming caches, then leave the app untouched
+for more than five minutes. Repeated fingerprints identify recurring SQL;
+requests without SQL lines indicate no observed queries through this app's pool.
+These are query logs, not exact cache-hit metrics or Neon billing measurements:
+other clients, connection activity, background jobs, and separate CLI pools are
+not captured. Standard pool and transaction queries are covered; streaming
+Submittable queries are passed through without logging. The logger issues no SQL.
+
+For caching closer to deployment, stop the dev server and run `npm run build`,
+then `npm start` with the same environment variable. Treat build-time activity
+separately. Development reloads and caching behavior can distort comparisons.
+Keep the same game mode for repeated visits, then test mode switches separately.
+
+Use `PG_QUERY_LOG=verbose` to include SQL text. Bound parameter values, result
+rows, connection strings, and error messages are never printed by this logger;
+verbose SQL can still contain literals embedded directly in a statement. Logs
+stay in the server terminal unless you redirect them. To save a local session,
+use `npm run dev 2>&1 | Tee-Object -FilePath "$env:TEMP\tarkov-postgres.log"`.
+Set the variable to `0` or remove it, then restart the server to disable logging.
 
 ## Validation
 
@@ -201,6 +257,11 @@ analysis runs and biggest movers. The API keeps releaseId only as a
 compatibility field containing the string content version. It is not a release
 lifecycle. Search's stale-token protocol remains unchanged.
 
+The compact site feedback row reads current `good` and `bad` totals directly from
+the singleton through [get-site-feedback.ts](../src/server/site-rating/get-site-feedback.ts).
+These counts are site-wide across modes and retain bigint precision. A missing row
+or read failure is shown explicitly while the rest of the page remains available.
+
 ## Mutable price refresh
 
 ```bash
@@ -221,25 +282,26 @@ plus derived analytics. Manual price refreshes share its per-mode lease.
 
 ### Scheduled catalog updates
 
-[vercel.json](../vercel.json) schedules one daily request at 00:15 UTC to
-[/api/cron/catalog](../src/app/api/cron/catalog/route.ts). It requires the existing
-`CRON_SECRET` bearer token and `DATABASE_URL`. No current-patch variable is needed.
-The former price cron endpoints are removed; prices are handled by the worker or
-`db:prices:refresh`.
+The [market analyzer](../market-analyzer/README.md) runs the shared
+[full catalog updater](../src/server/catalog/refresh-catalog.ts) on startup when due
+and every two hours after success. It always prepares all three modes, regardless
+of the configured price modes, and uses the same validated atomic writer as
+`db:update`. Prices and discovery are preserved; migrations and local discovery
+imports remain explicit CLI operations.
 
-The route bundles the same adapters and catalog preparation as `db:update`, fetches
-all three modes, prepares item details, and uses the same validated atomic writer.
-It preserves prices and existing discovery. It does not run migrations or import a
-local discovery file; use the CLI for explicit discovery imports and dry runs.
-Missing secrets return 503, unauthorized requests 401, and update failures 500;
-success reports changed/no-op status and per-mode counts. A competing catalog write
-invalidates a stale preparation baseline instead of allowing it to overwrite data.
+The worker saves attempt/success timestamps in `/data/catalog.json`; failed runs
+retry after 15 minutes without advancing success. Catalog failures are logged as
+`catalog-failed` and do not prevent the per-mode price/analytics steps from running.
+`catalog-started` and `catalog-completed` identify successful passes. The volume
+lock and heartbeat remain refreshed during long catalog runs. `status` reports
+catalog timestamps alongside mode state. Use `npm run db:status` for database
+freshness and `npm run db:update` for an immediate manual recovery.
 
-Deploy to activate the changed schedule. The route requests a 300-second execution
-budget; verify that the hosting configuration permits it and monitor the first run's
-duration and catalog freshness with `db:status`. If a run times out or fails before
-commit, no partial catalog is published. Vercel does not automatically retry failed
-cron invocations; an authenticated retry or `db:update` can recover a failed run.
+[vercel.json](../vercel.json) has no cron schedules and the catalog cron endpoint
+is removed. Deploy the rebuilt worker first, verify `catalog-completed`, then
+deploy the website to remove its old schedule. `CRON_SECRET` is no longer needed.
+The website's catalog-version cache revalidates every two hours (plus its
+60-second process memo) to discover external commits without a callback.
 
 ### Flea stability evidence and validation
 
@@ -302,6 +364,39 @@ summaries; --storage adds PostgreSQL relation sizes. Inspect
 [price store](../src/server/prices/price-store.ts) for the corresponding failures.
 Do not treat content_version as a restore point.
 
-Map/quest-content utilities remain independent: npm run pull-map-overlays,
-quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
+Map/quest-content utilities remain independent: npm run pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
 and [data layer](data-layer.md) for their source policies.
+
+## Seasonal rollover rehearsal
+
+The single availability setting is Season 1's `endsAt` in
+[seasons.ts](../src/lib/cfg/seasons.ts). Its configured end remains December 7,
+2026 at 23:59:59 UTC. Season 2 is the blue **Test** placeholder. Crossing the
+boundary changes availability and navigation; character activation is manual.
+
+Use a disposable browser origin/profile rather than an existing player's save:
+
+1. Select KORD, record recognizable level, inventory, story and pass progress.
+2. Temporarily set Season 1's `endsAt` to a UTC timestamp in the past. Reload or
+   refocus the app. The old character must remain selected, with an Activate Test
+   banner and unchanged progress.
+3. Activate Test. Confirm a new default character and separate pass progress.
+   Repeated activation must preserve any Test edits.
+4. Open the profile menu, choose **View past**, then KORD. The three current
+   profile choices are replaced by past seasonal characters. Confirm old progress
+   remains editable and the banner now offers **Switch to Test**.
+5. Switch among KORD, Test, PVP and PVE, reload, and check pass/map links and
+   document consumption isolation. Export/import a v2 backup with both seasons;
+   a v1 KORD backup must affect Season 1 only.
+6. Restore the original `endsAt`. This changes availability only; it does not
+   remove the disposable Test character. Never clear real player data to rerun.
+
+Focused checks:
+
+```bash
+node --test --import jiti/register src/lib/cfg/seasons.test.ts src/lib/stores/useUserStore.profile.test.ts src/lib/stores/user-state-storage.test.ts src/features/settings/progress-backup.test.ts src/features/battle-pass/lib/battle-pass-seasons.test.ts
+```
+
+The historical character keeps progress IDs. It does not freeze the live
+`pvp-season` server catalog; only the bundled seasonal battlepass/map content is
+versioned by this preparation.

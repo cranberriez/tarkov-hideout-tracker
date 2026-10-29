@@ -48,7 +48,7 @@ export function ItemDetailQuestRequirements({
 		<div>
 			{requiredQuestCount > 0 && (
 				<section>
-					<div className="border-b border-border-color bg-shadow/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+					<div className="bg-border-color px-3 py-2 text-xs font-semibold text-foreground">
 						Required for quests
 					</div>
 					<div className="divide-y divide-border-color">
@@ -67,10 +67,8 @@ export function ItemDetailQuestRequirements({
 				</section>
 			)}
 			{questRewards.length > 0 && (
-				<section className={requiredQuestCount > 0 ? "border-t border-border-color" : ""}>
-					<div className="border-b border-border-color bg-brand/[0.04] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-brand/80">
-						Quest rewards
-					</div>
+				<section>
+					<div className="bg-brand/10 px-3 py-2 text-xs font-semibold text-brand">Quest rewards</div>
 					<div className="divide-y divide-border-color">
 						{questRewards.map((reward) => (
 							<QuestRewardRow

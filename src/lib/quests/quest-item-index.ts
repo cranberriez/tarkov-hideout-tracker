@@ -15,6 +15,7 @@ import {
 	type QuestAvailabilityQuest,
 } from "./quest-availability";
 import { isQuestDisabledByCompletedFailedRequirement } from "./quest-failures";
+import { buildCompletedTraderTierQuestCounts } from "./quest-trader-completion-gates";
 
 export const BROAD_ANY_ITEM_PREVIEW_LIMIT = 15;
 
@@ -475,9 +476,10 @@ function getAvailableQuestIds(
 ): Set<string> {
 	const questsById = buildQuestAvailabilityMap(quests);
 	const availableQuestIds = new Set<string>();
+	const completedCounts = buildCompletedTraderTierQuestCounts(questsById.values(), availabilityProfile.completedQuests);
 
 	for (const quest of quests) {
-		if (isQuestAvailableForProfile(quest, availabilityProfile, questsById)) {
+		if (isQuestAvailableForProfile(quest, availabilityProfile, questsById, undefined, completedCounts)) {
 			availableQuestIds.add(quest.id);
 		}
 	}

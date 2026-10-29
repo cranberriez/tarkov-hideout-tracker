@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ItemLink, type PreviewItem } from "./item-link";
-import { ItemQuantityBadge, ItemThumbnail } from "./item-thumbnail";
+import { ItemImage } from "./item-image";
 
 /**
  * Item image, name, and quantity. Standard items link to their page with a preview;
@@ -14,6 +14,7 @@ export function ItemReference({
 	item,
 	quantityLabel,
 	quantityOverlay = false,
+	tool = false,
 	badges,
 	secondary,
 	previewDetails,
@@ -21,12 +22,14 @@ export function ItemReference({
 	variant = "chip",
 	thumbnailSize,
 	preferShortName = false,
+	hideName = false,
 	className,
 }: {
 	item: PreviewItem;
 	quantityLabel?: string;
 	/** Chip only: draw the quantity over the thumbnail. */
 	quantityOverlay?: boolean;
+	tool?: boolean;
 	badges?: ReactNode;
 	secondary?: ReactNode;
 	previewDetails?: ReactNode;
@@ -35,13 +38,20 @@ export function ItemReference({
 	thumbnailSize?: "sm" | "md";
 	/** Chip only: show the short name (full name on hover) for dense layouts such as recipes. */
 	preferShortName?: boolean;
+	/** Chip only: omit the visible name while retaining the accessible name and hover preview. */
+	hideName?: boolean;
 	className?: string;
 }) {
 	const row = variant === "row";
 	const chipLabel = (preferShortName && item.shortName) || item.name;
 	const content = row ? (
 		<>
-			<ItemThumbnail item={item} size={thumbnailSize ?? "sm"} className="border-r border-highlight/10 bg-highlight/5" />
+			<ItemImage
+				item={item}
+				size={thumbnailSize ?? "sm"}
+				tool={tool}
+				className="border-r border-highlight/10 bg-highlight/5"
+			/>
 			<span className="min-w-0 flex-1 truncate px-2.5 text-xs text-foreground">{item.name}</span>
 			{badges}
 			{quantityLabel && (
@@ -50,23 +60,27 @@ export function ItemReference({
 		</>
 	) : (
 		<>
-			<ItemThumbnail item={item} size="md">
-				{quantityOverlay && quantityLabel && <ItemQuantityBadge label={quantityLabel} />}
-			</ItemThumbnail>
-			<span className="flex min-w-0 flex-1 flex-col">
-				<span className="flex min-w-0 items-center gap-2">
-					<span
-						className="min-w-0 flex-1 truncate text-foreground/80"
-						title={chipLabel === item.name ? undefined : item.name}
-					>
-						{chipLabel}
-					</span>
-					{quantityLabel && !quantityOverlay && (
-						<span className="shrink-0 font-mono text-xs font-semibold text-foreground">{quantityLabel}</span>
+			<ItemImage item={item} size="md" tool={tool} quantity={quantityOverlay ? quantityLabel : undefined} />
+			{(!hideName || (quantityLabel && !quantityOverlay) || secondary) && (
+				<span className="flex min-w-0 flex-1 flex-col">
+					{(!hideName || (quantityLabel && !quantityOverlay)) && (
+						<span className="flex min-w-0 items-center gap-2">
+							{!hideName && (
+								<span
+									className="min-w-0 flex-1 truncate text-foreground/80"
+									title={chipLabel === item.name ? undefined : item.name}
+								>
+									{chipLabel}
+								</span>
+							)}
+							{quantityLabel && !quantityOverlay && (
+								<span className="shrink-0 font-mono text-xs font-semibold text-foreground">{quantityLabel}</span>
+							)}
+						</span>
 					)}
+					{secondary && <span className="mt-0.5 flex items-center">{secondary}</span>}
 				</span>
-				{secondary && <span className="mt-0.5 flex items-center">{secondary}</span>}
-			</span>
+			)}
 			{badges}
 		</>
 	);
@@ -82,7 +96,7 @@ export function ItemReference({
 		<ItemLink
 			item={item}
 			previewDetails={previewDetails}
-			aria-label={quantityLabel ? `${item.name}, ${quantityLabel}` : undefined}
+			aria-label={[item.name, quantityLabel, tool && "reusable tool"].filter(Boolean).join(", ")}
 			className={cn(
 				classes,
 				"transition-colors focus-visible:outline-2 focus-visible:outline-brand",

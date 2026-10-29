@@ -25,6 +25,10 @@
 	/* Neutral primitives: white overlays/borders, black scrims/shadows, dark text on bright fills. */
 	--highlight: #ffffff;
 	--shadow: #000000;
+	/* Map glyph outlines retain black ink against third-party map artwork in every theme. */
+	--map-marker-ink: #000000;
+	/* Neutral group outlines remain white against map artwork in every theme. */
+	--map-marker-outline: #ffffff;
 	--inverse: var(--background);
 
 	/* Brand: navigation, selection, links and primary actions. Change this to var(--accent-alternate) to trial tan; hover derives automatically. */
@@ -45,6 +49,11 @@
 
 	/* Danger: failed/error states, destructive actions and negative profit. */
 	--danger: oklch(0.704 0.191 22.216);
+	/* Fixed black ink for solid danger banners in every theme. */
+	--danger-foreground: #000000;
+	/* Fixed dark surface and light ink for the unobtrusive site-rating chip. */
+	--rating-surface: #111111;
+	--rating-foreground: #eeeeee;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -94,11 +103,6 @@
 	--chart-3: var(--warning);
 	--chart-4: var(--special);
 	--chart-5: var(--danger);
-
-	/* Map roles: objective fallback, extracts and transits; independent aliases allow map-only adjustments. */
-	--map-objective: var(--chart-1);
-	--map-extract: var(--success);
-	--map-transit: var(--warning);
 
 	/* Faction insignia stripes: blue/red reuse the information/danger pigments without tying their identity to brand. */
 	--faction-blue: var(--info);
@@ -204,6 +208,7 @@
 	--color-warning: var(--warning);
 	--color-fir: var(--fir);
 	--color-danger: var(--danger);
+	--color-danger-foreground: var(--danger-foreground);
 	--color-info: var(--info);
 	--color-special: var(--special);
 	--color-success-surface: var(--success-surface);
@@ -232,9 +237,6 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-4: var(--chart-4);
 	--color-chart-5: var(--chart-5);
-	--color-map-objective: var(--map-objective);
-	--color-map-extract: var(--map-extract);
-	--color-map-transit: var(--map-transit);
 	--color-faction-blue: var(--faction-blue);
 	--color-faction-red: var(--faction-red);
 	--color-sidebar: var(--sidebar);
@@ -257,6 +259,27 @@ body {
 	font-family: var(--font-sans), sans-serif;
 }
 
+/* Only the wrapper directly containing a page main supplies its side space. */
+.page-content:has(> main) {
+	flex-direction: row;
+}
+
+.page-content:has(> main) > main {
+	flex: 0 0 auto;
+	min-width: 0;
+	width: 100%;
+	margin-inline: 0;
+}
+
+.page-content-side {
+	display: none;
+	flex: 1 1 0;
+}
+
+.page-content:has(> main) > .page-content-side {
+	display: block;
+}
+
 body.quest-workspace-active,
 body.uploader-workspace-active {
 	height: 100dvh;
@@ -268,27 +291,7 @@ body.uploader-workspace-active [data-main-nav] {
 	flex-shrink: 0;
 }
 
-@media (width >= 64rem) {
-	body.quest-raid-planner-fullscreen [data-main-nav],
-	body.quest-raid-planner-fullscreen [data-quest-list-pane],
-	body.quest-raid-planner-fullscreen [data-quest-action-bar] {
-		display: none;
-	}
-
-	body.quest-raid-planner-fullscreen [data-quest-workspace] {
-		height: 100dvh;
-	}
-
-	body.quest-raid-planner-fullscreen [data-quest-workspace-grid] {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-
 @media (width < 64rem) {
-	body.quest-raid-planner-active [data-main-nav] {
-		display: none;
-	}
-
 	body.quest-objective-map-active [data-quest-mobile-back-bar] {
 		display: none;
 	}
@@ -314,4 +317,24 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
 	appearance: textfield;
 	-moz-appearance: textfield;
+}
+
+/* Navbar search refused while a game is in progress. */
+@keyframes search-denied {
+	0%,
+	100% {
+		translate: 0;
+	}
+	20% {
+		translate: -4px;
+	}
+	40% {
+		translate: 4px;
+	}
+	60% {
+		translate: -3px;
+	}
+	80% {
+		translate: 2px;
+	}
 }

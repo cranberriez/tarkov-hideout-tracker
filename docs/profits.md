@@ -155,7 +155,17 @@ route selections still take precedence; disabling the option restores accessible
 automatic recommendations. This page preference does not change recursive optimizer
 eligibility.
 An explicitly linked recipe remains visible with its lock reasons so its profit
-breakdown can still be inspected.
+breakdown can still be inspected; pinned-only filtering still applies. The bottom
+filter drawer shows one **Recipe Focussed** chip and explains the bypass of search,
+source, availability, profit and top filters. Clearing it restores normal filtering
+and removes only the `recipe` URL parameter, preserving other parameters and the fragment.
+
+The drawer also shows the active result-filter count and removable icon chips for
+search, individual sources, pins, lock visibility, profitable-only and top-per-source.
+Lock category chips are inactive while the master hide-locked filter is enabled.
+Filtered empty results offer **Clear search and filters**, which broadens visibility
+without changing skills, pricing inputs, acquisition preferences, overrides or saved
+pins. Sort and calculation preferences are excluded from the active-filter count.
 
 ### Lock presentation
 
@@ -251,6 +261,15 @@ from the shared [filter bar kit](../src/components/ui/filter-bar.tsx): local out
 search, trader multi-selection, Options/Skills triggers, and the pinned-crafts toggle.
 Options uses shared panel sections and checkboxes; Skills retains its specialized
 validation and dialog. Escape closes Options and restores trigger focus.
+Options also offers **Show top only**, with a 1–5 per-station (crafts) or per-trader (barters) limit (default 2;
+the filter starts off). It ranks filtered barters by baseline profit and crafts
+by baseline profit/hour, independently of display sorting and manual overrides.
+Direct recipe links remain visible even outside the limit. **Ignore player level**
+omits player-level gates from recipe calculations and sale/ingredient details;
+flea item bans, quests, trader loyalty and station requirements still apply.
+The navbar level input keeps a local draft and writes through the existing profile
+action after 500 ms without another edit. Empty drafts do not change saved levels;
+profile changes or external level updates cancel pending writes.
 The [multi-select dropdown](../src/components/ui/filter-multi-select.tsx) supplies
 the trigger/menu and checkbox-row interactions, including keyboard navigation,
 disabled rows, and remaining open after selection. The profits feature supplies

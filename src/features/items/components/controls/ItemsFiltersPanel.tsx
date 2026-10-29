@@ -12,6 +12,8 @@ interface ItemsFiltersPanelProps {
 	onChecklistViewModeChange: (value: "all" | "nextLevel") => void;
 	showHidden: boolean;
 	onShowHiddenChange: (value: boolean) => void;
+	ignoreStationGoals: boolean;
+	onIgnoreStationGoalsChange: (value: boolean) => void;
 	itemQuestVisibilityMode: ItemQuestVisibilityMode;
 	onItemQuestVisibilityModeChange: (value: ItemQuestVisibilityMode) => void;
 	itemQuestCustomLookahead: number;
@@ -36,6 +38,8 @@ export function ItemsFiltersPanel({
 	onChecklistViewModeChange,
 	showHidden,
 	onShowHiddenChange,
+	ignoreStationGoals,
+	onIgnoreStationGoalsChange,
 	itemQuestVisibilityMode,
 	onItemQuestVisibilityModeChange,
 	itemQuestCustomLookahead,
@@ -78,6 +82,12 @@ export function ItemsFiltersPanel({
 						checked={showHidden}
 						onCheckedChange={onShowHiddenChange}
 					/>
+					<FilterCheckbox
+						id="items-filter-ignore-station-goals"
+						label="Ignore Station Goals"
+						checked={ignoreStationGoals}
+						onCheckedChange={onIgnoreStationGoalsChange}
+					/>
 				</PanelSection>
 
 				<PanelSection title="Quests">
@@ -85,12 +95,11 @@ export function ItemsFiltersPanel({
 						label="Quest visibility"
 						value={itemQuestVisibilityMode}
 						onValueChange={onItemQuestVisibilityModeChange}
-						className="flex-wrap"
 						options={[
-							{ value: "available", label: "Available" },
-							{ value: "nextLayer", label: "Next Layer" },
-							{ value: "allFuture", label: "All Future" },
-							{ value: "custom", label: "Custom" },
+							{ value: "available", label: "Available", title: "Available quests" },
+							{ value: "nextLayer", label: "Next", title: "Next quest layer" },
+							{ value: "allFuture", label: "All", title: "All future quests" },
+							{ value: "custom", label: "Custom", title: "Custom lookahead" },
 						]}
 					/>
 					<div

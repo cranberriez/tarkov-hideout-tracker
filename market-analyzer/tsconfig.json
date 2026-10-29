@@ -6,6 +6,7 @@
 		"typeRoots": ["../node_modules/@types"],
 		"skipLibCheck": true,
 		"strict": true,
+		"allowJs": true,
 		"noEmit": true,
 		"esModuleInterop": true,
 		"module": "esnext",

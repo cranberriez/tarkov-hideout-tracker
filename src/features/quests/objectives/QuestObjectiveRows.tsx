@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { ItemLink } from "@/components/entities/item-link";
-import { ItemReference } from "@/components/entities/item-reference";
+import { ItemImage } from "@/components/entities/item-image";
 import { ItemThumbnail } from "@/components/entities/item-thumbnail";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import type { FullQuestObjective, QuestObjectiveItemType, QuestObjectiveShootType } from "@/types/quests";
 import type { ItemSummary } from "@/types/items";
 import { QuestObjectiveIcon } from "./QuestObjectiveIcon";
@@ -230,21 +229,14 @@ export function ObjectiveRow({
 								// Quest-specific pickups are display-only: no inventory, pricing, or item page.
 								const isQuestSpecific = "source" in rowItem && rowItem.source === "questSpecific";
 								return (
-									<ItemReference
+									<ItemImage
 										key={rowItem.id}
-										variant="row"
-										thumbnailSize="md"
-										linked={!isQuestSpecific}
+										size="md"
+										opensModal={!isQuestSpecific}
 										item={rowItem}
-										className={cn("min-h-11", item?.foundInRaid && "border-fir/40")}
-										badges={
-											item?.foundInRaid ? (
-												<Badge tone="fir" size="xs" className="mr-2">
-													FiR
-												</Badge>
-											) : undefined
-										}
-										quantityLabel={hasItemChoices ? undefined : `x${item?.count ?? objective.count ?? 1}`}
+										framed
+										foundInRaid={item?.foundInRaid}
+										quantity={hasItemChoices ? undefined : (item?.count ?? objective.count ?? 1)}
 									/>
 								);
 							})}
@@ -252,7 +244,7 @@ export function ObjectiveRow({
 								<button
 									type="button"
 									onClick={() => setShowAllItems((expanded) => !expanded)}
-									className="flex min-h-11 min-w-[13rem] flex-[1_1_14rem] items-center justify-center gap-1.5 rounded-md bg-highlight/[0.035] px-3 py-2 text-xs font-medium text-subtle-foreground transition-colors hover:bg-highlight/[0.07] hover:text-foreground"
+									className="flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-highlight/[0.035] px-3 py-2 text-xs font-medium text-subtle-foreground transition-colors hover:bg-highlight/[0.07] hover:text-foreground"
 								>
 									{showAllItems ? (
 										<>

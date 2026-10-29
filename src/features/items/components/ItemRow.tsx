@@ -10,7 +10,7 @@ import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
 import { describeMarketTiming } from "@/lib/utils/market-timing";
 import { MarketTimingMarker } from "@/components/entities/market-timing-banner";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 
 interface ItemRowProps {
 	item: ItemSummary;
@@ -79,7 +79,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 					className={`${isIconOnly ? "w-12 h-12" : "w-10 h-10"} bg-shadow/40 flex items-center justify-center shrink-0 overflow-visible relative`}
 				>
 					<div className="h-full w-full overflow-hidden">
-						<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+						<ItemImage item={item} size={isIconOnly ? 48 : 40} />
 					</div>
 					{marketTiming && <MarketTimingMarker timing={marketTiming} />}
 				</div>
@@ -147,7 +147,7 @@ export function ItemRow({ item, count, firCount = 0, size, isHideout = false, is
 			<div className="flex items-start gap-3 min-w-0 z-1">
 				<div className="w-12 h-12 bg-shadow/40 flex items-center justify-center shrink-0 overflow-visible relative">
 					<div className="h-full w-full overflow-hidden">
-						<img src={itemImageUrl(item)} alt={item.name} className="w-full h-full object-contain" />
+						<ItemImage item={item} size={48} />
 					</div>
 					{marketTiming && <MarketTimingMarker timing={marketTiming} />}
 				</div>

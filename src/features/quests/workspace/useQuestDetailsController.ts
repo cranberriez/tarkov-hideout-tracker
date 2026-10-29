@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { QuestDetailMapData } from "./quest-details-model";
 
 export function useQuestDetailsController(questId: string | null, questMapData: QuestDetailMapData | null) {
@@ -10,7 +10,6 @@ export function useQuestDetailsController(questId: string | null, questMapData: 
 	const [compactMapQuestId, setCompactMapQuestId] = useState<string | null>(null);
 	const [mapWidthPercent, setMapWidthPercent] = useState(46);
 	const [isResizingMap, setIsResizingMap] = useState(false);
-	const [objectiveFloorNames, setObjectiveFloorNames] = useState<ReadonlyMap<string, string[]>>(new Map());
 	const [hoveredObjectiveId, setHoveredObjectiveId] = useState<string | null>(null);
 	const [mapTarget, setMapTarget] = useState<{
 		questId: string;
@@ -18,10 +17,10 @@ export function useQuestDetailsController(questId: string | null, questMapData: 
 		objectiveId: string | null;
 		requestKey: number;
 	} | null>(null);
+	const [mapSelection, setMapSelection] = useState<{ questId: string; objectiveId: string } | null>(null);
 	const mapSectionRef = useRef<HTMLElement>(null);
 	const detailScrollRef = useRef<HTMLDivElement>(null);
 	const detailSplitRef = useRef<HTMLDivElement>(null);
-	const deferredMapData = useDeferredValue(questMapData);
 
 	useEffect(() => {
 		detailScrollRef.current?.scrollTo({ top: 0 });
@@ -49,26 +48,26 @@ export function useQuestDetailsController(questId: string | null, questMapData: 
 			? mapTarget.mapKey
 			: (detailMaps[0]?.key ?? null);
 	const selectedDetailMap = detailMaps.find((map) => map.key === selectedDetailMapKey) ?? null;
-	const detailMarkers = selectedDetailMapKey ? (questMapData?.markersByMap.get(selectedDetailMapKey) ?? []) : [];
-	const panelMapData = deferredMapData ?? questMapData;
-	const panelMapKey =
-		panelMapData &&
-		mapTarget?.questId === panelMapData.questId &&
-		panelMapData.maps.some((map) => map.key === mapTarget.mapKey)
-			? mapTarget.mapKey
-			: (panelMapData?.maps[0]?.key ?? null);
-	const panelSelectedMap = panelMapData?.maps.find((map) => map.key === panelMapKey) ?? null;
-	const panelMarkers = panelMapKey ? (panelMapData?.markersByMap.get(panelMapKey) ?? []) : [];
-	const isMapUpdatePending = !!panelMapData && panelMapData.questId !== questId;
 	const focusedObjectiveId =
 		questId && mapTarget?.questId === questId && mapTarget.mapKey === selectedDetailMapKey
 			? mapTarget.objectiveId
 			: null;
 	const focusRequestKey = focusedObjectiveId ? (mapTarget?.requestKey ?? null) : null;
 
+	// A marker pinned by hand highlights its objective in the list; "show on map" replaces it.
+	const markerObjectiveId = questId && mapSelection?.questId === questId ? mapSelection.objectiveId : null;
+	const highlightedObjectiveId = markerObjectiveId ?? focusedObjectiveId;
+	const selectMarkerObjective = useCallback(
+		(objectiveId: string | null) => {
+			if (questId) setMapSelection(objectiveId ? { questId, objectiveId } : null);
+		},
+		[questId],
+	);
+
 	const showObjectiveOnMap = useCallback(
 		(mapKey: string, objectiveId: string) => {
 			if (!questId) return;
+			setMapSelection(null);
 			setMapTarget((current) => ({
 				questId,
 				mapKey,
@@ -131,8 +130,6 @@ export function useQuestDetailsController(questId: string | null, questMapData: 
 		setMapWidthPercent,
 		isResizingMap,
 		setIsResizingMap,
-		objectiveFloorNames,
-		handleObjectiveFloorsChange: setObjectiveFloorNames,
 		hoveredObjectiveId,
 		setHoveredObjectiveId,
 		mapSectionRef,
@@ -141,12 +138,10 @@ export function useQuestDetailsController(questId: string | null, questMapData: 
 		detailMaps,
 		selectedDetailMapKey,
 		selectedDetailMap,
-		detailMarkers,
-		panelSelectedMap,
-		panelMarkers,
-		isMapUpdatePending,
 		focusedObjectiveId,
+		highlightedObjectiveId,
 		focusRequestKey,
+		selectMarkerObjective,
 		showObjectiveOnMap,
 		selectDetailMap,
 		openCompactMap,

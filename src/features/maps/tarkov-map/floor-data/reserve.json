@@ -1,0 +1,729 @@
+{
+	"map": "reserve",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "2mxmqk74",
+			"zone": "dome",
+			"floor": "2nd Floor",
+			"height": [
+				22.1,
+				25.7
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1go1ued",
+			"rect": {
+				"x": -8,
+				"z": 181.5,
+				"width": 18,
+				"depth": 35,
+				"angle": 0
+			}
+		},
+		{
+			"id": "39mmswde",
+			"zone": "wizard tower",
+			"floor": "2nd Floor",
+			"height": [
+				-3.6,
+				-0.5
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 118.53,
+				"z": -84.95,
+				"width": 13.53,
+				"depth": 8.48,
+				"angle": -14
+			}
+		},
+		{
+			"id": "3esix836",
+			"zone": "towers",
+			"floor": "2nd Floor",
+			"height": [
+				1,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|6jfp93",
+			"rect": {
+				"x": -2.05,
+				"z": -205.7,
+				"width": 10,
+				"depth": 10,
+				"angle": -13.5
+			}
+		},
+		{
+			"id": "3u2av8br",
+			"zone": "white bishop",
+			"floor": "3rd Floor",
+			"height": [
+				-0.6,
+				10
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -67.65,
+				"z": -34.43,
+				"width": 37.62,
+				"depth": 25.24,
+				"angle": -14
+			}
+		},
+		{
+			"id": "4wzyer5i",
+			"zone": "white pawn",
+			"floor": "4th Floor",
+			"height": [
+				2.2,
+				5
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -103.19,
+				"z": 92.4,
+				"width": 51.41,
+				"depth": 16.44,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "62bs2a5f",
+			"zone": "checkpoint fence tower",
+			"floor": "2nd Floor",
+			"height": [
+				-3.5,
+				-0.6
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|7ug8ra",
+			"rect": {
+				"x": 56.8,
+				"z": 102.13,
+				"width": 10.83,
+				"depth": 12.18,
+				"angle": -16.5
+			}
+		},
+		{
+			"id": "6exr9mr8",
+			"zone": "wizard tower",
+			"floor": "3rd Floor",
+			"height": [
+				-0.5,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 118.4,
+				"z": -85.68,
+				"width": 13.41,
+				"depth": 9.97,
+				"angle": -14
+			}
+		},
+		{
+			"id": "6l5yt0ul",
+			"zone": "dome tunnels",
+			"floor": "Bunkers",
+			"height": [
+				null,
+				18
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|11g518b",
+			"rect": {
+				"x": -21,
+				"z": 181,
+				"width": 88,
+				"depth": 16,
+				"angle": 0
+			}
+		},
+		{
+			"id": "6qdpv7kb",
+			"zone": "dome",
+			"floor": "3rd Floor",
+			"height": [
+				25.7,
+				29.3
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|1go1ued",
+			"rect": {
+				"x": -8,
+				"z": 181.5,
+				"width": 18,
+				"depth": 35,
+				"angle": 0
+			}
+		},
+		{
+			"id": "727fs9om",
+			"zone": "bunkers",
+			"floor": "Bunkers",
+			"height": [
+				-11,
+				-4.6
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 142.36,
+				"z": 30.85,
+				"width": 27,
+				"depth": 27.22,
+				"angle": -16
+			}
+		},
+		{
+			"id": "8bxpwr62",
+			"zone": "bunker hermetic door bunkers",
+			"floor": "Bunkers",
+			"height": [
+				-7.3,
+				-3.2
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|lhihv2",
+			"rect": {
+				"x": 47.15,
+				"z": -173.06,
+				"width": 47.25,
+				"depth": 37.59,
+				"angle": -15
+			}
+		},
+		{
+			"id": "a0ylq1sq",
+			"zone": "scav lands",
+			"floor": "2nd Floor",
+			"height": [
+				-4.1,
+				-1.2
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1woxdwb",
+			"rect": {
+				"x": -139.19,
+				"z": -128.89,
+				"width": 18.79,
+				"depth": 19,
+				"angle": -15.5
+			}
+		},
+		{
+			"id": "bxwqbcox",
+			"zone": "black pawn",
+			"floor": "3rd Floor",
+			"height": [
+				-0.6,
+				2.2
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -164.31,
+				"z": 54.86,
+				"width": 19.05,
+				"depth": 52.82,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "c5bxvz0y",
+			"zone": "black pawn",
+			"floor": "2nd Floor",
+			"height": [
+				-3.5,
+				-0.6
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -164.31,
+				"z": 54.86,
+				"width": 19.05,
+				"depth": 52.82,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "ci9ww9r3",
+			"zone": "storage bunker",
+			"floor": "Bunkers",
+			"height": [
+				null,
+				-7.3
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|hukcvz",
+			"rect": {
+				"x": 74.36,
+				"z": -112.21,
+				"width": 104.06,
+				"depth": 155.39,
+				"angle": -14
+			}
+		},
+		{
+			"id": "cmfg7mkf",
+			"zone": "bunkers",
+			"floor": "Bunkers",
+			"height": [
+				-11,
+				-4.6
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|brpslx",
+			"rect": {
+				"x": 222.53,
+				"z": -8.38,
+				"width": 31.14,
+				"depth": 33.43,
+				"angle": 19.5
+			}
+		},
+		{
+			"id": "d8ezw3xu",
+			"zone": "white king",
+			"floor": "4th Floor",
+			"height": [
+				2.2,
+				6.6
+			],
+			"heightSource": "data",
+			"source": "4th Floor|box|1w4qco9",
+			"rect": {
+				"x": -48.95,
+				"z": 13,
+				"width": 58.09,
+				"depth": 52,
+				"angle": -14
+			}
+		},
+		{
+			"id": "d8f9eugq",
+			"zone": "white king",
+			"floor": "3rd Floor",
+			"height": [
+				-2.2,
+				2.1
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|1w4qco9",
+			"rect": {
+				"x": -48.95,
+				"z": 13,
+				"width": 58.09,
+				"depth": 52,
+				"angle": -14
+			}
+		},
+		{
+			"id": "dv1qbk0r",
+			"zone": "black bishop",
+			"floor": "3rd Floor",
+			"height": [
+				-0.6,
+				2.2
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -140.94,
+				"z": -15.88,
+				"width": 70.73,
+				"depth": 28.21,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "g05ukgtg",
+			"zone": "towers",
+			"floor": "2nd Floor",
+			"height": [
+				1,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|e15v47",
+			"rect": {
+				"x": 190.49,
+				"z": -256.35,
+				"width": 10,
+				"depth": 10,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "ihvrf6fq",
+			"zone": "towers",
+			"floor": "2nd Floor",
+			"height": [
+				1,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|wmlfov",
+			"rect": {
+				"x": 271,
+				"z": 22,
+				"width": 10,
+				"depth": 10,
+				"angle": -15.5
+			}
+		},
+		{
+			"id": "ir0soqj4",
+			"zone": "white knight",
+			"floor": "4th Floor",
+			"height": [
+				1.9,
+				4.7
+			],
+			"heightSource": "data",
+			"source": "4th Floor|box|bl4p7f",
+			"rect": {
+				"x": 86.13,
+				"z": -19.34,
+				"width": 26.18,
+				"depth": 14.58,
+				"angle": -14
+			}
+		},
+		{
+			"id": "j33hg3fp",
+			"zone": "black knight",
+			"floor": "2nd Floor",
+			"height": [
+				-3.9,
+				-1.1
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 14.53,
+				"z": -12.59,
+				"width": 24.59,
+				"depth": 34.91,
+				"angle": -14
+			}
+		},
+		{
+			"id": "jqfhexss",
+			"zone": "white pawn",
+			"floor": "3rd Floor",
+			"height": [
+				-0.6,
+				2.2
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -103.19,
+				"z": 92.4,
+				"width": 51.41,
+				"depth": 16.44,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "jwatn23f",
+			"zone": "white pawn",
+			"floor": "5th Floor",
+			"height": [
+				5,
+				9.5
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -103.19,
+				"z": 92.4,
+				"width": 51.41,
+				"depth": 16.44,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "majar8yh",
+			"zone": "white knight",
+			"floor": "2nd Floor",
+			"height": [
+				-3.9,
+				-1.1
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|bl4p7f",
+			"rect": {
+				"x": 83.51,
+				"z": -30.54,
+				"width": 24.62,
+				"depth": 36.32,
+				"angle": -14
+			}
+		},
+		{
+			"id": "n55lc0bu",
+			"zone": "command bunkers",
+			"floor": "Bunkers",
+			"height": [
+				null,
+				-7.3
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|l56bgw",
+			"rect": {
+				"x": -106.65,
+				"z": 28.65,
+				"width": 144.92,
+				"depth": 145.55,
+				"angle": -13.5
+			}
+		},
+		{
+			"id": "o2asrbmw",
+			"zone": "black pawn",
+			"floor": "4th Floor",
+			"height": [
+				2.2,
+				5
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -164.31,
+				"z": 54.86,
+				"width": 19.05,
+				"depth": 52.82,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "oljhkzm1",
+			"zone": "black pawn",
+			"floor": "5th Floor",
+			"height": [
+				5,
+				9.5
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -164.31,
+				"z": 54.86,
+				"width": 19.05,
+				"depth": 52.82,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "oyooh56j",
+			"zone": "white pawn",
+			"floor": "2nd Floor",
+			"height": [
+				-3.5,
+				-0.6
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|scfq1z",
+			"rect": {
+				"x": -103.19,
+				"z": 92.4,
+				"width": 51.41,
+				"depth": 16.44,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "pn04t9rl",
+			"zone": "towers",
+			"floor": "2nd Floor",
+			"height": [
+				1,
+				8
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1p4j7sy",
+			"rect": {
+				"x": -114.31,
+				"z": -152.44,
+				"width": 10,
+				"depth": 9,
+				"angle": -14
+			}
+		},
+		{
+			"id": "q1ftf65m",
+			"zone": "white bishop",
+			"floor": "2nd Floor",
+			"height": [
+				-3.9,
+				-0.6
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1kmkl0h",
+			"rect": {
+				"x": -67.65,
+				"z": -34.43,
+				"width": 37.62,
+				"depth": 25.24,
+				"angle": -14
+			}
+		},
+		{
+			"id": "q3eh0bfw",
+			"zone": "white king",
+			"floor": "2nd Floor",
+			"height": [
+				-4.3,
+				-2.2
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|1w4qco9",
+			"rect": {
+				"x": -48.95,
+				"z": 13,
+				"width": 58.09,
+				"depth": 52,
+				"angle": -14
+			}
+		},
+		{
+			"id": "ri29m3h5",
+			"zone": "dome",
+			"floor": "4th Floor",
+			"height": [
+				29.3,
+				36
+			],
+			"heightSource": "data",
+			"source": "4th Floor|box|1go1ued",
+			"rect": {
+				"x": -8.41,
+				"z": 173.87,
+				"width": 18.82,
+				"depth": 19.68,
+				"angle": 0
+			}
+		},
+		{
+			"id": "rp32vxws",
+			"zone": "black bishop",
+			"floor": "2nd Floor",
+			"height": [
+				-3.5,
+				-0.6
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|15ii23f",
+			"rect": {
+				"x": -148.97,
+				"z": -9.56,
+				"width": 52,
+				"depth": 20.01,
+				"angle": -14.5
+			}
+		},
+		{
+			"id": "sssrcso3",
+			"zone": "D2",
+			"floor": "Bunkers",
+			"height": [
+				null,
+				-12
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|1oaed8v",
+			"rect": {
+				"x": -83.78,
+				"z": 147.98,
+				"width": 95.45,
+				"depth": 79.9,
+				"angle": -27.5
+			}
+		},
+		{
+			"id": "tj1obw6j",
+			"zone": "E1 bunkers",
+			"floor": "Bunkers",
+			"height": [
+				-11,
+				-4.6
+			],
+			"heightSource": "data",
+			"source": "Bunkers|box|epffl2",
+			"rect": {
+				"x": -261.77,
+				"z": -68.12,
+				"width": 28,
+				"depth": 26,
+				"angle": 37.5
+			}
+		},
+		{
+			"id": "u5msfvol",
+			"zone": "white knight",
+			"floor": "3rd Floor",
+			"height": [
+				-1.1,
+				1.9
+			],
+			"heightSource": "data",
+			"source": "3rd Floor|box|bl4p7f",
+			"rect": {
+				"x": 83.51,
+				"z": -30.54,
+				"width": 24.62,
+				"depth": 36.32,
+				"angle": -14
+			}
+		},
+		{
+			"id": "vcq4ah1v",
+			"zone": "train depot",
+			"floor": "2nd Floor",
+			"height": [
+				-1.9,
+				11.3
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|y2m3c1",
+			"rect": {
+				"x": 162.98,
+				"z": -148.62,
+				"width": 58.35,
+				"depth": 52.83,
+				"angle": -15
+			}
+		},
+		{
+			"id": "wa8o562i",
+			"zone": "towers",
+			"floor": "2nd Floor",
+			"height": [
+				1,
+				8
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -294.7,
+				"z": -87.89,
+				"width": 10,
+				"depth": 9,
+				"angle": -14
+			}
+		},
+		{
+			"id": "y2uvi119",
+			"zone": "black knight",
+			"floor": "3rd Floor",
+			"height": [
+				-1.1,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 14.53,
+				"z": -12.59,
+				"width": 24.59,
+				"depth": 34.91,
+				"angle": -14
+			}
+		}
+	]
+}

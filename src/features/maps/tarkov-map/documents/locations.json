@@ -1,0 +1,5627 @@
+{
+	"source": {
+		"name": "EFT Docs Map",
+		"url": "https://tarkovdoc.com/maps/",
+		"season": "KORD BREACH",
+		"attribution": "EFT Docs Map. Escape from Tarkov map imagery and game assets © Battlestate Games."
+	},
+	"locations": [
+		{
+			"id": "factory/blueprint-3-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "3F Office Desk Drawer",
+			"description": "Office block, 3rd floor: inside the desk drawer in the office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/3-3.webp",
+			"estimate": {
+				"x": 29.15,
+				"z": 56.33
+			}
+		},
+		{
+			"id": "factory/blueprint-3-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "3F Hallway Filing Cabinet",
+			"description": "Office block, 3rd floor: inside the filing cabinet standing in the hallway.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/3-2.webp",
+			"estimate": {
+				"x": 27.85,
+				"z": 50.45
+			}
+		},
+		{
+			"id": "factory/blueprint-3-3",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "3F Locked Office Cabinet",
+			"description": "Office block, 3rd floor, in the locked room: on top of the filing cabinet.",
+			"key": "Factory emergency exit key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/3-1.webp",
+			"estimate": {
+				"x": 21.82,
+				"z": 56.31
+			}
+		},
+		{
+			"id": "factory/blueprint-3-4",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "3F Office Fallen Cabinets",
+			"description": "Office block, 3rd floor: on the office floor next to the fallen cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/3-4.webp",
+			"estimate": {
+				"x": 12.62,
+				"z": 55.01
+			}
+		},
+		{
+			"id": "factory/blueprint-1-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Backyard Window Office Desk",
+			"description": "Office reached through the window from the factory backyard: on the desk at the back of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-1.webp",
+			"estimate": {
+				"x": 27.05,
+				"z": 42.48
+			}
+		},
+		{
+			"id": "factory/blueprint-1-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "1F Office Drawer by Safe",
+			"description": "Office block, ground floor: inside the open drawer next to the safe.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-2.webp",
+			"position": {
+				"x": 13.22,
+				"y": 1.41,
+				"z": 38.55
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-1-3",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Workshop Shed Top Shelf",
+			"description": "Workshop shed (container): on the top-right shelf at the back.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-3.webp",
+			"position": {
+				"x": 54.36,
+				"y": 1.57,
+				"z": 22.04
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-1-4",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Couch Side Table Slot",
+			"description": "In the shelf slot of the side table next to the couch.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-4-a.webp",
+			"position": {
+				"x": 32.24,
+				"y": 0.8,
+				"z": 17.52
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-1-5",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Medical Building Kitchen Shelf",
+			"description": "Medical building, ground floor: on the kitchen shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-5-a.webp",
+			"position": {
+				"x": 33.82,
+				"y": 0.75,
+				"z": -35.83
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-1-6",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Medical Building Bench",
+			"description": "Medical building, ground floor: sitting on the bench.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-6.webp",
+			"estimate": {
+				"x": 26.97,
+				"z": -34.69
+			}
+		},
+		{
+			"id": "factory/blueprint-1-7",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Med Tent Table",
+			"description": "Inside the medical tent: on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-7.webp",
+			"position": {
+				"x": -15.31,
+				"y": 1.01,
+				"z": -26.71
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-1-8",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Gate 2 Tagilla Gym Shelf",
+			"description": "Gate 2 hideout: on the shelf next to Tagilla's improvised gym equipment.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/1-8.webp",
+			"position": {
+				"x": 47.29,
+				"y": 1.13,
+				"z": -46.08
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-2-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "2F Blueprints Spot",
+			"description": "Second floor. The exact spot is still being confirmed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/2-1.webp",
+			"estimate": {
+				"x": 27.98,
+				"z": -64.07
+			}
+		},
+		{
+			"id": "factory/blueprint-0-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Basement Blueprints Spot",
+			"description": "Basement level. The exact spot is still being confirmed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/0-1.webp",
+			"position": {
+				"x": -21.07,
+				"y": -1.82,
+				"z": 48.72
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/blueprint-0-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "blueprints",
+			"title": "Basement Dead Body",
+			"description": "Basement: between the legs of the dead body.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/blueprints/0-2-a.webp",
+			"position": {
+				"x": 19.46,
+				"y": -2.51,
+				"z": -22.22
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-3-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "3F Office Cabinet Top",
+			"description": "Office block, 3rd floor: on top of the cabinets in the office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/3-1.webp",
+			"estimate": {
+				"x": 29.34,
+				"z": 53.82
+			}
+		},
+		{
+			"id": "factory/project-3-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "3F Breach Room Stools",
+			"description": "Office block, 3rd floor, behind the breachable door: next to the chair at the front left, between the two stools.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/3-2-a.webp",
+			"estimate": {
+				"x": 24.07,
+				"z": 54.41
+			}
+		},
+		{
+			"id": "factory/project-3-3",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "3F Locked Office Side Table",
+			"description": "Office block, 3rd floor, in the locked room: in the shelf slot to the left of the door.",
+			"key": "Factory emergency exit key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/3-3.webp",
+			"estimate": {
+				"x": 21.66,
+				"z": 53.86
+			}
+		},
+		{
+			"id": "factory/project-3-4",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "3F Office Filing Cabinets Floor",
+			"description": "Office block, 3rd floor: on the floor in front of the filing cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/3-4.webp",
+			"estimate": {
+				"x": 12.81,
+				"z": 56.88
+			}
+		},
+		{
+			"id": "factory/project-1-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Backyard Window Office Floor",
+			"description": "Ground-floor office you climb into through the window: standing against the left side of the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-1-a.webp",
+			"position": {
+				"x": 27.09,
+				"y": 1.76,
+				"z": 41.02
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-1-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Office Book Pile",
+			"description": "Buried in the pile of books, sticking out.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-2-a.webp",
+			"estimate": {
+				"x": 12.81,
+				"z": 42.15
+			}
+		},
+		{
+			"id": "factory/project-1-3",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Workshop Hard Hat Side Table",
+			"description": "In the shelf slot of the side table with a hard hat on it.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-3.webp",
+			"position": {
+				"x": 55.69,
+				"y": 0.76,
+				"z": 24.55
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-1-4",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Pumping Station Lockers",
+			"description": "Pumping station: leaning between the lockers.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-4.webp",
+			"position": {
+				"x": 41.58,
+				"y": 0.25,
+				"z": -15.49
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-1-5",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Medical Building Lockers",
+			"description": "Medical building, ground floor: inside one of the lockers.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-5.webp",
+			"position": {
+				"x": 30.53,
+				"y": 0.82,
+				"z": -34.9
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-1-6",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Gate 1 Bench Hard Hat",
+			"description": "By Gate 1: on the bench next to the hard hat.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-6.webp",
+			"position": {
+				"x": 73.71,
+				"y": 0.64,
+				"z": -34.41
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-1-7",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Medical Building Kitchen Doorway",
+			"description": "Medical building: leaning against the shelves outside the kitchen doorway.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/1-7.webp",
+			"position": {
+				"x": 36.72,
+				"y": 0.25,
+				"z": -35.36
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-2-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "2F Project Spot A",
+			"description": "Second floor. The exact spot is still being confirmed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/2-1.webp",
+			"position": {
+				"x": -21.32,
+				"y": 3.05,
+				"z": 29.47
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-2-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "2F Project Spot B",
+			"description": "Second floor. The exact spot is still being confirmed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/2-2-a.webp",
+			"estimate": {
+				"x": 26.61,
+				"z": -48.83
+			}
+		},
+		{
+			"id": "factory/project-0-1",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Basement Project Spot",
+			"description": "Basement level. The exact spot is still being confirmed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/0-1.webp",
+			"position": {
+				"x": -1.27,
+				"y": -2.47,
+				"z": 49.04
+			},
+			"match": "auto"
+		},
+		{
+			"id": "factory/project-0-2",
+			"maps": [
+				"factory",
+				"night-factory"
+			],
+			"type": "project",
+			"title": "Polkhim Storage Room Pallet",
+			"description": "Inside the Polkhim (TerraGroup storage) keycard room: lying on the pallet.",
+			"key": "TerraGroup storage room keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/factory/project/0-2.webp",
+			"position": {
+				"x": -18.85,
+				"y": -2.27,
+				"z": 47.02
+			},
+			"match": "auto"
+		},
+		{
+			"id": "customs/financial-1-4-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Warehouse 5 Shelves",
+			"description": "Warehouse 5 (the Vitamins quest building): on the metal shelf next to the computer, beside the hard hat.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/1-4-1-1-a.webp",
+			"estimate": {
+				"x": 517.61,
+				"z": -18.61
+			}
+		},
+		{
+			"id": "customs/financial-1-7-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Old Gas Station Desk",
+			"description": "Inside the old gas station, on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/1-7-1-1.webp",
+			"estimate": {
+				"x": 325.9,
+				"z": -176.42
+			}
+		},
+		{
+			"id": "customs/financial-2-1-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Fortress Couch",
+			"description": "Fortress (the new concrete building), ground floor: on the armrest of the couch in the middle room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-1-1-1-a.webp",
+			"position": {
+				"x": 203.43,
+				"y": 2.51,
+				"z": -121.9
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-2-3-3-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Industrial Plant Top-Floor Office",
+			"description": "Top floor of the industrial plant (the camera-placement quest spot): go through the inner door into the manager's office and check the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-3-3-1.webp",
+			"position": {
+				"x": 264.69,
+				"y": 13.65,
+				"z": -75.73
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-2-2-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Crackhouse Library Book Pile",
+			"description": "Crackhouse library: on the floor in the right-hand corner of the second section, among the books.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-2-2-1.webp",
+			"position": {
+				"x": 78.63,
+				"y": 5.22,
+				"z": -159.24
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-2-2-2-2",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Crackhouse Library Back Shelf",
+			"description": "Crackhouse library: on the bookshelf at the very back of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-2-2-2.webp",
+			"position": {
+				"x": 77.67,
+				"y": 5.46,
+				"z": -154.58
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-2-0-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Crackhouse Bunkhouse Shelf",
+			"description": "In the standalone bunkhouse container outside the crackhouse, on the shelf at the back.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-0-1-1.webp",
+			"estimate": {
+				"x": 143.4,
+				"z": -89.28
+			}
+		},
+		{
+			"id": "customs/financial-2-5-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Company Director's Safe",
+			"description": "Upper floor of the boiler building, inside the company director's room: on top of the safe in the corner.",
+			"key": "Company director's room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-5-2-1.webp",
+			"estimate": {
+				"x": 183.78,
+				"z": -61.62
+			}
+		},
+		{
+			"id": "customs/financial-2-6-3-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Old Construction Rafters Desk",
+			"description": "Third floor of the old construction building: on the desk in the office up in the rafters.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/2-6-3-1.webp",
+			"estimate": {
+				"x": 163.43,
+				"z": -62.66
+			}
+		},
+		{
+			"id": "customs/financial-3-1-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Big Red Computer Room Table",
+			"description": "Big Red, inside the locked computer room: on the low table in the right-hand corner.",
+			"key": "Tarcone Director's office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/3-1-2-1-a.webp",
+			"position": {
+				"x": -204.01,
+				"y": 7.85,
+				"z": -109.54
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-3-0-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "Blue Shack Filing Cabinet",
+			"description": "In the small blue shack just north of Big Red, on top of the filing cabinet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/3-0-1-1.webp",
+			"estimate": {
+				"x": -60.1,
+				"z": -94.92
+			}
+		},
+		{
+			"id": "customs/financial-5-1-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "3-Story Dorm 212 Shelf",
+			"description": "3-story dorms, room 212: on the shelf behind the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/5-1-2-1.webp",
+			"position": {
+				"x": 173.38,
+				"y": 3.5,
+				"z": 182.9
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-5-1-3-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "3-Story Dorm 304 Side Table",
+			"description": "3-story dorms, room 304: in the shelf slot of the side table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/5-1-3-1.webp",
+			"position": {
+				"x": 170.99,
+				"y": 6.54,
+				"z": 154.7
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-5-2-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "2-Story Dorm Guard Desk",
+			"description": "2-story dorms, guard booth on the ground floor: on the desk.",
+			"key": "Dorm guard desk key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/5-2-1-1.webp",
+			"position": {
+				"x": 224.08,
+				"y": 0.98,
+				"z": 140.92
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/financial-5-2-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "financial",
+			"title": "2-Story Dorm 212 Under Bed",
+			"description": "2-story dorms, room 212: on the floor under the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/financial/5-2-2-1-a.webp",
+			"position": {
+				"x": 227.17,
+				"y": 2.89,
+				"z": 161.09
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-1-3-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Metal Workshop TV Table",
+			"description": "Second floor of the workshop across from the chroma-key room: leaning against the TV table in the corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/1-3-2-1.webp",
+			"position": {
+				"x": 580.13,
+				"y": 6.9,
+				"z": -50.11
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-1-7-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Old Gas Station Bookshelf",
+			"description": "Old gas station: on the floor in the corner to the right of the bookshelf, just inside the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/1-7-1-1.webp",
+			"estimate": {
+				"x": 327.46,
+				"z": -173.1
+			}
+		},
+		{
+			"id": "customs/project-2-1-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Fortress Bunk Room Shelf",
+			"description": "Fortress: on a shelf in the small bunk room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-1-1-1-a.webp",
+			"position": {
+				"x": 197.15,
+				"y": 3.28,
+				"z": -101.67
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-2-2-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Crackhouse Library Entrance",
+			"description": "Crackhouse library: on the floor right inside the entrance, next to the side table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-2-2-1-a.webp",
+			"position": {
+				"x": 78.54,
+				"y": 4.98,
+				"z": -164.52
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-2-2-2-2",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Crackhouse Library Second Bookshelf",
+			"description": "Crackhouse library, upper level: on top of the second bookshelf, right side.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-2-2-2-a.webp",
+			"position": {
+				"x": 79.14,
+				"z": -158.48
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-2-5-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Repair Workshop Table",
+			"description": "Repair workshop next to the boiler building: on the table in the corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-5-1-1.webp",
+			"estimate": {
+				"x": 186.58,
+				"z": -78.03
+			}
+		},
+		{
+			"id": "customs/project-2-5-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Company Director's Room Shelf",
+			"description": "Boiler building, upper floor: on a bookshelf inside the company director's room.",
+			"key": "Company director's room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-5-2-1.webp",
+			"estimate": {
+				"x": 183.21,
+				"z": -63.39
+			}
+		},
+		{
+			"id": "customs/project-2-6-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Old Construction 2F Bunk Room",
+			"description": "Old construction building, 2nd floor: in the east corner room, on the floor to the right of the side table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-6-2-1.webp",
+			"estimate": {
+				"x": 142.96,
+				"z": -52.41
+			}
+		},
+		{
+			"id": "customs/project-2-6-3-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Old Construction Rafters Duffel Bag",
+			"description": "Old construction building, 3rd floor: in the rafters office, on the floor behind the duffel bag.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-6-3-1.webp",
+			"estimate": {
+				"x": 164.48,
+				"z": -62.5
+			}
+		},
+		{
+			"id": "customs/project-2-0-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Crackhouse Bunk Container",
+			"description": "In the small bunk container in front of the crackhouse, to the left of the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/2-0-1-1.webp",
+			"position": {
+				"x": 68.58,
+				"y": 1.49,
+				"z": -169.43
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-3-1-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Big Red Computer Room Desk",
+			"description": "Big Red, inside the locked computer room: leaning against the desk in the left corner.",
+			"key": "Tarcone Director's office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/3-1-2-1.webp",
+			"position": {
+				"x": -202.76,
+				"y": 7.37,
+				"z": -104.91
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-3-0-1-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "Blue Shack Under Desk",
+			"description": "Blue shack north of Big Red: lying under the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/3-0-1-1-a.webp",
+			"estimate": {
+				"x": -23.05,
+				"z": -127.79
+			}
+		},
+		{
+			"id": "customs/project-5-1-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "3-Story Dorm 212 Under Desk",
+			"description": "3-story dorms, room 212: under the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/5-1-2-1-a.webp",
+			"position": {
+				"x": 173.38,
+				"y": 3.5,
+				"z": 182.9
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-5-2-2-1",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "2-Story Dorm 216 Cupboard",
+			"description": "2-story dorms, room 216: inside the open cupboard.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/5-2-2-1.webp",
+			"position": {
+				"x": 236.99,
+				"y": 2.91,
+				"z": 158.71
+			},
+			"match": "manual"
+		},
+		{
+			"id": "customs/project-5-2-2-2",
+			"maps": [
+				"customs"
+			],
+			"type": "project",
+			"title": "2-Story Dorm 207 Broken Chair",
+			"description": "2-story dorms, room 207: under the broken chair.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/customs/project/5-2-2-2.webp",
+			"position": {
+				"x": 224.83,
+				"z": 138.47
+			},
+			"match": "manual"
+		},
+		{
+			"id": "ground_zero/medical-1-2-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Oasis Coffee Table",
+			"description": "Oasis building, 2nd floor: on the coffee table by the window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/1-2-1-1.webp",
+			"estimate": {
+				"x": 247.35,
+				"z": 115.15
+			}
+		},
+		{
+			"id": "ground_zero/medical-1-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Emercom Parking Bench",
+			"description": "Next to the Emercom extract: on the bench in front of the blue car in the parking lot.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/1-0-1-1.webp",
+			"position": {
+				"x": 112.64,
+				"y": 23.44,
+				"z": -77.32
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-1-0-1-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Emercom Wheelchair",
+			"description": "Right in front of the Emercom extract: on the wheelchair outside the medical tent.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/1-0-1-2.webp",
+			"position": {
+				"x": 148.63,
+				"y": 23.16,
+				"z": -85.12
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-3-2-3-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Science Office Room 3 Couch",
+			"description": "Science building, room 3: on the left side of the couch directly in front of the door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/3-2-3-1.webp",
+			"estimate": {
+				"x": -73.86,
+				"z": 64.13
+			}
+		},
+		{
+			"id": "ground_zero/medical-3-2-3-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Science Office Room 3 Monitor Desk",
+			"description": "Science building, room 3: on the computer desk in front of the widescreen monitor.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/3-2-3-2.webp",
+			"estimate": {
+				"x": -80.07,
+				"z": 77.48
+			}
+		},
+		{
+			"id": "ground_zero/medical-3-2-4-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Science Office Room 4 Document Holder",
+			"description": "Science building, room 4 (locked): in the document holder on the corner of the desk.",
+			"key": "Science office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/3-2-4-1.webp",
+			"estimate": {
+				"x": -89.2,
+				"z": 45.45
+			}
+		},
+		{
+			"id": "ground_zero/medical-3-2-4-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Science Office Room 4 Window Desk",
+			"description": "Science building, room 4 (locked): on the computer desk next to the window.",
+			"key": "Science office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/3-2-4-2.webp",
+			"estimate": {
+				"x": -76.35,
+				"z": 51.76
+			}
+		},
+		{
+			"id": "ground_zero/medical-3-3-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Cafe Bar Armchair",
+			"description": "In the cafe: tucked beside the armrest of the chair in front of the bar.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/3-3-1-1.webp",
+			"estimate": {
+				"x": 24.86,
+				"z": 74.33
+			}
+		},
+		{
+			"id": "ground_zero/medical-4-2-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Restaurant Entrance Table",
+			"description": "Restaurant, ground-floor entrance: on the table immediately to the left as you walk in.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/4-2-1-1.webp",
+			"position": {
+				"x": 101.88,
+				"y": 25.32,
+				"z": 153.83
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-5-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Coffee Nice Terrace Table",
+			"description": "Outside the Coffee Nice cafe: on the coffee table on the terrace.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/5-0-1-1.webp",
+			"position": {
+				"x": 81.26,
+				"y": 23.35,
+				"z": 130
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-5-0-1-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Park Bench by Underground Garage",
+			"description": "In the park across from Capital Insight: on the bench to the left of the underground garage entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/5-0-1-2.webp",
+			"position": {
+				"x": 49.55,
+				"y": 23.38,
+				"z": 252.44
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-6-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Capital Insight Parking Lot Trunk",
+			"description": "At the far end of the Capital Insight parking lot: in the trunk of the black car.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/6-0-1-1.webp",
+			"estimate": {
+				"x": 144.68,
+				"z": 234.21
+			}
+		},
+		{
+			"id": "ground_zero/medical-7-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Nakatani Tower Benches",
+			"description": "Outside Nakatani Tower: on one of the benches in front of the building.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/7-0-1-1.webp",
+			"position": {
+				"x": 21.5,
+				"y": 23.36,
+				"z": 340.64
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/medical-8-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Underground Cardboard Box",
+			"description": "Underground garage: in the toppled cardboard box next to the blue dumpster.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/8-0-1-1.webp",
+			"estimate": {
+				"x": -238.06,
+				"z": 136.84
+			}
+		},
+		{
+			"id": "ground_zero/medical-8-0-1-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "medical",
+			"title": "Underground Black Car",
+			"description": "Underground garage: on the ground behind the black car with the open trunk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/medical/8-0-1-2.webp",
+			"estimate": {
+				"x": -241.4,
+				"z": -34.81
+			}
+		},
+		{
+			"id": "ground_zero/user-2-5-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Building Lobby Chair",
+			"description": "Science building lobby (2nd floor): on one of the chairs.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/2-5-1-1.webp",
+			"estimate": {
+				"x": -115.12,
+				"z": 68.28
+			}
+		},
+		{
+			"id": "ground_zero/user-2-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Guard Booth by Flare Extract",
+			"description": "In the guard booth at the metal gate next to the flare extract: on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/2-0-1-1.webp",
+			"position": {
+				"x": 197.24,
+				"y": 17.2,
+				"z": 43.65
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-3-1-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Garage Black Car Door",
+			"description": "Garage: under the open passenger-side door of the black car.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-1-1-1s.webp",
+			"position": {
+				"x": 11.41,
+				"y": 23.96,
+				"z": -44.89
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-3-2-3-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Room 3 Sofa Table",
+			"description": "Science building, room 3: on the low table in front of the sofa at the back of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-3-1.webp",
+			"estimate": {
+				"x": -91.72,
+				"z": 82.56
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-3-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Room 3 L-Shaped Desk",
+			"description": "Science building, room 3: on the L-shaped desk by the window, under the monitor.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-3-2.webp",
+			"estimate": {
+				"x": -73.26,
+				"z": 70.43
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-4-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Room 4 Back Desk",
+			"description": "Science building, room 4 (locked): on the left side of the left-hand desk at the back of the room.",
+			"key": "Science office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-4-1.webp",
+			"estimate": {
+				"x": -83.2,
+				"z": 40.11
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-4-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Room 4 Corner Desk",
+			"description": "Science building, room 4 (locked): immediately left of the door, on the lower right shelf of the corner computer desk.",
+			"key": "Science office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-4-2.webp",
+			"estimate": {
+				"x": -79.02,
+				"z": 54.66
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-4-3",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Room 4 Couch",
+			"description": "Science building, room 4 (locked): on the couch against the window.",
+			"key": "Science office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-4-3.webp",
+			"estimate": {
+				"x": -77.97,
+				"z": 45.96
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-5-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Building 2F Reception",
+			"description": "Science building, 2nd floor: on the shelf of the reception desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-5-1.webp",
+			"estimate": {
+				"x": -106.6,
+				"z": 65.86
+			}
+		},
+		{
+			"id": "ground_zero/user-3-2-5-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Science Office Hallway Bench",
+			"description": "Science building, in the hallway beside room 3: on the right side of the bench.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-2-5-2.webp",
+			"estimate": {
+				"x": -97.84,
+				"z": 83.01
+			}
+		},
+		{
+			"id": "ground_zero/user-3-3-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Coffee Maniac Back Table",
+			"description": "Coffee Maniac cafe in front of the TerraGroup building: on the table at the very back.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/3-3-1-1.webp",
+			"position": {
+				"x": 13.62,
+				"y": 25.09,
+				"z": 65.54
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-4-2-2-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Restaurant 2F Sofa",
+			"description": "Restaurant, 2nd floor: on the sofa behind the flipped-over table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/4-2-2-1.webp",
+			"estimate": {
+				"x": 267.77,
+				"z": 150.12
+			}
+		},
+		{
+			"id": "ground_zero/user-4-0-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Coffee Joy Umbrella Bench",
+			"description": "Next to the car dealership: on the bench under the red umbrella by the Coffee Joy stand.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/4-0-1-1.webp",
+			"position": {
+				"x": 95.1,
+				"y": 23.32,
+				"z": 204.73
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-5-1-1-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Tarbank Lobby Shelf",
+			"description": "Tarbank lobby: on the bottom-right cubby of the square shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/5-1-1-1.webp",
+			"position": {
+				"x": 55.26,
+				"y": 24.33,
+				"z": 152.51
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-5-1-1-2",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Tarbank Lobby Glass Table",
+			"description": "Tarbank lobby: on the glass table closest to the back doorway.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/5-1-1-2.webp",
+			"position": {
+				"x": 35.64,
+				"y": 23.97,
+				"z": 138.12
+			},
+			"match": "auto"
+		},
+		{
+			"id": "ground_zero/user-5-1-3-1",
+			"maps": [
+				"ground-zero",
+				"ground-zero-21"
+			],
+			"type": "user",
+			"title": "Tarbank 2F Office Binders",
+			"description": "Tarbank, 2nd-floor office: on the back-left shelf, leaning against the binders.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/ground_zero/user/5-1-3-1.webp",
+			"estimate": {
+				"x": -9.15,
+				"z": 197.07
+			}
+		},
+		{
+			"id": "interchange/blueprint-1-1-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "IDEA Computer Room Desk",
+			"description": "IDEA, computer room: on the desk in the bottom-left corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-1-1.webp",
+			"position": {
+				"x": 3.15,
+				"y": 28.02,
+				"z": -293.44
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-1-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "IDEA Furniture Display",
+			"description": "IDEA furniture showroom: on the floor in front of the dresser.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-1-2-a.webp",
+			"position": {
+				"x": -25.15,
+				"y": 27.29,
+				"z": -199.41
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Alarm Room Office Desk",
+			"description": "Office attached to the alarm room: on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-1-a.webp",
+			"position": {
+				"x": -79.08,
+				"y": 27.94,
+				"z": 45.96
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Goshan Office Copier Desk",
+			"description": "Goshan offices: on the corner desk next to the copier.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-2-a.webp",
+			"position": {
+				"x": -78.82,
+				"y": 27.95,
+				"z": -148.37
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-3",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Goshan South Office Corner Desk",
+			"description": "Goshan south office: on the desk in the left corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-3-a.webp",
+			"position": {
+				"x": -68.35,
+				"y": 28.31,
+				"z": 53.11
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-4",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Goshan Office PC Cubicle",
+			"description": "Goshan offices: on the desk in the PC cubicle.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-4.webp",
+			"position": {
+				"x": -68.58,
+				"y": 27.59,
+				"z": -159.75
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-5",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "The National Filing Cabinet",
+			"description": "Inside The National store, on top of the filing cabinet in the desk cubicle.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-5.webp",
+			"position": {
+				"x": 64.78,
+				"y": 28.41,
+				"z": -28.9
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-6",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Bizarro Shopping Cart",
+			"description": "Inside the Bizarro store, in the shopping cart in the middle of the shop.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-6.webp",
+			"position": {
+				"x": -63.49,
+				"y": 27.86,
+				"z": -105.3
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-2-7",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Spiel Bedroll",
+			"description": "Inside the Spiel store: at the head of the bedroll behind the counter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-2-7.webp",
+			"position": {
+				"x": 98.15,
+				"y": 27.28,
+				"z": -87.13
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-4-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "OLI Logistics Room Desk",
+			"description": "OLI, logistics department: on the middle desk.",
+			"key": "OLI logistics department office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-4-1.webp",
+			"position": {
+				"x": 89.76,
+				"y": 27.94,
+				"z": 114.94
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-4-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "OLI Back Office Desk",
+			"description": "OLI back offices: on the back-left desk of the first desk cluster.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-4-2.webp",
+			"position": {
+				"x": -91.31,
+				"y": 27.94,
+				"z": 110.61
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-4-3",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "OLI Back Office Whiteboard",
+			"description": "OLI back offices: on the table to the left of the whiteboard.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-4-3-a.webp",
+			"position": {
+				"x": -84.89,
+				"y": 27.92,
+				"z": 112.88
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-4-4",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "OLI Info Cubicle",
+			"description": "OLI: on the desk in the information cubicle.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-4-4.webp",
+			"position": {
+				"x": -46.73,
+				"y": 27.96,
+				"z": 126.37
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-1-4-5",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "OLI Admin Office Shelf",
+			"description": "OLI administration office: on the shelf at the back of the room.",
+			"key": "OLI administration office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/1-4-5.webp",
+			"position": {
+				"x": 85.67,
+				"y": 28.18,
+				"z": 98.71
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/blueprint-4-1-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "blueprints",
+			"title": "Smugglers' Base Locker",
+			"description": "Outside, in the container next to the flare extract: on top of the blue locker.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/blueprints/4-1-1a.webp",
+			"estimate": {
+				"x": 1362.19,
+				"z": 83.48
+			}
+		},
+		{
+			"id": "interchange/financial-1-1-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "IDEA Computer Room North Desk",
+			"description": "IDEA computer room: on the second desk from the left along the north wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-1-1.webp",
+			"position": {
+				"x": 1.04,
+				"y": 27.96,
+				"z": -302.93
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-1-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "IDEA Playground Bench",
+			"description": "IDEA play area: on the wooden bench next to the map kiosk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-1-2.webp",
+			"position": {
+				"x": 40.27,
+				"y": 27.76,
+				"z": -205.8
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-1-3",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "IDEA–Goshan Corridor Bathroom",
+			"description": "On a sink in the first bathroom along the corridor that runs from IDEA to the Goshan offices.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-1-3.webp",
+			"estimate": {
+				"x": 82.72,
+				"z": -210.44
+			}
+		},
+		{
+			"id": "interchange/financial-1-2-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Goshan Small Office Desk",
+			"description": "Goshan small office: on the desk under the painting.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-1.webp",
+			"position": {
+				"x": -64.72,
+				"y": 27.96,
+				"z": -162.51
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-2-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "IDEA–Goshan Office Desks",
+			"description": "In the office between IDEA and Goshan, on the cluster of desks.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-2.webp",
+			"position": {
+				"x": -77.95,
+				"y": 27.96,
+				"z": -152.93
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-2-3",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Alarm Room Office Desk 2",
+			"description": "Office attached to the alarm room: on the second desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-3.webp",
+			"position": {
+				"x": -66.13,
+				"y": 27.95,
+				"z": 40.94
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-2-4",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "TTS Store Table",
+			"description": "Inside the TTS store across from Emercom: on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-4-a.webp",
+			"position": {
+				"x": 24.72,
+				"y": 28.1,
+				"z": -136.55
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-2-5",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Goshan South Office Desk",
+			"description": "Goshan south office: on the right-hand desk, between the standing books.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-5.webp",
+			"position": {
+				"x": -63.78,
+				"y": 28.11,
+				"z": 53.05
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-2-6",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Goshan Cafeteria Tent",
+			"description": "In the dining tent in front of Goshan: on one of the tables.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-2-6.webp",
+			"position": {
+				"x": -59.81,
+				"y": 28.04,
+				"z": -49.77
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-1-4-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "OLI Admin Office Table",
+			"description": "OLI administration office: on the table to the left as you walk in.",
+			"key": "OLI administration office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/1-4-1.webp",
+			"position": {
+				"x": 86.57,
+				"y": 27.57,
+				"z": 104.21
+			},
+			"match": "auto"
+		},
+		{
+			"id": "interchange/financial-2-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "MK Store Shelf",
+			"description": "Second floor, inside the MK store across from the burger restaurant: on the shelf next to the red couch.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/2-1-a.webp",
+			"estimate": {
+				"x": -293.04,
+				"z": -137.25
+			}
+		},
+		{
+			"id": "interchange/financial-2-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Burger Spot Booth",
+			"description": "Second floor, inside the Burger Spot restaurant: on a booth.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/2-2.webp",
+			"estimate": {
+				"x": -327.36,
+				"z": -101.91
+			}
+		},
+		{
+			"id": "interchange/financial-4-1-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Smugglers' Base Round Table",
+			"description": "Outside at the smugglers' base: on the round table under the green shipping container.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/4-1-1.webp",
+			"estimate": {
+				"x": 1307.22,
+				"z": 169.36
+			}
+		},
+		{
+			"id": "interchange/financial-4-1-2",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "Power Station Computer Room",
+			"description": "Power station, computer room: in the document holder on the metal shelf right next to the doorway.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/4-1-2.webp",
+			"estimate": {
+				"x": -282.69,
+				"z": 133.4
+			}
+		},
+		{
+			"id": "interchange/financial-4-2-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "#21WS Armory Container",
+			"description": "Inside the locked #21WS armory container: on the middle-left shelf.",
+			"key": "#21WS keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/4-2-1.webp",
+			"estimate": {
+				"x": 1021.24,
+				"z": 282.87
+			}
+		},
+		{
+			"id": "interchange/financial-4-0-1",
+			"maps": [
+				"interchange"
+			],
+			"type": "financial",
+			"title": "KORD Room Under the Power Station",
+			"description": "Underground below the power station, in the KORD room that opens as the story progresses: on the shelf next to the safe.",
+			"key": "KORD 14-4 restored key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/interchange/financial/4-0-1.webp",
+			"estimate": {
+				"x": -287.89,
+				"z": 267.64
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-1-3-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Cardinal Corporate Apartment Couch",
+			"description": "Cardinal apartment building, 2nd floor: unlock the TerraGroup corporate apartment and check the floor behind the living-room sofa.",
+			"key": "TerraGroup corporate apartment key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/1-3-2-1.webp",
+			"estimate": {
+				"x": 375.83,
+				"z": -19.84
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-1-3-2-2",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Cardinal Apartments 2F Shelf",
+			"description": "Cardinal apartment building, 2nd floor: on the black shelf facing the door as you walk into the apartment.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/1-3-2-2.webp",
+			"estimate": {
+				"x": 362.43,
+				"z": -60.14
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-1-4-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Unity Credit Bank Shelf",
+			"description": "Inside the Unity Credit bank, on the third row of the shelving behind the teller counter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/1-4-1-1.webp",
+			"position": {
+				"x": 71.85,
+				"y": 1.14,
+				"z": -23.61
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-1-6-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "TerraGroup Lobby Reception",
+			"description": "Ground floor of the TerraGroup building, behind the reception counter in the lobby.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/1-6-1-1.webp",
+			"position": {
+				"x": 60.07,
+				"y": 1.22,
+				"z": -62.52
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-1-6-1-2",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "TerraGroup Armory Office Shelf",
+			"description": "TerraGroup building, in the room outside the locked armory: on the upper-right shelf. No key needed for this one.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/1-6-1-2.webp",
+			"position": {
+				"x": 54.8,
+				"y": 1.03,
+				"z": -72.55
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-2-8-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "IT Firm Middle Office Desk",
+			"description": "IT firm building (where the relaxation room key spawns): on the computer desk just to the right as you enter the middle office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/2-8-1-1.webp",
+			"position": {
+				"x": 158.94,
+				"y": 1.48,
+				"z": 149.49
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-2-8-1-2",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "IT Firm Music Room Floor",
+			"description": "IT firm building: on the floor of the music room behind the meeting room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/2-8-1-2.webp",
+			"position": {
+				"x": 168.82,
+				"y": 1.65,
+				"z": 165.3
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-4-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Beluga Restaurant Bar",
+			"description": "Second floor of the Beluga restaurant, on top of the round bar.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/4-1-2-1.webp",
+			"estimate": {
+				"x": -136.8,
+				"z": -161.85
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-4-2-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "TerraGroup Office 2F Shelf",
+			"description": "Second floor of the TerraGroup office building, on the shelf against the wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/4-2-2-1-a.webp",
+			"position": {
+				"x": -31.39,
+				"y": 7.52,
+				"z": -113.87
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-5-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Pinewood Hotel Room 212",
+			"description": "Pinewood Hotel, room 212: on the table by the window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/5-1-2-1.webp",
+			"estimate": {
+				"x": -364.61,
+				"z": 118.86
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-7-6-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Concordia Apartment 8 Home Cinema",
+			"description": "Concordia, 2nd floor: inside the Apartment 8 home cinema, on the floor by the toppled bookshelf.",
+			"key": "Concordia apartment 8 home cinema key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/7-6-2-1.webp",
+			"estimate": {
+				"x": 461.56,
+				"z": 574.63
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-7-7-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Concordia Office Shelf",
+			"description": "Separate Concordia office building: on the left end of the shelf above the desk in the middle of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/7-7-1-1.webp",
+			"position": {
+				"x": 139.72,
+				"y": 4.72,
+				"z": 355.09
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-7-7-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Concordia Office 2F Book Pile",
+			"description": "Second floor of the separate Concordia building just south of Sparja: on the floor among a pile of books.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/7-7-2-1.webp",
+			"estimate": {
+				"x": 311.3,
+				"z": 498.56
+			}
+		},
+		{
+			"id": "streets_of_tarkov/financial-8-1-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Financial Institution Small Office",
+			"description": "West office building (the Audit quest building), ground floor east room: on the shelf in the back-left corner.",
+			"key": "Financial institution small office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/8-1-1-1.webp",
+			"position": {
+				"x": -181.96,
+				"y": 3.58,
+				"z": 220.93
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/financial-8-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "financial",
+			"title": "Financial Institution Office Desk",
+			"description": "Audit quest building, 2nd floor: on the second desk, next to the phone.",
+			"key": "Financial institution office key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/financial/8-1-2-1.webp",
+			"estimate": {
+				"x": -305.47,
+				"z": 317.16
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-1-3-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Cardinal Apartment Living Room",
+			"description": "Cardinal apartment building, 2nd floor: open the Cardinal apartment and check the living-room table.",
+			"key": "Cardinal apartment key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-3-2-1.webp",
+			"estimate": {
+				"x": 343.9,
+				"z": -45.37
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-1-3-2-2",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Cardinal Corporate Apartment Kitchen",
+			"description": "Inside the TerraGroup corporate apartment (Cardinal, 2nd floor): on the counter on the street-facing side.",
+			"key": "TerraGroup corporate apartment key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-3-2-2.webp",
+			"estimate": {
+				"x": 366.7,
+				"z": -20.15
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-1-4-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Unity Credit Meeting Table",
+			"description": "Unity Credit bank: on the table in the meeting room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-4-1-1.webp",
+			"position": {
+				"x": 84.55,
+				"y": 1.75,
+				"z": -26.17
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-1-6-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "TerraGroup Armory Desk",
+			"description": "TerraGroup building: on the desk beside the lockers, next to the armory door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-6-1-1.webp",
+			"position": {
+				"x": 58.79,
+				"y": 1.21,
+				"z": -72.78
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-1-6-1-2",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "TerraGroup Back Office Paper Tray",
+			"description": "In the small office beside the TerraGroup reception counter, inside the paper tray.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-6-1-2.webp",
+			"position": {
+				"x": 65.72,
+				"y": 1.26,
+				"z": -59.42
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-1-0-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Red Car by Cardinal",
+			"description": "In the red car on the road in front of the Cardinal apartments — check the passenger door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/1-0-1-1.webp",
+			"position": {
+				"x": 135.2,
+				"y": -2.67,
+				"z": 2.83
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-2-8-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "IT Firm Meeting Table",
+			"description": "IT firm building: on the meeting table next to the laptop, in the room just before the music room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/2-8-1-1.webp",
+			"position": {
+				"x": 170.84,
+				"y": 2.09,
+				"z": 160.53
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-3-2-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Klimov Diner Booth",
+			"description": "Inside the diner, on the booth to the right of the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/3-2-1-1.webp",
+			"position": {
+				"x": 46.8,
+				"y": 1.1,
+				"z": 34.47
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-4-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Beluga Window Booth",
+			"description": "Beluga restaurant, 2nd floor: on the cushion of the window-side booth.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/4-1-2-1.webp",
+			"estimate": {
+				"x": -121.65,
+				"z": -153.6
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-4-2-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "TerraGroup Office 2F Table",
+			"description": "Second floor of the TerraGroup office building, on the table beside a stack of files.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/4-2-2-1-a.webp",
+			"position": {
+				"x": -38.07,
+				"y": 7.52,
+				"z": -110.91
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-5-1-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Pinewood Hotel Dentist Lobby",
+			"description": "Ground floor of the Pinewood Hotel, dentist's office: on the stool beside the wet-floor sign.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/5-1-1-1.webp",
+			"position": {
+				"x": -53.27,
+				"y": 1.89,
+				"z": 61.17
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-5-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Pinewood Hotel Room 208",
+			"description": "Pinewood Hotel, room 208: on the table under the TV.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/5-1-2-1.webp",
+			"estimate": {
+				"x": -337.15,
+				"z": 100.27
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-7-7-1-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Concordia Office Filing Cabinet",
+			"description": "Separate Concordia building south of Sparja, office area: inside the toppled filing cabinet by the corner window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/7-7-1-1.webp",
+			"position": {
+				"x": 151.78,
+				"y": 3.51,
+				"z": 344.69
+			},
+			"match": "auto"
+		},
+		{
+			"id": "streets_of_tarkov/user-7-7-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Concordia Office 2F Computer Desk",
+			"description": "Second floor of the separate Concordia building, on the computer desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/7-7-2-1.webp",
+			"estimate": {
+				"x": 315.71,
+				"z": 504.07
+			}
+		},
+		{
+			"id": "streets_of_tarkov/user-8-1-2-1",
+			"maps": [
+				"streets-of-tarkov"
+			],
+			"type": "user",
+			"title": "Financial Institution Meeting Room",
+			"description": "Audit quest building (west office), 2nd floor west room: on the meeting table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/streets_of_tarkov/user/8-1-2-1.webp",
+			"estimate": {
+				"x": -314.1,
+				"z": 309.85
+			}
+		},
+		{
+			"id": "reserve/pmc-1-1-1-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Far-Left Office Cabinet",
+			"description": "In the far-left end room: right inside the entrance, on the lower shelf of the office cabinet on the right.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/1-1-1-1-a.webp",
+			"estimate": {
+				"x": -14.83,
+				"z": 193.27
+			}
+		},
+		{
+			"id": "reserve/pmc-3-1-1-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Train Between K1 and K3",
+			"description": "On the train between the K1 and K3 warehouses: on the cushion through the archway of boxes.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/3-1-1-1.webp",
+			"estimate": {
+				"x": -46.22,
+				"z": 128.19
+			}
+		},
+		{
+			"id": "reserve/pmc-3-4-1-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "K4 Warehouse Side Table",
+			"description": "K4 warehouse: on the side table next to the cot.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/3-4-1-1.webp",
+			"estimate": {
+				"x": -37.93,
+				"z": 177.79
+			}
+		},
+		{
+			"id": "reserve/pmc-4-1-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "White Knight 3rd Floor",
+			"description": "White Knight, 3rd floor: on the floor to the left of the large drawer cabinet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/4-1-3-1.webp",
+			"estimate": {
+				"x": -134.12,
+				"z": 203.56
+			}
+		},
+		{
+			"id": "reserve/pmc-4-3-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Black Knight 3rd Floor",
+			"description": "Black Knight, 3rd floor: on top of the fallen cabinet in the second room down the hall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/4-3-3-1.webp",
+			"estimate": {
+				"x": -144.99,
+				"z": 208.44
+			}
+		},
+		{
+			"id": "reserve/pmc-5-1-0-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Black Bishop Basement Desk",
+			"description": "Black Bishop basement: on the desk with the flipped chair, behind the boxes.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/5-1-0-1.webp",
+			"estimate": {
+				"x": 33.19,
+				"z": -28.01
+			}
+		},
+		{
+			"id": "reserve/pmc-5-1-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Black Bishop 2F Side Table",
+			"description": "Black Bishop, 2nd floor: in the side table of the small room across from the staircase.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/5-1-2-1.webp",
+			"estimate": {
+				"x": -130.34,
+				"z": -28.82
+			}
+		},
+		{
+			"id": "reserve/pmc-5-2-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "RB-OB Room Cabinet",
+			"description": "Black Pawn, 3rd floor, inside the RB-OB room: on the lower shelf of the cabinet.",
+			"key": "RB-OB key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/5-2-3-1.webp",
+			"estimate": {
+				"x": -83.57,
+				"z": -35.18
+			}
+		},
+		{
+			"id": "reserve/pmc-5-2-3-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Black Pawn 3F Stairwell Shelf",
+			"description": "Black Pawn, 3rd floor: on the small desk shelf right outside the south stairwell.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/5-2-3-2-a.webp",
+			"estimate": {
+				"x": -94.71,
+				"z": -37.7
+			}
+		},
+		{
+			"id": "reserve/pmc-5-3-4-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "White Pawn 4th Floor",
+			"description": "White Pawn, 4th floor: on the floor next to the green binder.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/5-3-4-1.webp",
+			"estimate": {
+				"x": -111.31,
+				"z": -54.33
+			}
+		},
+		{
+			"id": "reserve/pmc-6-1-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "RB-RS Room Desk",
+			"description": "Inside the RB-RS room: on the desk with the chair in the far corner.",
+			"key": "RB-RS key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/6-1-2-1.webp",
+			"estimate": {
+				"x": -119.4,
+				"z": 26.9
+			}
+		},
+		{
+			"id": "reserve/pmc-6-1-2-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "RB-KORL Room Cabinet",
+			"description": "Inside the RB-KORL room: on the bottom shelf of the tall cabinet on the right.",
+			"key": "RB-KORL key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/6-1-2-2.webp",
+			"estimate": {
+				"x": -112.49,
+				"z": 26.94
+			}
+		},
+		{
+			"id": "reserve/pmc-6-1-2-3",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "RB-RLSA Room Window Desk",
+			"description": "Inside the RB-RLSA room: on the desk between the two open windows.",
+			"key": "RB-RLSA key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/6-1-2-3.webp",
+			"estimate": {
+				"x": -113.09,
+				"z": 22.99
+			}
+		},
+		{
+			"id": "reserve/pmc-6-0-1-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "RB-KPRL Guardhouse Window",
+			"description": "RB-KPRL guardhouse: leaning on the windowsill between the two doorways. You can grab it from outside through the window, so no key is needed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/6-0-1-1.webp",
+			"position": {
+				"x": -122.12,
+				"y": 2.39,
+				"z": 93.53
+			},
+			"match": "auto"
+		},
+		{
+			"id": "reserve/pmc-6-0-1-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "Checkpoint Office Desk",
+			"description": "Building next to the checkpoint scav extract: in the desk slot on the ground floor. The door is locked — shoot the lock to get in.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/6-0-1-2.webp",
+			"estimate": {
+				"x": -109.89,
+				"z": 135.64
+			}
+		},
+		{
+			"id": "reserve/pmc-8-3-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "personnel",
+			"title": "D2 Tunnel Safe Room Computer",
+			"description": "In the room with the safe on the way to the D2 extract: on the desk next to the old computer.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/pmc/8-3-2-1.webp",
+			"estimate": {
+				"x": -34.93,
+				"z": -20.65
+			}
+		},
+		{
+			"id": "reserve/project-4-1-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "White Knight Window Desk",
+			"description": "White Knight, 3rd floor: in the desk by the window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/4-1-3-1.webp",
+			"estimate": {
+				"x": -132.47,
+				"z": 203.33
+			}
+		},
+		{
+			"id": "reserve/project-4-3-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Black Knight Drawer Desk",
+			"description": "Black Knight, 3rd floor: standing on the desk in front of the two large drawer cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/4-3-3-1.webp",
+			"estimate": {
+				"x": -145.49,
+				"z": 207.91
+			}
+		},
+		{
+			"id": "reserve/project-4-7-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "White King 3F Office",
+			"description": "White King, 3rd floor office: between the two desks against the window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/4-7-3-1.webp",
+			"estimate": {
+				"x": -157.42,
+				"z": 166.82
+			}
+		},
+		{
+			"id": "reserve/project-4-7-3-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "White King 3F Under Desk",
+			"description": "White King, 3rd floor: on the floor under the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/4-7-3-2.webp",
+			"estimate": {
+				"x": -149.21,
+				"z": 167.05
+			}
+		},
+		{
+			"id": "reserve/project-5-1-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Black Bishop RB-AK Room",
+			"description": "Black Bishop, 2nd floor, in the RB-AK room: on the floor between the desk and the shelf in the middle of the room. You can skip the key by dropping in from the 3rd-floor window.",
+			"key": "RB-AK key (optional)",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-1-2-1.webp",
+			"position": {
+				"x": -129.03,
+				"y": -2.43,
+				"z": -16.58
+			},
+			"match": "auto"
+		},
+		{
+			"id": "reserve/project-5-1-3-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Black Bishop 3F Copier Cabinet",
+			"description": "Black Bishop, 3rd floor end room: on a shelf in the cabinet next to the copier.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-1-3-1.webp",
+			"estimate": {
+				"x": -111.71,
+				"z": -28.11
+			}
+		},
+		{
+			"id": "reserve/project-5-2-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Black Pawn 2F Filing Cabinet",
+			"description": "Black Pawn, 2nd floor: standing upright against the filing cabinet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-2-2-1-a.webp",
+			"estimate": {
+				"x": -98.46,
+				"z": -28.09
+			}
+		},
+		{
+			"id": "reserve/project-5-2-4-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Black Pawn 4F Armory Couch",
+			"description": "Black Pawn, 4th floor: on the couch at the back of the armory.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-2-4-1-a.webp",
+			"estimate": {
+				"x": -81.39,
+				"z": -42.29
+			}
+		},
+		{
+			"id": "reserve/project-5-3-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "White Pawn 2F Cabinet",
+			"description": "White Pawn, 2nd floor: in the cabinet of the room next to the broken wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-3-2-1.webp",
+			"estimate": {
+				"x": -127.42,
+				"z": -41.71
+			}
+		},
+		{
+			"id": "reserve/project-5-3-2-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "White Pawn 2F Stool",
+			"description": "White Pawn, 2nd floor: on the stool to the right of the doorway.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/5-3-2-2.webp",
+			"estimate": {
+				"x": -127.16,
+				"z": -55.22
+			}
+		},
+		{
+			"id": "reserve/project-6-1-2-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "RB-KORL Room Floor",
+			"description": "Inside the RB-KORL room: on the floor between the two cabinets.",
+			"key": "RB-KORL key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/6-1-2-1.webp",
+			"estimate": {
+				"x": -115.25,
+				"z": 33.11
+			}
+		},
+		{
+			"id": "reserve/project-6-1-2-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "RB-RLSA Water Cooler",
+			"description": "Inside the RB-RLSA room: on the floor between the water cooler and the filing cabinets.",
+			"key": "RB-RLSA key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/6-1-2-2.webp",
+			"position": {
+				"x": -116.08,
+				"y": -14.51,
+				"z": 33.15
+			},
+			"match": "auto"
+		},
+		{
+			"id": "reserve/project-6-0-1-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Checkpoint Back Room Desk",
+			"description": "Building next to the checkpoint fence scav extract: in the desk slot of the back room. Shoot the door lock to get in.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/6-0-1-1.webp",
+			"estimate": {
+				"x": -108.27,
+				"z": 135.82
+			}
+		},
+		{
+			"id": "reserve/project-6-0-1-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Dome Guard Post Filing Cabinet",
+			"description": "Unlocked guard post by the dome: on the floor against the right side of the filing cabinet in the corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/6-0-1-2.webp",
+			"position": {
+				"x": -123.09,
+				"y": -2.77,
+				"z": 95.75
+			},
+			"match": "auto"
+		},
+		{
+			"id": "reserve/project-8-0-1",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Bunker Command Office Floor",
+			"description": "Underground bunker, command office: on the floor under and behind the middle desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/8-0-1.webp",
+			"estimate": {
+				"x": -4.96,
+				"z": -28.11
+			}
+		},
+		{
+			"id": "reserve/project-8-0-2",
+			"maps": [
+				"reserve"
+			],
+			"type": "project",
+			"title": "Bunker Copier Room",
+			"description": "Underground bunker, small single room: on the floor between the copier and the cabinet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/reserve/project/8-0-2.webp",
+			"estimate": {
+				"x": 9.33,
+				"z": -28.43
+			}
+		},
+		{
+			"id": "lighthouse/pmc-1-1-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Train Station Warehouse Shelf",
+			"description": "Warehouse next to the train station: on the shelf behind the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/1-1-1-1.webp",
+			"position": {
+				"x": 34.55,
+				"y": 13,
+				"z": -845.74
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-2-1-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Water Plant Building 1 Control Room",
+			"description": "Water treatment plant, Building 1, 2nd floor: on the table in the control-room office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/2-1-2-1.webp",
+			"estimate": {
+				"x": 488.16,
+				"z": -820.82
+			}
+		},
+		{
+			"id": "lighthouse/pmc-2-2-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Water Plant Building 2 Radio Room",
+			"description": "Water treatment plant, Building 2, ground floor: on the table in the small room next to the black SUV.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/2-2-1-1.webp",
+			"position": {
+				"x": -65.76,
+				"y": 5.82,
+				"z": -734.39
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-2-3-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Water Plant Building 3 Hallway",
+			"description": "Water treatment plant, Building 3, 2nd floor: on the floor by the fallen shelf in the hallway behind the office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/2-3-2-1.webp",
+			"estimate": {
+				"x": 278.46,
+				"z": -790.01
+			}
+		},
+		{
+			"id": "lighthouse/pmc-2-0-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Water Basin Tent Table",
+			"description": "Water treatment plant: on the table inside the tent in the water basin.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/2-0-1-1.webp",
+			"position": {
+				"x": -92.54,
+				"y": 1.02,
+				"z": -489.82
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-2-0-1-2",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Rogue USEC Stash Couch",
+			"description": "Locked container in front of Building 1: on the armrest of the couch inside.",
+			"key": "Rogue USEC stash key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/2-0-1-2.webp",
+			"position": {
+				"x": 52.61,
+				"y": 5.58,
+				"z": -553.58
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-3-1-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Northern Seahouse Balcony Chair",
+			"description": "Northern seaside house: on the balcony chair with the guitar leaning against it.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/3-1-2-1.webp",
+			"estimate": {
+				"x": 138.36,
+				"z": -186.64
+			}
+		},
+		{
+			"id": "lighthouse/pmc-3-2-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Southern Seahouse Bedroom Console",
+			"description": "Southern seaside house, bedroom: sticking out of a drawer in the TV console.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/3-2-2-1.webp",
+			"position": {
+				"x": 142.89,
+				"y": 3.79,
+				"z": -130.94
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-3-4-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Scav Village Large House Speaker",
+			"description": "Scav village, large house, 2nd floor: in the speaker console.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/3-4-2-1.webp",
+			"estimate": {
+				"x": -481.49,
+				"z": -183.18
+			}
+		},
+		{
+			"id": "lighthouse/pmc-3-6-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Red Brick House Bedroom",
+			"description": "Scav village, red brick house, 2nd floor: on the nightstand at the back of the bedroom.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/3-6-2-1.webp",
+			"estimate": {
+				"x": -532.95,
+				"z": -184.64
+			}
+		},
+		{
+			"id": "lighthouse/pmc-4-1-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Blue Chalet 2F Bedroom",
+			"description": "Blue chalet, 2nd floor: on the desk next to the stairs up to the 3rd floor, in the bedroom above the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-1-2-1.webp",
+			"estimate": {
+				"x": -332.95,
+				"z": -31.41
+			}
+		},
+		{
+			"id": "lighthouse/pmc-4-2-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Tennis Court Tent Tape Reel",
+			"description": "Chalet tennis court, inside the tent: on top of the tape-to-tape reel on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-2-1-1.webp",
+			"position": {
+				"x": -64.74,
+				"y": 27.67,
+				"z": 112.9
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-4-2-1-2",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Black Chalet Kitchen Microwave",
+			"description": "Black chalet, ground floor kitchen: on top of the microwave.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-2-1-2.webp",
+			"position": {
+				"x": -122.28,
+				"y": 40.99,
+				"z": 82.1
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-4-2-1-3",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Black Chalet South Bedroom",
+			"description": "Black chalet, ground-floor south room: on the floor next to the suitcase leaning against the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-2-1-3.webp",
+			"position": {
+				"x": -121.77,
+				"y": 39.88,
+				"z": 103.75
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/pmc-4-3-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Sunken House 2F Cot",
+			"description": "Sunken house, 2nd floor: on the cot.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-3-2-1.webp",
+			"estimate": {
+				"x": 246.46,
+				"z": 291.95
+			}
+		},
+		{
+			"id": "lighthouse/pmc-4-4-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "personnel",
+			"title": "Chalet Garage 2F Bedroom",
+			"description": "Garage building next to the blue chalet, 2nd floor: in the last bedroom.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/pmc/4-4-2-1.webp",
+			"estimate": {
+				"x": -416.29,
+				"z": -55.21
+			}
+		},
+		{
+			"id": "lighthouse/technical-1-1-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Train Station Warehouse Locker",
+			"description": "Warehouse next to the train station: in the bottom compartment of the blue locker beside the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/1-1-1-1.webp",
+			"position": {
+				"x": 33.9,
+				"y": 12.2,
+				"z": -849.27
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-2-1-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Water Plant Building 1 Office Shelf",
+			"description": "Water treatment plant, Building 1, 2nd-floor office: standing up on the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/2-1-2-1.webp",
+			"estimate": {
+				"x": 491.56,
+				"z": -821.79
+			}
+		},
+		{
+			"id": "lighthouse/technical-2-2-3-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Water Plant Building 2 Roof Tent",
+			"description": "Water treatment plant, roof of Building 2: inside the green tent, left of the entrance and right of the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/2-2-3-1.webp",
+			"estimate": {
+				"x": 351.3,
+				"z": -783.37
+			}
+		},
+		{
+			"id": "lighthouse/technical-2-3-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Water Plant Building 3 Office",
+			"description": "Water treatment plant, Building 3, 2nd floor: in the corner of the office, leaning against the filing shelves.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/2-3-2-1.webp",
+			"estimate": {
+				"x": 281.37,
+				"z": -793.4
+			}
+		},
+		{
+			"id": "lighthouse/technical-2-0-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Water Basin Tent Laptop Table",
+			"description": "Water treatment plant: on the laptop table at the back of the water-basin tent.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/2-0-1-1.webp",
+			"position": {
+				"x": -100.09,
+				"y": 0.76,
+				"z": -492.19
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-2-0-1-2",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Rogue USEC Stash Fridge",
+			"description": "Locked container in front of Building 1: on top of the fridge inside.",
+			"key": "Rogue USEC stash key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/2-0-1-2.webp",
+			"position": {
+				"x": 48.19,
+				"y": 6.28,
+				"z": -551.92
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-3-1-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Northern Seahouse Bedroom TV",
+			"description": "Northern seaside house, bedroom: in the middle shelf of the TV console.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/3-1-1-1.webp",
+			"position": {
+				"x": 135.93,
+				"y": 3.79,
+				"z": -187.39
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-3-4-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Scav Village Large House Bookshelf",
+			"description": "Scav village, large house, 2nd floor: on the bookshelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/3-4-2-1.webp",
+			"estimate": {
+				"x": -479.59,
+				"z": -163.79
+			}
+		},
+		{
+			"id": "lighthouse/technical-3-6-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Red Brick House Living Room Shelf",
+			"description": "Scav village, red brick house, ground-floor living room: on the shelf to the right of the TV.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/3-6-1-1.webp",
+			"position": {
+				"x": -188.79,
+				"y": 13.58,
+				"z": -199.31
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-4-1-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Blue Chalet Wine Cellar Side Table",
+			"description": "Blue chalet, ground floor: on the side table next to the living room, by the wine cellar.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-1-1-1.webp",
+			"position": {
+				"x": -81.39,
+				"y": 19.13,
+				"z": -84.4
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-4-1-1-2",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Chalet Dining Deck Chair",
+			"description": "Outside the blue chalet: on the first chair on the dining-house deck.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-1-1-2.webp",
+			"position": {
+				"x": -60.66,
+				"y": 20.33,
+				"z": -130.27
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-4-1-3-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Blue Chalet 3F Loft",
+			"description": "Blue chalet, 3rd floor: in the corner of the loft above the 2nd-floor bedroom.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-1-3-1.webp",
+			"estimate": {
+				"x": -367.87,
+				"z": -29.01
+			}
+		},
+		{
+			"id": "lighthouse/technical-4-2-1-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Tennis Court Tent Shelf",
+			"description": "Chalet tennis court: on the upper shelf in the green tent.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-2-1-1.webp",
+			"position": {
+				"x": -67.09,
+				"y": 28.45,
+				"z": 109.63
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-4-2-1-2",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Black Chalet Living Room",
+			"description": "Black chalet living room: on the floor between the couch and the armchair.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-2-1-2s.webp",
+			"position": {
+				"x": -119.32,
+				"y": 39.89,
+				"z": 94.2
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lighthouse/technical-4-3-2-1",
+			"maps": [
+				"lighthouse"
+			],
+			"type": "technical",
+			"title": "Sunken House 2F Shelf",
+			"description": "Sunken house by the dock, 2nd floor: standing up on the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lighthouse/technical/4-3-2-1.webp",
+			"estimate": {
+				"x": 251.81,
+				"z": 292.92
+			}
+		},
+		{
+			"id": "shoreline/technical-2-1-206-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Resort West Wing 206",
+			"description": "Health Resort west wing, room 206: on the floor in the corner, next to a pair of jeans.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-1-206-1.webp",
+			"estimate": {
+				"x": -1305.29,
+				"z": -185.87
+			}
+		},
+		{
+			"id": "shoreline/technical-2-1-316-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Resort West Wing 316",
+			"description": "Health Resort west wing, room 316: on the floor inside the open cabinet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-1-316-1.webp",
+			"estimate": {
+				"x": -1115.31,
+				"z": -265.31
+			}
+		},
+		{
+			"id": "shoreline/technical-2-2-2-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Resort Admin Office Safe Room",
+			"description": "Health Resort admin (north) wing, 2nd floor: in the office with the open safe — the one whose window looks toward the Reserve dome — on the shelf below the phone.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-2-2-1.webp",
+			"estimate": {
+				"x": -663.55,
+				"z": -615.06
+			}
+		},
+		{
+			"id": "shoreline/technical-2-3-212-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Resort East Wing 212",
+			"description": "Health Resort east wing, room 212: on the second shelf of the large cabinet. You can also reach it across the balcony from room 211.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-3-212-1.webp",
+			"estimate": {
+				"x": -1204.25,
+				"z": 463.98
+			}
+		},
+		{
+			"id": "shoreline/technical-2-3-3-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Resort East Wing 301 Hallway",
+			"description": "Health Resort east wing, 3rd floor: on the chair to the left of the broken TV outside room 301.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-3-3-1.webp",
+			"estimate": {
+				"x": -1049.38,
+				"z": 234.03
+			}
+		},
+		{
+			"id": "shoreline/technical-2-0-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Canal Overlook Bench",
+			"description": "At the overlook just below the resort: on the bench in the bottom-right corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/2-0-1-1.webp",
+			"position": {
+				"x": -212.29,
+				"y": -17.23,
+				"z": 19.8
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-3-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Smugglers' Warehouse Crate",
+			"description": "North warehouse at the smugglers' base: on the large crate in the middle of the building.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/3-1-1-1.webp",
+			"position": {
+				"x": -627.6,
+				"y": -25.83,
+				"z": -232.54
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-3-0-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Car Extract Bunk Shelf",
+			"description": "In the small bunk building below the car (taxi) extract: on the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/3-0-1-1.webp",
+			"position": {
+				"x": -536.44,
+				"y": -17.17,
+				"z": -336.18
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-4-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Scav Village Red Couch",
+			"description": "Scav village: under the red couch in the middle of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/4-2-1-1.webp",
+			"position": {
+				"x": 412.84,
+				"y": -54.07,
+				"z": 160.93
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-6-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Cottage Back Deck Chair",
+			"description": "Cottages: on the chair on the back deck by the rear door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/6-2-1-1.webp",
+			"position": {
+				"x": 93.6,
+				"y": -47.49,
+				"z": 116.55
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-7-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Power Station Bench",
+			"description": "Power station building: on a bench in the second room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/7-1-1-1.webp",
+			"position": {
+				"x": -241.17,
+				"y": -40.19,
+				"z": 203.33
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-8-1-3-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Weather Station Tower Top",
+			"description": "Steel tower next to the weather station: on the floor of the room at the very top.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/8-1-3-1.webp",
+			"position": {
+				"x": -511.19,
+				"y": -13.63,
+				"z": 263.98
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-8-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Radio Tower Container",
+			"description": "Radio tower, inside the red container: between the server rack and the laptop table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/8-2-1-1.webp",
+			"position": {
+				"x": -707.49,
+				"y": -26.55,
+				"z": 96.73
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-10-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Pier Station Lobby Counter",
+			"description": "Pier boat station, ground-floor lobby: on the counter across from the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/10-1-1-1.webp",
+			"position": {
+				"x": -318.99,
+				"y": -60.63,
+				"z": 483.07
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/technical-10-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "technical",
+			"title": "Burned Gas Station Office Shelf",
+			"description": "Burned-out gas station: in the room to the right after you enter, on the shelf of the main office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/technical/10-2-1-1.webp",
+			"position": {
+				"x": -183,
+				"y": -54.87,
+				"z": 376.34
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-2-1-211-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort West Wing 211",
+			"description": "Health Resort west wing, room 211: at the foot of the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-1-211-1.webp",
+			"estimate": {
+				"x": -1213.94,
+				"z": -142.97
+			}
+		},
+		{
+			"id": "shoreline/test-2-1-216-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort West Wing 216",
+			"description": "Health Resort west wing, room 216 (locked): on top of a cardboard box.",
+			"key": "Health Resort west wing room 216 key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-1-216-1.webp",
+			"estimate": {
+				"x": -1149.21,
+				"z": -137.04
+			}
+		},
+		{
+			"id": "shoreline/test-2-1-3-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort West Wing 301 Hallway",
+			"description": "Health Resort west wing, 3rd floor: on the table right outside room 301.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-1-3-1.webp",
+			"estimate": {
+				"x": -1327.81,
+				"z": -374.6
+			}
+		},
+		{
+			"id": "shoreline/test-2-1-314-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort West Wing 314",
+			"description": "Health Resort west wing, room 314: sticking out of the drawer beside the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-1-314-1.webp",
+			"estimate": {
+				"x": -1128.34,
+				"z": -324.37
+			}
+		},
+		{
+			"id": "shoreline/test-2-3-2-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort Admin Filing Room",
+			"description": "Health Resort admin (north) wing, 2nd floor: on the floor of the back filing room, next to the filing cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-3-2-1.webp",
+			"estimate": {
+				"x": -536.69,
+				"z": -644.67
+			}
+		},
+		{
+			"id": "shoreline/test-2-3-218-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort East Wing 218",
+			"description": "Health Resort east wing, room 218: on the table next to the duffel bag.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-3-218-1.webp",
+			"estimate": {
+				"x": -1263.21,
+				"z": 415.33
+			}
+		},
+		{
+			"id": "shoreline/test-2-3-326-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Resort East Wing 326",
+			"description": "Health Resort east wing, room 326: sticking out of the drawer to the right of the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-3-326-1.webp",
+			"estimate": {
+				"x": -1373.16,
+				"z": 284.15
+			}
+		},
+		{
+			"id": "shoreline/test-2-0-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Bus Stop Back Door Crate",
+			"description": "Bus-stop building in front of the resort: on the crate outside the back door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/2-0-1-1a.webp",
+			"position": {
+				"x": -135.74,
+				"y": -21.08,
+				"z": -14.64
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-3-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Smugglers' Camp Stool",
+			"description": "Smugglers' camp, warehouse with the camouflage net: on the white stool between the two doorways.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/3-2-1-1.webp",
+			"position": {
+				"x": -612.59,
+				"y": -29.38,
+				"z": -180.02
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-3-0-2-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Car Extract Bunk 2F",
+			"description": "Two-story container in front of the car (taxi) extract: on the upper-level floor next to the bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/3-0-2-1a.webp",
+			"position": {
+				"x": -520.24,
+				"y": -15.88,
+				"z": -340.1
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-4-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Scav Village Crashed-Car House",
+			"description": "Scav village, the house with the white car crashed into its gate: on the ground-floor table by the binders.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/4-1-1-1.webp",
+			"position": {
+				"x": 441.97,
+				"y": -53.26,
+				"z": 154.01
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-5-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Scav Village Blue Pickup",
+			"description": "In the bed of the blue pickup truck: on top of a box.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/5-1-1-1.webp",
+			"position": {
+				"x": 279.46,
+				"y": -54.96,
+				"z": 180.73
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-6-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Cottage Med Boxes",
+			"description": "Cottages: on the medical supply boxes next to the medical trading post.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/6-2-1-1.webp",
+			"position": {
+				"x": 97.79,
+				"y": -48.14,
+				"z": 97.18
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-8-1-2-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Weather Station 2F Chair",
+			"description": "Weather station building, 2nd floor: on the office chair.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/8-1-2-1.webp",
+			"position": {
+				"x": -512.65,
+				"y": -21.76,
+				"z": 236.52
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-8-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Radio Tower Container Shelf",
+			"description": "Radio tower, inside the red container: on the lowest shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/8-2-1-1.webp",
+			"position": {
+				"x": -707.73,
+				"y": -26.55,
+				"z": 99.08
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-10-1-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Pier Station Stretchers",
+			"description": "In front of the pier boat station: on the stretchers to the right of the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/10-1-1-1.webp",
+			"position": {
+				"x": -319.39,
+				"y": -61.89,
+				"z": 496.45
+			},
+			"match": "auto"
+		},
+		{
+			"id": "shoreline/test-10-2-1-1",
+			"maps": [
+				"shoreline"
+			],
+			"type": "test",
+			"title": "Burned Gas Station Back Office",
+			"description": "Burned-out gas station: in the desk slot of the back office, in the room to the right after you enter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/shoreline/test/10-2-1-1.webp",
+			"position": {
+				"x": -180.72,
+				"y": -54.72,
+				"z": 374.1
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Scav Camp Container Bunk",
+			"description": "Scav camp, two-story container: leaning against the pillow in the upper bunk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-1.webp",
+			"position": {
+				"x": 140.77,
+				"y": 27.9,
+				"z": -725.74
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-2",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "USEC Camp Radar Stool",
+			"description": "North USEC camp: on the small stool next to the radar dish.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-2.webp",
+			"position": {
+				"x": 295.2,
+				"y": 23.34,
+				"z": -506.86
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-3",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Scav Bunker Tower Machinery",
+			"description": "Scav bunker area: on top of the machinery under the radio tower.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-3.webp",
+			"position": {
+				"x": 226.69,
+				"y": 25.48,
+				"z": -712.24
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-4",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Crashed Car Passenger Seat",
+			"description": "In the crashed car: by the feet of the body in the passenger seat.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-4.webp",
+			"position": {
+				"x": -46.05,
+				"y": 20.69,
+				"z": -251.74
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-5",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Lakeside Grave Pallet",
+			"description": "Graves near the lake shore: on the pallet next to the dead bodies.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-5.webp",
+			"position": {
+				"x": -54.91,
+				"y": 8.87,
+				"z": -501.34
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-1-6",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Cultist House Mattress",
+			"description": "Cultist house: on the mattress to the left as you walk in.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/1-6.webp",
+			"position": {
+				"x": -128.82,
+				"y": 10.63,
+				"z": -689.11
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-2-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Bunker Showers",
+			"description": "Underground bunker: on the floor of the showers, past the restroom entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/2-1.webp",
+			"estimate": {
+				"x": -431.41,
+				"z": -619.76
+			}
+		},
+		{
+			"id": "woods/technical-2-1-2",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Old Sawmill Container",
+			"description": "Old sawmill, inside the container: on the floor under the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/2-1-2.webp",
+			"position": {
+				"x": -475.17,
+				"y": 13.95,
+				"z": -178.18
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-2-2",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Scav Village Bookshelf",
+			"description": "Scav village house, ground floor: on the floor in front of the bookshelf, next to the scattered books.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/2-2.webp",
+			"position": {
+				"x": -459.04,
+				"y": 15.54,
+				"z": -364.49
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-2-3",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "North Mountain Bunker Barrels",
+			"description": "At the sealed bunker entrance in the northern mountains: on the blue barrels.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/2-3-a.webp",
+			"position": {
+				"x": -153.07,
+				"y": 51.93,
+				"z": -275.22
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-3-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Road to Outskirts SUV",
+			"description": "On the road toward the Outskirts extract: on the ground behind the black SUV.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/3-1.webp",
+			"estimate": {
+				"x": 360.1,
+				"z": 91.71
+			}
+		},
+		{
+			"id": "woods/technical-4-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Sawmill Shack Stool",
+			"description": "Sawmill, the first shack: on the stool.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/4-1.webp",
+			"position": {
+				"x": -1.62,
+				"y": -0.72,
+				"z": -81.39
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-5-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Plane Cockpit",
+			"description": "Crashed plane: in the cockpit, between the pilot and co-pilot seats.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/5-1.webp",
+			"position": {
+				"x": -248.67,
+				"y": 12.29,
+				"z": -24.46
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-5-2",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Emercom Camp Crate",
+			"description": "Emercom camp: on the crate behind the medical containers.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/5-2.webp",
+			"position": {
+				"x": -210.48,
+				"y": -0.8,
+				"z": 217.72
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/technical-6-1",
+			"maps": [
+				"woods"
+			],
+			"type": "technical",
+			"title": "Depot Train Weapon Car",
+			"description": "Train at the depot, the container car with weapon crates (third car): on top of the boxes.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/technical/6-1a.webp",
+			"position": {
+				"x": -675.62,
+				"y": 11.08,
+				"z": 132.79
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-1-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Camp Crate",
+			"description": "USEC camp: on the crate across from the medical table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/1-1-a.webp",
+			"position": {
+				"x": 272.19,
+				"y": 23.95,
+				"z": -511.4
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-1-2",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Camp Tent Chair",
+			"description": "USEC camp: on the white chair under the tent cover.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/1-2.webp",
+			"position": {
+				"x": 280.04,
+				"y": 23.45,
+				"z": -434.16
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-1-3",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Camp Sleeping Bag",
+			"description": "USEC camp: tucked into the opening of the sleeping bag under the tent cover.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/1-3.webp",
+			"estimate": {
+				"x": 273.73,
+				"z": -437.18
+			}
+		},
+		{
+			"id": "woods/test-1-4",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Camp Long Tent Cot",
+			"description": "USEC camp, long tent: on the floor next to one of the cots.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/1-4.webp",
+			"position": {
+				"x": 310.07,
+				"y": 23.21,
+				"z": -462.87
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-1-5",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Camp Medical Table",
+			"description": "USEC camp: on the table at the foot of the cot in the medical area.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/1-5.webp",
+			"position": {
+				"x": 284.06,
+				"y": 23.64,
+				"z": -517.19
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-2-1-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Old Sawmill Small Shack",
+			"description": "Old sawmill, the small shack: on the machine against the back wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/2-1-1.webp",
+			"position": {
+				"x": -512.71,
+				"y": 16.95,
+				"z": -177.96
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-2-2-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Scav Village Brick House 2F",
+			"description": "Scav village by the river, middle house on the east side: on the mattress on the 2nd floor of the brick building.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/2-2-1-a.webp",
+			"position": {
+				"x": -513.04,
+				"y": 19.17,
+				"z": -394.17
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-2-2-2",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Old Sawmill 2F Table",
+			"description": "Old sawmill main building, 2nd floor: on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/2-2-2.webp",
+			"position": {
+				"x": -544.89,
+				"y": 18.92,
+				"z": -199.92
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-2-3",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Scav Village Ironing Board",
+			"description": "Scav village house, ground floor: on the floor in front of the ironing board.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/2-3.webp",
+			"position": {
+				"x": -456.04,
+				"y": 15.95,
+				"z": -366.54
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-3-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Checkpoint Container",
+			"description": "USEC checkpoint: inside the container, on top of the filing cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/3-1.webp",
+			"estimate": {
+				"x": 242.36,
+				"z": -64.36
+			}
+		},
+		{
+			"id": "woods/test-3-2",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "USEC Checkpoint Toilet",
+			"description": "Behind the USEC checkpoint: inside the right-hand portable toilet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/3-2.webp",
+			"position": {
+				"x": 238.56,
+				"y": -0.88,
+				"z": -71.04
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-4-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Sawmill Guard House Cabinets",
+			"description": "Sawmill guard house (the small building): on top of the filing cabinets.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/4-1.webp",
+			"position": {
+				"x": -27,
+				"y": -2.32,
+				"z": 47.45
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-4-2",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Sawmill Pickup Back Seat",
+			"description": "Blue pickup truck in front of the sawmill: on the left side of the back seat.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/4-2.webp",
+			"position": {
+				"x": 58.35,
+				"y": -1.73,
+				"z": -51.01
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-5-1",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Emercom White Container Body",
+			"description": "Emercom camp, inside the white container: under the left hand of the uncovered body.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/5-1.webp",
+			"position": {
+				"x": -201.93,
+				"y": -1.74,
+				"z": 232.12
+			},
+			"match": "auto"
+		},
+		{
+			"id": "woods/test-5-2",
+			"maps": [
+				"woods"
+			],
+			"type": "test",
+			"title": "Emercom Tipped Table",
+			"description": "Emercom camp: on the ground in front of the tipped-over table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/woods/test/5-2.webp",
+			"position": {
+				"x": -189.85,
+				"y": -1.87,
+				"z": 208.4
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-1-1",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Blue-Side Medical Room Back Desk",
+			"description": "Medical room next to the Blue room: on the desk at the very back, facing the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-1.webp",
+			"estimate": {
+				"x": -7.97,
+				"z": -591.87
+			}
+		},
+		{
+			"id": "lab/medical-1-2",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Blue-Side Medical Room Left Desk",
+			"description": "Medical room next to the Blue room: on the desk to the left of the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-2.webp",
+			"estimate": {
+				"x": 1.8,
+				"z": -595.23
+			}
+		},
+		{
+			"id": "lab/medical-1-3",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Testing Station Back Corner",
+			"description": "Inside the residential-unit testing area: on the floor in the back-right corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-3.webp",
+			"estimate": {
+				"x": 46.45,
+				"z": -637.78
+			}
+		},
+		{
+			"id": "lab/medical-1-4",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Testing Area Unpowered Office",
+			"description": "Pull the lever to open the testing area, then take the small office on the right (behind the unpowered door): on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-4.webp",
+			"estimate": {
+				"x": 23.49,
+				"z": -650.26
+			}
+		},
+		{
+			"id": "lab/medical-1-5",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Blue Room Medical Bed",
+			"description": "Inside the Blue keycard room: on the floor at the base of the medical bed.",
+			"key": "Labs blue keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-5.webp",
+			"estimate": {
+				"x": -6.71,
+				"z": -603.82
+			}
+		},
+		{
+			"id": "lab/medical-1-6",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Black Room Camera",
+			"description": "Inside the Black keycard room: on the floor next to the camera.",
+			"key": "Labs black keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-6.webp",
+			"estimate": {
+				"x": 3.55,
+				"z": -554.02
+			}
+		},
+		{
+			"id": "lab/medical-1-7",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Blue Room Clipboard Stand",
+			"description": "Inside the Blue keycard room: on the clipboard stand against the glass.",
+			"key": "Labs blue keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-7.webp",
+			"estimate": {
+				"x": -3.09,
+				"z": -600.26
+			}
+		},
+		{
+			"id": "lab/medical-1-8",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Central Dome Testing Table",
+			"description": "Testing floor near the central dome: on the large medical table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-8.webp",
+			"estimate": {
+				"x": -47.86,
+				"z": -564.56
+			}
+		},
+		{
+			"id": "lab/medical-1-9",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Blue Room Chemistry Station",
+			"description": "Just outside the Blue keycard room: on the left side of the chemistry desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/1-9.webp",
+			"estimate": {
+				"x": -2.12,
+				"z": -614.92
+			}
+		},
+		{
+			"id": "lab/medical-2-1",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Green Room Computer Desk",
+			"description": "Inside the Green keycard room: on the desk next to the computer monitor.",
+			"key": "Labs green keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-1.webp",
+			"position": {
+				"x": -131.96,
+				"y": 5.09,
+				"z": -377.93
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-2",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Cargo Elevator Isolation Ward",
+			"description": "In the isolation ward in front of the cargo elevator.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-2.webp",
+			"position": {
+				"x": -124.06,
+				"y": 5.29,
+				"z": -393.87
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-3",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "2F Elevator Landing by Restroom",
+			"description": "Second floor, where the elevator opens: across from the restroom.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-3.webp",
+			"estimate": {
+				"x": -136.73,
+				"z": -408.75
+			}
+		},
+		{
+			"id": "lab/medical-2-4",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Green Room Filing Table",
+			"description": "Inside the Green keycard room: on the corner of the table next to the filing shelves.",
+			"key": "Labs green keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-4.webp",
+			"position": {
+				"x": -121.86,
+				"y": 4.99,
+				"z": -360.92
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-5",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Central Meeting Room Round Table",
+			"description": "Central meeting room: on the round table next to a laptop.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-5.webp",
+			"position": {
+				"x": -230.22,
+				"y": 5.02,
+				"z": -345.02
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-6",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Cafeteria Window Table",
+			"description": "Cafeteria: on the tall table against the glass window.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-6.webp",
+			"position": {
+				"x": -233.61,
+				"y": 5.27,
+				"z": -312.34
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-7",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Hallway Medical Bed",
+			"description": "Second-floor hallway in front of the Green room: on the medical bed.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-7.webp",
+			"position": {
+				"x": -114.4,
+				"y": 4.83,
+				"z": -364.46
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-8",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Infirmary Storage Room",
+			"description": "Through the front door by the cargo elevator, the room immediately on the right: on the table in the corner.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-8.webp",
+			"position": {
+				"x": -122.68,
+				"y": 5.4,
+				"z": -397.78
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/medical-2-9",
+			"maps": [
+				"the-lab"
+			],
+			"type": "medical",
+			"title": "Isolation Ward Far End",
+			"description": "At the far end of the isolation ward in front of the cargo elevator.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/medical/2-9.webp",
+			"estimate": {
+				"x": -139.9,
+				"z": -389.22
+			}
+		},
+		{
+			"id": "lab/user-1-1",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Front Reception Desk",
+			"description": "Ground floor: in the middle of the reception desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/1-1.webp",
+			"estimate": {
+				"x": -128.49,
+				"z": -544.49
+			}
+		},
+		{
+			"id": "lab/user-1-2",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Coffee Counter Under Manager's Office",
+			"description": "Ground floor: on the coffee counter underneath the manager's office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/1-2.webp",
+			"estimate": {
+				"x": -37.52,
+				"z": -545.87
+			}
+		},
+		{
+			"id": "lab/user-2-1",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Kruglov Office Meeting Table",
+			"description": "Beside the entrance to Kruglov's office: on the meeting table outside.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-1.webp",
+			"position": {
+				"x": -265.67,
+				"y": 5.24,
+				"z": -369.38
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-2",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Residential Unit Desk",
+			"description": "Orange (residential unit) area: on the desk behind the residential-unit keycard room.",
+			"key": "Labs residential unit keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-2.webp",
+			"estimate": {
+				"x": 12.35,
+				"z": -651.87
+			}
+		},
+		{
+			"id": "lab/user-2-3",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Computer Room Relax Area",
+			"description": "North office, the room next to the safe: on the long desk in the glassed-off relax area of the computer room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-3.webp",
+			"position": {
+				"x": -187.35,
+				"y": 4.67,
+				"z": -407.28
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-4",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "South Office Spot A",
+			"description": "In the south office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-4.webp",
+			"position": {
+				"x": -148.83,
+				"y": 5.16,
+				"z": -393.61
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-5",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Red/Violet Connecting Room Desk",
+			"description": "On the desk at the back of the room that connects the Red and Violet keycard rooms.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-5.webp",
+			"position": {
+				"x": -268.74,
+				"y": 4.96,
+				"z": -326.1
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-6",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Manager's Office Desk",
+			"description": "Inside the manager's office: on the desk with two monitors.",
+			"key": "Labs manager's office room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-6.webp",
+			"position": {
+				"x": -163.13,
+				"y": 4.94,
+				"z": -347.64
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-7",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Garage Gate Control Room",
+			"description": "Parking gate control room: next to the control panel.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-7.webp",
+			"position": {
+				"x": -244.07,
+				"y": 5.01,
+				"z": -382.46
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-8",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Cafeteria Chair",
+			"description": "Cafeteria: on the pulled-out chair against the planter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-8.webp",
+			"position": {
+				"x": -225.92,
+				"y": 4.7,
+				"z": -308.57
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-9",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "South Office Spot B",
+			"description": "In the south office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-9.webp",
+			"position": {
+				"x": -142.74,
+				"y": 4.72,
+				"z": -409.54
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-10",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Manager's Bridge Meeting Table",
+			"description": "Next to the manager's office: on the meeting table on the bridge.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-10a.webp",
+			"estimate": {
+				"x": -174.11,
+				"z": -342.69
+			}
+		},
+		{
+			"id": "lab/user-2-11",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Kruglov Glass Office Shelf",
+			"description": "In front of Kruglov's office: on the filing shelf in the corner glass office.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-11-a.webp",
+			"position": {
+				"x": -252.2,
+				"y": 5.02,
+				"z": -367.72
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-12",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Central Meeting Room Laptop",
+			"description": "Central meeting room: on the round table next to a laptop.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-12.webp",
+			"position": {
+				"x": -230.49,
+				"y": 4.85,
+				"z": -341.37
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-13",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Yellow Room Boxes",
+			"description": "Inside the Yellow keycard room: on the boxes to the right of the red cage.",
+			"key": "Labs yellow keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-13-a.webp",
+			"position": {
+				"x": -216.03,
+				"y": 4.89,
+				"z": -382.15
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-14",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Computer Room Center Desk",
+			"description": "North office computer room: on the desk in the middle of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-14.webp",
+			"position": {
+				"x": -193.75,
+				"y": 4.97,
+				"z": -401.76
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-15",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Hangar Gate Control Shelf",
+			"description": "In the room behind the one that opens the extract (hangar gate control): between the binders on the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-15.webp",
+			"position": {
+				"x": -171.47,
+				"y": 5.07,
+				"z": -285.03
+			},
+			"match": "auto"
+		},
+		{
+			"id": "lab/user-2-16",
+			"maps": [
+				"the-lab"
+			],
+			"type": "user",
+			"title": "Server Room 2F Kitchen Counter",
+			"description": "Server room, 2nd floor kitchenette: in the open binder on the counter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/lab/user/2-16.webp",
+			"position": {
+				"x": -139.45,
+				"y": 5.18,
+				"z": -283.3
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-1",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Green Canister Key Spot Boxes",
+			"description": "On top of the cardboard boxes next to the corpse-key spawn with the green canister.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/1.webp",
+			"position": {
+				"x": 3.73,
+				"y": 1.07,
+				"z": 28.7
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-2",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Observation Room Filing Cabinet",
+			"description": "Inside the Observation room: in the standing filing cabinet.",
+			"key": "Observation room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/2.webp",
+			"position": {
+				"x": 9.44,
+				"y": 0.97,
+				"z": 2.97
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-3",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Assembly Gate Dead Worker",
+			"description": "By the left door of the central lab: between the legs of the dead worker leaning against the assembly room gate.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/3-a.webp",
+			"position": {
+				"x": -7.34,
+				"y": 0.32,
+				"z": 23.27
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-4",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Curved Hallway Side Room Crate",
+			"description": "In the room off the curved hallway: on top of the wooden crate.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/4.webp",
+			"position": {
+				"x": -16.29,
+				"y": 1.18,
+				"z": 8.62
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-5",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Scientist 4 Trash Pile",
+			"description": "Next to dead scientist #4: tucked into the gap in the pile of boxes and trash.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/5.webp",
+			"position": {
+				"x": -15.03,
+				"y": 0.35,
+				"z": 51.26
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-6",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Assembly Room Tool Shelf Box",
+			"description": "Assembly room: on top of a box on the tool shelf at the back.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/6.webp",
+			"position": {
+				"x": -10.97,
+				"y": 1.04,
+				"z": 26.57
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-7",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Assembly Room Pallet",
+			"description": "Assembly room: on top of the pallet.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/7.webp",
+			"position": {
+				"x": -6.51,
+				"y": 0.75,
+				"z": 35.67
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-8",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Ariadne Extract Corpse",
+			"description": "In front of the Ariadne extract: next to the corpse by the torture room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/8.webp",
+			"position": {
+				"x": 16.54,
+				"y": 0.05,
+				"z": 3.9
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-9",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Observation Server Racks",
+			"description": "Inside the Observation room: between the server racks.",
+			"key": "Observation room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/9.webp",
+			"position": {
+				"x": 12.31,
+				"y": 0.44,
+				"z": 4.6
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-10",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Corpse Room Gate",
+			"description": "At the Corpse room: under the right side of the gate.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/10.webp",
+			"position": {
+				"x": 7.86,
+				"y": 0.69,
+				"z": -11.08
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-11",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Corpse Key Spawn Box",
+			"description": "Near corpse-key spawn #6 (or #5), between the toxic puddle and shotgun trap rooms: in the box where the key spawns.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/11.webp",
+			"position": {
+				"x": 0.26,
+				"y": 0.95,
+				"z": 54.58
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-12",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Scientist 3 Pallet",
+			"description": "Next to dead scientist #3: on the corner of the pallet against the wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/12.webp",
+			"position": {
+				"x": 11.27,
+				"y": 0.22,
+				"z": 31.41
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/blueprints-13",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Room 3 Exit Pallet",
+			"description": "In front of the room 3 exit: on the pallet in the corner of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/13.webp",
+			"estimate": {
+				"x": -24.45,
+				"z": -8.81
+			}
+		},
+		{
+			"id": "labyrinth/blueprints-14",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "blueprints",
+			"title": "Crushed Scientist 5",
+			"description": "Dead scientist #5, crushed by a barrel: under the body's left arm.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/blueprints/14.webp",
+			"position": {
+				"x": -0.14,
+				"y": 0.15,
+				"z": -0.02
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-1",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Central Lab Back Dead Worker",
+			"description": "Behind the central lab, next to the assembly room: between the legs of the dead worker.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/1.webp",
+			"position": {
+				"x": -16.89,
+				"y": 0.05,
+				"z": 34.95
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-2",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Observation Hallway Corpse",
+			"description": "On the corpse in the hallway just outside the Observation room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/2-a.webp",
+			"position": {
+				"x": 14.29,
+				"y": 0.3,
+				"z": 9.44
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-3",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Corpse Key 6 Wooden Box",
+			"description": "Next to corpse-key spawn #6: on top of the wooden box.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/3.webp",
+			"estimate": {
+				"x": -0.65,
+				"z": 54.53
+			}
+		},
+		{
+			"id": "labyrinth/medical-4",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Central Lab Dead Scientist",
+			"description": "Central lab (assembly room side): under the left arm of the dead scientist.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/4.webp",
+			"position": {
+				"x": -7.47,
+				"y": 0.35,
+				"z": 30.63
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-5",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Forklift Dead Scientist",
+			"description": "By the forklift in the middle of the map: under the dead scientist in front of it.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/5.webp",
+			"position": {
+				"x": -4.73,
+				"y": 0.22,
+				"z": 10.18
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-6",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Observation Room Scientist",
+			"description": "Inside the Observation room: on the ground to the right of the dead scientist.",
+			"key": "Observation room key",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/6.webp",
+			"position": {
+				"x": 7.96,
+				"y": 0.85,
+				"z": 4.32
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-7",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Corpse Room Entrance Wall",
+			"description": "On the wall to the right of the Corpse room entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/7.webp",
+			"estimate": {
+				"x": 6.88,
+				"z": -10.24
+			}
+		},
+		{
+			"id": "labyrinth/medical-8",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Dead Scientist 3",
+			"description": "Next to dead scientist #3, on the left side of the body.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/8.webp",
+			"position": {
+				"x": 12.27,
+				"y": 0.24,
+				"z": 33.6
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-9",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Minotaur Shrine Boxes",
+			"description": "South side, toward Ariadne: on the boxes to the left of the Minotaur statue shrine.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/9-a.webp",
+			"estimate": {
+				"x": 13.98,
+				"z": 17.76
+			}
+		},
+		{
+			"id": "labyrinth/medical-10",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Assembly Room Center Crate",
+			"description": "Assembly room: on top of the crate in the middle of the room.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/10.webp",
+			"position": {
+				"x": -9.11,
+				"y": 0.96,
+				"z": 30.45
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-11",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Assembly Room Entrance Crate",
+			"description": "Assembly room: on the crate right by the entrance.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/11.webp",
+			"position": {
+				"x": -5.44,
+				"y": 0.69,
+				"z": 26.74
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-12",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Assembly Room Outside Worker",
+			"description": "Right outside the assembly room: next to the dead worker.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/12.webp",
+			"position": {
+				"x": -1.72,
+				"y": 0.26,
+				"z": 35.82
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-13",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Archway Barrels",
+			"description": "In the archway opposite the torture room: on top of the barrels. The source marks this position as an estimate.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/13.webp",
+			"position": {
+				"x": 15.01,
+				"y": 0.98,
+				"z": 16.51
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-14",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Curved Tunnel Bagged Corpse",
+			"description": "In front of the room 5 exit, in the curved tunnel: on the lap of the bagged corpse.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/14.webp",
+			"position": {
+				"x": -24.96,
+				"y": 0.54,
+				"z": 40.09
+			},
+			"match": "auto"
+		},
+		{
+			"id": "labyrinth/medical-15",
+			"maps": [
+				"the-labyrinth"
+			],
+			"type": "medical",
+			"title": "Boiler Burnt Boxes",
+			"description": "In front of the room 3 exit, by the boilers: on top of the burnt boxes. The source marks this position as approximate.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/labyrinth/medical/15.webp",
+			"estimate": {
+				"x": -24.35,
+				"z": -7.61
+			}
+		},
+		{
+			"id": "icebreaker/pmc-13-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Engine Room Code Door Chair",
+			"description": "Engine room: enter the code-locked lower automation room and check the blue chair against the wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/13-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-12-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Engine Room Code Note Shelf",
+			"description": "Engine room, the room where the door code is written: on the top shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/12-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-1-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Medical Office Table",
+			"description": "Deck 1 medical office (where the engine room keycard can spawn): on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/1-1s.webp"
+		},
+		{
+			"id": "icebreaker/pmc-1-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Control Room Cork Board",
+			"description": "Control room midway between the lower and upper helipad levels: on the counter under the cork board, to the right as you enter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/1-2.webp"
+		},
+		{
+			"id": "icebreaker/pmc-1-3",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Green Flare Room Console",
+			"description": "Deck 1, the small room where the green flare spawns: on the console.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/1-3.webp"
+		},
+		{
+			"id": "icebreaker/pmc-1-4",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Compartment C-3 Binders",
+			"description": "Deck 1, compartment C-3: in the binders to the left of the tape.",
+			"key": "Compartment C-3 keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/1-4a.webp"
+		},
+		{
+			"id": "icebreaker/pmc-1-5",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Compartment C-3 Changing Room",
+			"description": "Deck 1, compartment C-3: in the changing room.",
+			"key": "Compartment C-3 keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/1-5.webp"
+		},
+		{
+			"id": "icebreaker/pmc-2-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Drone Room Counter",
+			"description": "Room just before the helipad: on the counter in the room to the right.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/2-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-2-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Drone Room Stair Boxes",
+			"description": "Before the helipad, at the top of the stairs coming up from the engine room: on the boxes.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/2-2.webp"
+		},
+		{
+			"id": "icebreaker/pmc-3-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Canteen West Room Table",
+			"description": "Canteen, west side room: on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/3-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-3-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Crew Quarters 12 Desk Shelf",
+			"description": "Crew quarters room 12: on the shelf above the desk in the room to the left after the door.",
+			"key": "Crew quarters keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/3-2.webp"
+		},
+		{
+			"id": "icebreaker/pmc-4-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Wheelhouse Flare Room Box",
+			"description": "Wheelhouse where the aviation fuel and green flare spawn: on the cardboard box against the wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/4-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-4-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Archives Binder Pile",
+			"description": "Code-locked archives room: in the pile of binders under the table on the right, as seen from the right-hand door.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/4-2a.webp"
+		},
+		{
+			"id": "icebreaker/pmc-4-3",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Crew Quarters 19 Blue Crate",
+			"description": "Deck 4, crew quarters room 19: in the blue crate to the right as you enter.",
+			"key": "Crew quarters keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/4-3.webp"
+		},
+		{
+			"id": "icebreaker/pmc-5-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Conference Room Table",
+			"description": "Code-locked conference room two decks above the canteen: on the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/5-1a.webp"
+		},
+		{
+			"id": "icebreaker/pmc-7-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Compartment C-1 Desk",
+			"description": "Compartment C-1 officer control room: on the right side of the desk.",
+			"key": "Compartment C-1 keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/7-1.webp"
+		},
+		{
+			"id": "icebreaker/pmc-9-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "personnel",
+			"title": "Bridge Communications Console",
+			"description": "Captain's bridge: on the shelf above the control panel, right side of the communications console.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/pmc/9-1.webp"
+		},
+		{
+			"id": "icebreaker/test-0-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Lower Stairs Red Binder",
+			"description": "Lowest level, next to the staircase: inside the red binder on the stacked tables.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/0-1.webp"
+		},
+		{
+			"id": "icebreaker/test-0-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Under-Helipad Storage Shelf",
+			"description": "Level 0, in the room underneath the helipad control room: on a crate on the shelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/0-2.webp"
+		},
+		{
+			"id": "icebreaker/test-1-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Medical Storage Desk",
+			"description": "Deck 1, medical storage room: on the desk.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/1-1.webp"
+		},
+		{
+			"id": "icebreaker/test-1-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Green Flare Shelf",
+			"description": "Deck 1, right in front of the starting area: on the shelf underneath the green flare.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/1-2.webp"
+		},
+		{
+			"id": "icebreaker/test-1-3",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Compartment C-3 Lab Office",
+			"description": "Deck 1, compartment C-3 lab office: on the small table to the left of the doorway.",
+			"key": "Compartment C-3 keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/1-3.webp"
+		},
+		{
+			"id": "icebreaker/test-2-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Drone Room Stair Box",
+			"description": "Room just before the helipad: on the small white box at the top of the stairs.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/2-1s.webp"
+		},
+		{
+			"id": "icebreaker/test-2-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Drone Room PC",
+			"description": "Room just before the helipad: on top of the PC under the table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/2-2.webp"
+		},
+		{
+			"id": "icebreaker/test-2-3",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Drone Room Upper Shelf",
+			"description": "Room just before the helipad: on the upper shelf in the room to the left.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/2-3a.webp"
+		},
+		{
+			"id": "icebreaker/test-3-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Canteen East Room Armchair",
+			"description": "Deck 3 canteen, east side room: on the armchair.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/3-1.webp"
+		},
+		{
+			"id": "icebreaker/test-4-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Archives Blue Crate",
+			"description": "Code-locked archives room above the canteen: on the floor in front of the blue crate by the bookshelf.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/4-1.webp"
+		},
+		{
+			"id": "icebreaker/test-4-2",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Bridge-Side Flare Room Table",
+			"description": "Near the bridge, just right of the door to the small room with the guaranteed flare spawn: on the small table.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/4-2.webp"
+		},
+		{
+			"id": "icebreaker/test-4-3",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Archives Cabinet",
+			"description": "Code-locked archives room: open the right-hand code door, then check the bottom of the cabinet diagonally to the left.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/4-3.webp"
+		},
+		{
+			"id": "icebreaker/test-4-4",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Crew Quarters 19 Desk",
+			"description": "Deck 4, crew quarters room 19: in the desk shelf next to the headphones.",
+			"key": "Crew quarters keycard",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/4-4.webp"
+		},
+		{
+			"id": "icebreaker/test-5-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Conference Room Shelf",
+			"description": "Code-locked conference room two decks above the canteen: on the metal shelf to the left as you enter.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/5-1.webp"
+		},
+		{
+			"id": "icebreaker/test-9-1",
+			"maps": [
+				"icebreaker"
+			],
+			"type": "test",
+			"title": "Bridge Floor Binders",
+			"description": "Captain's bridge: in the pile of documents on the floor in front of the half-wall.",
+			"photo": "/images/battle-pass/map-assets/tarkovdoc.com/assets/previews/icebreaker/test/9-1.webp"
+		}
+	]
+}

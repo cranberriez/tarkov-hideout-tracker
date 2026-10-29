@@ -1,5 +1,6 @@
 export { StationImage } from "@/components/entities/station-image";
 import type { ReactNode } from "react";
+import { Ban, Flag } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import type { Station } from "@/types/hideout";
 import { cn } from "@/lib/utils";
@@ -11,6 +12,7 @@ export function StationIdentity({
 	currentLevel,
 	maxLevel,
 	locked = false,
+	goalLevel,
 	imageClassName,
 	headingLevel: Heading = "h3",
 	size = "sm",
@@ -20,6 +22,8 @@ export function StationIdentity({
 	currentLevel: number;
 	maxLevel: number;
 	locked?: boolean;
+	/** Shown when the player's station goal stops below `maxLevel`. */
+	goalLevel?: number;
 	imageClassName?: string;
 	headingLevel?: "h1" | "h2" | "h3";
 	size?: "sm" | "lg";
@@ -39,6 +43,16 @@ export function StationIdentity({
 				<div className={cn("mt-0.5 font-mono text-subtle-foreground", size === "lg" ? "text-xs" : "text-[10px]")}>
 					LEVEL <span className={currentLevel > 0 ? "text-brand" : "text-subtle-foreground"}>{currentLevel}</span>{" "}
 					<span className="text-subtle-foreground">/</span> {maxLevel}
+					{goalLevel !== undefined && (
+						<span
+							className="ml-1.5 inline-flex items-center gap-0.5 align-middle text-brand"
+							title={goalLevel === 0 ? "Ignored" : `Goal: level ${goalLevel}`}
+						>
+							{goalLevel === 0 ? <Ban size={10} aria-hidden="true" /> : <Flag size={10} aria-hidden="true" />}
+							{goalLevel > 0 && goalLevel}
+							<span className="sr-only">{goalLevel === 0 ? "Ignored" : `Goal level ${goalLevel}`}</span>
+						</span>
+					)}
 				</div>
 			</div>
 		</div>

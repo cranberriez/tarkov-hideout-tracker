@@ -17,6 +17,7 @@ interface SourceOption {
 import type { ProfitLockOptionsProps } from "../types";
 
 export function ProfitPageControls({
+	activeFilterCount,
 	kind,
 	craftingSkillLevel,
 	craftingSkillForced,
@@ -31,6 +32,12 @@ export function ProfitPageControls({
 	stationSourceIds,
 	onStationSourceIdsChange,
 	sources,
+	showTopOnly,
+	onShowTopOnlyChange,
+	topCount,
+	onTopCountChange,
+	ignorePlayerLevel,
+	onIgnorePlayerLevelChange,
 	availableOnly,
 	onAvailableOnlyChange,
 	lockFilters,
@@ -48,6 +55,7 @@ export function ProfitPageControls({
 	showPinnedOnly,
 	onShowPinnedOnlyChange,
 }: {
+	activeFilterCount: number;
 	kind: ProfitPageKind;
 	craftingSkillLevel: number;
 	craftingSkillForced: boolean;
@@ -64,6 +72,12 @@ export function ProfitPageControls({
 	sources: SourceOption[];
 	availableOnly: boolean;
 	onAvailableOnlyChange: (value: boolean) => void;
+	showTopOnly: boolean;
+	onShowTopOnlyChange: (value: boolean) => void;
+	topCount: number;
+	onTopCountChange: (value: number) => void;
+	ignorePlayerLevel: boolean;
+	onIgnorePlayerLevelChange: (value: boolean) => void;
 	profitableOnly: boolean;
 	onProfitableOnlyChange: (value: boolean) => void;
 	preferBestLockedRoute: boolean;
@@ -108,6 +122,14 @@ export function ProfitPageControls({
 				/>
 			)}
 			<CalculationSettings
+				activeFilterCount={activeFilterCount}
+				kind={kind}
+				showTopOnly={showTopOnly}
+				onShowTopOnlyChange={onShowTopOnlyChange}
+				topCount={topCount}
+				onTopCountChange={onTopCountChange}
+				ignorePlayerLevel={ignorePlayerLevel}
+				onIgnorePlayerLevelChange={onIgnorePlayerLevelChange}
 				lockFilters={lockFilters}
 				onLockFiltersChange={onLockFiltersChange}
 				useTraderSaleForLockedOutputs={useTraderSaleForLockedOutputs}

@@ -7,6 +7,7 @@ import { useKappaStore, KAPPA_STORE_STORAGE_KEY } from "../../lib/stores/useKapp
 import { canonical, comparisonRows, emptyBackupProfile, parseProgressBackup, profileStatus } from "./progress-backup";
 import { importProgressBackup, readProgressBackup, selectBackupProfiles } from "./progress-backup-storage";
 import { profitOptionsStorageKey } from "../profit-pages/profit-options";
+import { createUserStateStorage } from "../../lib/stores/user-state-storage";
 
 function setup() {
 	const values = new Map<string, string>();
@@ -41,6 +42,26 @@ function setup() {
 		},
 	};
 }
+
+test("stale first activation reuses a character saved by another tab and explicit reset deletes archives", () => {
+	const { storage } = setup();
+	useUserStore.persist.setOptions({ storage: createJSONStorage(() => createUserStateStorage(storage)) });
+	useUserStore.getState().setGameMode("KORD");
+	const stale = useUserStore.getState();
+	const envelope = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+	envelope.state.seasonalProfiles["season-2"] = {
+		...envelope.state.profiles.KORD,
+		playerLevel: 48,
+		itemCounts: { saved: { have: 19, haveFir: 4 } },
+	};
+	storage.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(envelope));
+	assert.equal(stale.seasonalProfiles["season-2"], undefined);
+	stale.activateSeason("season-2", Date.UTC(2026, 11, 8));
+	assert.equal(useUserStore.getState().playerLevel, 48);
+	assert.equal(useUserStore.getState().itemCounts.saved.have, 19);
+	useUserStore.getState().resetAll();
+	assert.equal(JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!).state.seasonalProfiles["season-2"], undefined);
+});
 
 test("round-trips all progression owners and excludes UI, pricing, and planning state", () => {
 	const { storage } = setup();
@@ -78,7 +99,7 @@ test("rejects malformed, unsupported, incomplete and unsafe files without mutati
 	const cases = [
 		"not json",
 		"{}",
-		JSON.stringify({ ...backup, version: 2 }),
+		JSON.stringify({ ...backup, version: 3 }),
 		JSON.stringify({ ...backup, profiles: {} }),
 		JSON.stringify({ ...backup, profiles: { XYZ: backup.profiles.PVP } }),
 	];
@@ -222,5 +243,88 @@ test("rolls back all writes and in-memory progression if any owner fails to save
 		assert.deepEqual(values, before);
 		assert.equal(useUserStore.getState().playerLevel, 7);
 		assert.equal(canonical(readProgressBackup(storage).profiles), canonical(current.profiles));
+	}
+});
+
+test("season activation preserves archives, manually selects characters, and round-trips season backups", async () => {
+	const { storage } = setup();
+	const before = Date.UTC(2026, 11, 7);
+	const after = Date.UTC(2026, 11, 8);
+	useUserStore.getState().setGameMode("KORD");
+	useUserStore.getState().setPlayerLevel(44);
+	useUserStore.getState().addItemCounts("old-item", 12, 3);
+	assert.throws(() => useUserStore.getState().activateSeason("season-2", before));
+	assert.equal(useUserStore.getState().selectedSeasonId, "season-1");
+	useUserStore.getState().activateSeason("season-2", after);
+	assert.equal(useUserStore.getState().playerLevel, 1);
+	assert.equal(useUserStore.getState().seasonalProfiles["season-1"].playerLevel, 44);
+	useUserStore.getState().setPlayerLevel(20);
+	useKappaStore.getState().completeItems("KORD:season-2", ["second-kappa"]);
+	storage.setItem(profitOptionsStorageKey("KORD:season-2"), JSON.stringify({ craftingSkillLevel: 17 }));
+	useUserStore.getState().activateSeason("season-2", after);
+	assert.equal(useUserStore.getState().playerLevel, 20);
+	useUserStore.getState().addItemCountsForSeason("season-1", "signed", -4, -2);
+	assert.equal(useUserStore.getState().itemCounts.signed, undefined);
+	assert.deepEqual(useUserStore.getState().seasonalProfiles["season-1"].itemCounts.signed, { have: -4, haveFir: -2 });
+	const backup = parseProgressBackup(JSON.stringify(readProgressBackup(storage)));
+	assert.equal(backup.version, 2);
+	assert.equal(backup.profiles.KORD!.progress.playerLevel, 44);
+	assert.equal(backup.profiles["KORD:season-2"]!.progress.playerLevel, 20);
+	assert.equal(backup.profiles["KORD:season-2"]!.skills.craftingSkillLevel, 17);
+	useUserStore.getState().selectSeason("season-1");
+	assert.equal(useUserStore.getState().playerLevel, 44);
+	await useUserStore.persist.rehydrate();
+	assert.equal(useUserStore.getState().selectedSeasonId, "season-1");
+	assert.equal(useUserStore.getState().playerLevel, 44);
+	useUserStore.getState().selectSeason("season-2");
+	assert.equal(useUserStore.getState().playerLevel, 20);
+	const old = { ...backup, version: 1 as const, profiles: { KORD: backup.profiles.KORD } };
+	old.profiles.KORD = structuredClone(old.profiles.KORD!);
+	old.profiles.KORD.progress.playerLevel = 46;
+	importProgressBackup(old, readProgressBackup(storage), ["KORD"], storage);
+	assert.equal(useUserStore.getState().playerLevel, 20);
+	assert.equal(useUserStore.getState().seasonalProfiles["season-1"].playerLevel, 46);
+	useUserStore.getState().resetAll();
+	importProgressBackup(backup, readProgressBackup(storage), ["KORD", "KORD:season-2"], storage);
+	assert.equal(useUserStore.getState().seasonalProfiles["season-2"].playerLevel, 20);
+	assert.equal(useKappaStore.getState().completedItemsByMode["KORD:season-2"]!["second-kappa"], true);
+});
+
+test("v25 KORD migration retains progress and activation rolls back storage failures", async () => {
+	const { storage, failOnce } = setup();
+	useUserStore.getState().setGameMode("KORD");
+	useUserStore.getState().setPlayerLevel(39);
+	const envelope = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+	delete envelope.state.seasonalProfiles;
+	delete envelope.state.selectedSeasonId;
+	envelope.version = 25;
+	storage.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(envelope));
+	await useUserStore.persist.rehydrate();
+	assert.equal(useUserStore.getState().seasonalProfiles["season-1"].playerLevel, 39);
+	failOnce(USER_STORE_STORAGE_KEY);
+	assert.throws(() => useUserStore.getState().activateSeason("season-2", Date.UTC(2026, 11, 8)));
+	assert.equal(useUserStore.getState().selectedSeasonId, "season-1");
+	assert.equal(useUserStore.getState().seasonalProfiles["season-2"], undefined);
+});
+
+test("v19 through v25 migrate existing KORD inventory into season1 without creating season2", async () => {
+	for (let version = 19; version <= 25; version++) {
+		const { storage } = setup();
+		useUserStore.getState().setGameMode("KORD");
+		useUserStore.getState().setPlayerLevel(37);
+		useUserStore.getState().addItemCounts("stable-item", -5, 7);
+		useUserStore.getState().toggleRequirement("stable-requirement");
+		const envelope = JSON.parse(storage.getItem(USER_STORE_STORAGE_KEY)!);
+		delete envelope.state.seasonalProfiles;
+		delete envelope.state.selectedSeasonId;
+		envelope.version = version;
+		storage.setItem(USER_STORE_STORAGE_KEY, JSON.stringify(envelope));
+		await useUserStore.persist.rehydrate();
+		const state = useUserStore.getState();
+		assert.equal(state.selectedSeasonId, "season-1");
+		assert.equal(state.seasonalProfiles["season-1"].playerLevel, 37);
+		assert.deepEqual(state.seasonalProfiles["season-1"].itemCounts["stable-item"], { have: -5, haveFir: 7 });
+		assert.equal(state.seasonalProfiles["season-1"].completedRequirements["stable-requirement"], true);
+		assert.equal(state.seasonalProfiles["season-2"], undefined);
 	}
 });

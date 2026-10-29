@@ -15,8 +15,10 @@ import {
 import { questTraderRequirementMatchesProfile } from "./quest-trader-gates";
 import {
 	compareTraderTierCompletionCount,
-	countCompletedTraderTierQuests,
+	buildCompletedTraderTierQuestCounts,
+	getCompletedTraderTierQuestCount,
 	getTraderTierCompletionGate,
+	type CompletedTraderTierQuestCounts,
 } from "./quest-trader-completion-gates";
 
 export type QuestFactionFilter = "USEC" | "BEAR";
@@ -115,13 +117,12 @@ function traderRequirementsSatisfied(quest: QuestAvailabilityQuest, profile: Que
 
 function traderTierCompletionRequirementsSatisfied(
 	quest: QuestAvailabilityQuest,
-	profile: QuestAvailabilityProfile,
-	questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
+	completedCounts: CompletedTraderTierQuestCounts,
 ) {
 	return (quest.otherRequirements ?? []).every((requirement) => {
 		const gate = getTraderTierCompletionGate(requirement);
 		if (!gate) return true;
-		const completedCount = countCompletedTraderTierQuests(questsById.values(), profile.completedQuests, gate);
+		const completedCount = getCompletedTraderTierQuestCount(completedCounts, gate);
 		return compareTraderTierCompletionCount(completedCount, gate);
 	});
 }
@@ -135,6 +136,7 @@ function isQuestRequirementSatisfied(
 	profile: QuestAvailabilityProfile,
 	questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
 	visiting: Set<string>,
+	completedCounts: CompletedTraderTierQuestCounts,
 ): boolean {
 	if (
 		statusIncludesComplete(requirement.status) &&
@@ -156,7 +158,7 @@ function isQuestRequirementSatisfied(
 	const prerequisiteQuest = questsById.get(requirement.task.id);
 	if (!prerequisiteQuest) return false;
 
-	return isQuestAvailableForProfile(prerequisiteQuest, profile, questsById, visiting);
+	return isQuestAvailableForProfile(prerequisiteQuest, profile, questsById, visiting, completedCounts);
 }
 
 export function isQuestAvailableForProfile(
@@ -164,6 +166,7 @@ export function isQuestAvailableForProfile(
 	profile: QuestAvailabilityProfile,
 	questsById: ReadonlyMap<string, QuestAvailabilityQuest>,
 	visiting = new Set<string>(),
+	completedCounts = buildCompletedTraderTierQuestCounts(questsById.values(), profile.completedQuests),
 ): boolean {
 	if (profile.completedQuests[quest.id]) return false;
 	if (profile.failedQuests?.[quest.id]) return false;
@@ -173,12 +176,12 @@ export function isQuestAvailableForProfile(
 	if ((quest.requiredPrestige?.prestigeLevel ?? 0) > profile.prestigeLevel) return false;
 
 	if (!traderRequirementsSatisfied(quest, profile)) return false;
-	if (!traderTierCompletionRequirementsSatisfied(quest, profile, questsById)) return false;
+	if (!traderTierCompletionRequirementsSatisfied(quest, completedCounts)) return false;
 	if (visiting.has(quest.id)) return false;
 
 	visiting.add(quest.id);
 	const prerequisitesSatisfied = quest.taskRequirements.every((requirement) =>
-		isQuestRequirementSatisfied(requirement, profile, questsById, visiting),
+		isQuestRequirementSatisfied(requirement, profile, questsById, visiting, completedCounts),
 	);
 	visiting.delete(quest.id);
 

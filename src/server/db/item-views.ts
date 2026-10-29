@@ -13,11 +13,14 @@ import { boundedReadCache } from "./read-cache";
 import {
 	getCachedCatalogItems,
 	getCachedQuests,
+	getCachedQuestsByIds,
 	getCachedStations,
 	getCachedTraderOffers,
 	getCachedTraders,
 	pickById,
 } from "./catalog-cache";
+
+import { readItemRecipeUsage } from "./item-recipe-usage";
 
 interface ItemViewPayloads {
 	relations: ItemRelationsPayload;
@@ -46,14 +49,17 @@ export async function getItemView<ViewType extends ItemViewType>(
 	includePrices = true,
 ): Promise<ItemViewPayloads[ViewType]> {
 	const expectedVersion = await getCatalogVersion(mode);
-	// The stored view is immutable for a catalog version; offers, prices and labels are layered on below.
+	// Catalog views are versioned; usage is derived from indexed recipes, other views remain stored.
+	// Mutable offers, prices and source labels are layered on below.
 	const payload = await boundedReadCache(
-		["item-view", viewType, mode, expectedVersion, itemId],
+		["item-view-inputs-v1", viewType, mode, expectedVersion, itemId],
 		async () =>
 			(
 				await withStableCatalogRead(
 					mode,
 					async (db) => {
+						if (viewType === "usage")
+							return (await readItemRecipeUsage(mode, itemId, db, expectedVersion)) as ItemViewPayloads[ViewType];
 						const [row] = await db
 							.select({ value: itemDetails[viewType], sourceFreshness: catalogStatus.sourceFreshness })
 							.from(itemDetails)
@@ -65,17 +71,7 @@ export async function getItemView<ViewType extends ItemViewType>(
 						const freshnessDomains: Record<string, string> =
 							viewType === "relations"
 								? { itemsUpdatedAt: "items", stationsUpdatedAt: "stations", questsUpdatedAt: "quests" }
-								: viewType === "usage"
-									? {
-											itemsUpdatedAt: "items",
-											stationsUpdatedAt: "stations",
-											questsUpdatedAt: "quests",
-											taskUnlocksUpdatedAt: "quests",
-											tradersUpdatedAt: "traders",
-											bartersUpdatedAt: "barters",
-											craftsUpdatedAt: "crafts",
-										}
-									: { itemsUpdatedAt: "items", bartersUpdatedAt: "barters", craftsUpdatedAt: "crafts" };
+								: { itemsUpdatedAt: "items", bartersUpdatedAt: "barters", craftsUpdatedAt: "crafts" };
 						const freshness = (dto.freshness ?? {}) as Record<string, number | null | undefined>;
 						for (const key of Object.keys(freshnessDomains)) freshness[key] ??= null;
 						for (const [key, domain] of Object.entries(freshnessDomains)) {
@@ -85,7 +81,6 @@ export async function getItemView<ViewType extends ItemViewType>(
 							freshness[key] = timestamp;
 						}
 						if (viewType === "relations") freshness.pricesUpdatedAt ??= null;
-						if (viewType === "usage") freshness.pricesUpdatedAt ??= null;
 						if (viewType === "acquisition") freshness.pricesUpdatedAt ??= null;
 						(dto as { freshness: Record<string, number | null | undefined> }).freshness = freshness;
 						if (viewType === "relations") {
@@ -93,11 +88,6 @@ export async function getItemView<ViewType extends ItemViewType>(
 						}
 						if (viewType === "acquisition") {
 							(dto as ItemAcquisitionTreeData).errors ??= { items: null, prices: null, barters: null, crafts: null };
-						}
-						if (viewType === "usage") {
-							// Rows stored before used-in recipes were projected lack these lists until the next catalog update.
-							(dto as ItemUsageData).usedInBarters ??= [];
-							(dto as ItemUsageData).usedInCrafts ??= [];
 						}
 						return dto;
 					},
@@ -118,7 +108,9 @@ export async function getItemView<ViewType extends ItemViewType>(
 			: (payload as ItemUsageData | ItemAcquisitionTreeData).items;
 	const itemIds = [...new Set(allItems.map((item) => item.id))];
 	const [catalogItems, priceResult, offersById] = await Promise.all([
-		getCachedCatalogItems(mode, expectedVersion),
+		viewType === "usage"
+			? Promise.resolve({ data: Object.fromEntries(allItems.map((item) => [item.id, item])) })
+			: getCachedCatalogItems(mode, expectedVersion),
 		includePrices
 			? getCurrentPriceData(mode, itemIds)
 			: Promise.resolve({ data: {} as Record<string, CurrentPrice>, updatedAt: null }),
@@ -130,6 +122,8 @@ export async function getItemView<ViewType extends ItemViewType>(
 		return { ...merged, marketPrice: includePrices ? (priceResult.data[item.id] ?? null) : null };
 	};
 	const hydratedItems = allItems.map(hydrate);
+	let usageStations: ItemUsageData["stationsById"] = {};
+	let stationPresentationUpdatedAt: number | null = null;
 	let traderById: Record<string, import("@/types/traders").Trader> = {};
 	let taskUnlocksById: Record<string, { id: string; name: string; wikiLink?: string | null }> = {};
 	let traderPresentationUpdatedAt: number | null = null;
@@ -138,17 +132,23 @@ export async function getItemView<ViewType extends ItemViewType>(
 	if (viewType === "usage") {
 		const usage = payload as ItemUsageData;
 		const rootOffers = offersById[itemId] ?? [];
-		const traderIds = [...new Set([...Object.keys(usage.tradersById), ...rootOffers.map((offer) => offer.traderId)])];
+		const listedBarters = [...usage.barters, ...usage.usedInBarters];
+		const listedCrafts = [...usage.crafts, ...usage.usedInCrafts];
+		const stationIds = new Set(listedCrafts.map((r) => r.stationId));
+		const traderIds = [
+			...new Set([...listedBarters.map((r) => r.traderId), ...rootOffers.map((offer) => offer.traderId)]),
+		];
 		const unlockIds = [
 			...new Set([
-				...Object.keys(usage.taskUnlocksById),
+				...[...listedBarters, ...listedCrafts].flatMap((r) => (r.taskUnlockId ? [r.taskUnlockId] : [])),
 				...rootOffers.flatMap((offer) => (offer.taskUnlockId ? [offer.taskUnlockId] : [])),
 			]),
 		];
 		try {
-			const [traders, quests] = await Promise.all([
+			const [traders, quests, stations] = await Promise.all([
 				traderIds.length ? selectCached(getCachedTraders(mode, expectedVersion), traderIds) : Promise.resolve(null),
-				unlockIds.length ? selectCached(getCachedQuests(mode, expectedVersion), unlockIds) : Promise.resolve(null),
+				unlockIds.length ? getCachedQuestsByIds(mode, expectedVersion, unlockIds) : Promise.resolve(null),
+				stationIds.size ? getCachedStations(mode, expectedVersion) : Promise.resolve(null),
 			]);
 			traderById = {
 				...usage.tradersById,
@@ -158,10 +158,33 @@ export async function getItemView<ViewType extends ItemViewType>(
 				...usage.taskUnlocksById,
 				...(quests
 					? Object.fromEntries(
-							quests.data.map((quest) => [quest.id, { id: quest.id, name: quest.name, wikiLink: quest.wikiLink }]),
+							Object.values(quests.data).map((quest) => [
+								quest.id,
+								{ id: quest.id, name: quest.name, wikiLink: quest.wikiLink },
+							]),
 						)
 					: {}),
 			};
+			usageStations = Object.fromEntries(
+				(stations?.data ?? [])
+					.filter((s) => stationIds.has(s.id))
+					.map((s) => [
+						s.id,
+						{
+							id: s.id,
+							name: s.name,
+							normalizedName: s.normalizedName,
+							...(s.imageLink ? { imageLink: s.imageLink } : {}),
+						},
+					]),
+			);
+			stationPresentationUpdatedAt = stations?.updatedAt ?? null;
+			if (
+				traderIds.some((id) => !traderById[id]) ||
+				unlockIds.some((id) => !taskUnlocksById[id]) ||
+				[...stationIds].some((id) => !usageStations[id])
+			)
+				presentationError = "Some recipe source labels are unavailable";
 			traderPresentationUpdatedAt = traders?.updatedAt ?? null;
 			taskPresentationUpdatedAt = quests?.updatedAt ?? null;
 		} catch {
@@ -228,10 +251,12 @@ export async function getItemView<ViewType extends ItemViewType>(
 			...usage,
 			items: hydratedItems,
 			tradersById: traderById,
+			stationsById: usageStations,
 			taskUnlocksById,
 			freshness: {
 				...usage.freshness,
 				pricesUpdatedAt: priceResult.updatedAt,
+				stationsUpdatedAt: stationPresentationUpdatedAt,
 				tradersUpdatedAt: traderPresentationUpdatedAt ?? usage.freshness.tradersUpdatedAt,
 				taskUnlocksUpdatedAt: taskPresentationUpdatedAt ?? usage.freshness.taskUnlocksUpdatedAt,
 			},

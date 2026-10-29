@@ -7,11 +7,11 @@ import { getPostgresDb, type PostgresDatabase } from "@/server/postgres/connecti
 import { DatabaseConfigurationError, DatabaseTransientReadError } from "./errors";
 import { boundedReadCache, evictMemoizedReads, memoizedRead } from "./read-cache";
 
-/** Invalidated by the catalog cron after a committed update, or when a read observes a newer version. */
+/** Invalidated when a read observes a newer version. */
 export const CATALOG_VERSION_TAG = "postgres-catalog-version";
-// The catalog only changes through the nightly cron, which invalidates the tag. The TTLs are safety nets.
+// External worker/CLI writes cannot invalidate Next's cache; discover them through a two-hour TTL.
 const VERSION_MEMO_MS = 60_000;
-const VERSION_REVALIDATE_SECONDS = 7 * 24 * 60 * 60;
+const VERSION_REVALIDATE_SECONDS = 2 * 60 * 60;
 
 export function getDatabase(db?: PostgresDatabase): PostgresDatabase {
 	return db ?? getPostgresDb();

@@ -3,13 +3,11 @@
 import type { BaseItemRequirementsProps } from "./ItemRequirements";
 import { PreviewFact } from "@/components/entities/entity-preview";
 import { ItemLink } from "@/components/entities/item-link";
-import Image from "next/image";
-import { CircleCheckBig, Check } from "lucide-react";
+import { ItemImage } from "@/components/entities/item-image";
 import { formatNumber } from "@/lib/utils/format-number";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { computeNeeds } from "@/lib/utils/item-needs";
 import { describeFleaPrice, formatFleaPriceState } from "@/lib/utils/market-price";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function CompactItemRequirements({
 	nextLevelData,
@@ -78,56 +76,39 @@ export function CompactItemRequirements({
 									{isCompleted && <span className="ml-1 text-success">· done</span>}
 								</PreviewFact>
 							}
-							className={`relative block w-16 h-16 bg-shadow/40 border group transition-all focus-visible:outline-2 focus-visible:outline-brand ${
-								req.isFir ? "border-fir" : "border-highlight/10"
-							} ${isCompleted ? "opacity-50 grayscale" : "hover:border-highlight/30"}`}
+							className="group inline-flex self-start focus-visible:outline-2 focus-visible:outline-brand"
 						>
-							<Image src={itemImageUrl(item)} alt={item.name} fill className="object-contain p-1" unoptimized />
-							{req.isFir && (
-								<div
-									className="absolute -top-1.5 -right-1.5 bg-shadow rounded-full z-10 text-fir"
-									title="Found In Raid"
-								>
-									<CircleCheckBig className="w-3.5 h-3.5 text-fir" />
-								</div>
-							)}
-							{isCompleted && (
-								<div className="absolute inset-0 flex items-center justify-center bg-shadow/40">
-									<Check size={16} />
-								</div>
-							)}
-							<div className="absolute bottom-0 right-0 bg-shadow/40 px-1 text-[10px] font-mono text-foreground border-t border-l border-highlight/10 text-right leading-tight">
-								{isCurrency ? (
-									<div
-										className={
-											req.isFir
-												? isCompleted
-													? "text-success"
-													: "text-fir"
-												: isCompleted
-													? "text-success"
-													: "text-brand"
-										}
-									>
-										{formatNumber(req.count)}
-									</div>
-								) : req.isFir ? (
-									<div className={isCompleted ? "text-success" : "text-fir"}>
-										{formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
-									</div>
-								) : (
-									<div className={isCompleted ? "text-success" : "text-brand"}>
-										{formatNumber(needs.effectiveHave)}{" "}
-										{owned.haveFir > 0 && <span className="text-fir">{formatNumber(owned.haveFir)}</span>}
-										{` / ${formatNumber(needs.totalRequired)}`}
-									</div>
+							<ItemImage
+								item={item}
+								size={64}
+								framed
+								foundInRaid={req.isFir}
+								completed={isCompleted}
+								className={`p-1 ${req.isFir ? "border-fir group-hover:bg-shadow/50" : "group-hover:border-highlight/30"}`}
+							>
+								{priceLabel && !isCurrency && (
+									<span className="absolute top-0 left-0 max-w-full bg-shadow/55 px-1 text-left font-mono text-[9px] leading-4 text-foreground">
+										{priceLabel}
+									</span>
 								)}
-							</div>
-							{priceLabel && !isCurrency && (
-								<div className="absolute top-0 left-0 max-w-full bg-shadow/55 px-1 text-[9px] font-mono leading-4 text-foreground">
-									{priceLabel}
-								</div>
-							)}
+								<span
+									className={`absolute bottom-0 right-0 max-w-full bg-shadow/40 px-1 text-right font-mono text-[10px] leading-tight ${isCompleted ? "text-success" : req.isFir ? "text-fir" : "text-brand"}`}
+								>
+									{isCurrency ? (
+										formatNumber(req.count)
+									) : req.isFir ? (
+										<>
+											{formatNumber(needs.haveFirReserved)} / {formatNumber(needs.requiredFir)}
+										</>
+									) : (
+										<>
+											{formatNumber(needs.effectiveHave)}{" "}
+											{owned.haveFir > 0 && <span className="text-fir">{formatNumber(owned.haveFir)}</span>}
+											{` / ${formatNumber(needs.totalRequired)}`}
+										</>
+									)}
+								</span>
+							</ItemImage>
 						</ItemLink>
 					);
 				})}

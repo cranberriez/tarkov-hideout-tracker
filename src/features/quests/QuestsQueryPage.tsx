@@ -9,6 +9,7 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { isDev } from "@/lib/is-dev";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
+import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
 import type { QuestWorkspaceIndexData } from "@/types/quest-workspace";
 import { QuestsClientPage } from "./QuestsClientPage";
 import { DEV_QUEST_QUERY } from "./dev-quest-fixture";
@@ -48,7 +49,7 @@ export function QuestsQueryPage({
 	return (
 		<DataQueryRetryProvider retry={() => void query.refetch()}>
 			{query.error && <DataRefreshError message="Updated quest index could not be loaded." />}
-			<QuestsClientPage quests={data.quests} devQuery={devQuery}>
+			<QuestsClientPage quests={expandQuestSummaries(data.quests)} devQuery={devQuery}>
 				{children}
 			</QuestsClientPage>
 		</DataQueryRetryProvider>

@@ -1,0 +1,196 @@
+{
+	"map": "ground-zero",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "4jx3lgn9",
+			"zone": "garage",
+			"floor": "Garage",
+			"height": [
+				null,
+				21
+			],
+			"heightSource": "data",
+			"source": "Garage|box|5i1gt5",
+			"rect": {
+				"x": 80,
+				"z": 45,
+				"width": 74,
+				"depth": 290,
+				"angle": 0
+			}
+		},
+		{
+			"id": "889dzzch",
+			"zone": "office",
+			"floor": "2nd Floor",
+			"height": [
+				27,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 116.79,
+				"z": 187.55,
+				"width": 34.89,
+				"depth": 41.08,
+				"angle": 0
+			}
+		},
+		{
+			"id": "8odsa9k8",
+			"zone": "m showroom",
+			"floor": "2nd Floor",
+			"height": [
+				26,
+				31
+			],
+			"heightSource": "data",
+			"source": "2nd Floor|box|ej9ccx",
+			"rect": {
+				"x": 94.5,
+				"z": 222,
+				"width": 7,
+				"depth": 12,
+				"angle": 0
+			}
+		},
+		{
+			"id": "a6ckzs8s",
+			"zone": "capital insight",
+			"floor": "3rd Floor",
+			"height": [
+				32,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 116.61,
+				"z": 286.94,
+				"width": 57.21,
+				"depth": 69.75,
+				"angle": 0
+			}
+		},
+		{
+			"id": "ccq9o7w9",
+			"zone": "restaurant balcony",
+			"floor": "2nd Floor",
+			"height": [
+				20,
+				26
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 175.39,
+				"z": 28.48,
+				"width": 11.82,
+				"depth": 19.51,
+				"angle": 0
+			}
+		},
+		{
+			"id": "cfpbqipz",
+			"zone": "restaurant",
+			"floor": "2nd Floor",
+			"height": [
+				29,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 116.83,
+				"z": 151.94,
+				"width": 35.1,
+				"depth": 30.2,
+				"angle": 0
+			}
+		},
+		{
+			"id": "g6w0xbs0",
+			"zone": "terragroup",
+			"floor": "2nd Floor",
+			"height": [
+				29.5,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -25.52,
+				"z": 65.93,
+				"width": 56.9,
+				"depth": 57.38,
+				"angle": 0
+			}
+		},
+		{
+			"id": "gw660yha",
+			"zone": "underpass",
+			"floor": "Garage",
+			"height": [
+				null,
+				21
+			],
+			"heightSource": "data",
+			"source": "Garage|box|nu1u6f",
+			"rect": {
+				"x": 130,
+				"z": 64.5,
+				"width": 26,
+				"depth": 31,
+				"angle": 0
+			}
+		},
+		{
+			"id": "hsqpnuuk",
+			"zone": "capital insight",
+			"floor": "2nd Floor",
+			"height": [
+				28,
+				32
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 116.61,
+				"z": 286.94,
+				"width": 57.21,
+				"depth": 69.75,
+				"angle": 0
+			}
+		},
+		{
+			"id": "i5jw06lx",
+			"zone": "bank",
+			"floor": "2nd Floor",
+			"height": [
+				29.5,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 49.02,
+				"z": 145.17,
+				"width": 32.31,
+				"depth": 38.84,
+				"angle": 0
+			}
+		},
+		{
+			"id": "l1kzw9mp",
+			"zone": "oasis",
+			"floor": "2nd Floor",
+			"height": [
+				29,
+				null
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": 118.76,
+				"z": 103.3,
+				"width": 40.13,
+				"depth": 34.05,
+				"angle": 0
+			}
+		}
+	]
+}

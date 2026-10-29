@@ -1,15 +1,18 @@
 import type { LucideIcon } from "lucide-react";
 import {
+	BookOpen,
 	Boxes,
+	ChartCandlestick,
 	Columns3,
-	Compass,
 	Factory,
+	Gamepad2,
 	GitBranch,
 	Goal,
 	HandCoins,
 	House,
 	KeyRound,
 	ListChecks,
+	Map,
 	PackageOpen,
 	ScanSearch,
 	ScrollText,
@@ -45,6 +48,7 @@ export const navMenus: NavMenu[] = [
 				href: "/items/kappa-checklist",
 				icon: ListChecks,
 			},
+			{ name: "Market", href: "/items/market", icon: ChartCandlestick },
 			{ name: "Keys", href: "/items/keys", icon: KeyRound, disabled: true },
 			{
 				name: "Barter Profits",
@@ -80,13 +84,31 @@ export const navMenus: NavMenu[] = [
 		children: [
 			{ name: "Trader Board", href: questViewHref("board"), icon: Columns3 },
 			{ name: "Visualizer", href: questViewHref("visualizer"), icon: GitBranch },
-			{ name: "Raid Planner", href: questViewHref("planner"), icon: Compass },
+			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
 	},
+	{
+		name: "Maps",
+		href: "/maps",
+		icon: Map,
+	},
 ];
+
+/** The games hub, listed in the secondary (☰) menu. */
+export const gamesNavItem: NavItem = {
+	name: "Games",
+	href: "/games",
+	icon: Gamepad2,
+};
 
 export const devNavItem: NavItem = {
 	name: "Dev",
 	href: "/dev",
 	icon: Wrench,
+};
+
+export const battlePassNavItem: NavItem = {
+	name: "Battle Pass",
+	href: "/battle-pass",
+	icon: Goal,
 };

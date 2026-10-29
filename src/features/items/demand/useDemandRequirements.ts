@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 import { useKappaStore } from "@/lib/stores/useKappaStore";
 import { COLLECTOR_QUEST_ID_BY_MODE } from "@/lib/quests/collector";
 import { fetchJson } from "@/lib/query/request";
@@ -18,6 +19,7 @@ export function useDemandRequirements() {
 		useShallow((state) => ({
 			gameMode: state.gameMode,
 			stationLevels: state.stationLevels,
+			stationGoals: state.stationGoals,
 			completedRequirements: state.completedRequirements,
 			completedQuests: state.completedQuests,
 			completedQuestObjectives: state.completedQuestObjectives,
@@ -30,7 +32,8 @@ export function useDemandRequirements() {
 			questFenceReputation: state.questFenceReputation,
 		})),
 	);
-	const kappaCompleted = useKappaStore((state) => state.completedItemsByMode[profile.gameMode]);
+	const scope = useProfileStorageScope(profile.gameMode);
+	const kappaCompleted = useKappaStore((state) => state.completedItemsByMode[scope]);
 	const kappaIgnored = useKappaStore((state) => state.ignoreInUploader);
 	const mode = toTarkovJsonGameMode(profile.gameMode);
 	const enabled = useGameDataEnabled(mode);

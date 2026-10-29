@@ -3,8 +3,10 @@ import test from "node:test";
 
 import type { QuestAvailabilityQuest } from "./quest-availability";
 import {
+	buildCompletedTraderTierQuestCounts,
 	compareTraderTierCompletionCount,
 	countCompletedTraderTierQuests,
+	getCompletedTraderTierQuestCount,
 	getQuestTraderTabLoyaltyLevel,
 	getTraderTierCompletionGate,
 } from "./quest-trader-completion-gates";
@@ -123,4 +125,38 @@ test("leaves unknown global variables unclassified", () => {
 		}),
 		null,
 	);
+});
+
+test("batch counts match standalone counts across traders, reviewed tiers, and exclusions", () => {
+	const quests = [
+		makeQuest("p1", " Prapor "),
+		makeQuest("p2", "Prapor", 2),
+		makeQuest("s1", "Skier"),
+		makeQuest("59674eb386f774539f14813a"),
+		makeQuest("597a171586f77405ba6887d3"),
+		{ ...makeQuest("removed"), removed: true },
+		makeQuest("incomplete"),
+	];
+	const completed = Object.fromEntries(quests.map((quest) => [quest.id, quest.id !== "incomplete"]));
+	const counts = buildCompletedTraderTierQuestCounts(quests, completed);
+	for (const trader of ["Prapor", "Skier", "Therapist"]) {
+		for (const tier of [1, 2, 3, 4] as const) {
+			assert.equal(
+				getCompletedTraderTierQuestCount(counts, { trader, tier }),
+				countCompletedTraderTierQuests(quests, completed, { trader, tier }),
+			);
+		}
+	}
+});
+
+test("count snapshots remain scoped to their quest set and completed progress", () => {
+	const quest = makeQuest("same-id");
+	const pvp = buildCompletedTraderTierQuestCounts([quest], { "same-id": true });
+	const pve = buildCompletedTraderTierQuestCounts([quest], {});
+	const kord = buildCompletedTraderTierQuestCounts([{ ...quest, removed: true }], { "same-id": true });
+	const counter = { trader: "Prapor", tier: 1 } as const;
+	assert.equal(getCompletedTraderTierQuestCount(pvp, counter), 1);
+	assert.equal(getCompletedTraderTierQuestCount(pve, counter), 0);
+	assert.equal(getCompletedTraderTierQuestCount(kord, counter), 0);
+	assert.equal(getCompletedTraderTierQuestCount(pvp, counter), 1);
 });

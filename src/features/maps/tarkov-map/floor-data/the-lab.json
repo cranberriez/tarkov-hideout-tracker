@@ -1,0 +1,41 @@
+{
+	"map": "the-lab",
+	"samples": [],
+	"rooms": [
+		{
+			"id": "2bkfqs55",
+			"zone": "Upper",
+			"floor": "Second Level",
+			"height": [
+				4,
+				null
+			],
+			"heightSource": "data",
+			"source": "Second Level|box|1owxjma",
+			"rect": {
+				"x": -187.82,
+				"z": -357.22,
+				"width": 166.36,
+				"depth": 174.43,
+				"angle": 0
+			}
+		},
+		{
+			"id": "ggjb053g",
+			"zone": "Lower",
+			"floor": "Technical",
+			"height": [
+				null,
+				0
+			],
+			"heightSource": "manual",
+			"rect": {
+				"x": -195.04,
+				"z": -332.85,
+				"width": 181.54,
+				"depth": 184.03,
+				"angle": 0
+			}
+		}
+	]
+}

@@ -16,6 +16,8 @@ interface PoolingOptions {
 	showHidden: boolean;
 	viewMode: "all" | "nextLevel";
 	completedRequirements: Record<string, boolean>;
+	/** Highest level per station that counts; stations without a cap use every level. */
+	goalCaps?: Readonly<Record<string, number>>;
 }
 
 export function poolItems({
@@ -25,6 +27,7 @@ export function poolItems({
 	showHidden,
 	viewMode,
 	completedRequirements,
+	goalCaps,
 }: PoolingOptions): PooledItem[] {
 	const itemMap = new Map<string, PooledItem>();
 
@@ -37,9 +40,11 @@ export function poolItems({
 		}
 
 		const currentLevel = stationLevels[station.id] ?? 0;
+		const cap = goalCaps?.[station.id] ?? Infinity;
 
 		// Determine target levels based on view mode
 		const targetLevels = station.levels.filter((levelData) => {
+			if (levelData.level > cap) return false;
 			if (viewMode === "nextLevel") {
 				return levelData.level === currentLevel + 1;
 			} else {

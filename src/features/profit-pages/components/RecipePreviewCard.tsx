@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { Clock3 } from "lucide-react";
+import { ItemImage } from "@/components/entities/item-image";
 import type { RecipePreviewData, RouteContext } from "../types";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
 import { RouteIcon, routeChipClasses } from "./RouteIcon";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function RecipePreviewCard({
 	preview,
@@ -60,14 +60,7 @@ export function RecipePreviewCard({
 								className="flex h-9 items-center gap-2 border-t border-highlight/5 first:border-t-0"
 							>
 								{item ? (
-									<Image
-										src={itemImageUrl(item)}
-										alt=""
-										width={30}
-										height={30}
-										className="size-8 shrink-0 object-contain"
-										unoptimized
-									/>
+									<ItemImage item={item} size={32} className="size-8 shrink-0 object-contain" />
 								) : (
 									<span className="size-8 shrink-0" />
 								)}

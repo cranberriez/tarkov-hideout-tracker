@@ -5,7 +5,7 @@ import type { ItemAmount, ItemCraftRecipe } from "@/features/items/item-detail/i
 import type { ItemSummary } from "@/types/items";
 import type { GameEdition } from "@/lib/stores/useUserStore";
 import { QuestLink } from "@/components/entities/quest-link";
-import { AvailabilityBadge, RecommendationBadge, ToolBadge } from "./ItemDetailBadges";
+import { AvailabilityBadge, RecommendationBadge } from "./ItemDetailBadges";
 import { ItemDetailItemChip } from "./ItemDetailItemChip";
 import { ItemDetailRecipeFlow } from "./ItemDetailRecipeFlow";
 import { ItemDetailRecipeProfit } from "./ItemDetailRecipeProfit";
@@ -59,7 +59,7 @@ export function ItemDetailCrafting({
 				const editionMet = isEditionAllowed(recipe.gameEditions, gameEdition);
 				const available = stationMet && questMet && editionMet;
 				return (
-					<div key={recipe.id} className="bg-shadow/10 px-3 py-3">
+					<div key={recipe.id} className="bg-shadow/10 px-3 py-3 hover:bg-highlight/[0.02]">
 						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
 							<div className="flex min-w-48 flex-1 items-center gap-2.5">
 								{recipe.station.imageLink ? (
@@ -109,15 +109,20 @@ export function ItemDetailCrafting({
 								<Ingredient
 									key={`${entry.item.id}-${index}`}
 									entry={entry}
+									hideName={usedIn}
 									highlighted={usedIn && entry.item.id === outputItem.id}
 									manualBuy={overrides[entry.item.id]?.buy}
-									plan={evaluation?.requiredItems.find((candidate) => candidate.itemId === entry.item.id)}
+									plan={evaluation?.requiredItems.find(
+										(candidate) =>
+											candidate.itemId === entry.item.id && (candidate.isTool === true) === (entry.isTool === true),
+									)}
 								/>
 							))}
 							{recipe.requiredQuestItems.map((entry, index) => (
 								<Ingredient
 									key={`quest-${entry.item.id}-${index}`}
 									entry={entry}
+									hideName={usedIn}
 									highlighted={usedIn && entry.item.id === outputItem.id}
 									questItem
 								/>
@@ -165,12 +170,14 @@ function formatEdition(value: string) {
 
 function Ingredient({
 	entry,
+	hideName,
 	highlighted,
 	manualBuy,
 	plan,
 	questItem = false,
 }: {
 	entry: ItemAmount;
+	hideName: boolean;
 	highlighted: boolean;
 	manualBuy?: number;
 	plan?: AcquisitionPlan;
@@ -179,16 +186,16 @@ function Ingredient({
 	return (
 		<ItemDetailItemChip
 			item={entry.item}
+			tool={entry.isTool}
 			highlighted={highlighted}
+			hideName={hideName}
 			preferShortName
 			flat
 			linked={!questItem}
 			quantityLabel={`${entry.count}`}
 			quantityOverlay
 			secondary={
-				entry.isTool ? (
-					<ToolBadge />
-				) : plan ? (
+				!entry.isTool && plan ? (
 					<RecommendationBadge
 						plan={plan}
 						unstable={

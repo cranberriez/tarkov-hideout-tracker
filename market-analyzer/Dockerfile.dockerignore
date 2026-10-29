@@ -4,6 +4,7 @@
 !package-lock.json
 !tsconfig.json
 !src/**
+!db-scripts/lib/**
 !market-analyzer/package.json
 !market-analyzer/package-lock.json
 !market-analyzer/build.mjs

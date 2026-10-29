@@ -1,0 +1,172 @@
+.anchor {
+	position: fixed;
+	right: max(8px, env(safe-area-inset-right));
+	bottom: max(16px, env(safe-area-inset-bottom));
+	z-index: 40;
+	color: color-mix(in srgb, var(--rating-foreground) 75%, var(--rating-surface));
+}
+
+.pill {
+	width: 88px;
+	height: 40px;
+	border-radius: 999px;
+	background: var(--rating-surface);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	position: relative;
+	transition:
+		width 300ms ease,
+		height 300ms ease,
+		border-radius 300ms ease,
+		background 300ms ease,
+		transform 250ms ease,
+		opacity 250ms ease;
+}
+
+.buttons {
+	display: flex;
+	gap: 8px;
+}
+.pill button,
+.caret {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	cursor: pointer;
+	border-radius: 50%;
+}
+.buttons button:hover svg {
+	fill: currentColor;
+}
+.pill button:focus-visible,
+.caret:focus-visible,
+.pill a:focus-visible {
+	outline: 2px solid var(--brand);
+	outline-offset: 2px;
+}
+.caret {
+	background: transparent;
+	color: var(--muted-foreground);
+}
+.pill .close {
+	position: absolute;
+	top: -8px;
+	right: -4px;
+	width: 18px;
+	height: 18px;
+}
+
+.pill[data-layout="vertical"][data-phase="idle"] {
+	width: 44px;
+	height: 68px;
+	border-radius: 28px;
+	padding: 6px;
+}
+.pill[data-layout="vertical"][data-phase="idle"] .buttons {
+	flex-direction: column;
+	gap: 2px;
+}
+.pill[data-layout="collapsed"][data-expanded="true"][data-phase="idle"] {
+	animation: slide-in 250ms ease;
+}
+.pill[data-phase="loading"] {
+	width: 36px;
+	height: 36px;
+	gap: 0;
+}
+.spinner {
+	animation: spin 800ms linear infinite;
+}
+.pill[data-phase="positive"] {
+	width: 40px;
+	height: 40px;
+	background: transparent;
+}
+.heart {
+	color: var(--danger);
+	fill: currentColor;
+	animation: thank-you 1500ms ease both;
+}
+.pill:is([data-phase="negative"], [data-phase="closing"][data-outcome="bad"]) {
+	width: 116px;
+	height: 36px;
+	flex-direction: row;
+	justify-content: flex-start;
+	gap: 4px;
+	padding-right: 8px;
+	overflow: hidden;
+}
+.pill:is([data-phase="negative"], [data-phase="closing"][data-outcome="bad"]) a {
+	font-size: 11px;
+	padding-left: 1em;
+	white-space: nowrap;
+	flex-shrink: 0;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	margin-bottom: 4px;
+}
+.pill:is([data-phase="negative"], [data-phase="closing"][data-outcome="bad"]) button {
+	flex-shrink: 0;
+}
+.pill[data-phase="closing"] {
+	transform: scale(0);
+	opacity: 0;
+	pointer-events: none;
+}
+.pill[data-phase="closing"][data-outcome="good"] {
+	width: 40px;
+	height: 40px;
+	background: transparent;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes slide-in {
+	from {
+		transform: translateX(110%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+@keyframes thank-you {
+	0% {
+		transform: scale(0.65);
+	}
+	20%,
+	50% {
+		transform: scale(1.12) rotate(-8deg);
+	}
+	35%,
+	65% {
+		transform: scale(1) rotate(8deg);
+	}
+	80% {
+		transform: scale(1.15);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.pill {
+		transition: none;
+		animation: none !important;
+	}
+	.heart {
+		animation: none;
+	}
+	.spinner {
+		animation-duration: 1800ms;
+	}
+}

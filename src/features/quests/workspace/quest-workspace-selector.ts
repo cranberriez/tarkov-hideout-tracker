@@ -1,6 +1,7 @@
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import type { QuestWorkspaceLockedFilterSettings } from "../../../lib/stores/useUserStore";
 import { questMatchesTraderRequirementProfile } from "../../../lib/quests/quest-trader-gates";
+import { buildCompletedTraderTierQuestCounts } from "../../../lib/quests/quest-trader-completion-gates";
 import { questMatchesSelectedMapGroups } from "../quest-map-groups";
 import {
 	buildNextTaskCountGateByGroup,
@@ -25,6 +26,8 @@ export interface QuestWorkspaceSelectionOptions {
 	selectedObjectiveCategories: ReadonlySet<QuestObjectiveCategory>;
 	hiddenQuests: Readonly<Record<string, boolean>>;
 	showHiddenQuests: boolean;
+	pinnedQuests?: Readonly<Record<string, boolean>>;
+	showPinnedOnly?: boolean;
 	retainedCompletedQuestIds: ReadonlySet<string>;
 	searchQuery: string;
 }
@@ -42,8 +45,9 @@ export function selectWorkspaceQuests(
 	profile: QuestProfileSnapshot,
 	options: QuestWorkspaceSelectionOptions,
 ): QuestWorkspaceSelection {
+	const completedCounts = buildCompletedTraderTierQuestCounts(questsById.values(), profile.completedQuests);
 	const statusByQuestId = new Map(
-		quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById)]),
+		quests.map((quest) => [quest.id, getQuestWorkspaceStatus(quest, profile, questsById, completedCounts)]),
 	);
 	const nextTaskCountGateByGroup = buildNextTaskCountGateByGroup(statusByQuestId.values());
 	const upcomingLockedQuestIds = new Set(
@@ -59,6 +63,7 @@ export function selectWorkspaceQuests(
 
 	const filteredQuestIds = quests
 		.filter((quest) => {
+			if (options.showPinnedOnly && !options.pinnedQuests?.[quest.id]) return false;
 			if (!options.showHiddenQuests && options.hiddenQuests[quest.id]) return false;
 			if (options.selectedTraderIds.size > 0 && !options.selectedTraderIds.has(quest.trader.id)) return false;
 			if (options.filterByTraderRequirements && !questMatchesTraderRequirementProfile(quest, profile)) return false;

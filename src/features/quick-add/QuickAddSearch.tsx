@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useId, useState, type RefObject } from "react";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { Search, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { cn } from "@/lib/utils";
 import { ITEM_SEARCH_MAX_QUERY_LENGTH, ITEM_SEARCH_QUICK_RESULT_LIMIT } from "@/types/contracts";
 import { useItemSearchController } from "@/features/items/useItemSearchController";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function QuickAddSearch({
 	mode,
@@ -124,7 +123,7 @@ export function QuickAddSearch({
 								)}
 							>
 								<div className="relative h-8 w-8 min-w-8 overflow-hidden rounded bg-shadow/40">
-									<Image src={itemImageUrl(item)} alt="" fill className="object-contain" unoptimized />
+									<ItemImage item={item} size={32} />
 								</div>
 								<span className="truncate text-sm text-foreground">{item.name}</span>
 							</div>

@@ -10,6 +10,8 @@
 		"format": "npx prettier . --write",
 		"docs:check": "node scripts/check-doc-links.mjs",
 		"test:architecture": "node --test --import jiti/register src/architecture/data-import-boundaries.test.ts",
+		"test:sync": "node --test --import jiti/register src/features/sync/sync-model.test.ts",
+		"test:group-auth": "node --test --import jiti/register src/server/group-auth/group-auth.test.ts",
 		"test:theme": "node --test --import jiti/register src/architecture/theme-colors.test.ts",
 		"test:contracts": "node --test --import jiti/register src/server/queries/page-data-queries.test.ts src/server/queries/shared-data-queries.test.ts src/server/queries/item-detail-queries.test.ts src/server/queries/getKappaChecklistPageData.test.ts src/server/queries/searchItems.test.ts src/server/queries/getItemDetailViews.test.ts",
 		"test:query": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/query-foundation.test.ts",
@@ -18,7 +20,7 @@
 		"test:reusable-reads": "node --test --experimental-test-isolation=none --import jiti/register src/lib/query/reusable-reads.test.ts",
 		"db:status": "node db-scripts/status.mjs",
 		"db:prices:refresh": "node db-scripts/refresh-prices.mjs",
-		"pull-map-overlays": "node scripts/pull-map-overlays.mjs",
+		"pull-map-loot-categories": "node scripts/pull-map-loot-categories.mjs",
 		"quest-series-candidates": "node scripts/generate-quest-series-candidates.mjs",
 		"quest-data-compare": "node scripts/compare-quest-data.mjs",
 		"trader-resets": "node scripts/track-trader-resets.mjs",
@@ -26,6 +28,7 @@
 		"db:migrate": "node db-scripts/migrate.mjs",
 		"db:discovery:export": "node db-scripts/discovery-export.mjs",
 		"db:discovery:import": "node db-scripts/discovery-import.mjs",
+		"test:recipe-reads": "node --test --import jiti/register src/server/db/item-recipe-usage.test.ts",
 		"test:postgres": "node --test --experimental-test-isolation=none --import jiti/register db-scripts/lib/turso-discovery.test.mjs db-scripts/lib/discovery.test.mjs db-scripts/lib/discovery-diagnostics.test.mjs db-scripts/lib/discovery-input.test.mjs db-scripts/discovery.integration.test.mjs db-scripts/lib/postgres-catalog.test.mjs src/server/db/search-manifest.test.ts src/server/prices/price-store.test.ts src/server/db/price-data.test.ts"
 	},
 	"dependencies": {

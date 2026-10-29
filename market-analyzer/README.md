@@ -16,9 +16,18 @@ identical inputs.
 | --------- | ----------------------- | ------------- | ------------------------------------------- |
 | Poll      | every 30 min            | every 6 h     | No (upstream + local cache only)            |
 | Push      | hourly                  | hourly        | Only if something changed                   |
-| Catalog   | every 6 h               | every 6 h     | Reference prices / trader offers, at a push |
+| Catalog prices | every 6 h               | every 6 h     | Reference prices / trader offers, at a push |
 | Analytics | 00:00 / 12:00 UTC       | 00:00 UTC     | One row per item with new upstream data     |
 
+- **Full catalog**: on startup when due, then every two hours after success,
+  rebuilds all three modes using the site's validated atomic catalog updater.
+  This replaces the Vercel nightly cron and is separate from catalog prices above.
+  Failed attempts retry after 15 minutes; prices and analytics still run after a
+  catalog failure. `/data/catalog.json` preserves attempt/success timestamps across
+  restarts. Logs use `catalog-started`, `catalog-completed`, and `catalog-failed`.
+  The `run` scheduler owns this job; `once` and `run-now` retain their price/analytics
+  scope. For an immediate full update use `npm run db:update` from the repository.
+  The existing `DATABASE_URL` role must have catalog/discovery write permissions.
 - **Poll**: conditional (ETag) requests to `json.tarkov.dev/{mode}/prices/{id}`. A full
   304 pass takes a few seconds. Full histories are cached on the `/data` volume, never
   in PostgreSQL; Tarkov.dev stays the canonical raw history.
@@ -93,12 +102,106 @@ docker compose up -d --build
 
 Commands run inside the container: `docker compose exec market-analyzer node dist/worker.cjs <command>`.
 
+### Deploy or update using an image file
+
+[compose.deploy.yml](compose.deploy.yml) runs a locally loaded image without a
+source checkout or registry login on the deployment device.
+
+1. On the build machine, run these commands from the repository root:
+
+   ```bash
+   docker build -f market-analyzer/Dockerfile -t tarkov-market-analyzer:local .
+   docker save -o market-analyzer.tar tarkov-market-analyzer:local
+   ```
+
+   Build for the deployment device's CPU architecture. If it differs from the
+   build machine, add `--platform linux/arm64` or `--platform linux/amd64` to the
+   `docker build` command as appropriate.
+
+2. Copy `market-analyzer.tar` to the deployment device. For the first deployment,
+   also copy `compose.deploy.yml` and [.sample.env](.sample.env) into a deployment
+   folder, renaming `.sample.env` to `.env`. Set `DATABASE_URL` to the initialized,
+   migrated site database. Keep the existing `.env` when updating.
+
+3. The Compose service must use the local image (already set in the supplied file):
+
+   ```yaml
+   image: tarkov-market-analyzer:local
+   pull_policy: never
+   ```
+
+4. In that deployment folder, load the image and recreate the worker:
+
+   ```bash
+   docker load -i market-analyzer.tar
+   docker compose -f compose.deploy.yml up -d --force-recreate
+   docker compose -f compose.deploy.yml logs -f market-analyzer
+   ```
+
+For future updates, repeat the build, export, transfer, load, and recreate steps.
+Keep the existing deployment folder, Compose project name, `.env`, and named volume
+to preserve analyzer state. Do not use `docker compose down -v`, which deletes the
+volume. The image file does not include the database or existing volume data.
+The device needs Docker with Linux container support and network access to the
+database and Tarkov.dev.
+
+The `-f compose.deploy.yml` option is required because Compose does not discover
+that filename automatically. If you rename it to `compose.yml`, you can omit `-f`.
+
+### Alternative: deploy a published image
+
+The manual [Publish market analyzer workflow](../.github/workflows/publish-market-analyzer.yml)
+builds the `development` branch for Linux AMD64 and ARM64, then publishes to GHCR
+using GitHub's built-in `GITHUB_TOKEN`. No personal token or local Docker login is
+needed to build and publish. It runs only when manually dispatched, not on pushes.
+
+GitHub requires the workflow file on the repository's default branch (`main`) for
+the **Run workflow** button to appear. Add the workflow there as well as on
+`development`; the application changes can remain on `development`. In GitHub,
+open **Actions → Publish market analyzer → Run workflow**. Regardless of the
+selected workflow branch, the build explicitly checks out `development`.
+
+Each successful run publishes `ghcr.io/cranberriez/tarkov-market-analyzer:development`
+and a `sha-<full-commit-sha>` tag identifying the checked-out development commit.
+To use this registry image, change `image:` in your deployment Compose file to
+`ghcr.io/cranberriez/tarkov-market-analyzer:development` and remove
+`pull_policy: never`. Use the SHA tag or image digest to pin a particular build.
+The workflow hosts the image, but does not start a worker.
+
+On the deployment device, copy `compose.deploy.yml` and
+[.sample.env](.sample.env) as `.env`, then set `DATABASE_URL` to the initialized,
+migrated site database. The device needs Docker with Linux container support and
+network access to that database and Tarkov.dev. Private GHCR packages also require
+`docker login ghcr.io` there with an account/token that has `read:packages` access;
+public packages can be pulled without login. New GHCR packages are private by
+default. To avoid authentication on deployment devices, change the package's
+visibility to public in GitHub's package settings after its first publication.
+If the package already exists from a manual push, grant this repository Actions
+access in the package settings if publishing fails with a permission error.
+
+```bash
+docker compose -f compose.deploy.yml pull
+docker compose -f compose.deploy.yml up -d
+docker compose -f compose.deploy.yml logs -f market-analyzer
+```
+
+The named volume preserves local state across container replacements. When moving
+an existing deployment, keep its Compose project name and volume or transfer its
+volume data to the new device. Publishing the image does not transfer that state
+or initialize the database. To update, run the workflow again, then run
+the pull and up commands above on the deployment device.
+
+### Worker commands
+
+With the deployment filename, use
+`docker compose -f compose.deploy.yml exec market-analyzer node dist/worker.cjs <command>`.
+
 | Command                        | Purpose                                                              |
 | ------------------------------ | -------------------------------------------------------------------- |
 | `run` (default)                | Long-running scheduler                                               |
 | `run-now <spec>`               | Ask the running worker to run steps now (picked up within ~5 s)      |
 | `once [spec]`                  | Run steps once and exit (default `all`); refused while a worker runs |
-| `status [--modes …]`           | Local cache/state summary (no database access)                       |
+| `status [--modes …]`           | Catalog timestamps and mode cache/state summary (no database access)                       |
 | `recheck-excluded [--modes …]` | Check excluded items again on the next poll                          |
 
 A spec is `mode:steps`, comma-separated: `pvp-season:analyze`, `pvp-season:poll+push`,

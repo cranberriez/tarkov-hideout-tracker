@@ -1,8 +1,13 @@
-/** Remove independently refreshed price values while retaining stored DTO shape. */
+/** Item fields stored only in item_modes columns; projections never carry them. */
+const CATALOG_ONLY_ITEM_KEYS = ["itemTypes", "defaultPresetId", "presetContents"];
+
+/** Remove independently refreshed price values and catalog-only item fields while retaining stored DTO shape. */
 export function stripCatalogDto(value) {
 	if (Array.isArray(value)) return value.map(stripCatalogDto);
 	if (!value || typeof value !== "object") return value;
-	const entries = Object.entries(value).filter(([key]) => !["marketPrice", "buyFromTrader"].includes(key));
+	const entries = Object.entries(value).filter(
+		([key]) => !["marketPrice", "buyFromTrader", ...CATALOG_ONLY_ITEM_KEYS].includes(key),
+	);
 	return Object.fromEntries(
 		entries.map(([key, child]) => {
 			if (key === "freshness" && child && typeof child === "object" && !Array.isArray(child)) {

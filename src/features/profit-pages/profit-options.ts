@@ -7,6 +7,9 @@ export interface ProfitOptions {
 	hideoutManagementSkillLevel: number;
 	availableOnly: boolean;
 	profitableOnly: boolean;
+	showTopOnly: boolean;
+	topCount: number;
+	ignorePlayerLevel: boolean;
 	useTraderSaleForLockedOutputs: boolean;
 	preferBestLockedRoute: boolean;
 	allowCrafts: boolean;
@@ -24,6 +27,9 @@ export const DEFAULT_PROFIT_OPTIONS: ProfitOptions = {
 	hideoutManagementSkillLevel: 0,
 	availableOnly: false,
 	profitableOnly: false,
+	showTopOnly: false,
+	topCount: 2,
+	ignorePlayerLevel: false,
 	useTraderSaleForLockedOutputs: true,
 	preferBestLockedRoute: false,
 	allowCrafts: true,
@@ -54,6 +60,8 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 	for (const key of [
 		"availableOnly",
 		"profitableOnly",
+		"showTopOnly",
+		"ignorePlayerLevel",
 		"useTraderSaleForLockedOutputs",
 		"preferBestLockedRoute",
 		"allowCrafts",
@@ -62,6 +70,13 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 		if (typeof value[key] === "boolean") options[key] = value[key];
 	}
 	options.craftingSkillLevel = normalizeCraftingSkillLevel(value.craftingSkillLevel);
+	if (
+		typeof value.topCount === "number" &&
+		Number.isInteger(value.topCount) &&
+		value.topCount >= 1 &&
+		value.topCount <= 5
+	)
+		options.topCount = value.topCount;
 	options.hideoutManagementSkillLevel = normalizeHideoutManagementSkillLevel(value.hideoutManagementSkillLevel);
 	const filters = record(value.lockFilters);
 	for (const key of ["flea", "quest", "vendor", "station"] as const) {
@@ -70,18 +85,29 @@ export function parseProfitOptions(raw: string | null): ProfitOptions {
 	return options;
 }
 
-export function profitOptionsStorageKey(mode: GameMode): string {
+export function profitOptionsStorageKey(mode: GameMode | `KORD:${string}`): string {
 	return `tarkov-profit-options-v1:${mode}`;
 }
 
-export function createProfitOptionsStore(mode: GameMode, getStorage: () => Pick<Storage, "getItem" | "setItem">) {
+export function createProfitOptionsStore(
+	mode: GameMode | `KORD:${string}`,
+	getStorage: () => Pick<Storage, "getItem" | "setItem">,
+) {
 	const key = profitOptionsStorageKey(mode);
 	let snapshot = DEFAULT_PROFIT_OPTIONS;
 	let lastRaw: string | null | undefined;
 
 	function getSnapshot(): ProfitOptions {
 		try {
-			const raw = getStorage().getItem(key);
+			const stored = getStorage().getItem(key);
+			const legacy =
+				stored === null && mode.startsWith("KORD:") ? getStorage().getItem(profitOptionsStorageKey("KORD")) : null;
+			// Display preferences remain familiar; character skills start fresh.
+			const raw =
+				stored ??
+				(legacy
+					? JSON.stringify({ ...parseProfitOptions(legacy), craftingSkillLevel: 0, hideoutManagementSkillLevel: 0 })
+					: null);
 			if (raw !== lastRaw) {
 				snapshot = parseProfitOptions(raw);
 				lastRaw = raw;

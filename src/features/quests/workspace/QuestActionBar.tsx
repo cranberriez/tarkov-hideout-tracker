@@ -1,6 +1,16 @@
 "use client";
 
-import { Columns3, Compass, GitBranch, History, PanelTopClose, PanelTopOpen, Search, Upload, X } from "lucide-react";
+import {
+	Columns3,
+	GitBranch,
+	History,
+	PanelTopClose,
+	PanelTopOpen,
+	Pin,
+	Search,
+	Upload,
+	X,
+} from "lucide-react";
 import { useState } from "react";
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
@@ -9,8 +19,17 @@ import { QuestLogImportDialog } from "../import/QuestLogImportDialog";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
-	const { searchQuery, setSearchQuery, mode, setMode, listMode, setListMode, showQuestVisualizerIndex } =
-		useQuestWorkspace();
+	const {
+		searchQuery,
+		setSearchQuery,
+		mode,
+		setMode,
+		listMode,
+		setListMode,
+		showQuestVisualizerIndex,
+		showPinnedOnly,
+		setShowPinnedOnly,
+	} = useQuestWorkspace();
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	const setMainNavHidden = useUIStore((state) => state.setMainNavHidden);
 	const [searchOpen, setSearchOpen] = useState(false);
@@ -28,6 +47,13 @@ export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
 					onClick={() => setListMode(listMode === "history" ? "quests" : "history")}
 				>
 					<History size={14} /> <span className="hidden sm:inline">History</span>
+				</Button>
+				<Button
+					selected={showPinnedOnly}
+					aria-pressed={showPinnedOnly}
+					onClick={() => setShowPinnedOnly(!showPinnedOnly)}
+				>
+					<Pin size={14} /> Pinned
 				</Button>
 				{searchOpen ? (
 					<div className="flex min-w-0 flex-1 items-center gap-2 border-b border-brand/50 px-1 py-1.5">
@@ -77,14 +103,6 @@ export function QuestActionBar({ quests }: { quests: QuestWorkspaceQuest[] }) {
 					className={mode === "visualizer" ? undefined : "text-foreground"}
 				>
 					<GitBranch size={15} /> Visualizer
-				</Button>
-				<Button
-					selected={mode === "planner"}
-					aria-pressed={mode === "planner"}
-					onClick={() => setMode(mode === "planner" ? "details" : "planner")}
-					className={mode === "planner" ? undefined : "text-foreground"}
-				>
-					<Compass size={15} /> Raid planner
 				</Button>
 			</div>
 			<QuestLogImportDialog open={importOpen} onOpenChange={setImportOpen} quests={quests} />

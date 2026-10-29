@@ -67,6 +67,8 @@ const eslintConfig = defineConfig([
 		"next-env.d.ts",
 		// Generated worker bundle.
 		"market-analyzer/dist/**",
+		// Map library vendored from tarkov-mappinator; kept close to upstream so it can be re-synced.
+		"src/features/maps/tarkov-map/**",
 	]),
 ]);
 

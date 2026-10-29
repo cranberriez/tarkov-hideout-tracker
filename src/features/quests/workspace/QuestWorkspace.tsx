@@ -3,15 +3,10 @@
 import { ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import type { QuestWorkspaceQuest } from "@/types/quests";
-import type { MapViewTransform } from "@/features/maps/map-view-transform";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
-import { QuestFilterBar, QuestTraderBar } from "./QuestFilterBar";
-import { QuestListPane } from "./QuestListPane";
-import { QuestActionBar } from "./QuestActionBar";
-import { QuestMobileMenu } from "./QuestMobileMenu";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneLoading() {
@@ -22,50 +17,39 @@ function PaneLoading() {
 	);
 }
 
-const RaidPlannerPane = dynamic(() => import("./RaidPlannerPane").then((module) => module.RaidPlannerPane), {
+// Keep the routed detail outlet outside these browser-only boundaries: its public
+// quest content must still be present in the HTML on a direct visit.
+const QuestListSurface = dynamic(() => import("./QuestListSurface").then((module) => module.QuestListSurface), {
+	ssr: false,
 	loading: PaneLoading,
+});
+const QuestActionBar = dynamic(() => import("./QuestActionBar").then((module) => module.QuestActionBar), {
+	ssr: false,
+});
+const QuestMobileMenu = dynamic(() => import("./QuestMobileMenu").then((module) => module.QuestMobileMenu), {
+	ssr: false,
 });
 const QuestTraderBoardPane = dynamic(
 	() => import("./QuestTraderBoardPane").then((module) => module.QuestTraderBoardPane),
-	{ loading: PaneLoading },
+	{ ssr: false, loading: PaneLoading },
 );
 const QuestVisualizerPane = dynamic(
 	() => import("./QuestVisualizerPane").then((module) => module.QuestVisualizerPane),
-	{ loading: PaneLoading },
+	{ ssr: false, loading: PaneLoading },
 );
 
 /** `children` is the routed detail outlet: the selection prompt or `/quests/[questId]`. */
 export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQuest[]; children: ReactNode }) {
-	const { mode, setMode, plannerMapKey, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } =
+	const { mode, setMode, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } =
 		useQuestWorkspace();
-	const [plannerViews, setPlannerViews] = useState(() => new Map<string, MapViewTransform>());
-	const rememberPlannerView = useCallback((mapKey: string, view: MapViewTransform | null) => {
-		setPlannerViews((current) => {
-			const next = new Map(current);
-			if (view) next.set(mapKey, view);
-			else next.delete(mapKey);
-			return next;
-		});
-	}, []);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
 	useEffect(() => {
 		document.body.classList.add("quest-workspace-active");
 		return () => document.body.classList.remove("quest-workspace-active");
 	}, []);
-	useEffect(() => {
-		document.body.classList.toggle("quest-raid-planner-active", mode === "planner");
-		return () => document.body.classList.remove("quest-raid-planner-active");
-	}, [mode]);
 	// Back/Forward, search, and shared links show the selected quest's details even when the
-	// planner or visualizer is open. Workspace-initiated selection keeps the current mode.
+	// visualizer is open. Workspace-initiated selection keeps the current mode.
 	const previousQuestId = useRef(selectedQuestId);
-	useEffect(() => {
-		const questId = previousQuestId.current;
-		if (questId)
-			requestAnimationFrame(() =>
-				document.getElementById(`quest-workspace-${questId}`)?.scrollIntoView({ block: "center" }),
-			);
-	}, []);
 	useEffect(() => {
 		if (previousQuestId.current === selectedQuestId) return;
 		previousQuestId.current = selectedQuestId;
@@ -80,11 +64,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 			data-quest-workspace
 			className={cn(
 				"flex min-h-0 shrink-0 overflow-hidden",
-				isMainNavHidden
-					? "h-dvh"
-					: mode === "planner"
-						? "h-dvh lg:h-[calc(100dvh-4.75rem)]"
-						: "h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-4.75rem)]",
+				isMainNavHidden ? "h-dvh" : "h-[calc(100dvh-4rem)] sm:h-[calc(100dvh-4.75rem)]",
 			)}
 		>
 			<div
@@ -102,9 +82,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					)}
 					data-quest-list-pane
 				>
-					<QuestFilterBar />
-					<QuestTraderBar />
-					<QuestListPane />
+					<QuestListSurface />
 				</section>
 				<section
 					className={cn("min-h-0 min-w-0 flex-col lg:flex", mode !== "details" || selectedQuestId ? "flex" : "hidden")}
@@ -121,12 +99,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 							<ChevronLeft size={16} /> Back to quests
 						</Link>
 					)}
-					{mode === "planner" ? (
-						<RaidPlannerPane
-							rememberedView={plannerMapKey ? (plannerViews.get(plannerMapKey) ?? null) : null}
-							onViewChange={rememberPlannerView}
-						/>
-					) : mode === "board" ? (
+					{mode === "board" ? (
 						<QuestTraderBoardPane />
 					) : mode === "visualizer" ? (
 						<QuestVisualizerPane />
@@ -135,7 +108,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					)}
 				</section>
 			</div>
-			{!(mode === "planner" && plannerMapKey) && <QuestMobileMenu />}
+			<QuestMobileMenu />
 		</main>
 	);
 }

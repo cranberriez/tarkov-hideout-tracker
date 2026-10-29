@@ -5,7 +5,7 @@ import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
 import { SetupModal } from "../features/setup/SetupModal";
 import { Analytics } from "@vercel/analytics/next";
-import { SeasonUpdateBanner } from "@/components/core/SeasonUpdateBanner";
+import { SeasonCharacterBanner } from "@/features/seasons/SeasonCharacterBanner";
 import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
@@ -13,6 +13,8 @@ import { QueryProvider } from "@/lib/query/QueryProvider";
 import { HoverPreviewProvider } from "@/components/ui/hover-preview-provider";
 import { AppThemeSync } from "@/components/core/AppThemeSync";
 import { APP_THEME_BOOT_SCRIPT } from "@/lib/cfg/app-preferences";
+import { SiteRating } from "@/features/site-rating/SiteRating";
+import { isSyncEnabled } from "@/server/sync-enabled";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -45,10 +47,15 @@ export default function RootLayout({
 					<HoverPreviewProvider>
 						<ActiveGameModeSync />
 						<AppThemeSync />
-						<Navbar />
-						{/* <SeasonUpdateBanner /> */}
-						<div className="flex min-h-0 flex-1 flex-col">{children}</div>
+						<Navbar syncEnabled={isSyncEnabled()} />
+						<SeasonCharacterBanner />
+						<div className="page-content flex min-h-0 flex-1 flex-col">
+							<div className="page-content-side" aria-hidden="true" />
+							{children}
+							<div className="page-content-side" aria-hidden="true" />
+						</div>
 						<SetupModal />
+						<SiteRating />
 						<QuickAddModal />
 						<GlobalItemDetailModal />
 						<Analytics />

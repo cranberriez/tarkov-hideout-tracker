@@ -1,4 +1,5 @@
-import { GAME_MODES, type GameMode } from "../../lib/game-mode";
+import type { ProfileStorageScope } from "../../lib/seasons/profile-scope";
+export type BackupProfileScope = ProfileStorageScope;
 import { createDefaultPlayerProfile } from "../../lib/stores/useUserStore";
 import { pickPlayerProgress, type PlayerProgress } from "../../lib/player-progress";
 
@@ -9,9 +10,9 @@ export interface BackupProfile {
 }
 export interface ProgressBackup {
 	format: "tarkov-player-progress";
-	version: 1;
+	version: 1 | 2;
 	exportedAt: string;
-	profiles: Partial<Record<GameMode, BackupProfile>>;
+	profiles: Partial<Record<BackupProfileScope, BackupProfile>>;
 }
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 export const emptyBackupProfile = (): BackupProfile => ({
@@ -67,12 +68,17 @@ export function parseProgressBackup(raw: string): ProgressBackup {
 		throw new Error("This file is not valid JSON. Choose a player progress backup.");
 	}
 	const root = exact(parsed, ["format", "version", "exportedAt", "profiles"]);
-	if (root.format !== "tarkov-player-progress" || root.version !== 1)
+	if (root.format !== "tarkov-player-progress" || (root.version !== 1 && root.version !== 2))
 		throw new Error("Unsupported backup format or version.");
 	if (typeof root.exportedAt !== "string" || !Number.isFinite(Date.parse(root.exportedAt)))
 		throw new Error("Invalid backup date.");
 	const profiles = object(root.profiles);
-	if (!Object.keys(profiles).length || Object.keys(profiles).some((mode) => !GAME_MODES.includes(mode as GameMode)))
+	if (
+		!Object.keys(profiles).length ||
+		Object.keys(profiles).some(
+			(mode) => !(root.version === 1 ? ["PVP", "PVE", "KORD"] : ["PVP", "PVE", "KORD", "KORD:season-2"]).includes(mode),
+		)
+	)
 		throw new Error("Backup must contain PVP, PVE, or KORD profiles.");
 	for (const entry of Object.values(profiles)) {
 		const profile = exact(entry, ["progress", "kappa", "skills"]);

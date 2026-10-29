@@ -9,6 +9,17 @@ The runtime and routine writers use PostgreSQL domain tables through
 cover migration and deployment. There are no active release pointers, generic
 payload tables, historical catalogs, or stored search manifests in PostgreSQL.
 
+Site ratings use the site-wide `feedback` table from
+[migration 0007](../db-scripts/migrations/0007_feedback.sql). Its fixed primary key
+`id = 1` permits at most one row, seeded with nonnegative bigint `good` and `bad`
+counters and aggregate `created_at`/`updated_at` timestamps. The server-only
+[recorder](../src/server/site-rating/record-site-rating.ts) atomically upserts the
+chosen counter using the shared pool; concurrent submissions cannot lose increments.
+Success is returned only after the write completes; database failures use the existing
+48-hour cookie retry. No identities, modes, profiles or individual votes are stored.
+Cookies provide browser-level suppression, not exactly-once delivery: clearing cookies,
+simultaneous requests or a lost response after a committed write can produce repeats.
+
 `GAME_MODE_CONFIG` in [game-mode.ts](../src/lib/game-mode.ts) is the single
 source for per-mode mappings (PVP to regular, PVE to pve, KORD to pvp-season),
 quest-log raid tags, labels and mode rules such as `seasonal` and `hasLightkeeper`;
@@ -27,6 +38,12 @@ empty/malformed input aborts before writes. Reviewed
 [FiR fallbacks](../src/lib/cfg/foundInRaid.ts) remain authoritative; seasonal
 requirements remain separate. Adapter recipe exclusions and translation fallback
 rules are unchanged.
+
+The item adapter also maps provider `types`, each gun's `defaultPreset` and preset `containsItems`
+(item ID and count; one malformed entry omits the list) to nullable `item_modes` columns
+(migration 0006). They are catalog-only: `stripCatalogDto` keeps them out of item-detail projections
+and runtime item reads do not select them; currently only the Higher or Lower query reads them.
+Apply migration 0006 before deploying the updated catalog writer, which writes these columns.
 
 The hideout adapter keeps only validated `AdditionalSlots` (with slot item IDs) and
 `FuelConsumption` level bonuses in `StationLevel.bonuses`; other bonus types and
@@ -48,16 +65,91 @@ labels from the [editable timeline](operations.md#release-timeline), preserving 
 historical provenance and unknown baselines. Catalog ingestion strips monetary offers
 and market data and never overwrites existing price rows.
 
-Current item_details rows store relations, usage and acquisition JSONB without
-prices or embedded monetary offers. Usage lists recipes that produce the item and,
-separately, recipes that consume it (`usedInBarters`/`usedInCrafts`, including
-tools and craft quest items); rows written before those lists existed read as empty
-until the next catalog update. Runtime detail reads stay bounded and
+Recipe inputs also have normalized `craft_inputs` and `barter_inputs` rows
+(migration 0005), indexed by mode, item ID and recipe ID for reverse lookups.
+Composite recipe foreign keys preserve mode isolation and cascade only when their
+owning catalog recipe is removed. Positions preserve duplicate input references;
+craft input kinds separate ordinary and quest requirements, and nullable `is_tool`
+preserves the source flag. Item IDs intentionally have no item-table FK because
+synthetic, quest and unresolved references must survive ingestion.
+The migration backfills existing JSON arrays. The catalog writer validates inputs,
+upserts both representations and prunes stale input positions in the same transaction.
+Apply `npm run db:migrate` before deploying the updated catalog writer.
+Full recipe and station-graph readers reconstruct input arrays from the normalized
+rows. Item usage reads select only recipes producing the requested item or using
+it through the reverse indexes, including tools and quest inputs. They hydrate
+referenced items and source labels, reporting unresolved IDs and label failures.
+Usage no longer depends on the stored item-detail usage projection. Relations and
+acquisition-tree projections remain stored; JSON recipe columns remain dual-written
+for compatibility with older deployments. Deploy migration 0005 and the updated
+writer before deploying these readers; an old writer does not maintain input rows.
+
+Current item_details rows retain relations, legacy usage and acquisition JSONB without
+prices or embedded monetary offers. The legacy usage projection lists output and input recipes for older deployments.
+Current usage reads derive `usedInBarters`/`usedInCrafts` from indexed input rows,
+including tools and craft quest items, without waiting for projection regeneration. Runtime detail reads stay bounded and
 hydrate current discovery and trader offers from their owning relations; acquisition
 reads also attach trader, station and unlock-quest labels for the graph's recipes by
 known ID (a label failure is a nonblocking `presentationError`). Flea
 hydration remains optional. Source freshness is assembled from catalog_status.
 See [operations](operations.md) and the [CLI guide](../db-scripts/README.md).
+
+## Season 1 battle pass snapshot
+
+[season-1-battle-pass.json](../src/lib/data/season-1-battle-pass.json) is a static,
+source-attributed Tarkov Market snapshot for the battle pass tracker. It
+contains 12 pages, 53 purchasable tiles, and 501 documents across eight types.
+The original payload fields retain game item IDs, document keys, tile layout,
+image URLs, faction restrictions, and nested rewards. The standalone Battle Pass
+route imports it locally without provider services or runtime database queries.
+
+Each page's `req` counts claimed tiles on the immediately previous page, not
+cumulative rewards. `unlockRequirement` makes that relationship explicit. Each
+tile's `cost` maps document keys to quantities; `totalDocumentCost` is their sum.
+These costs are one player's assignment: totals match the wiki for every tile, but
+document types differ between players, so players can swap types (see
+[user state](user-state.md#battle-pass-progress)).
+The final page's six trader offers share one tile and one cost. Trader rewards
+unlock offers rather than directly granting items.
+
+Tile `id`, `slot`, `displayName`, and `totalDocumentCost` are locally derived.
+There are no upstream tile IDs: local keys use season/page/slot, so future source
+reordering must be reconciled before retaining saved selections. Nested game item
+IDs are preserved independently. Images remain remote URLs, and unspecified item
+quantities remain absent. Source provenance and additional rules are in the JSON.
+
+[Document locations](../src/lib/data/season-1-document-locations.json) maps the eight
+source document keys to map names, verified against Tarkov Market's season guide
+and EFT Docs Map. Classified documents come from the Expansion Hub and replace
+one required document each; the separate five-for-one ordinary-document exchange
+is not applied by the planner.
+
+The Locations dropdown defaults to one column per map, with the existing map
+preview artwork and square document tiles. Its Table toggle shows the map-overlap
+matrix. Both views use `spawnsPerRelevantType`: seven possible spawns of each
+relevant type, with Factory at five. These are spawn counts, not guaranteed pickups.
+Locations alone uses a static [document artwork mapping](../src/features/battle-pass/lib/battle-pass-document-artwork.ts)
+verified against tarkov.dev's seasonal item data and English names. All eight
+document IDs have transparent `image512pxLink` artwork (512px on the longest side).
+Image failures fall back to the snapshot artwork, then a placeholder. No runtime
+provider query is added; reward cards and inventory chips retain their existing images.
+Reward cards use large source artwork, truncated overlaid
+names, and anchored document/action chips whose labels expand on hover or keyboard
+focus without moving the layout. Detailed plan costs remain in the Breakdown
+disclosure. The redesign does not change planning or saved-state semantics.
+
+[battle-pass-model](../src/features/battle-pass/lib/battle-pass-model.ts) calculates
+minimum total document count by retaining wanted rewards and filling each earlier
+page with its cheapest remaining tiles, with source slot order breaking ties.
+Completed tiles satisfy page counts and incur no further cost. Inventory does not
+change which route is cheapest: after selection, owned stock is deducted once
+across the aggregate plan, then optional classified documents fill shortages in
+document display order. The UI reports required, inventory-covered, classified
+and remaining counts per type. Cumulative card previews independently plan the
+path to that one reward from saved completion, excluding other goals and inventory.
+The Everything plan includes every uncompleted tile. The model is covered by
+[focused tests](../src/features/battle-pass/lib/battle-pass-model.test.ts), including
+comparison against exhaustive route enumeration.
 
 ## Repository and page read contracts
 
@@ -107,8 +199,11 @@ which still select mode from the cookie and prefetch queries directly. Explicit 
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
-Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v1`
-deliver only the quest index (unversioned requests also return the index).
+Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v2`
+deliver only the quest index (unversioned requests also return the index). Summaries
+carry trader IDs only (`traderId`, and `traderId` on trader requirements); readers expand
+them through [quest-summary-payload](../src/lib/quests/quest-summary-payload.ts) against the
+bundled [trader list](../src/lib/data/traders.ts), never by reading the raw cache entry.
 The SQL index projection excludes objective details, geometry and reward groups;
 the query performs no item reads. The format is part of the URL/query key to avoid
 reusing earlier full-workspace caches. [Quest contracts](../src/types/quest-workspace.ts)
@@ -120,7 +215,7 @@ errors. Complete single-ID responses use public page caching; batches and partia
 responses use `no-store`. Batch combinations are transport only: the browser caches
 individual mode/quest entries, and server catalog caching uses mode/content-version/
 quest-ID entries. Concurrent cold server misses coalesce into bounded SQL batches.
-The planner requests active quests for the selected map; sustained hover previews
+The maps explorer requests active quests for its map; sustained hover previews
 and direct quest routes use the same per-quest cache. No player profile data enters
 the endpoint or its cache key.
 
@@ -180,6 +275,13 @@ after the initial metadata domains settle. Their query keys distinguish unpriced
 metadata from older priced payloads. Compatibility API callers can still request
 the previous price-hydrated payloads.
 
+Item dialogs and direct item pages initially request relations for requirement
+totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
+graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
+when those requested graphs settle. Previously opened items do not expand the
+price request. The server item page prefetches relations only. Existing per-view,
+mode/item/version server caching remains unchanged.
+
 Data GET routes read the mode from the `?mode=` query parameter through
 [readModeParam](../src/app/api/_lib/mode-params.ts): a missing mode selects `regular`
 (PVP) and an unknown mode returns 400. Browser clients always send it explicitly so
@@ -192,11 +294,13 @@ than mixing datasets or reporting a missing entity.
 
 ### Server read caching
 
-The catalog content_version only changes through the nightly
-[catalog cron](../src/app/api/cron/catalog/route.ts). [postgres-read](../src/server/db/postgres-read.ts)
-serves the current version from a 60-second per-instance memo backed by the Next data
-cache under the `postgres-catalog-version` tag; the cron invalidates that tag after a
-committed change, and any read that observes a newer version clears it too. Next rejects
+The catalog content_version changes through the
+[market analyzer](../market-analyzer/README.md) or `db:update`.
+[postgres-read](../src/server/db/postgres-read.ts) serves the current version from
+a 60-second per-instance memo backed by a Next data cache that revalidates every
+two hours under the `postgres-catalog-version` tag. This discovers external
+commits without a web callback; any read that observes a newer version clears the
+tag too. Next rejects
 tag revalidation during render and inside cached functions (where closing checks usually
 run), so a mismatch seen there marks the mode stale: its version reads bypass the data
 cache and read PostgreSQL until a request scope that allows revalidation clears the tag.
@@ -243,16 +347,15 @@ parameter parsing, database error responses, and the named
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [prices](../src/app/api/items/prices/route.ts)                                                                                                                   | GET with at most one mode and 1–200 IDs or named checklist/recipes scope; browser 300s, CDN 3600s                                                                                 |
 | [relations](../src/app/api/items/[itemId]/relations/route.ts)                                                                                                    | Hideout requirements, quest demand/rewards and availability closure; complete: browser 300s, CDN 3600s; partial: no-store                                                         |
-| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
+| [usage](../src/app/api/items/[itemId]/usage/route.ts)                                                                                                            | Direct trader purchases and recipes producing or using one item, referenced items and source labels; complete: browser 300s, CDN 3600s; partial: no-store                                  |
 | [acquisition-tree](../src/app/api/items/[itemId]/acquisition-tree/route.ts)                                                                                      | Cycle-safe graph bounded by depth/item count with `truncated`; complete: browser 300s, CDN 3600s; partial: no-store                                                               |
 | [price-history](../src/app/api/items/[itemId]/price-history/route.ts)                                                                                            | On-demand provider history for catalog items only; histories and provider 404s cached 7200s (server and CDN); unknown IDs 404 locally, CDN 1 day                                  |
 | [market-analytics](../src/app/api/items/[itemId]/market-analytics/route.ts)                                                                                      | Latest market-analyzer observation for one item; found and not-analyzed (404) answers: browser 300s, CDN 3600s; database errors: no-store                                         |
 | [search](../src/app/api/items/search/route.ts)                                                                                                                   | Mode and `q` up to 80 characters, normalized for matching; 10 results by default or 50 with `limit=50`; `private, no-store`                                                       |
 | [status](../src/app/api/data/status/route.ts)                                                                                                                    | Mode/release identity, hideout/item/quest/craft/barter release freshness, and independent mutable-price change/check timestamps; browser 30s, CDN 60s                             |
 | [legacy-profile conversion](../src/app/api/conversion/legacy-profile/route.ts), [completed-items conversion](../src/app/api/conversion/completed-items/route.ts) | Bounded conversion support through [shared-api-data](../src/server/db/shared-api-data.ts); complete: browser 300s, CDN 3600s; errors: no-store                                    |
-| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
-| [map APIs](../src/app/api/maps/)                                                                                                                                 | Committed map metadata, navigation overlays, and allow-listed SVG service; see [maps](maps.md)                                                                                    |
-| [catalog cron API](../src/app/api/cron/catalog/route.ts)                                                                                                         | Protected all-mode catalog update; see [operations](operations.md)                                                                                                                |
+| [page data](../src/app/api/page-data/)                                                                                                                           | Mode-specific Hideout, Items, Quests, Kappa, Market, and shared Profit payloads; unpriced profit: `no-store`; other complete unpriced: browser 300s, CDN 3600s; partial/error: `no-store` |
+| [map APIs](../src/app/api/maps/)                                                                                                                                 | Per-map marker data for the maps explorer; see [maps](maps.md)                                                                                    |
 
 Complete item-view responses use the same browser 300s / CDN 3600s policy as page data, which embeds the same hourly-refreshed trader offers; the item-detail queries expose their
 payload through a typed partial-data error rather than entering it as reusable
@@ -322,7 +425,7 @@ full upstream histories only in its own disk cache, pushes changed items hourly,
 and does not write not-modified checks. Its derived analytics are append-only rows in
 market_analysis_runs and item_market_observations (migration 0002), read by the
 development dashboard and by [market-analytics.ts](../src/server/db/market-analytics.ts)
-for the two uses below.
+for the three uses below.
 
 Each current price batch also reads the latest observation per item and attaches an
 optional `marketReference` (7-day median and p10–p90 range, with the analysis time)
@@ -334,6 +437,40 @@ bottom and 13% below is unusually low. Levels more than 36 hours from the price
 observation, stale or unavailable prices, and missing references produce no flag.
 Item hover cards and the item dialog's Market section show the flag. The item dialog's
 Analytics tab loads one item's full latest observation through its own route on demand.
+
+The `/items/market` page reads the latest observation for every item with
+`on_flea_market` true through [market page data](../src/app/api/page-data/market/route.ts)
+and [market-page.ts](../src/server/db/market-page.ts), a per-item lateral index lookup
+rather than a scan of the append-only history. Each item also carries its stored recent
+minimum-listing points (about a day, points older than 36 hours dropped) for a sparkline. Malformed or
+out-of-range rows are left out and counted; a missing analytics schema returns an empty
+payload with an error. Both are `no-store`; complete payloads use browser 300s / CDN 3600s.
+The page is not server-prefetched: the client suspends on this one query behind the route
+loader. Pinned rows are per profile; see [user state](user-state.md).
+
+The `/games/higher-lower` game reads one value per playable item through
+[its page data](../src/app/api/page-data/games/higher-lower/route.ts) and
+[higher-lower.ts](../src/server/db/higher-lower.ts), with the same lateral observation lookup,
+error handling and cache policy as the market page. Items take the latest observation's 7-day
+median at medium or high confidence, else their cheapest rouble trader purchase price. A gun's flea
+price is its default build's, so guns are valued only through the flea and show their default
+preset's image; that default preset is then left out. Presets without their own price are estimated
+from parts: a gun build starts from the default build price, adds the parts it adds and subtracts the
+default parts it removes; other presets sum their parts. A part without a value leaves the preset out.
+Values under 1,000 ₽ and placeholder images are excluded; the rest are rounded to the nearest 1,000 ₽
+(100 or 10 below that), and the game compares the rounded values. The query reads every item in the mode
+because estimates need part values; the payload is about 85 KB gzipped per mode. Pair selection, the
+narrowing difficulty bands and the count-up live in the client
+[model](../src/features/games/higher-lower/higher-lower-model.ts).
+
+Trader Alibi reads [its page data](../src/app/api/page-data/games/trader-alibi/route.ts) through
+[trader-alibi.ts](../src/server/db/trader-alibi.ts): single objectives of non-removed quests (hand-ins,
+kills, quest items, locations and stashes; no find-item, requirement or status objectives, no quest
+names, trader names in the text replaced), barters (inputs from `barter_inputs`) and cash purchase
+offers of the traders in [TRADER_ALIBI_TRADER_IDS](../src/lib/games/trader-alibi.ts) (Ref excluded),
+in one payload of about 65 KB gzipped; item names and images come from the search manifest. Database errors return 503; complete payloads
+use browser 300s / CDN 3600s. Do I Need It reads no new endpoint: it reuses the uploader requirements
+and the search manifest.
 
 Trader sell offers (`sellFor`) carry only `traderId`; names and images come from the
 bundled [trader list](../src/lib/data/traders.ts), which needs an entry when a new trader
@@ -432,7 +569,8 @@ removed-quest and game-mode data in
 [quest-preparation](../src/lib/quests/quest-preparation.ts)), mode and catalog
 content_version. No database manifest table is used. Items carry their leaf
 category as an index into a shared category ID list; the uploader groups those
-leaves for its category filter.
+leaves for its category filter. A quest-only flag marks flea-banned items with
+no other provider type (quest notes, tapes, documents); Do I Need It? skips them.
 
 [/api/search](../src/app/api/search/route.ts) keeps identity=1 and the releaseId
 request/response field. The field now carries the string content version. A

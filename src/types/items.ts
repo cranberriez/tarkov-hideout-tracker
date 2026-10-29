@@ -26,6 +26,11 @@ export interface TraderPurchaseOffer {
 }
 
 /** A standard item from the mode-specific Tarkov JSON item catalog. */
+export interface ItemPresetPart {
+	itemId: string;
+	count: number;
+}
+
 export interface ItemSummary extends ItemIdentity {
 	/** First successful observation; null means an imported or unknown-date baseline. */
 	firstSeenAt?: number | null;
@@ -46,8 +51,17 @@ export interface ItemSummary extends ItemIdentity {
 	barter?: boolean;
 	/** Leaf category ID; the compact search manifest carries this instead of `category`. */
 	categoryId?: string;
+	/** Quest-chain item rather than regular loot; only the compact search manifest carries this. */
+	questOnly?: boolean;
 	/** Resource capacity from the provider's resource properties (fuel tank units). */
 	resourceUnits?: number;
+	/**
+	 * Catalog-only fields written to item_modes and stripped from stored projections; runtime item reads do not
+	 * select them. Provider types (e.g. "gun", "preset", "noFlea"), a gun's default preset, and a preset's parts.
+	 */
+	itemTypes?: string[];
+	defaultPresetId?: string;
+	presetContents?: ItemPresetPart[];
 	buyFromTrader?: TraderPurchaseOffer[];
 	marketPrice?: CurrentPrice | null;
 	/** Ephemeral delivery state; never persisted in player progress. */

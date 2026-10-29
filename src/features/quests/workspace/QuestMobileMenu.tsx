@@ -4,12 +4,12 @@ import {
 	ChevronUp,
 	CircleDot,
 	Columns3,
-	Compass,
 	GitBranch,
 	History,
 	List,
 	Map,
 	Menu,
+	Pin,
 	SlidersHorizontal,
 	UserRound,
 	type LucideIcon,
@@ -26,14 +26,13 @@ import { cn } from "@/lib/utils";
 import { useQuestWorkspace, type QuestFilterSection } from "./QuestWorkspaceContext";
 
 type FilterSection = Exclude<QuestFilterSection, null>;
-type MenuView = "log" | "history" | "board" | "visualizer" | "planner";
+type MenuView = "log" | "history" | "board" | "visualizer";
 
 const VIEWS: { view: MenuView; label: string; icon: LucideIcon }[] = [
 	{ view: "log", label: "Quest log", icon: List },
 	{ view: "history", label: "History", icon: History },
 	{ view: "board", label: "Trader board", icon: Columns3 },
 	{ view: "visualizer", label: "Visualizer", icon: GitBranch },
-	{ view: "planner", label: "Raid planner", icon: Compass },
 ];
 
 const FILTERS: { section: FilterSection; label: string; icon: LucideIcon }[] = [
@@ -63,7 +62,7 @@ export function QuestMobileMenu() {
 			workspace.sortMode !== "unlockOrder" ||
 			workspace.selectedObjectiveCategories.size > 0,
 	};
-	const anyFilterModified = Object.values(modifiedFilters).some(Boolean);
+	const anyFilterModified = workspace.showPinnedOnly || Object.values(modifiedFilters).some(Boolean);
 	const currentFilter = mode === "details" ? FILTERS.find((filter) => filter.section === openFilter) : undefined;
 	const currentViewId: MenuView = mode === "details" ? (listMode === "history" ? "history" : "log") : mode;
 	const currentView = VIEWS.find((view) => view.view === currentViewId) ?? VIEWS[0];
@@ -116,6 +115,12 @@ export function QuestMobileMenu() {
 				))}
 				<DropdownMenuSeparator />
 				<MenuLabel>Filter</MenuLabel>
+				<MenuItem
+					icon={Pin}
+					label="Pinned only"
+					current={workspace.showPinnedOnly}
+					onSelect={() => workspace.setShowPinnedOnly(!workspace.showPinnedOnly)}
+				/>
 				{FILTERS.map((filter) => (
 					<MenuItem
 						key={filter.section}

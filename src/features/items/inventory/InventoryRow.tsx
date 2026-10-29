@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { HelpCircle, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DemandReasonLine } from "../demand/DemandReasonLine";
 import type { SaveReason } from "../demand/item-demand-model";
 import { inventoryDisplayName, previewReasons, type InventoryRow as InventoryRowData } from "./inventory-model";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 export function InventoryRow({
 	row,
@@ -25,7 +24,7 @@ export function InventoryRow({
 	const label = row.item ? inventoryDisplayName(row.item) : name;
 	const isEmpty = row.fir === 0 && row.nonFir === 0;
 	const image = row.item ? (
-		<Image src={itemImageUrl(row.item)} alt="" fill className="object-contain" unoptimized />
+		<ItemImage item={row.item} size={46} />
 	) : (
 		<HelpCircle size={18} className="text-muted-foreground" aria-hidden="true" />
 	);

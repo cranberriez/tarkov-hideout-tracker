@@ -1,3 +1,4 @@
+import { FIRST_SEASON_ID, getCurrentSeason, getSeason, type SeasonId } from "../cfg/seasons";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { createUserStateStorage, USER_STORE_STORAGE_KEY } from "./user-state-storage";
@@ -95,6 +96,8 @@ export interface CompletedSetup {
 export interface PlayerProfileState {
 	stationLevels: Record<string, number>;
 	hiddenStations: Record<string, boolean>;
+	/** stationId -> highest level wanted; absent means the max level. */
+	stationGoals: Record<string, number>;
 	completedRequirements: Record<string, boolean>;
 	completedQuests: Record<string, boolean>;
 	completedQuestObjectives: Record<string, Record<string, boolean>>;
@@ -118,6 +121,7 @@ export function createDefaultPlayerProfile(): PlayerProfileState {
 	return {
 		stationLevels: {},
 		hiddenStations: {},
+		stationGoals: {},
 		completedRequirements: {},
 		completedQuests: {},
 		completedQuestObjectives: {},
@@ -149,12 +153,17 @@ const PLAYER_PROFILE_KEYS = Object.keys(createDefaultPlayerProfile()) as Array<k
 
 interface UserState {
 	profiles: Record<GameMode, PlayerProfileState>;
+	seasonalProfiles: Record<string, PlayerProfileState>;
+	selectedSeasonId: SeasonId;
+	/** Identifies an explicit all-data reset for cross-tab archive merging. */
+	seasonalResetRevision: number;
 	deprecatedLegacyState: Record<string, unknown> | null;
 	hasConvertedDeprecatedLegacyState: boolean;
 	hasDismissedDeprecatedLegacyState: boolean;
 	// Per-station progress and visibility
 	stationLevels: Record<string, number>; // stationId -> current level
 	hiddenStations: Record<string, boolean>; // stationId -> hidden?
+	stationGoals: Record<string, number>; // stationId -> goal level (absent = max)
 	completedRequirements: Record<string, boolean>; // requirementId -> completed?
 	completedQuests: Record<string, boolean>; // questId -> completed?
 	completedQuestObjectives: Record<string, Record<string, boolean>>; // questId -> objectiveId -> visited?
@@ -227,6 +236,7 @@ interface UserState {
 	itemQuestCustomLevelLookahead: number;
 	itemShowFutureFir: boolean;
 	itemShowIgnored: boolean;
+	itemIgnoreStationGoals: boolean;
 
 	// Onboarding / feature flags
 	hasSeenItemConversionModal: boolean;
@@ -244,6 +254,8 @@ interface UserState {
 	setStationLevel: (stationId: string, level: number) => void;
 	incrementStationLevel: (stationId: string) => void;
 	toggleHiddenStation: (stationId: string) => void;
+	/** `null` clears the goal, so the station counts to its max level. */
+	setStationGoal: (stationId: string, level: number | null) => void;
 	toggleRequirement: (requirementId: string) => void;
 	toggleQuestCompletion: (questId: string) => void;
 	toggleQuestObjectiveCompletion: (questId: string, objectiveId: string) => void;
@@ -259,6 +271,7 @@ interface UserState {
 	togglePinnedQuest: (questId: string) => void;
 
 	addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
+	addItemCountsForSeason: (seasonId: SeasonId, itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
 	setChecklistViewMode: (mode: "all" | "nextLevel") => void;
 	setItemSourceFilter: (value: ItemSourceFilter) => void;
@@ -279,6 +292,9 @@ interface UserState {
 	setHasSeenHideoutLevelWarning: (value: boolean) => void;
 
 	setGameMode: (mode: GameMode) => void;
+	activateSeason: (seasonId?: SeasonId, now?: number) => void;
+	selectSeason: (seasonId: SeasonId) => void;
+	importSeasonalProgress: (profiles: Record<string, import("../player-progress").PlayerProgress>) => void;
 	completeSetup: (setup: CompletedSetup) => void;
 	setSetupOpen: (isOpen: boolean) => void;
 	setPlayerLevel: (level: number) => void;
@@ -318,6 +334,7 @@ interface UserState {
 	setItemQuestCustomLevelLookahead: (value: number) => void;
 	setItemShowFutureFir: (value: boolean) => void;
 	setItemShowIgnored: (value: boolean) => void;
+	setItemIgnoreStationGoals: (value: boolean) => void;
 
 	importStationLevels: (levels: Record<string, number>) => void;
 	importPlayerProgress: (profiles: Partial<Record<GameMode, import("../player-progress").PlayerProgress>>) => void;
@@ -342,6 +359,9 @@ function createDefaultUserState(): UserStateData {
 	return {
 		...createDefaultPlayerProfile(),
 		profiles: createDefaultProfiles(),
+		seasonalProfiles: { [FIRST_SEASON_ID]: createDefaultPlayerProfile() },
+		selectedSeasonId: FIRST_SEASON_ID,
+		seasonalResetRevision: 0,
 		deprecatedLegacyState: null,
 		hasConvertedDeprecatedLegacyState: false,
 		hasDismissedDeprecatedLegacyState: false,
@@ -393,6 +413,7 @@ function createDefaultUserState(): UserStateData {
 		itemQuestCustomLevelLookahead: 5,
 		itemShowFutureFir: false,
 		itemShowIgnored: false,
+		itemIgnoreStationGoals: false,
 
 		gameMode: DEFAULT_GAME_MODE,
 		isSetupOpen: false,
@@ -425,6 +446,7 @@ function createPlayerProfileFromLegacyState(legacyState: Record<string, unknown>
 		...profile,
 		stationLevels: { ...profile.stationLevels },
 		hiddenStations: { ...profile.hiddenStations },
+		stationGoals: { ...profile.stationGoals },
 		completedRequirements: { ...profile.completedRequirements },
 		completedQuests: {},
 		completedQuestObjectives: {},
@@ -440,6 +462,16 @@ function createPlayerProfileFromLegacyState(legacyState: Record<string, unknown>
 	};
 }
 
+function normalizeSeasonProfiles(state: UserState): UserState {
+	const profiles = { ...createDefaultProfiles(), ...state.profiles };
+	const seasonalProfiles = { ...state.seasonalProfiles };
+	if (!seasonalProfiles[FIRST_SEASON_ID]) seasonalProfiles[FIRST_SEASON_ID] = profiles.KORD;
+	const selectedSeasonId =
+		state.selectedSeasonId && seasonalProfiles[state.selectedSeasonId] ? state.selectedSeasonId : FIRST_SEASON_ID;
+	profiles.KORD = seasonalProfiles[selectedSeasonId];
+	return { ...state, profiles, seasonalProfiles, selectedSeasonId, ...profiles[state.gameMode ?? DEFAULT_GAME_MODE] };
+}
+
 export const useUserStore = create<UserState>()(
 	persist(
 		(rawSet, get) => {
@@ -450,6 +482,14 @@ export const useUserStore = create<UserState>()(
 					if (Object.keys(profilePatch).length === 0) return patch;
 					return {
 						...patch,
+						...(state.gameMode === "KORD"
+							? {
+									seasonalProfiles: {
+										...state.seasonalProfiles,
+										[state.selectedSeasonId]: { ...state.profiles.KORD, ...profilePatch },
+									},
+								}
+							: {}),
 						profiles: {
 							...state.profiles,
 							[state.gameMode]: {
@@ -468,7 +508,14 @@ export const useUserStore = create<UserState>()(
 						for (const mode of GAME_MODES) {
 							if (incoming[mode]) profiles[mode] = { ...profiles[mode], ...incoming[mode] };
 						}
-						return { profiles, ...profiles[state.gameMode] };
+						const seasonalProfiles = incoming.KORD
+							? {
+									...state.seasonalProfiles,
+									[FIRST_SEASON_ID]: { ...state.seasonalProfiles[FIRST_SEASON_ID], ...incoming.KORD },
+								}
+							: state.seasonalProfiles;
+						profiles.KORD = seasonalProfiles[state.selectedSeasonId] ?? profiles.KORD;
+						return { profiles, seasonalProfiles, ...profiles[state.gameMode] };
 					}),
 				...createDefaultUserState(),
 
@@ -488,6 +535,14 @@ export const useUserStore = create<UserState>()(
 							[stationId]: !state.hiddenStations[stationId],
 						},
 					})),
+
+				setStationGoal: (stationId, level) =>
+					set((state) => {
+						const stationGoals = { ...state.stationGoals };
+						if (level === null || !Number.isFinite(level)) delete stationGoals[stationId];
+						else stationGoals[stationId] = Math.max(0, Math.floor(level));
+						return { stationGoals };
+					}),
 
 				toggleRequirement: (requirementId) => {
 					set((state) => {
@@ -631,6 +686,25 @@ export const useUserStore = create<UserState>()(
 						},
 					})),
 
+				addItemCountsForSeason: (seasonId, itemId, haveDelta, haveFirDelta) =>
+					rawSet((state) => {
+						const previous = state.seasonalProfiles[seasonId];
+						if (!previous) return {};
+						const counts = previous.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+						const profile = {
+							...previous,
+							itemCounts: {
+								...previous.itemCounts,
+								[itemId]: { have: counts.have + haveDelta, haveFir: counts.haveFir + haveFirDelta },
+							},
+						};
+						return {
+							seasonalProfiles: { ...state.seasonalProfiles, [seasonId]: profile },
+							...(state.selectedSeasonId === seasonId
+								? { profiles: { ...state.profiles, KORD: profile }, ...(state.gameMode === "KORD" ? profile : {}) }
+								: {}),
+						};
+					}),
 				addItemCounts: (itemId, haveDelta, haveFirDelta) => {
 					set((state) => {
 						const current = state.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
@@ -747,18 +821,77 @@ export const useUserStore = create<UserState>()(
 					}),
 				setItemShowFutureFir: (value) => set({ itemShowFutureFir: value }),
 				setItemShowIgnored: (value) => set({ itemShowIgnored: value }),
+				setItemIgnoreStationGoals: (value) => set({ itemIgnoreStationGoals: value }),
 
 				setHasSeenItemConversionModal: (value) => set({ hasSeenItemConversionModal: value }),
 				setHasSeenHideoutLevelWarning: (value) => set({ hasSeenHideoutLevelWarning: value }),
 
+				importSeasonalProgress: (incoming) =>
+					rawSet((state) => {
+						const seasonalProfiles = { ...state.seasonalProfiles };
+						for (const [id, progress] of Object.entries(incoming)) {
+							getSeason(id as SeasonId);
+							seasonalProfiles[id] = { ...(seasonalProfiles[id] ?? createDefaultPlayerProfile()), ...progress };
+						}
+						const profiles = { ...state.profiles, KORD: seasonalProfiles[state.selectedSeasonId] };
+						return { seasonalProfiles, profiles, ...profiles[state.gameMode] };
+					}),
+				activateSeason: (seasonId = getCurrentSeason().id, now = Date.now()) => {
+					getSeason(seasonId);
+					if (getCurrentSeason(now).id !== seasonId) throw new Error("This season is not currently available.");
+					const before = get();
+					try {
+						// A tab may activate before receiving another tab's storage event.
+						// Reuse an already saved character instead of replacing it with defaults.
+						const saved = useUserStore.persist.getOptions().storage?.getItem(USER_STORE_STORAGE_KEY);
+						const savedProfiles =
+							saved && !(saved instanceof Promise)
+								? (saved.state as Partial<UserState> | undefined)?.seasonalProfiles
+								: undefined;
+						rawSet((state) => {
+							const seasonalProfiles = { ...state.seasonalProfiles, ...savedProfiles };
+							const profile = seasonalProfiles[seasonId] ?? createDefaultPlayerProfile();
+							return {
+								...profile,
+								gameMode: "KORD",
+								selectedSeasonId: seasonId,
+								profiles: { ...state.profiles, KORD: profile },
+								seasonalProfiles: { ...seasonalProfiles, [seasonId]: profile },
+							};
+						});
+					} catch (error) {
+						try {
+							rawSet(before);
+						} catch {}
+						throw error;
+					}
+					if (typeof document !== "undefined") document.cookie = serializeActiveGameModeCookie("KORD");
+				},
+				selectSeason: (seasonId) => {
+					getSeason(seasonId);
+					const profile = get().seasonalProfiles[seasonId];
+					if (!profile) throw new Error("Activate this season before selecting it.");
+					rawSet((state) => ({
+						...profile,
+						gameMode: "KORD",
+						selectedSeasonId: seasonId,
+						profiles: { ...state.profiles, KORD: profile },
+					}));
+					if (typeof document !== "undefined") document.cookie = serializeActiveGameModeCookie("KORD");
+				},
 				setGameMode: (mode) =>
 					rawSet((state) => {
-						if (state.gameMode === mode) return {};
-						const profile = state.profiles[mode] ?? createDefaultPlayerProfile();
-						if (typeof document !== "undefined") {
-							document.cookie = serializeActiveGameModeCookie(mode);
-						}
-						return { ...profile, gameMode: mode };
+						const available = getCurrentSeason().id;
+						const selectedSeasonId =
+							mode === "KORD" && state.seasonalProfiles[available] ? available : state.selectedSeasonId;
+						const profile = mode === "KORD" ? state.seasonalProfiles[selectedSeasonId] : state.profiles[mode];
+						if (typeof document !== "undefined") document.cookie = serializeActiveGameModeCookie(mode);
+						return {
+							...profile,
+							gameMode: mode,
+							selectedSeasonId,
+							profiles: { ...state.profiles, KORD: state.seasonalProfiles[selectedSeasonId] },
+						};
 					}),
 
 				completeSetup: ({ gameMode, ...setup }) =>
@@ -774,6 +907,9 @@ export const useUserStore = create<UserState>()(
 						return {
 							...profile,
 							profiles: { ...state.profiles, [gameMode]: profile },
+							...(gameMode === "KORD"
+								? { seasonalProfiles: { ...state.seasonalProfiles, [state.selectedSeasonId]: profile } }
+								: {}),
 							gameMode,
 							isSetupOpen: false,
 						};
@@ -811,6 +947,7 @@ export const useUserStore = create<UserState>()(
 					set(() => ({
 						stationLevels: {},
 						hiddenStations: {},
+						stationGoals: {},
 						completedRequirements: {},
 					}));
 				},
@@ -838,7 +975,11 @@ export const useUserStore = create<UserState>()(
 						document.cookie = serializeActiveGameModeCookie(DEFAULT_GAME_MODE);
 					}
 					// Delete ALL intentionally leaves the active profile with no ignored quests.
-					rawSet(() => ({ ...createDefaultUserState(), ignoredQuests: {} }));
+					rawSet((state) => ({
+						...createDefaultUserState(),
+						seasonalResetRevision: state.seasonalResetRevision + 1,
+						ignoredQuests: {},
+					}));
 				},
 				applyProfilePatch: (patch) => set(patch),
 				convertDeprecatedLegacyState: (targetMode) => {
@@ -848,6 +989,9 @@ export const useUserStore = create<UserState>()(
 					try {
 						rawSet({
 							...convertedProfile,
+							...(targetMode === "KORD"
+								? { seasonalProfiles: { ...state.seasonalProfiles, [state.selectedSeasonId]: convertedProfile } }
+								: {}),
 							profiles: {
 								...state.profiles,
 								[targetMode]: convertedProfile,
@@ -877,7 +1021,15 @@ export const useUserStore = create<UserState>()(
 		{
 			name: USER_STORE_STORAGE_KEY,
 			storage: createJSONStorage(() => createUserStateStorage(localStorage)),
-			version: 24,
+			version: 26,
+			merge: (persisted, current) =>
+				normalizeSeasonProfiles({
+					...current,
+					...(persisted as Partial<UserState>),
+					seasonalProfiles: (persisted as Partial<UserState>)?.seasonalProfiles ?? {
+						[FIRST_SEASON_ID]: (persisted as Partial<UserState>)?.profiles?.KORD ?? current.profiles.KORD,
+					},
+				}),
 			migrate: (persistedState, version) => {
 				let nextState =
 					persistedState && typeof persistedState === "object"
@@ -1158,8 +1310,35 @@ export const useUserStore = create<UserState>()(
 					}
 				}
 
-				return nextState as unknown as UserState;
+				if (version < 25) {
+					// Station goals are new per-profile data; existing saves start with none.
+					const withGoals = (profile: Record<string, unknown>) => ({
+						...profile,
+						stationGoals:
+							typeof profile.stationGoals === "object" && profile.stationGoals !== null ? profile.stationGoals : {},
+					});
+					nextState = { ...withGoals(nextState), itemIgnoreStationGoals: false };
+					if (typeof nextState.profiles === "object" && nextState.profiles !== null) {
+						nextState.profiles = Object.fromEntries(
+							Object.entries(nextState.profiles as Record<string, unknown>).map(([mode, profile]) => [
+								mode,
+								typeof profile === "object" && profile !== null
+									? withGoals(profile as Record<string, unknown>)
+									: profile,
+							]),
+						);
+					}
+				}
+
+				return normalizeSeasonProfiles(nextState as unknown as UserState);
 			},
 		},
 	),
 );
+
+// Remote character selection/edits hydrate through the same migration and projection owner.
+if (typeof window !== "undefined") {
+	window.addEventListener("storage", (event) => {
+		if (event.key === USER_STORE_STORAGE_KEY) void useUserStore.persist.rehydrate();
+	});
+}

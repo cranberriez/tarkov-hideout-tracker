@@ -101,6 +101,9 @@ export function Button({ tone, variant, size, iconOnly, selected, className, typ
 	return (
 		<button
 			{...props}
+			// Firefox restores dynamic disabled state on reload before React hydrates.
+			// This Firefox-specific button attribute is absent from React's button types.
+			{...{ autoComplete: "off" }}
 			type={type}
 			className={buttonClassName({ tone, variant, size, iconOnly, selected, className })}
 		/>

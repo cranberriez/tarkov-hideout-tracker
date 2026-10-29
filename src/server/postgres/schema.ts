@@ -10,8 +10,10 @@ import {
 	pgTable,
 	primaryKey,
 	text,
+	timestamp,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { ItemPresetPart } from "@/types/items";
 
 const modeCheck = (table: string, column = "mode") =>
 	check(`${table}_${column}_check`, sql`${sql.raw(`\"${column}\"`)} in ('regular', 'pve', 'pvp-season')`);
@@ -41,6 +43,9 @@ export const itemModes = pgTable(
 		onFleaMarket: boolean("on_flea_market"),
 		minLevelForFlea: integer("min_level_for_flea"),
 		resourceUnits: numeric("resource_units"),
+		itemTypes: text("item_types").array(),
+		defaultPresetId: text("default_preset_id"),
+		presetContents: json<ItemPresetPart[]>("preset_contents"),
 		category: json("category"),
 		displayOverride: json("display_override"),
 		sourceUpdatedAt: bigint("source_updated_at", { mode: "number" }),
@@ -236,6 +241,52 @@ export const barters = pgTable(
 	],
 );
 
+export const craftInputs = pgTable(
+	"craft_inputs",
+	{
+		craftId: text("craft_id").notNull(),
+		mode: text("mode", { enum: modes }).notNull(),
+		inputKind: text("input_kind", { enum: ["item", "quest"] }).notNull(),
+		position: integer("position").notNull(),
+		itemId: text("item_id").notNull(),
+		count: numeric("count").notNull(),
+		isTool: boolean("is_tool"),
+	},
+	(table) => [
+		primaryKey({ columns: [table.craftId, table.mode, table.inputKind, table.position] }),
+		foreignKey({ columns: [table.craftId, table.mode], foreignColumns: [crafts.id, crafts.mode] }).onDelete("cascade"),
+		index("craft_inputs_mode_item_idx").on(table.mode, table.itemId, table.craftId),
+		check("craft_inputs_position_check", sql`${table.position} >= 0`),
+		check("craft_inputs_count_check", sql`${table.count} > 0 AND ${table.count} < 'Infinity'::numeric`),
+		check("craft_inputs_item_check", sql`length(btrim(${table.itemId})) > 0`),
+		check("craft_inputs_kind_check", sql`${table.inputKind} in ('item', 'quest')`),
+		modeCheck("craft_inputs"),
+	],
+);
+
+export const barterInputs = pgTable(
+	"barter_inputs",
+	{
+		barterId: text("barter_id").notNull(),
+		mode: text("mode", { enum: modes }).notNull(),
+		position: integer("position").notNull(),
+		itemId: text("item_id").notNull(),
+		count: numeric("count").notNull(),
+		isTool: boolean("is_tool"),
+	},
+	(table) => [
+		primaryKey({ columns: [table.barterId, table.mode, table.position] }),
+		foreignKey({ columns: [table.barterId, table.mode], foreignColumns: [barters.id, barters.mode] }).onDelete(
+			"cascade",
+		),
+		index("barter_inputs_mode_item_idx").on(table.mode, table.itemId, table.barterId),
+		check("barter_inputs_position_check", sql`${table.position} >= 0`),
+		check("barter_inputs_count_check", sql`${table.count} > 0 AND ${table.count} < 'Infinity'::numeric`),
+		check("barter_inputs_item_check", sql`length(btrim(${table.itemId})) > 0`),
+		modeCheck("barter_inputs"),
+	],
+);
+
 export const itemPrices = pgTable(
 	"item_prices",
 	{
@@ -357,7 +408,28 @@ export const priceRefreshState = pgTable(
 	() => [modeCheck("price_refresh_state")],
 );
 
+export const feedback = pgTable(
+	"feedback",
+	{
+		id: integer("id").primaryKey().default(1),
+		good: bigint("good", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		bad: bigint("bad", { mode: "bigint" })
+			.notNull()
+			.default(sql`0`),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => [
+		check("feedback_singleton_check", sql`${table.id} = 1`),
+		check("feedback_good_nonnegative_check", sql`${table.good} >= 0`),
+		check("feedback_bad_nonnegative_check", sql`${table.bad} >= 0`),
+	],
+);
+
 export const postgresSchema = {
+	feedback,
 	items,
 	itemModes,
 	traders,
@@ -372,6 +444,8 @@ export const postgresSchema = {
 	questModes,
 	crafts,
 	barters,
+	craftInputs,
+	barterInputs,
 	itemPrices,
 	itemPriceSync,
 	itemDiscovery,

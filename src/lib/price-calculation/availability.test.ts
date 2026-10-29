@@ -80,6 +80,24 @@ const craft = (id: string, output: string, input: string): CraftRecord => ({
 	gameEditions: [],
 });
 
+test("omitting player level removes level gates while keeping item bans and recipe requirements", () => {
+	const gated = { ...item("A"), minLevelForFlea: 30 };
+	assert.equal(getFleaLockReasons(gated, 10).length, 1);
+	assert.deepEqual(getFleaLockReasons(gated, undefined), []);
+	assert.equal(getFleaLockReasons({ ...gated, onFleaMarket: false }, undefined)[0].message, "Not on flea");
+	const recipe = { ...craft("locked", "A", "B"), taskUnlockId: "quest" };
+	const input = { itemsById: { A: gated, B: item("B") }, crafts: [recipe], barters: [], stationLevels: { bench: 0 } };
+	const locked = createRecipeCalculator({ ...input, playerLevel: 10 }).evaluateCraft(recipe);
+	const ignored = createRecipeCalculator({ ...input, playerLevel: undefined }).evaluateCraft(recipe);
+	assert.ok(locked.outputLockReasons.some((reason) => reason.requiredLevel === 30));
+	assert.equal(
+		ignored.outputLockReasons.some((reason) => reason.requiredLevel === 30),
+		false,
+	);
+	assert.ok(ignored.lockReasons.some((reason) => reason.kind === "station"));
+	assert.ok(ignored.lockReasons.some((reason) => reason.kind === "quest"));
+});
+
 test("nested inaccessible recipes fall back and retain quest/station reasons through unpriced parents", () => {
 	const nested = { ...craft("nested", "B", "C"), taskUnlockId: "quest" };
 	const parent = craft("parent", "A", "B");

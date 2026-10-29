@@ -1,6 +1,7 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { postgresSchema } from "./schema";
+import { enableQueryLogging } from "./query-logging";
 
 export const CATALOG_ADVISORY_LOCK_KEY = 7_416_203_911_027_441;
 export type PostgresDatabase = NodePgDatabase<typeof postgresSchema>;
@@ -18,13 +19,15 @@ function createPool(): Pool {
 	const statementTimeout = Number(process.env.PG_STATEMENT_TIMEOUT_MS ?? "30000");
 	if (!Number.isSafeInteger(statementTimeout) || statementTimeout < 1)
 		throw new Error("PG_STATEMENT_TIMEOUT_MS must be a positive safe integer");
-	return new Pool({
+	const pool = new Pool({
 		connectionString,
 		max,
 		idleTimeoutMillis: 30_000,
 		connectionTimeoutMillis: 10_000,
 		statement_timeout: statementTimeout,
 	});
+	enableQueryLogging(pool);
+	return pool;
 }
 
 export function getPostgresPool(): Pool {

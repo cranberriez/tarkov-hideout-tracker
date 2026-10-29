@@ -31,7 +31,7 @@ export function ItemDetailInventory({
 			</div>
 
 			{hasChanges && (
-				<div className="mt-4 flex items-center justify-end gap-2 border-t border-border-color pt-4">
+				<div className="mt-2 flex items-center justify-end gap-2">
 					<button
 						type="button"
 						onClick={onReset}

@@ -1,10 +1,9 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Catalog previews. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import type { ItemSummary } from "@/types/items";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 import { cn } from "@/lib/utils";
 import { summarizeReview, type ReviewEntry } from "./review-model";
 import { foundInRaidLabel } from "./found-in-raid";
@@ -102,7 +101,7 @@ export function UploaderCompletion({
 								key={`${item.id}:${foundInRaid}`}
 								className="flex items-center gap-2 border-b border-border-color/50 py-2 last:border-0"
 							>
-								<img src={itemImageUrl(item)} alt="" className="h-9 w-9 object-contain" />
+								<ItemImage item={item} size={36} aria-label="" />
 								<div className="min-w-0 flex-1">
 									<p className="text-xs text-foreground">{item.name}</p>
 									<p className="text-[10px] text-muted-foreground">{foundInRaidLabel(foundInRaid)}</p>
@@ -139,7 +138,7 @@ export function UploaderCompletion({
 										{item?.name ?? `Missing catalog item: ${entry.itemId}`}
 									</p>
 									<div className="flex items-center gap-2">
-										{item && <img src={itemImageUrl(item)} alt="" className="h-9 w-9 object-contain" />}
+										{item && <ItemImage item={item} size={36} aria-label="" />}
 										<input
 											key={`${entry.id}:${entry.quantity}`}
 											aria-label={`Quantity for ${item?.name ?? entry.itemId}`}

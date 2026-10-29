@@ -1,6 +1,6 @@
 import { DEFAULT_TARKOV_JSON_GAME_MODE } from "../../lib/game-mode";
 import { fetchTarkovJsonDataset, type TarkovJsonDataset, type TarkovJsonGameMode } from "./tarkovJson/client";
-import type { ItemSummary, ItemCategory, TraderPurchaseOffer } from "@/types/items";
+import type { ItemSummary, ItemCategory, ItemPresetPart, TraderPurchaseOffer } from "@/types/items";
 import type { CurrentPrice } from "@/types/prices";
 import type { GlobalSkill } from "@/types/hideout";
 import type { ItemsPayload, SkillsPayload } from "@/types/contracts";
@@ -33,7 +33,8 @@ interface JsonCatalogItem {
 	changeLast48hPercent?: number | null;
 	lastScan?: string | null;
 	types?: string[];
-	properties?: { propertiesType?: unknown; units?: unknown } | null;
+	properties?: { propertiesType?: unknown; units?: unknown; defaultPreset?: unknown } | null;
+	containsItems?: unknown;
 	buyFromTrader?: Array<{
 		trader?: unknown;
 		price?: unknown;
@@ -122,6 +123,37 @@ function resourceUnits(item: JsonCatalogItem): { resourceUnits?: number } {
 		units > 0
 		? { resourceUnits: units }
 		: {};
+}
+
+function referencedId(value: unknown): string | null {
+	if (typeof value === "string") return value || null;
+	const id = typeof value === "object" && value !== null ? (value as { id?: unknown }).id : undefined;
+	return typeof id === "string" && id ? id : null;
+}
+
+/** Preset parts; a malformed entry omits the whole list, since partial contents would misstate a build. */
+function presetContents(value: unknown): ItemPresetPart[] | undefined {
+	if (!Array.isArray(value) || !value.length) return undefined;
+	const parts: ItemPresetPart[] = [];
+	for (const entry of value) {
+		const itemId = referencedId(typeof entry === "object" && entry !== null ? (entry as { item?: unknown }).item : null);
+		const count = typeof entry === "object" && entry !== null ? (entry as { count?: unknown }).count : null;
+		if (!itemId || typeof count !== "number" || !Number.isInteger(count) || count <= 0) return undefined;
+		parts.push({ itemId, count });
+	}
+	return parts;
+}
+
+function presetFields(item: JsonCatalogItem): Pick<ItemSummary, "itemTypes" | "defaultPresetId" | "presetContents"> {
+	const itemTypes = (item.types ?? []).filter((type): type is string => typeof type === "string");
+	const defaultPresetId =
+		item.properties?.propertiesType === "ItemPropertiesWeapon" ? referencedId(item.properties.defaultPreset) : null;
+	const contents = itemTypes.includes("preset") ? presetContents(item.containsItems) : undefined;
+	return {
+		itemTypes,
+		...(defaultPresetId ? { defaultPresetId } : {}),
+		...(contents ? { presetContents: contents } : {}),
+	};
 }
 
 function mapTraderPurchaseOffer(value: unknown, itemId: string): TraderPurchaseOffer {
@@ -237,6 +269,7 @@ function mapItem(
 		// item materially inflates all catalog cache and RSC payloads.
 		category,
 		...resourceUnits(item),
+		...presetFields(item),
 		...(item.buyFromTrader == null
 			? {}
 			: {

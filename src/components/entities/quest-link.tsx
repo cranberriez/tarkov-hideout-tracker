@@ -10,6 +10,7 @@ import { questHref } from "@/lib/entity-routes";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/quests/quest-trader-gates";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
+import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
 import { decodeSearchManifest } from "@/lib/search/manifest";
 import { searchIdentityOptions, searchManifestOptions } from "@/lib/search/query";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -43,7 +44,7 @@ export function QuestLink({
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	const prepare = async () => {
 		const workspace = client.getQueryData(questWorkspacePageQueryOptions(mode).queryKey);
-		const cachedQuest = quest ?? workspace?.quests?.find((entry) => entry.id === questId);
+		const cachedQuest = quest ?? expandQuestSummaries(workspace?.quests ?? []).find((entry) => entry.id === questId);
 		const suppliedImage = cachedQuest?.trader.image4xLink ?? cachedQuest?.trader.imageLink;
 		if (suppliedImage) return preloadHoverImage(suppliedImage);
 		const identity = await client.ensureQueryData(searchIdentityOptions(mode));
@@ -71,7 +72,7 @@ function useCachedQuest(questId: string, quest: QuestWorkspaceQuest | null | und
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
 	if (quest) return quest;
 	const data = client.getQueryData(questWorkspacePageQueryOptions(mode).queryKey);
-	return data?.quests?.find((entry) => entry.id === questId) ?? null;
+	return expandQuestSummaries(data?.quests ?? []).find((entry) => entry.id === questId) ?? null;
 }
 
 function objectiveItemLines(objectives: FullQuestObjective[], itemNames: ReadonlyMap<string, string>) {

@@ -45,8 +45,15 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 	);
 	const mode = toTarkovJsonGameMode(user.gameMode);
 	const { overrides, setItemOverride } = useManualPriceOverrides(user.gameMode);
-	const { craftingSkillLevel, hideoutManagementSkillLevel, useTraderSaleForLockedOutputs, allowCrafts, allowBarters } =
-		useProfitOptions(user.gameMode);
+	const {
+		craftingSkillLevel,
+		hideoutManagementSkillLevel,
+		useTraderSaleForLockedOutputs,
+		allowCrafts,
+		allowBarters,
+		ignorePlayerLevel,
+	} = useProfitOptions(user.gameMode);
+	const pricingPlayerLevel = ignorePlayerLevel ? undefined : user.playerLevel;
 	const treeQuery = useQuery(itemAcquisitionQueryOptions(mode, target.outputItem.id, { withPrices: true }));
 	const tree = treeQuery.data;
 	const priceIds = useMemo(() => (tree ? tree.items.map((item) => item.id).filter(isPriceItemId) : []), [tree]);
@@ -71,7 +78,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 						crafts: tree.crafts,
 						craftingSkillLevel,
 						hideoutManagementSkillLevel,
-						playerLevel: user.playerLevel,
+						playerLevel: pricingPlayerLevel,
 						stationLevels: user.stationLevels,
 						useTraderSaleForLockedOutputs,
 						allowCrafts,
@@ -86,7 +93,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 			itemById,
 			craftingSkillLevel,
 			hideoutManagementSkillLevel,
-			user.playerLevel,
+			pricingPlayerLevel,
 			user.stationLevels,
 			useTraderSaleForLockedOutputs,
 			allowCrafts,
@@ -127,7 +134,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 	);
 	const pricingContext = useMemo(
 		() => ({
-			playerLevel: user.playerLevel,
+			playerLevel: pricingPlayerLevel,
 			useTraderSaleForLockedOutputs,
 			stationLevels: user.stationLevels,
 			hideoutManagementSkillLevel,
@@ -139,7 +146,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 			},
 		}),
 		[
-			user.playerLevel,
+			pricingPlayerLevel,
 			useTraderSaleForLockedOutputs,
 			user.stationLevels,
 			hideoutManagementSkillLevel,

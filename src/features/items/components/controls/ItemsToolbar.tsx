@@ -13,6 +13,7 @@ import { CHECKLIST_SORT_OPTIONS, type ChecklistSort, type ChecklistSortKey } fro
 import type { ItemSize, ItemSourceFilter } from "@/lib/stores/useUserStore";
 
 interface ItemsToolbarProps {
+	activeFilterCount: number;
 	sort: ChecklistSort;
 	onSortSelect: (key: ChecklistSortKey) => void;
 	filtersOpen: boolean;
@@ -31,6 +32,7 @@ interface ItemsToolbarProps {
 }
 
 export function ItemsToolbar({
+	activeFilterCount,
 	sort,
 	onSortSelect,
 	filtersOpen,
@@ -48,9 +50,9 @@ export function ItemsToolbar({
 	onUseCategorizationChange,
 }: ItemsToolbarProps) {
 	return (
-		<FilterBar aria-label="Item filters">
+		<FilterBar className="relative z-40" aria-label="Item filters">
 			<FilterPanelButton open={filtersOpen} panelId={panelId} onClick={onToggleFilters}>
-				<Filter size={14} /> Filters
+				<Filter size={14} /> Filters ({activeFilterCount})
 			</FilterPanelButton>
 			<FilterMultiSelect
 				label="Sort"

@@ -13,16 +13,69 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 | `/hideout`                                         | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades                                                                                                                                                                           |
 | `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
 | `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
+| `/story`, `/story/[chapterId]`                     | [Story index](<../src/app/(data)/story/page.tsx>) and [chapter tracker](<../src/app/(data)/story/[chapterId]/page.tsx>) from static hand-authored data (untracked chapters get a placeholder); no server reads; see [quests](quests.md#story-chapters)                                  |
 | `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
 | `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
 | `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
+| `/items/market`                                   | [Market analysis](<../src/app/(data)/items/market/page.tsx>): whole-market flea swings for flea-sellable items from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
+| `/games`                                          | [Games hub](<../src/app/(data)/games/page.tsx>): links to each game with its saved best score; listed with Battle Pass at the top of the secondary (☰) menu. Game routes (`/games/*`) hide the footer and refuse the navbar search (button and Ctrl/⌘ K shake red) |
+| `/games/higher-lower`                             | [Higher or Lower](<../src/app/(data)/games/higher-lower/page.tsx>): item value guessing from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
+| `/games/do-i-need-it`                             | [Do I Need It?](<../src/app/(data)/games/do-i-need-it/page.tsx>): pick an item the active profile still needs (the Loot Scanner's demand model over uploader requirements, minus owned inventory) among same-category decoys from the search manifest. After setup each visit asks whether to use that progress or play without it (a fresh profile, always used before setup); a header button reopens the choice |
+| `/games/trader-alibi`                             | [Trader Alibi](<../src/app/(data)/games/trader-alibi/page.tsx>): ask for quest objective, barter or sold-item clues and guess the trader; [clue data](../src/server/db/trader-alibi.ts) for the core traders, item names from the search manifest |
 | `/items/inventory`                                 | [Inventory](<../src/app/(data)/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
 | `/uploader`                                        | [Loot Scanner](<../src/app/(data)/uploader/page.tsx>) (beta): browser OCR, item-label matching, and keep/sell sorting; see below                                                                                                                      |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
+| `/sync`                                            | [Desktop companion sync](<../src/app/(data)/sync/page.tsx>): pair with the Mappinator app, view the quest/raid activity feed, raw protocol log and review log-recovered events; see [user state](user-state.md#companion-sync) |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
+| `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
+| `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
+
+Maps follows Quests in the main navigation as a direct link without map submenus.
+The secondary menu groups Battle Pass and Games, then News, then Settings,
+Setup, Sync, and Feedback. Sync (including its status indicator and background
+controller) is available only in development or when `syncEnabled=true`; otherwise
+`/sync` and `/api/group/auth` return 404. Every entry has an icon. Development builds add Dev
+in a final separate section. Mobile also lists the main navigation pages in this menu.
+Seasonal overview routes have been removed; Battle Pass remains available in every mode.
+Without an explicit `?season=season-1` or `?season=season-2`, Battle Pass uses the
+selected KORD character's season or the available season for permanent profiles.
+Test content is clearly labeled as placeholder data. Profile activation/history is
+described in [user state](user-state.md#seasonal-activation-and-history).
+
+Battle Pass supports `/battle-pass?page=N#pass-page-N`: it validates the one-based
+query page, selects a responsive spread containing it, and scrolls to that page's
+heading in gallery or saved list view. This navigation is transient and does not
+change preferences, completion, inventory, or goals.
+
+The [Battle Pass feature](../src/features/battle-pass/BattlePassPage.tsx) composes
+its panels and reward views from `components/`, reusable presentation elements
+from `components/ui/`, and pure planning logic and display data from `lib/`.
+Its page and bottom minimap use the navbar's responsive container widths.
+Reward and document artwork is bundled in `public/images/battle-pass` and rendered
+with lazy-loaded Next.js `Image` components, including the existing unavailable-image fallbacks.
+Reward rows adapt to viewport height with a readable minimum; short screens and
+expanded planning panels can still scroll.
+The top overview groups completion, planning/display controls, plan totals, and
+an icon-and-quantity row of documents still to collect, and Breakdown. The row
+uses the same inventory and classified allocation as the totals, including
+classified documents needed for avoided types. With no saved goals, the plan
+defaults to Everything; completed rewards remain excluded.
+The collect row, reward costs, planner breakdown, and document inventory all use
+the same DocumentChip: its hover label and glow identify the document, and
+clicking opens map names from the shared location data. Classified documents
+show their Expansion Hub source instead.
+Location dropdowns are non-modal: clicking another chip switches directly to it,
+and clicking elsewhere dismisses the dropdown without blocking that click.
+Page navigation is centered above the reward cards, with the document
+consumption toggle aligned right and retained in list view. The same toggle also
+appears below Total in the document panel. Reward document costs turn green with
+a checkmark when the effective owned balance covers that displayed cost.
+Locations expands below the overview with map columns and an optional comparison table.
+The overview's Document map link opens the [maps explorer](maps.md#battle-pass-document-maps)
+with the Documents preset.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
@@ -31,6 +84,13 @@ entity-specific titles, descriptions, and canonical URLs. Missing IDs render
 not-found states; failed reads report errors instead of 404s. Pages render public
 identity from server data; player progress hydrates afterwards. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
+
+Unmatched URLs use the root [404 page](../src/app/not-found.tsx), below the shared
+navbar. Its MIA banner and recovery controls need no entity reads; Back to Hideout
+links to `/hideout`, while Go Back uses browser history with a Hideout fallback
+when no previous history entry exists. The fade-in and finite decorative coin
+shower respect reduced motion. Entity-specific not-found views remain local to
+their routes.
 
 Search metadata uses `https://tarkovhideout.com` as the canonical origin.
 The root marks all other hosts (including dev and previews) `noindex`; settings
@@ -50,6 +110,17 @@ with bundled portraits and the saved level (a crown when maxed), so the shared
 layout still fetches no station data. The
 [(data) layout](<../src/app/(data)/layout.tsx>) supplies the footer and profile
 conversion UI without loading metadata or entity arrays for descendants.
+Both layouts supply empty side divs around their page content. The wrapper directly
+containing a `main` uses equal flexible sides to center its existing responsive
+width. Full-width mains leave no side space. The global
+[SiteRating](../src/features/site-rating/SiteRating.tsx) floats at the bottom right
+and measures the right safezone: horizontal at 128px, vertical at 72px, and a
+caret below that. The caret opens a sliding pill. Votes use a validated anonymous
+[server action](../src/features/site-rating/actions.ts); its
+[recorder](../src/server/site-rating/record-site-rating.ts) currently logs only
+`good`/`bad` and reserves a place for future storage. Only a completed recorder
+counts as success. Positive votes show a pulsing heart then disappear; negative
+votes offer the shared Google feedback form and close after 30 seconds or X.
 
 The root layout also supplies one browser [QueryProvider](../src/lib/query/QueryProvider.tsx)
 across route navigation. TanStack Query owns reusable server-data requests,
@@ -153,7 +224,14 @@ the shared unpriced profit query; profit uses the profit pages' calculator and p
 
 [item-pooling.ts](../src/lib/utils/item-pooling.ts) aggregates stable requirement
 IDs and item IDs across remaining levels or just the next level. Hidden stations
-and individually completed requirements affect demand. [item-needs.ts](../src/lib/utils/item-needs.ts)
+and individually completed requirements affect demand. Station goals cap each
+station's counted levels: [station-goals.ts](../src/lib/utils/station-goals.ts)
+resolves a saved goal (unset means max level, 0 means ignore) and raises it to cover
+unbuilt station prerequisites of other goal levels. The Hideout page's Goals toggle
+swaps card bodies for the level picker (page-local state). Goals cap the Hideout
+FiR pool, the Items checklist and stats (unless the Items filter Ignore Station Goals
+is on), and Inventory/uploader keep-or-sell demand; item and station detail pages
+are not capped. [item-needs.ts](../src/lib/utils/item-needs.ts)
 computes outstanding counts against inventory. Missing item presentation must
 remain an explicit unresolved requirement: it cannot enable an upgrade or discard
 an ID-based refund.
@@ -520,6 +598,12 @@ derives inventory, demand, market, usage, and recipe values for both the dialog 
 the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
 owns mode-aware relations, usage, and acquisition queries with partial-error handling.
+Relations load on open for header totals and the Hideout/Quests tabs. Traders and
+Crafting enable usage and acquisition queries only while selected, reusing the
+existing mode/item caches. Until then only the selected item's price is requested;
+recipe ingredient prices are deferred with those graphs. Tabs start on Hideout for
+each item/mode and do not automatically select an unloaded recipe tab. Unknown
+recipe counts are omitted, and empty tabs show explicit empty states.
 Below `lg`, the item dialog fills the full dynamic viewport even with short or
 loading content. The dialog itself is the vertical scroll surface: Back, the
 header, inventory, market and the active usage tab all scroll together. Back occupies
@@ -531,11 +615,11 @@ The shared item header presents requirement totals as a compact two-column
 text grid below `lg`, retaining the bordered summary on desktop.
 
 `/items/[itemId]` still exists but nothing links to it yet. It server-renders its
-rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts) reads the
-same unpriced stored views the item API routes serve; complete views are hydrated
-into the client query keys and partial views are passed as retryable fallbacks. Every
-data tab renders (inactive ones `hidden`), so hideout, quest, trade, and craft rows are
-in the server HTML. Rows are always shown; profile-dependent status (available/locked
+initial Hideout rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts)
+selects only the unpriced relations view; complete data is hydrated into the client
+query key and partial data is passed as a retryable fallback. Usage and acquisition
+remain deferred until their tabs are selected, matching the dialog. Only the active
+panel renders. Profile-dependent status (available/locked
 badges, lock reasons, availability ordering, current station level, quest status) is
 rendered client-side only after the saved profile loads. Until then the controller
 derives from the store's initial state so server HTML and the hydration render agree.
@@ -556,7 +640,9 @@ retryable. Recipe calculations reuse the
 Small primitives in [components/ui](../src/components/ui/) own presentation and
 accessibility; features own state and meaning. [Button](../src/components/ui/button.tsx)
 (`buttonClassName` for links) provides size, tone, soft/solid/ghost, selected, and
-focus variants; [Badge](../src/components/ui/badge.tsx) keeps FiR, locked, completed,
+focus variants. Buttons disable Firefox's restoration of dynamic disabled state
+across reloads so React can hydrate the server-rendered attributes consistently.
+[Badge](../src/components/ui/badge.tsx) keeps FiR, locked, completed,
 active, and milestone meanings on their palette roles;
 [RequirementRow/RequirementChip](../src/components/ui/requirement.tsx) render a
 satisfied/unmet/untracked state that domain code decides;
@@ -569,14 +655,36 @@ shares loading/failed/unavailable/estimate price states without merging purchase
 cost, gross sale, net sale, and profit.
 
 [ItemImage](../src/components/entities/item-image.tsx) is the shared square item image
-API. Its only required prop is `item` (a name and optional image URLs); the default
-is a display-only, unframed 44px square. Optional `size`, `foundInRaid`, `completed`,
+API. Use it for new item icons and when replacing feature-local raw images. Keep
+existing links, buttons, cards, prices, and other custom UI in their
+owning feature; drop a display-only `ItemImage` into those wrappers rather than
+moving feature behavior into the icon. Its only required prop is `item` (a name and optional image URLs); the default
+is a display-only, unframed 44px square. Optional `size`, `foundInRaid`, `tool`, `completed`,
 `quantity` (number or formatted progress), `selected`, and `framed` cover standard
-variants; noninteractive `children` allow price/tool overlays. Completion replaces
-the top-right FiR marker with the hideout requirement grid's green circular check
-badge, offset 4px outside the corner, without dimming or desaturating the image.
-FiR and quantity overlays extend 1px past their corners to overlap the slot border;
-the gallery's price/tool chips use the same edge alignment and compact typography.
+variants; noninteractive `children` allow caller-owned overlays. Compact Hideout
+requirements overlay price and inventory/required quantity inside the square;
+the feature owns their formatting and calculation and keeps 4px padding around
+the artwork. Trades and Crafting recipe inputs in item details show shortnames for
+recipes that produce the viewed item and omit visible names in recipes that use it,
+while retaining quantities, badges, accessible names, and previews; outputs
+retain their names and barter limits. `ItemReference` composes `ItemImage` for both
+its chip and row layouts. The `tool` boolean shows a solid blue wrench inside the
+icon's bottom-left corner with a "Reusable tool (not consumed)" tooltip. Modal and
+station crafting inputs pass their tool flag directly, without an adjacent tool chip.
+Recipe cost recommendations match both
+the item ID and tool status, keeping consumed and reusable entries distinct.
+Completed icons dim and grayscale the artwork, hide FiR, tool,
+quantity, and caller-owned overlays, and show a green checkmark centered over the
+image. Selection remains visible. Standard frames have square corners; feature
+wrappers retain their own styling.
+Quest workspace objective previews show up to 10 item icons before an expandable
+more button, with quantity and FiR overlays and names available through previews.
+Item-detail trader, barter, and crafting rows share the quest rows' subtle gray hover background.
+Item-detail and hover demand totals use the specific-item quest index: alternative
+groups remain visible as uses but neither add FiR demand to every eligible item nor
+subtract from that item's independent specific requirements.
+FiR, tool, and quantity overlays extend 1px past their corners to overlap the slot border;
+the gallery's custom price overlay uses the same edge alignment and compact typography.
 Selection is a 1px border inset by 1px; quantities use a flat, borderless bottom-right chip.
 `opensModal` requires
 an item ID and reuses ItemLink's dialog and hover preview (`preview={false}` disables
@@ -584,7 +692,8 @@ the latter). `onClick` adds a custom action; when combined with `opensModal`, ca
 `preventDefault()` cancels opening. Use a display-only image inside existing buttons.
 The shared ItemThumbnail renderer tries icon, 512px, grid, then base images, advancing
 on load failure and finally showing a placeholder. Existing thumbnail consumers use
-the same renderer; feature-local images can migrate separately. The development-only
+the same renderer. Retain specialized grid artwork and custom surrounding layouts
+where they serve a different purpose than an item icon. The development-only
 [/dev gallery](../src/app/dev/ItemImageGallery.tsx) shows minimal usage, all 32 visual
 boolean combinations, sizes, interactions, and fallback cases without saving progress.
 

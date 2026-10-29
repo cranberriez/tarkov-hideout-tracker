@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { Minus, Plus, X } from "lucide-react";
 import type { PendingItem } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { hasQuickAddCount } from "./quick-add-model";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 type CountKey = "fir" | "nonFir";
 
@@ -33,7 +32,7 @@ export function QuickAddItemRow({
 		>
 			<div className="flex w-full flex-1 items-center gap-3 sm:w-auto">
 				<div className="relative h-10 w-10 min-w-10 overflow-hidden rounded border border-highlight/5 bg-shadow/40">
-					<Image src={itemImageUrl(pending.item)} alt="" fill className="object-contain" unoptimized />
+					<ItemImage item={pending.item} size={38} />
 				</div>
 				<div className="min-w-0">
 					<div className="truncate text-sm font-medium" title={pending.item.name}>

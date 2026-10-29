@@ -5,8 +5,11 @@ import { gameDataKey } from "./scope";
 import type { QuestWorkspaceIndexData } from "../../types/quest-workspace";
 import type {
 	HideoutPageData,
+	HigherLowerPageData,
+	TraderAlibiPageData,
 	ItemChecklistPageData,
 	KappaChecklistPageData,
+	MarketPageData,
 	ProfitPageData,
 	QuestWorkspacePageData,
 } from "../../types/contracts";
@@ -33,6 +36,11 @@ export function isCompleteKappaChecklistPageData(data: KappaChecklistPageData) {
 
 export function isCompleteProfitPageData(data: ProfitPageData) {
 	return Boolean(data.items && Object.values(data.errors).every((error) => error === null));
+}
+
+/** Malformed rows are left out and reported, so only a missing analytics schema is incomplete. */
+export function isCompleteMarketPageData(data: MarketPageData) {
+	return data.error === null && data.invalidCount === 0;
 }
 
 function pageQueryOptions<T>(
@@ -91,14 +99,14 @@ export function itemChecklistPageQueryOptions(mode: TarkovJsonGameMode) {
 }
 
 export function questWorkspacePageQueryOptions(mode: TarkovJsonGameMode, devQuery: string | null = null) {
-	const params = new URLSearchParams({ mode, format: "index-v1" });
+	const params = new URLSearchParams({ mode, format: "index-v2" });
 	if (devQuery) params.set("q", devQuery);
 	return pageQueryOptions<QuestWorkspaceIndexData>(
 		mode,
 		"quests-page",
 		`/api/page-data/quests?${params}`,
 		isCompleteQuestWorkspaceIndex,
-		[devQuery, "index-v1"],
+		[devQuery, "index-v2"],
 	);
 }
 
@@ -123,6 +131,37 @@ export function profitPageQueryOptions(mode: TarkovJsonGameMode) {
 		isCompleteProfitPageData,
 		["unpriced-v1"],
 	);
+}
+
+/** The market page renders its explicit partial states itself, so the payload is never rejected. */
+export function marketPageQueryOptions(mode: TarkovJsonGameMode) {
+	return queryOptions({
+		queryKey: gameDataKey(mode, "market-page"),
+		queryFn: ({ signal }) => fetchJson<MarketPageData>(`/api/page-data/market?mode=${mode}`, { signal }),
+		staleTime: PAGE_DATA_STALE_TIME,
+		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
+	});
+}
+
+/** Like the market page, the game renders a missing analytics schema itself. */
+export function higherLowerQueryOptions(mode: TarkovJsonGameMode) {
+	return queryOptions({
+		queryKey: gameDataKey(mode, "higher-lower"),
+		queryFn: ({ signal }) =>
+			fetchJson<HigherLowerPageData>(`/api/page-data/games/higher-lower?mode=${mode}`, { signal }),
+		staleTime: PAGE_DATA_STALE_TIME,
+		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
+	});
+}
+
+export function traderAlibiQueryOptions(mode: TarkovJsonGameMode) {
+	return queryOptions({
+		queryKey: gameDataKey(mode, "trader-alibi"),
+		queryFn: ({ signal }) =>
+			fetchJson<TraderAlibiPageData>(`/api/page-data/games/trader-alibi?mode=${mode}`, { signal }),
+		staleTime: PAGE_DATA_STALE_TIME,
+		meta: { retentionGroup: "page-data", inactiveQueryLimit: 12 },
+	});
 }
 
 export function pageDataFromQuery<T>(data: T | undefined, error: Error | null, fallbackData: T | null): T | null {

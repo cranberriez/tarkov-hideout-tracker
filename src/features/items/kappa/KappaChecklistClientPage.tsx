@@ -8,11 +8,12 @@ import { BadgeCheck, Check } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemLink } from "@/components/entities/item-link";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { KappaChecklistPageData } from "@/types/contracts";
-import { itemImageUrl } from "@/lib/utils/item-images";
+import { ItemImage } from "@/components/entities/item-image";
 
 interface KappaChecklistClientPageProps extends Pick<
 	KappaChecklistPageData,
@@ -35,6 +36,7 @@ export function KappaChecklistClientPage({
 }: KappaChecklistClientPageProps) {
 	const collectorItems = useDeferredPriceItems(initialItems) ?? EMPTY_ITEMS;
 	const gameMode = useUserStore((state) => state.gameMode);
+	const scope = useProfileStorageScope(gameMode);
 	const { completedItemsByMode, viewMode, setViewMode, toggleCompletedItem } = useKappaStore(
 		useShallow((state) => ({
 			completedItemsByMode: state.completedItemsByMode,
@@ -43,7 +45,7 @@ export function KappaChecklistClientPage({
 			toggleCompletedItem: state.toggleCompletedItem,
 		})),
 	);
-	const completedItems = useMemo(() => completedItemsByMode[gameMode] ?? {}, [completedItemsByMode, gameMode]);
+	const completedItems = useMemo(() => completedItemsByMode[scope] ?? {}, [completedItemsByMode, scope]);
 
 	const sortedCollectorItems = useMemo(
 		() => [...collectorItems].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
@@ -167,10 +169,9 @@ export function KappaChecklistClientPage({
 											aria-label={`Open ${item.name} details`}
 										>
 											<span className="absolute -inset-[3px] flex items-center justify-center overflow-hidden">
-												<img
-													src={itemImageUrl(item)}
-													alt=""
-													className={`h-full w-full object-contain transition-opacity ${
+												<ItemImage
+													item={item}
+													className={`absolute inset-0 size-full! transition-opacity ${
 														isCompleted ? "opacity-45" : "group-hover:opacity-90"
 													}`}
 												/>
@@ -178,7 +179,7 @@ export function KappaChecklistClientPage({
 										</ItemLink>
 										<button
 											type="button"
-											onClick={() => toggleCompletedItem(gameMode, item.id)}
+											onClick={() => toggleCompletedItem(scope, item.id)}
 											aria-pressed={isCompleted}
 											aria-label={`${isCompleted ? "Mark as needed" : "Mark as collected"}: ${item.name}`}
 											title={`${isCompleted ? "Mark as needed" : "Mark as collected"}: ${item.name}`}

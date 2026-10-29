@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
-import { Check, CircleCheckBig, PackageOpen } from "lucide-react";
+import { Check, CircleCheckBig, PackageOpen, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { itemImageCandidates, type ItemImageSource } from "@/lib/utils/item-images";
 
@@ -21,12 +21,15 @@ export interface ItemImageAppearance {
 	size?: number | ItemThumbnailSize;
 	framed?: boolean;
 	foundInRaid?: boolean;
+	/** Reusable tool marker in the bottom-left corner. */
+	tool?: boolean;
+	/** Grayscale the art, hide informational overlays, and show a centered check. */
 	completed?: boolean;
 	selected?: boolean;
 	/** A count or formatted progress, e.g. 3 or "3/5". */
 	quantity?: number | string;
 	className?: string;
-	/** Extra noninteractive overlays, such as a price or tool badge. */
+	/** Extra noninteractive overlays, such as a price or tool badge; hidden when completed. */
 	children?: ReactNode;
 }
 
@@ -38,6 +41,7 @@ export function ItemThumbnail({
 	className,
 	children,
 	foundInRaid = false,
+	tool = false,
 	completed = false,
 	selected = false,
 	quantity,
@@ -53,11 +57,11 @@ export function ItemThumbnail({
 			style={{ width: edge, height: edge }}
 			className={cn(
 				"relative inline-flex shrink-0 items-center justify-center align-middle",
-				framed && "rounded-sm border border-highlight/12 bg-shadow/30",
+				framed && "border border-highlight/12 bg-shadow/30",
 				className,
 			)}
 		>
-			<ThumbnailSource key={JSON.stringify(sources)} sources={sources} edge={edge} />
+			<ThumbnailSource key={JSON.stringify(sources)} sources={sources} edge={edge} completed={completed} />
 			{selected && <span aria-hidden="true" className="pointer-events-none absolute inset-px border border-brand" />}
 			{foundInRaid && !completed && (
 				<CircleCheckBig
@@ -71,18 +75,28 @@ export function ItemThumbnail({
 				<span
 					aria-label="Completed"
 					role="img"
-					className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-background bg-success text-inverse shadow-sm"
+					className="pointer-events-none absolute inset-0 flex items-center justify-center bg-shadow/40 text-success"
 				>
-					<Check aria-hidden="true" size={10} strokeWidth={3} />
+					<Check aria-hidden="true" size={Math.min(24, edge / 2)} strokeWidth={2} />
 				</span>
 			)}
-			{quantity !== undefined && <ItemQuantityBadge label={String(quantity)} />}
-			{children}
+			{!completed && tool && (
+				<span
+					role="img"
+					aria-label="Reusable tool"
+					title="Reusable tool (not consumed)"
+					className="absolute -bottom-px -left-px inline-flex bg-background/90 p-0.5 text-info"
+				>
+					<Wrench size={12} fill="currentColor" strokeWidth={1.5} aria-hidden="true" />
+				</span>
+			)}
+			{!completed && quantity !== undefined && <ItemQuantityBadge label={String(quantity)} />}
+			{!completed && children}
 		</span>
 	);
 }
 
-function ThumbnailSource({ sources, edge }: { sources: string[]; edge: number }) {
+function ThumbnailSource({ sources, edge, completed }: { sources: string[]; edge: number; completed: boolean }) {
 	const [index, setIndex] = useState(0);
 	const src = sources[index];
 	return src ? (
@@ -93,10 +107,13 @@ function ThumbnailSource({ sources, edge }: { sources: string[]; edge: number })
 			height={edge}
 			unoptimized
 			onError={() => setIndex((current) => current + 1)}
-			className="size-full object-contain"
+			className={cn("size-full object-contain", completed && "opacity-50 grayscale")}
 		/>
 	) : (
-		<PackageOpen aria-hidden="true" className="size-1/2 text-subtle-foreground" />
+		<PackageOpen
+			aria-hidden="true"
+			className={cn("size-1/2 text-subtle-foreground", completed && "opacity-50 grayscale")}
+		/>
 	);
 }
 

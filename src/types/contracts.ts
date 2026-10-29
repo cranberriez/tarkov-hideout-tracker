@@ -169,6 +169,108 @@ export interface ItemMarketAnalyticsPayload {
 	data: ItemMarketAnalytics;
 }
 
+/** One flea-sellable item's latest observation, trimmed to the fields the market page shows. */
+export type MarketOverviewItem = Pick<
+	ItemMarketAnalytics,
+	| "calculatedAt"
+	| "confidence"
+	| "trend"
+	| "marketValue"
+	| "currentLevel"
+	| "liveOfferCount"
+	| "median7d"
+	| "median30d"
+	| "rangeLow7d"
+	| "rangeHigh7d"
+	| "change24h"
+	| "change7d"
+	| "change24hRub"
+	| "change7dRub"
+	| "move12h"
+	| "percentile30d"
+	| "volatility7d"
+	| "depthMedian24h"
+	| "traderValue"
+	| "traderId"
+	| "fleaFee"
+	| "fleaNet"
+> & {
+	id: string;
+	name: string;
+	shortName: string | null;
+	category: string | null;
+	shock: {
+		phase: "holding" | "retracing" | "settled" | "reverted";
+		baseline: number | null;
+		extreme: number | null;
+		retracement: number | null;
+	} | null; /** Recent minimum-listing flea prices (about a day, roughly evenly spaced), oldest first; null with fewer than two. */
+	sparkline: { from: number; to: number; prices: number[] } | null;
+};
+
+export interface MarketPageData {
+	mode: TarkovDataMode;
+	latestRun: { startedAt: number; completedAt: number; status: string } | null;
+	/** Flea-sellable items with at least one analyzer observation in this mode. */
+	items: MarketOverviewItem[];
+	/** Malformed or out-of-range observation rows left out of `items`. */
+	invalidCount: number;
+	/** Set when the analytics tables are missing; items is then empty. */
+	error: string | null;
+}
+
+/**
+ * One Higher or Lower card: a confident flea 7-day median, else the cheapest rouble trader price; presets without
+ * either are estimated from their parts.
+ */
+export interface HigherLowerItem {
+	id: string;
+	name: string;
+	value: number;
+	source: "flea" | "trader" | "parts";
+	/** Only when the 512px image does not follow the standard pattern; read through itemImageUrl. */
+	image512pxLink?: string;
+}
+
+export interface HigherLowerPageData {
+	mode: TarkovDataMode;
+	items: HigherLowerItem[];
+	/** Set when the analytics tables or catalog preset columns are missing; items is then empty. */
+	error: string | null;
+}
+
+export interface TraderAlibiItemCount {
+	itemId: string;
+	count: number;
+}
+
+/** Clues for Trader Alibi; item names and images come from the search manifest. */
+export interface TraderAlibiPageData {
+	mode: TarkovDataMode;
+	/**
+	 * Single objectives of each trader's quests (removed quests excluded), without quest names. Trader names
+	 * in the text are replaced. Single-item hand-ins carry the item so the client can show it.
+	 */
+	objectives: Array<{
+		traderId: string;
+		type: string;
+		text: string;
+		count: number;
+		itemId?: string;
+		foundInRaid?: boolean;
+		/** Maps the text does not already name. */
+		maps: string[];
+	}>;
+	barters: Array<{
+		traderId: string;
+		level: number;
+		output: TraderAlibiItemCount;
+		inputs: TraderAlibiItemCount[];
+	}>;
+	/** Items a trader sells for cash, at the loyalty level that unlocks them. */
+	offers: Array<{ traderId: string; itemId: string; level: number }>;
+}
+
 export interface HideoutStationsPayload {
 	stations: Station[];
 }

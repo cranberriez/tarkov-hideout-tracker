@@ -1,11 +1,10 @@
-import Image from "next/image";
+import { ItemImage } from "@/components/entities/item-image";
 import { CornerDownRight, ExternalLink } from "lucide-react";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
 import type { GoToRecipeHandler, RouteContext } from "../types";
 import { formatDuration, formatQuantity, formatRoundedRoubles } from "../utils/formatters";
 import { describeChainRoute, getPlanRecipePreview } from "../utils/recipes";
 import { routeChipClasses } from "./RouteIcon";
-import { itemImageUrl } from "@/lib/utils/item-images";
 
 /** Nested ingredients of one recipe-routed ingredient, rendered directly under its line. */
 export function RecipeChainBranch({
@@ -61,14 +60,7 @@ function RecipeChainNode({
 			>
 				<CornerDownRight className="size-3.5 shrink-0 text-foreground/25" />
 				{item ? (
-					<Image
-						src={itemImageUrl(item)}
-						alt=""
-						width={28}
-						height={28}
-						className="size-7 shrink-0 object-contain"
-						unoptimized
-					/>
+					<ItemImage item={item} size={28} className="size-7 shrink-0 object-contain" />
 				) : (
 					<span className="size-7 shrink-0" />
 				)}

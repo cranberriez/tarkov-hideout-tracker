@@ -2,10 +2,6 @@ import { Check, LockKeyhole } from "lucide-react";
 import type { AcquisitionPlan } from "@/lib/price-calculation";
 import { formatCompactRoubles } from "@/lib/utils/market-price";
 
-export function ToolBadge() {
-	return <span className="shrink-0 rounded bg-info/10 px-1 py-0.5 text-[9px] font-bold uppercase text-info">Tool</span>;
-}
-
 export function RecommendationBadge({ plan, unstable }: { plan: AcquisitionPlan; unstable: boolean }) {
 	const label =
 		plan.method === "empty"

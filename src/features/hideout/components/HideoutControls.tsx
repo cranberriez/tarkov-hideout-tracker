@@ -3,7 +3,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { FilterBar, FilterRadioGroup, FilterToggle } from "@/components/ui/filter-bar";
-import { Eye, EyeOff, Grid2x2, Rows2 } from "lucide-react";
+import { Eye, EyeOff, Goal, Grid2x2, Rows2 } from "lucide-react";
 
 const layoutOptions = [
 	{ value: "expanded", label: "Expanded view", icon: <Rows2 size={14} aria-hidden="true" /> },
@@ -33,7 +33,13 @@ function VisibilityToggle({
 	);
 }
 
-export function HideoutControls() {
+export function HideoutControls({
+	goalsMode,
+	onGoalsModeChange,
+}: {
+	goalsMode: boolean;
+	onGoalsModeChange: (value: boolean) => void;
+}) {
 	const {
 		showHidden,
 		setShowHidden,
@@ -58,6 +64,10 @@ export function HideoutControls() {
 
 	return (
 		<FilterBar className="items-center">
+			<FilterToggle checked={goalsMode} onCheckedChange={onGoalsModeChange} aria-label="Edit station goals">
+				<Goal size={14} aria-hidden="true" />
+				Goals
+			</FilterToggle>
 			<VisibilityToggle
 				label="Requirements"
 				actionLabel="Hide requirements"

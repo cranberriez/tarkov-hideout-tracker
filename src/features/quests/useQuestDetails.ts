@@ -2,9 +2,9 @@
 
 import { useQueries, type UseQueryResult } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { toTarkovJsonGameMode } from "@/lib/game-mode";
+import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { useGameDataEnabled } from "@/lib/query/game-data";
+import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { questDetailQueryOptions, type QuestDetailData } from "@/lib/query/quest-details";
 import { PartialDataError } from "@/lib/query/request";
 import { isDev } from "@/lib/is-dev";
@@ -32,8 +32,18 @@ function combineDetails(results: UseQueryResult<QuestDetailData, Error>[]) {
 	};
 }
 
-export function useQuestDetails(ids: readonly string[], enabled = true, fallback?: QuestDetailData | null) {
-	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
+export function useQuestDetails(
+	ids: readonly string[],
+	enabled = true,
+	fallback?: QuestDetailData | null,
+	fallbackMode?: TarkovJsonGameMode,
+) {
+	const activeMode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
+	const hydrated = useUserStoreHydrated();
+	// SSR and the first hydration render use the route's dataset, before the saved
+	// profile is available. Afterwards only the active profile may supply details.
+	const mode = !hydrated && fallbackMode ? fallbackMode : activeMode;
+	const scopedFallback = fallbackMode && fallbackMode !== mode ? null : fallback;
 	const gameEnabled = useGameDataEnabled(mode);
 	const searchParams = useSearchParams();
 	const devQuery = isDev && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
@@ -43,7 +53,9 @@ export function useQuestDetails(ids: readonly string[], enabled = true, fallback
 			...questDetailQueryOptions(mode, id, devQuery),
 			enabled: enabled && gameEnabled,
 			placeholderData:
-				uniqueIds.length === 1 && fallback && (!fallback.quest || fallback.quest.id === id) ? fallback : undefined,
+				uniqueIds.length === 1 && scopedFallback && (!scopedFallback.quest || scopedFallback.quest.id === id)
+					? scopedFallback
+					: undefined,
 		})),
 		combine: combineDetails,
 	});

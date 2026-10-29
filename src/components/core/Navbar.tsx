@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Coffee, Menu, MessageSquare, Plus, Search, Settings2 } from "lucide-react";
+import { ChevronDown, Menu, MessageSquare, Newspaper, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
 import { isDev } from "@/lib/is-dev";
-import { FEEDBACK_FORM_URL, KOFI_URL } from "@/lib/cfg/support-links";
+import { FEEDBACK_FORM_URL } from "@/lib/cfg/support-links";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import {
 	DropdownMenu,
@@ -21,23 +21,43 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
-import { devNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
+import { battlePassNavItem, devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
+import { SyncStatusPill } from "./SyncStatusPill";
+import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 
-export function Navbar() {
+export function Navbar({ syncEnabled }: { syncEnabled: boolean }) {
 	const gameMode = useUserStore((state) => state.gameMode);
-	return <NavbarContent key={gameMode} />;
+	const profileScope = useProfileStorageScope(gameMode);
+	return <NavbarContent key={profileScope} syncEnabled={syncEnabled} />;
 }
 
-function NavbarContent() {
+function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 	const gameMode = useUserStore((state) => state.gameMode);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const searchTrigger = useRef<HTMLElement | null>(null);
 	const router = useRouter();
 	const openItemDetail = useUIStore((state) => state.openItemDetail);
+	const currentPage = usePathname();
+	// Search would reveal item values mid-game.
+	const searchBlocked = currentPage.startsWith("/games/");
+	/** Restarts the denied shake on each blocked attempt; 0 when idle. */
+	const [searchDenied, setSearchDenied] = useState(0);
+	const deniedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+	const denySearch = useCallback(() => {
+		setSearchDenied((count) => count + 1);
+		clearTimeout(deniedTimer.current);
+		deniedTimer.current = setTimeout(() => setSearchDenied(0), 450);
+	}, []);
+	useEffect(() => () => clearTimeout(deniedTimer.current), []);
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
 			if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k" && !event.repeat) {
+				if (searchBlocked) {
+					event.preventDefault();
+					denySearch();
+					return;
+				}
 				// Do not place the palette on top of another modal workflow.
 				if (document.querySelector('[role="dialog"]') && !searchOpen) return;
 				event.preventDefault();
@@ -47,21 +67,31 @@ function NavbarContent() {
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [searchOpen]);
+	}, [searchOpen, searchBlocked, denySearch]);
 	const searchButton = (
 		<button
 			type="button"
-			aria-label="Search items, quests and stations"
-			title="Search items, quests and stations (Ctrl/⌘ K)"
+			aria-label={searchBlocked ? "Search is unavailable while playing" : "Search items, quests and stations"}
+			title={searchBlocked ? "Search is unavailable while playing" : "Search items, quests and stations (Ctrl/⌘ K)"}
 			aria-haspopup="dialog"
 			aria-expanded={searchOpen}
+			aria-disabled={searchBlocked || undefined}
 			onClick={(event) => {
+				if (searchBlocked) return denySearch();
 				searchTrigger.current = event.currentTarget;
 				setSearchOpen(true);
 			}}
 			className="flex h-10 w-10 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
 		>
-			<Search size={20} />
+			<span
+				key={searchDenied}
+				className={cn(
+					"flex",
+					searchDenied > 0 && "animate-[search-denied_0.4s_ease-in-out] text-danger motion-reduce:animate-none",
+				)}
+			>
+				<Search size={20} />
+			</span>
 		</button>
 	);
 	const setSetupOpen = useUserStore((state) => state.setSetupOpen);
@@ -69,10 +99,17 @@ function NavbarContent() {
 	const isQuickAddOpen = useUIStore((state) => state.isQuickAddOpen);
 	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
-	const currentPage = usePathname();
-	const isSecondaryRoute = currentPage === "/settings" || currentPage === "/news" || currentPage === "/dev";
+	const isSecondaryRoute =
+		currentPage === "/battle-pass" ||
+		currentPage === "/sync" ||
+		currentPage === "/settings" ||
+		currentPage === "/news" ||
+		currentPage === "/dev" ||
+		currentPage === "/games" ||
+		currentPage.startsWith("/games/");
 
-	if ((currentPage === "/quests" || currentPage.startsWith("/quests/")) && isMainNavHidden) return null;
+	const hidesNav = ["/quests", "/maps"].some((root) => currentPage === root || currentPage.startsWith(`${root}/`));
+	if (hidesNav && isMainNavHidden) return null;
 
 	return (
 		<>
@@ -96,7 +133,6 @@ function NavbarContent() {
 										<span className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg sm:tracking-wide">
 											TARKOV HIDEOUT
 										</span>
-										<span className="text-[10px] tracking-wide text-subtle-foreground sm:text-xs">STATION MANAGER</span>
 									</div>
 								</div>
 							</Link>
@@ -114,6 +150,8 @@ function NavbarContent() {
 								</button>
 
 								<PlayerProfileMenu />
+
+								{syncEnabled && <SyncStatusPill />}
 
 								{!hasCompletedSetup && (
 									<div className="hidden sm:block">
@@ -136,7 +174,11 @@ function NavbarContent() {
 											<MobileNavSection key={menu.name} menu={menu} currentPage={currentPage} separated={index > 0} />
 										))}
 										<DropdownMenuSeparator />
-										<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
+										<SecondaryMenuItems
+											currentPage={currentPage}
+											onSetup={() => setSetupOpen(true)}
+											syncEnabled={syncEnabled}
+										/>
 									</DropdownMenuContent>
 								</DropdownMenu>
 								{searchButton}
@@ -160,6 +202,8 @@ function NavbarContent() {
 
 							<PlayerProfileMenu />
 
+							{syncEnabled && <SyncStatusPill />}
+
 							{!hasCompletedSetup && <SetupButton onClick={() => setSetupOpen(true)} />}
 
 							<DropdownMenu>
@@ -173,7 +217,11 @@ function NavbarContent() {
 									<Menu size={18} />
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end" sideOffset={8}>
-									<SecondaryMenuItems currentPage={currentPage} onSetup={() => setSetupOpen(true)} />
+									<SecondaryMenuItems
+										currentPage={currentPage}
+										onSetup={() => setSetupOpen(true)}
+										syncEnabled={syncEnabled}
+									/>
 								</DropdownMenuContent>
 							</DropdownMenu>
 							{searchButton}
@@ -199,7 +247,11 @@ function NavbarContent() {
 }
 
 function isNavItemActive(currentPage: string, item: NavItem) {
-	return currentPage === item.href || currentPage.startsWith(`${item.href}/`);
+	return currentPage === item.href.split("?")[0] || currentPage.startsWith(`${item.href.split("?")[0]}/`);
+}
+
+function isNavMenuActive(currentPage: string, menu: NavMenu) {
+	return isNavItemActive(currentPage, menu);
 }
 
 function NavItemIcon({ item, size = 16 }: { item: NavItem; size?: number }) {
@@ -219,7 +271,7 @@ function NavItemBadge({ item }: { item: NavItem }) {
 function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: string }) {
 	const visibleChildren = menu.children?.filter((item) => !item.disabled) ?? [];
 	const hasChildren = visibleChildren.length > 0 || !!menu.panel;
-	const isActive = isNavItemActive(currentPage, menu);
+	const isActive = isNavMenuActive(currentPage, menu);
 
 	return (
 		<div className="group/nav-menu relative">
@@ -290,7 +342,7 @@ function MobileNavSection({
 			{separated && <DropdownMenuSeparator />}
 			<DropdownMenuItem
 				asChild
-				className={cn("font-semibold", isNavItemActive(currentPage, menu) && "bg-accent text-accent-foreground")}
+				className={cn("font-semibold", isNavMenuActive(currentPage, menu) && "bg-accent text-accent-foreground")}
 			>
 				<Link href={menu.href} className="flex w-full items-center gap-2">
 					<NavItemIcon item={menu} />
@@ -314,30 +366,41 @@ function MobileNavSection({
 	);
 }
 
-function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onSetup: () => void }) {
-	const items: NavItem[] = [
-		{ name: "News", href: "/news" },
-		{ name: "Settings", href: "/settings" },
-		...(isDev ? [devNavItem] : []),
-	];
+function SecondaryMenuItems({
+	currentPage,
+	onSetup,
+	syncEnabled,
+}: {
+	currentPage: string;
+	onSetup: () => void;
+	syncEnabled: boolean;
+}) {
+	const renderLink = (item: NavItem) => (
+		<DropdownMenuItem
+			key={item.href}
+			asChild
+			className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
+		>
+			<Link href={item.href} className="flex w-full items-center gap-2">
+				<NavItemIcon item={item} />
+				{item.name}
+			</Link>
+		</DropdownMenuItem>
+	);
 
 	return (
 		<>
-			{items.map((item) => (
-				<DropdownMenuItem
-					key={item.href}
-					asChild
-					className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
-				>
-					<Link href={item.href} className="flex w-full items-center gap-2">
-						<NavItemIcon item={item} />
-						{item.name}
-					</Link>
-				</DropdownMenuItem>
-			))}
+			{renderLink(battlePassNavItem)}
+			{renderLink(gamesNavItem)}
 			<DropdownMenuSeparator />
-			<DropdownMenuItem onSelect={onSetup}>Setup</DropdownMenuItem>
-			{(FEEDBACK_FORM_URL || KOFI_URL) && <DropdownMenuSeparator />}
+			{renderLink({ name: "News", href: "/news", icon: Newspaper })}
+			<DropdownMenuSeparator />
+			{renderLink({ name: "Settings", href: "/settings", icon: Settings2 })}
+			<DropdownMenuItem onSelect={onSetup} className="flex items-center gap-2">
+				<Settings2 size={16} />
+				Setup
+			</DropdownMenuItem>
+			{syncEnabled && renderLink({ name: "Sync", href: "/sync", icon: RefreshCw })}
 			{FEEDBACK_FORM_URL && (
 				<DropdownMenuItem asChild>
 					<a
@@ -347,17 +410,15 @@ function SecondaryMenuItems({ currentPage, onSetup }: { currentPage: string; onS
 						className="flex w-full items-center gap-2"
 					>
 						<MessageSquare size={16} />
-						Send feedback
+						Feedback
 					</a>
 				</DropdownMenuItem>
 			)}
-			{KOFI_URL && (
-				<DropdownMenuItem asChild>
-					<a href={KOFI_URL} target="_blank" rel="noopener noreferrer" className="flex w-full items-center gap-2">
-						<Coffee size={16} />
-						Support on Ko-fi
-					</a>
-				</DropdownMenuItem>
+			{isDev && (
+				<>
+					<DropdownMenuSeparator />
+					{renderLink(devNavItem)}
+				</>
 			)}
 		</>
 	);
