@@ -21,7 +21,7 @@ test("parses cookie and route values without treating KORD as regular PVP", () =
 	assert.equal(parseGameMode("PVP-SEASON"), "KORD");
 });
 
-test("reads and writes the server data-selection cookie", () => {
+test("reads and writes the active-mode preference cookie", () => {
 	assert.equal(readActiveGameModeCookie("theme=dark; tarkov-active-game-mode=KORD; compact=true"), "KORD");
 	assert.equal(readActiveGameModeCookie("theme=dark"), null);
 	assert.match(serializeActiveGameModeCookie("PVE"), /^tarkov-active-game-mode=PVE;/);

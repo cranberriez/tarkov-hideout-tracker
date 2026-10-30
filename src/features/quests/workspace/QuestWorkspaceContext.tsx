@@ -1,12 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { SearchParamListener } from "@/components/core/SearchParamListener";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import {
 	QUEST_VIEW_PARAM,
 	QUEST_VIEWS,
-	QUESTS_HREF,
+	questsHref,
 	questHref as buildQuestHref,
 	type QuestView,
 } from "../quest-routes";
@@ -143,7 +145,8 @@ export function QuestWorkspaceProvider({
 			),
 		[targetEnding, storyProgress],
 	);
-	const searchParams = useSearchParams();
+	const [viewParam, setViewParam] = useState<string | null>(null);
+	const { mode: routeMode } = useModeRoute();
 	const params = useParams<{ questId?: string }>();
 	const selectedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
 	const internalSelection = useRef<{ questId: string | null } | null>(null);
@@ -300,8 +303,13 @@ export function QuestWorkspaceProvider({
 		setRetainedCompletedQuestIds((current) => new Set(current).add(questId));
 	};
 
-	const questHref = useCallback((questId: string) => buildQuestHref(questId, devQuery), [devQuery]);
-	const indexHref = devQuery ? `${QUESTS_HREF}?q=${encodeURIComponent(devQuery)}` : QUESTS_HREF;
+	const questHref = useCallback(
+		(questId: string) => buildQuestHref(routeMode, questId, devQuery),
+		[routeMode, devQuery],
+	);
+	const indexHref = devQuery
+		? `${questsHref(routeMode)}?q=${encodeURIComponent(devQuery)}`
+		: questsHref(routeMode);
 	const markInternalSelection = useCallback((questId: string | null) => {
 		internalSelection.current = { questId };
 	}, []);
@@ -332,7 +340,7 @@ export function QuestWorkspaceProvider({
 	// Nav links open a panel via `?view=`; mode stays session state, so the parameter is applied once and removed.
 	// Direct quest visits must render the selected details on the server, even
 	// when a browser-only board/visualizer view is requested in the URL.
-	const requestedView = hydrated ? searchParams.get(QUEST_VIEW_PARAM) : null;
+	const requestedView = hydrated ? viewParam : null;
 	const [appliedView, setAppliedView] = useState<string | null>(null);
 	if (requestedView !== appliedView) {
 		setAppliedView(requestedView);
@@ -460,6 +468,10 @@ export function QuestWorkspaceProvider({
 				showQuestVisualizerIndex,
 			}}
 		>
+			{/* `?view=` is read in its own boundary so quest routes keep their prerendered content. */}
+			<Suspense fallback={null}>
+				<SearchParamListener name={QUEST_VIEW_PARAM} onChange={setViewParam} />
+			</Suspense>
 			{children}
 		</QuestWorkspaceContext.Provider>
 	);

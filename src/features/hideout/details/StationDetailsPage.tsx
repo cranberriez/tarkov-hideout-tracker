@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ModeLink } from "@/components/core/ModeLink";
 import { useMemo, useState, type ReactNode } from "react";
 import { ChevronRight, Clock } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
@@ -127,9 +127,9 @@ export function StationDetailsPage({
 		<StationDetailsProvider value={{ station, stations, currentLevel }}>
 			<main className="container mx-auto flex flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
 				<nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-subtle-foreground">
-					<Link href="/hideout" className="transition-colors hover:text-foreground">
+					<ModeLink href="/hideout" className="transition-colors hover:text-foreground">
 						Hideout
-					</Link>
+					</ModeLink>
 					<ChevronRight size={12} aria-hidden="true" />
 					<span aria-current="page" className="truncate text-muted-foreground">
 						{station.name}

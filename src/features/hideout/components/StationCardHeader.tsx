@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { ArrowUpRight, Eye, EyeOff, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Station } from "@/types/hideout";
-import { stationHref } from "@/lib/entity-routes";
+import { ModeLink } from "@/components/core/ModeLink";
+import { stationPath } from "@/lib/entity-routes";
 import { StationIdentity } from "./StationIdentity";
 
 export interface StationCardHeaderProps {
@@ -58,14 +58,13 @@ export function StationCardHeader({
 				goalLevel={goalCap}
 				imageClassName={iconBorderClass}
 				name={
-					<Link
-						href={stationHref(station.id)}
-						prefetch={false}
+					<ModeLink
+						href={stationPath(station.id)}
 						className="inline-flex items-center gap-0.5 rounded-xs transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
 					>
 						{station.name}
 						<ArrowUpRight size={13} aria-hidden="true" className="shrink-0" />
-					</Link>
+					</ModeLink>
 				}
 			/>
 

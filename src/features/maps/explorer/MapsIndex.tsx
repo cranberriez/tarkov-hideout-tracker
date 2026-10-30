@@ -2,13 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Map as MapIcon } from "lucide-react";
 import {
-	DEFAULT_MAP_VISIBILITY_PRESET,
 	MAP_EXPLORER_MAPS,
 	MAP_VISIBILITY_PRESETS,
 	mapExplorerHref,
+	mapsIndexHref,
 	type MapExplorerMapKey,
 	type MapVisibilityPresetKey,
 } from "@/lib/cfg/map-explorer";
+import type { GameMode } from "@/lib/game-mode";
 import { cn } from "@/lib/utils";
 
 /** Scenic card art in public/images/maps; variants share their base map's. */
@@ -31,7 +32,7 @@ const THUMBNAILS: Partial<Record<MapExplorerMapKey, string>> = {
 };
 
 /** Lists every interactive map; the chosen visibility preset decides which markers each link opens with. */
-export function MapsIndex({ preset }: { preset: MapVisibilityPresetKey }) {
+export function MapsIndex({ mode, preset }: { mode: GameMode; preset: MapVisibilityPresetKey }) {
 	return (
 		<main className="container mx-auto flex flex-col gap-6 px-6 py-8">
 			<header className="flex flex-wrap items-start justify-between gap-4">
@@ -44,7 +45,7 @@ export function MapsIndex({ preset }: { preset: MapVisibilityPresetKey }) {
 							return (
 								<Link
 									key={option.key}
-									href={option.key === DEFAULT_MAP_VISIBILITY_PRESET ? "/maps" : `/maps?preset=${option.key}`}
+									href={mapsIndexHref(mode, option.key)}
 									scroll={false}
 									replace
 									aria-current={active ? "true" : undefined}
@@ -72,7 +73,7 @@ export function MapsIndex({ preset }: { preset: MapVisibilityPresetKey }) {
 					return (
 						<Link
 							key={map.key}
-							href={mapExplorerHref(map.key, preset)}
+							href={mapExplorerHref(mode, map.key, preset)}
 							className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-brand hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
 						>
 							<span className="relative aspect-[5/3] bg-muted">

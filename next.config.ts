@@ -25,17 +25,6 @@ const nextConfig: NextConfig = {
 			},
 		];
 	},
-	async redirects() {
-		return [
-			{
-				// Legacy quest deep links; the quests index keeps a client fallback for streamed responses.
-				source: "/quests",
-				has: [{ type: "query", key: "quest", value: "(?<questId>[^&]+)" }],
-				destination: "/quests/:questId",
-				permanent: true,
-			},
-		];
-	},
 };
 
 export default nextConfig;

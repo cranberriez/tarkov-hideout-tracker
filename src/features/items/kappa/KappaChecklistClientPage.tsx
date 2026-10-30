@@ -10,6 +10,7 @@ import { DataLoadError } from "@/components/core/DataLoadError";
 import { ItemLink } from "@/components/entities/item-link";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 import { useKappaStore, type KappaViewMode } from "@/lib/stores/useKappaStore";
+import { questHref } from "@/lib/entity-routes";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { KappaChecklistPageData } from "@/types/contracts";
@@ -89,7 +90,7 @@ export function KappaChecklistClientPage({
 				<div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
 					{collectorQuest && (
 						<Link
-							href={`/quests#quest-${collectorQuest.id}`}
+							href={questHref(gameMode, collectorQuest.id)}
 							aria-label="Open Collector quest"
 							className="inline-flex h-[46px] items-center gap-2 rounded-md border border-highlight/10 bg-shadow/30 px-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 hover:bg-brand/5 hover:text-foreground"
 						>

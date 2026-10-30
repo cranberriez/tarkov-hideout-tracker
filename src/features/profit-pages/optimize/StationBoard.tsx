@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { GameMode } from "@/lib/game-mode";
-import { PROFIT_PAGE_HREFS } from "@/lib/entity-routes";
+import { ModeLink } from "@/components/core/ModeLink";
+import { PROFIT_PAGE_PATHS } from "@/lib/entity-routes";
 import type { RecipeCalculatorInput } from "@/lib/price-calculation";
 import type { ProfitStationSource, PriceChangeHandler } from "../types";
 import { usePinnedCrafts } from "../usePinnedCrafts";
@@ -69,9 +69,9 @@ export function StationBoard({
 					<h1 className="text-2xl font-semibold">Craft Planner</h1>
 					<p className="mt-1 text-sm text-muted-foreground">Choose your crafts. Keep your routine in view.</p>
 				</div>
-				<Link href={PROFIT_PAGE_HREFS.craft} className="text-xs text-muted-foreground hover:text-foreground">
+				<ModeLink href={PROFIT_PAGE_PATHS.craft} className="text-xs text-muted-foreground hover:text-foreground">
 					All craft profits →
-				</Link>
+				</ModeLink>
 			</header>
 			<div className="flex flex-wrap items-center justify-end gap-4">
 				<div className="flex flex-wrap justify-end gap-1" aria-label="Recommendation order">

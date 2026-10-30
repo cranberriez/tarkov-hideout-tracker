@@ -9,6 +9,7 @@ import { isPriceItemId } from "@/lib/query/price-contract";
 import { profitRecipeHref } from "@/lib/entity-routes";
 import { useUIStore, type RecipeBreakdownTarget } from "@/lib/stores/useUIStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { useManualPriceOverrides } from "@/features/profit-pages/useManualPriceOverrides";
 import { useProfitOptions } from "@/features/profit-pages/useProfitOptions";
 import { withRequiredItemRoute } from "@/features/profit-pages/utils/recipes";
@@ -44,6 +45,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 		})),
 	);
 	const mode = toTarkovJsonGameMode(user.gameMode);
+	const { mode: routeMode } = useModeRoute();
 	const { overrides, setItemOverride } = useManualPriceOverrides(user.gameMode);
 	const {
 		craftingSkillLevel,
@@ -187,7 +189,7 @@ export function useRecipeBreakdownController(target: RecipeBreakdownTarget) {
 		baseEvaluation,
 		onRouteChange: (index: number, routeKey: string) =>
 			setRouteSelections((current) => ({ ...current, [index]: routeKey })),
-		profitHref: profitRecipeHref(target.kind, target.recipeId),
+		profitHref: profitRecipeHref(routeMode, target.kind, target.recipeId),
 		/** Nested recipes in the chain open their own breakdown, pushing dialog history. */
 		goToRecipe(kind: "barter" | "craft", recipeId: string) {
 			const outputItemId =

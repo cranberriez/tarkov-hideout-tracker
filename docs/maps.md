@@ -1,6 +1,6 @@
 # Maps
 
-The [maps explorer](#maps-explorer) at `/maps` and the condensed
+The [maps explorer](#maps-explorer) at `/<mode>/maps` and the condensed
 [quest objective map](#quest-objective-map) share one map stack, ported from
 tarkov-mappinator. [Quest domain behavior](quests.md) owns active/visited
 objective selection; this document owns geometry, projection, and asset delivery.
@@ -12,7 +12,9 @@ which also feeds the Maps nav menu. Its visibility presets (Standard, Documents,
 Extracts & spawns, Loot, Bosses & hazards) are links: the chosen
 preset rides on each map link as `?preset=`, is applied once the map's layers are
 known, and is then dropped from the URL. They are only offered on `/maps`, not on
-the map itself. A preset lists the layers it shows; every other layer, including
+the map itself. Both routes are static per mode: `?preset=` is read in the browser
+([MapsIndexRoute](../src/features/maps/explorer/MapsIndexRoute.tsx) and
+[MapExplorerClient](../src/features/maps/explorer/MapExplorerClient.tsx)). A preset lists the layers it shows; every other layer, including
 groups that only exist in a map's data, is switched off.
 
 `/maps/[mapKey]` renders the client-only [MapExplorer](../src/features/maps/explorer/MapExplorer.tsx)

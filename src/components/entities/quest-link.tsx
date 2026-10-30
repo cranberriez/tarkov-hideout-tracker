@@ -7,6 +7,7 @@ import { MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { preloadHoverImage, useHoverDataIntent } from "@/components/ui/hover-preview-provider";
 import { questHref } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/quests/quest-trader-gates";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
@@ -42,6 +43,7 @@ export function QuestLink({
 }) {
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
+	const { mode: routeMode } = useModeRoute();
 	const prepare = async () => {
 		const workspace = client.getQueryData(questWorkspacePageQueryOptions(mode).queryKey);
 		const cachedQuest = quest ?? expandQuestSummaries(workspace?.quests ?? []).find((entry) => entry.id === questId);
@@ -59,7 +61,7 @@ export function QuestLink({
 			renderPreview={() => <QuestPreviewCard questId={questId} quest={quest} name={name} />}
 		>
 			{(triggerProps) => (
-				<Link {...props} {...triggerProps} prefetch={false} href={questHref(questId)} className={className}>
+				<Link {...props} {...triggerProps} prefetch={false} href={questHref(routeMode, questId)} className={className}>
 					{children ?? quest?.name ?? name ?? "Quest"}
 				</Link>
 			)}

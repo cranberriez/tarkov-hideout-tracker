@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ModeLink } from "@/components/core/ModeLink";
 import { Info } from "lucide-react";
 import { openCharacterPanel } from "@/components/core/PlayerProfileMenu";
 import type { ProfileLockGap } from "../utils/lock-summary";
@@ -34,9 +34,9 @@ export function ProfitProfileBanner({
 							Set PMC level
 						</button>
 					) : gap.key === "hideout" ? (
-						<Link key={gap.key} href="/hideout" className={actionClass}>
+						<ModeLink key={gap.key} href="/hideout" className={actionClass}>
 							Set hideout levels
-						</Link>
+						</ModeLink>
 					) : (
 						<button key={gap.key} type="button" onClick={onSetTraders} className={actionClass}>
 							Set trader levels

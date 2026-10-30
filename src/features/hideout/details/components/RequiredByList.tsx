@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 import { Check } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import { DetailSection } from "@/components/ui/detail-section";
-import { stationHref } from "@/lib/entity-routes";
+import { ModeLink } from "@/components/core/ModeLink";
+import { stationPath } from "@/lib/entity-routes";
 import type { Station } from "@/types/hideout";
 import { getStationDependents, type StationDependent } from "../../station-model";
 
@@ -35,9 +35,8 @@ export function RequiredByList({
 				<ul className="flex flex-col gap-0.5">
 					{groups.map(({ station: dependent, entries }) => (
 						<li key={dependent.id}>
-							<Link
-								href={stationHref(dependent.id)}
-								prefetch={false}
+							<ModeLink
+								href={stationPath(dependent.id)}
 								className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-1 rounded-sm px-1.5 py-1.5 transition-colors hover:bg-highlight/5 focus-visible:outline-2 focus-visible:outline-brand"
 							>
 								<StationImage station={dependent} size={34} className="row-span-2" />
@@ -58,7 +57,7 @@ export function RequiredByList({
 										);
 									})}
 								</span>
-							</Link>
+							</ModeLink>
 						</li>
 					))}
 				</ul>

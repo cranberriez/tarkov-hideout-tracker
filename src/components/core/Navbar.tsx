@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { ChevronDown, Menu, MessageSquare, Newspaper, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { isDev } from "@/lib/is-dev";
 import { FEEDBACK_FORM_URL } from "@/lib/cfg/support-links";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
@@ -21,6 +21,7 @@ import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
 import { HideoutStationsNav } from "./HideoutStationsNav";
+import { ModeLink } from "./ModeLink";
 import { battlePassNavItem, devNavItem, gamesNavItem, navMenus, type NavItem, type NavMenu } from "./nav-config";
 import { PlayerProfileMenu } from "./PlayerProfileMenu";
 import { SyncStatusPill } from "./SyncStatusPill";
@@ -38,7 +39,8 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 	const searchTrigger = useRef<HTMLElement | null>(null);
 	const router = useRouter();
 	const openItemDetail = useUIStore((state) => state.openItemDetail);
-	const currentPage = usePathname();
+	// Mode-less path (`/hideout`), compared against the mode-less nav config.
+	const { mode: routeMode, path: currentPage } = useModeRoute();
 	// Search would reveal item values mid-game.
 	const searchBlocked = currentPage.startsWith("/games/");
 	/** Restarts the denied shake on each blocked attempt; 0 when idle. */
@@ -117,7 +119,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 				<div className="container mx-auto px-3 py-3 sm:px-6 sm:py-4">
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
 						<div className="flex items-center justify-between gap-2 sm:gap-3">
-							<Link href="/" className="min-w-0 shrink-0">
+							<ModeLink href="/hideout" className="min-w-0 shrink-0">
 								<div className="group flex min-w-0 items-center gap-3">
 									<div className="relative h-8 w-8 shrink-0 group-hover:animate-spin">
 										<Image
@@ -135,7 +137,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 										</span>
 									</div>
 								</div>
-							</Link>
+							</ModeLink>
 
 							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
 								<button
@@ -237,8 +239,8 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 					onSelect={(result) => {
 						setSearchOpen(false);
 						if (result.kind === "item") openItemDetail(result.item);
-						else if (result.kind === "quest") router.push(questHref(result.id), { scroll: false });
-						else router.push(stationHref(result.id));
+						else if (result.kind === "quest") router.push(questHref(routeMode, result.id), { scroll: false });
+						else router.push(stationHref(routeMode, result.id));
 					}}
 				/>
 			)}
@@ -275,7 +277,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 
 	return (
 		<div className="group/nav-menu relative">
-			<Link
+			<ModeLink
 				href={menu.href}
 				aria-haspopup={hasChildren ? "menu" : undefined}
 				className={cn(
@@ -286,7 +288,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				<NavItemIcon item={menu} />
 				{menu.name}
 				{hasChildren && <ChevronDown size={14} className="opacity-60" />}
-			</Link>
+			</ModeLink>
 
 			{hasChildren && (
 				<div
@@ -299,7 +301,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				>
 					<div className="rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
 						{visibleChildren.map((item) => (
-							<Link
+							<ModeLink
 								key={item.href}
 								href={item.href}
 								role="menuitem"
@@ -311,7 +313,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 								<NavItemIcon item={item} />
 								{item.name}
 								<NavItemBadge item={item} />
-							</Link>
+							</ModeLink>
 						))}
 						{menu.panel === "hideout-stations" && (
 							<>
@@ -344,10 +346,10 @@ function MobileNavSection({
 				asChild
 				className={cn("font-semibold", isNavMenuActive(currentPage, menu) && "bg-accent text-accent-foreground")}
 			>
-				<Link href={menu.href} className="flex w-full items-center gap-2">
+				<ModeLink href={menu.href} className="flex w-full items-center gap-2">
 					<NavItemIcon item={menu} />
 					{menu.name}
-				</Link>
+				</ModeLink>
 			</DropdownMenuItem>
 			{visibleChildren.map((item) => (
 				<DropdownMenuItem
@@ -355,11 +357,11 @@ function MobileNavSection({
 					asChild
 					className={cn("pl-6", currentPage === item.href && "bg-accent text-accent-foreground")}
 				>
-					<Link href={item.href} className="flex w-full items-center gap-2">
+					<ModeLink href={item.href} className="flex w-full items-center gap-2">
 						<NavItemIcon item={item} />
 						{item.name}
 						<NavItemBadge item={item} />
-					</Link>
+					</ModeLink>
 				</DropdownMenuItem>
 			))}
 		</>
@@ -381,10 +383,10 @@ function SecondaryMenuItems({
 			asChild
 			className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
 		>
-			<Link href={item.href} className="flex w-full items-center gap-2">
+			<ModeLink href={item.href} className="flex w-full items-center gap-2">
 				<NavItemIcon item={item} />
 				{item.name}
-			</Link>
+			</ModeLink>
 		</DropdownMenuItem>
 	);
 

@@ -1,18 +1,16 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { DataLoadError, DataQueryRetryProvider, DataRefreshError } from "@/components/core/DataLoadError";
 import { RouteLoader } from "@/components/core/RouteLoader";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
-import { isDev } from "@/lib/is-dev";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
 import type { QuestWorkspaceIndexData } from "@/types/quest-workspace";
 import { QuestsClientPage } from "./QuestsClientPage";
-import { DEV_QUEST_QUERY } from "./dev-quest-fixture";
+import { useDevQuestQuery } from "./useDevQuestQuery";
 
 export function QuestsQueryPage({
 	mode,
@@ -23,8 +21,7 @@ export function QuestsQueryPage({
 	fallbackData: QuestWorkspaceIndexData | null;
 	children: ReactNode;
 }) {
-	const searchParams = useSearchParams();
-	const devQuery = isDev && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
+	const devQuery = useDevQuestQuery();
 	const hydrated = useUserStoreHydrated();
 	const enabled = useGameDataEnabled(mode);
 	const query = useQuery({

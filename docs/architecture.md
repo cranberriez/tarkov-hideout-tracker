@@ -7,30 +7,58 @@ Next.js App Router, React, TypeScript, Tailwind, Radix UI, Zustand, and PostgreS
 
 ## Routes and composition
 
+### Mode-scoped routes
+
+Data pages live under a game-mode URL segment, `/<mode>/...` with slugs `pvp`,
+`pve` and `kord` (`slug` in [GAME_MODE_CONFIG](../src/lib/game-mode.ts)); every
+mode is prefixed, PVP included. The scoped roots are Hideout, Items (including
+Inventory, Kappa, Market and profits), Quests, Maps, Games and the Loot Scanner,
+under [`(data)/[mode]`](<../src/app/(data)/[mode]/layout.tsx>). Settings, Story,
+Sync, News, Battle Pass and Dev stay unprefixed. Route paths below omit the prefix.
+
+- **Server:** pages read the mode from `params` through
+  [readRouteGameMode](../src/server/route-game-mode.ts) (unknown slugs 404) and
+  never read cookies or headers, so each mode × page is an ISR response
+  (`revalidate = 3600` in the `[mode]` layout; entity IDs render on first visit).
+  Query strings are read only in the browser (`?preset=`, `?view=` through
+  [SearchParamListener](../src/components/core/SearchParamListener.tsx),
+  `?recipe=` in the price-gated profit table) so routes stay static.
+- **Links:** build hrefs with [entity-routes](../src/lib/entity-routes.ts)
+  (`stationHref(mode, id)`, `modeHref(mode, path)`, mode-less `stationPath(id)`
+  etc.); client code takes the mode from [useModeRoute](../src/lib/useModeRoute.ts)
+  (the URL's mode, else the active profile's), and server components use
+  [ModeLink](../src/components/core/ModeLink.tsx). Do not hand-build data paths.
+- **Old URLs:** [proxy.ts](../src/proxy.ts) matches only unprefixed data paths,
+  `/` and `/quests?quest=<id>`, and redirects to the saved mode cookie's page
+  (307) or, without a cookie, to PVP (308); both are `no-store`. Prefixed pages
+  and assets never run the proxy. Legacy `#quest-<id>` fragments are translated
+  by the quests index in the browser.
+- **Mode switching:** see [user state](user-state.md#character-profiles).
+
 | Route                                              | Entry point and responsibility                                                                                                                                                                                                                        |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                                | [Redirect to Hideout](../src/app/page.tsx)                                                                                                                                                                                                            |
-| `/hideout`                                         | [Hideout page](<../src/app/(data)/hideout/page.tsx>): next station upgrades                                                                                                                                                                           |
-| `/items`                                           | [Items page](<../src/app/(data)/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
-| `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/quests/page.tsx>) and [quest route](<../src/app/(data)/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
+| `/`                                                | Proxy redirect to the saved mode's Hideout; [page](../src/app/page.tsx) is the PVP fallback                                                                                                                                                         |
+| `/hideout`                                         | [Hideout page](<../src/app/(data)/[mode]/hideout/page.tsx>): next station upgrades                                                                                                                                                                           |
+| `/items`                                           | [Items page](<../src/app/(data)/[mode]/items/page.tsx>): pooled hideout and quest demand                                                                                                                                                                     |
+| `/quests`, `/quests/[questId]`                     | [Quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) owns the persistent workspace; the [index](<../src/app/(data)/[mode]/quests/page.tsx>) and [quest route](<../src/app/(data)/[mode]/quests/[questId]/page.tsx>) fill its detail pane; see [quests](quests.md) |
 | `/story`, `/story/[chapterId]`                     | [Story index](<../src/app/(data)/story/page.tsx>) and [chapter tracker](<../src/app/(data)/story/[chapterId]/page.tsx>) from static hand-authored data (untracked chapters get a placeholder); no server reads; see [quests](quests.md#story-chapters)                                  |
-| `/items/[itemId]`                                  | [Item page](<../src/app/(data)/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
-| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
-| `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
-| `/items/market`                                   | [Market analysis](<../src/app/(data)/items/market/page.tsx>): whole-market flea swings for flea-sellable items from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
-| `/games`                                          | [Games hub](<../src/app/(data)/games/page.tsx>): links to each game with its saved best score; listed with Battle Pass at the top of the secondary (☰) menu. Game routes (`/games/*`) hide the footer and refuse the navbar search (button and Ctrl/⌘ K shake red) |
-| `/games/higher-lower`                             | [Higher or Lower](<../src/app/(data)/games/higher-lower/page.tsx>): item value guessing from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
-| `/games/do-i-need-it`                             | [Do I Need It?](<../src/app/(data)/games/do-i-need-it/page.tsx>): pick an item the active profile still needs (the Loot Scanner's demand model over uploader requirements, minus owned inventory) among same-category decoys from the search manifest. After setup each visit asks whether to use that progress or play without it (a fresh profile, always used before setup); a header button reopens the choice |
-| `/games/trader-alibi`                             | [Trader Alibi](<../src/app/(data)/games/trader-alibi/page.tsx>): ask for quest objective, barter or sold-item clues and guess the trader; [clue data](../src/server/db/trader-alibi.ts) for the core traders, item names from the search manifest |
-| `/items/inventory`                                 | [Inventory](<../src/app/(data)/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
-| `/uploader`                                        | [Loot Scanner](<../src/app/(data)/uploader/page.tsx>) (beta): browser OCR, item-label matching, and keep/sell sorting; see below                                                                                                                      |
+| `/items/[itemId]`                                  | [Item page](<../src/app/(data)/[mode]/items/[itemId]/page.tsx>): server-rendered item details; not linked yet (items open the dialog)                                                                                                                        |
+| `/hideout/stations/[stationId]`                    | [Station page](<../src/app/(data)/[mode]/hideout/stations/[stationId]/page.tsx>): level overview and level changes, prerequisites, dependents, remaining items, streamed crafts with profit, and Bitcoin Farm/Generator power panels                         |
+| `/items/kappa-checklist`                           | [Collector checklist](<../src/app/(data)/[mode]/items/kappa-checklist/page.tsx>); see [quests](quests.md)                                                                                                                                                    |
+| `/items/market`                                   | [Market analysis](<../src/app/(data)/[mode]/items/market/page.tsx>): whole-market flea swings for flea-sellable items from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
+| `/games`                                          | [Games hub](<../src/app/(data)/[mode]/games/page.tsx>): links to each game with its saved best score; listed with Battle Pass at the top of the secondary (☰) menu. Game routes (`/games/*`) hide the footer and refuse the navbar search (button and Ctrl/⌘ K shake red) |
+| `/games/higher-lower`                             | [Higher or Lower](<../src/app/(data)/[mode]/games/higher-lower/page.tsx>): item value guessing from one suspended page-data read; see [data layer](data-layer.md#prices-history-and-freshness) |
+| `/games/do-i-need-it`                             | [Do I Need It?](<../src/app/(data)/[mode]/games/do-i-need-it/page.tsx>): pick an item the active profile still needs (the Loot Scanner's demand model over uploader requirements, minus owned inventory) among same-category decoys from the search manifest. After setup each visit asks whether to use that progress or play without it (a fresh profile, always used before setup); a header button reopens the choice |
+| `/games/trader-alibi`                             | [Trader Alibi](<../src/app/(data)/[mode]/games/trader-alibi/page.tsx>): ask for quest objective, barter or sold-item clues and guess the trader; [clue data](../src/server/db/trader-alibi.ts) for the core traders, item names from the search manifest |
+| `/items/inventory`                                 | [Inventory](<../src/app/(data)/[mode]/items/inventory/page.tsx>): owned non-FiR/FiR balances with instant edits; see below                                                                                                                                   |
+| `/uploader`                                        | [Loot Scanner](<../src/app/(data)/[mode]/uploader/page.tsx>) (beta): browser OCR, item-label matching, and keep/sell sorting; see below                                                                                                                      |
 | `/items/barter-profits`, `/items/crafting-profits` | Shared [ProfitPage](../src/features/profit-pages/ProfitPage.tsx); see [profits](profits.md)                                                                                                                                                           |
 | `/hideout/craft-planner`                           | Station craft recommendations using the shared profit query; see [profits](profits.md)                                                                                                                                                                |
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/sync`                                            | [Desktop companion sync](<../src/app/(data)/sync/page.tsx>): pair with the Mappinator app, view the quest/raid activity feed, raw protocol log and review log-recovered events; see [user state](user-state.md#companion-sync) |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
-| `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
+| `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
 
 Maps follows Quests in the main navigation as a direct link without map submenus.
@@ -87,7 +115,7 @@ identity from server data; player progress hydrates afterwards. Titles use the r
 
 Unmatched URLs use the root [404 page](../src/app/not-found.tsx), below the shared
 navbar. Its MIA banner and recovery controls need no entity reads; Back to Hideout
-links to `/hideout`, while Go Back uses browser history with a Hideout fallback
+links to the current mode's Hideout, while Go Back uses browser history with a Hideout fallback
 when no previous history entry exists. The fade-in and finite decorative coin
 shower respect reduced motion. Entity-specific not-found views remain local to
 their routes.
@@ -96,9 +124,11 @@ Search metadata uses `https://tarkovhideout.com` as the canonical origin.
 Root metadata is `noindex` unless the build is a Vercel production deployment
 (`VERCEL_ENV`), so the layout never reads request headers; settings are always
 `noindex`. Robots allows page crawling so engines can read that directive.
-Only production hosts advertise the sitemap. The sitemap query lists public overview
-pages plus prepared quests and stations from the default PVP dataset, matching
-cookie-free visits; read failures propagate rather than publishing a partial sitemap.
+Only production hosts advertise the sitemap. The sitemap query lists `/pvp/...`
+overview pages, Story, and prepared quests and stations from the default PVP dataset;
+read failures propagate rather than publishing a partial sitemap. Mode-scoped pages
+set self-canonical URLs; PVE and KORD pages are `noindex, follow` (set by the
+`[mode]` layout), so only PVP is offered to search engines.
 Individual items remain outside the sitemap. No artificial modification dates are emitted.
 
 Keys and Station Goals routes are placeholders; Bitcoin Farm
@@ -737,7 +767,8 @@ mode-scoped compact search manifest for a trader portrait when the full quest is
 not already available. After sustained hover intent, they request that quest's
 full details and referenced item presentations through the shared per-quest cache;
 they show loading, missing-data and retry states. Quest links disable route prefetch,
-so merely listing links does not preload full quest records. Items checklist rows do not open item hover cards in Icon,
+so merely listing links does not preload full quest records. Station links keep the
+default prefetch: station routes are ISR pages, so prefetches are cached responses. Items checklist rows do not open item hover cards in Icon,
 Compact, or Expanded sizes. Alternatives inside an expanded any-of group likewise
 omit hover cards in Icon and Compact sizes; the Expanded layout retains them. Item
 previews prefer the square 512px image over the labeled grid image.

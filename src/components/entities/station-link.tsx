@@ -10,6 +10,7 @@ import type { decodeSearchManifest } from "@/lib/search/manifest";
 import { searchIdentityOptions, searchManifestOptions } from "@/lib/search/query";
 import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
 import { stationHref } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { hideoutPageQueryOptions } from "@/lib/query/page-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -38,6 +39,7 @@ export function StationLink({
 }) {
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
+	const { mode: routeMode } = useModeRoute();
 	return (
 		<EntityPreview
 			disabled={!preview}
@@ -50,7 +52,7 @@ export function StationLink({
 			renderPreview={() => <StationPreviewCard station={station} />}
 		>
 			{(triggerProps) => (
-				<Link {...props} {...triggerProps} prefetch={false} href={stationHref(station.id)} className={className}>
+				<Link {...props} {...triggerProps} href={stationHref(routeMode, station.id)} className={className}>
 					{children ?? station.name}
 				</Link>
 			)}

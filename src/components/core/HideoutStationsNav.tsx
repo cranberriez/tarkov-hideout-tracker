@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Crown } from "lucide-react";
 import { stationOrder } from "@/lib/cfg/stationOrder";
 import { STATIC_STATIONS, stationPortraitSrc } from "@/lib/data/static-stations";
-import { stationHref } from "@/lib/entity-routes";
+import { stationHref, stationPath } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +23,10 @@ const stations = [...STATIC_STATIONS].sort(
 	(a, b) => orderIndex(a.normalizedName) - orderIndex(b.normalizedName) || a.name.localeCompare(b.name),
 );
 
-/** Hideout nav dropdown body: every station with the active profile's saved level. */
+/** Hideout nav dropdown body: every station with the active profile's saved level. `currentPage` is mode-less. */
 export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
 	const stationLevels = useUserStore((state) => state.stationLevels);
+	const { mode } = useModeRoute();
 	return (
 		// Column-major so each column follows the progression order top to bottom.
 		<div
@@ -32,18 +34,17 @@ export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
 			style={{ gridTemplateRows: `repeat(${Math.ceil(stations.length / 2)}, auto)` }}
 		>
 			{stations.map((station) => {
-				const href = stationHref(station.id);
+				const href = stationHref(mode, station.id);
 				const level = stationLevels[station.id] ?? 0;
 				const maxed = level >= station.levels.length;
 				return (
 					<Link
 						key={station.id}
 						href={href}
-						prefetch={false}
 						role="menuitem"
 						className={cn(
 							"flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-							currentPage === href && "bg-accent text-accent-foreground",
+							currentPage === stationPath(station.id) && "bg-accent text-accent-foreground",
 						)}
 					>
 						<Image

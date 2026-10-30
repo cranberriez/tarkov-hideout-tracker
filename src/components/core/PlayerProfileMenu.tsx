@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 
-import { Check, LoaderCircle } from "lucide-react";
+import { Check } from "lucide-react";
 
-import { useRouter } from "next/navigation";
 
 import { useShallow } from "zustand/react/shallow";
 
@@ -47,10 +46,6 @@ export function PlayerProfileMenu() {
 	const [hoveredPanel, setHoveredPanel] = useState<OpenPanel | null>(null);
 
 	const [pinnedPanel, setPinnedPanel] = useState<OpenPanel | null>(null);
-
-	const [isSwitching, startSwitch] = useTransition();
-
-	const router = useRouter();
 
 	const rootRef = useRef<HTMLDivElement>(null);
 
@@ -195,11 +190,10 @@ export function PlayerProfileMenu() {
 	}, [pinnedPanel]);
 
 	function switchProfile(mode: GameMode) {
-		if (mode === gameMode || isSwitching) return;
+		// Mode-scoped pages follow the active profile to the same path in the new mode (RouteGameModeSync).
+		if (mode === gameMode) return;
 
 		setGameMode(mode);
-
-		startSwitch(() => router.refresh());
 	}
 
 	function pinPanel(panel: OpenPanel) {
@@ -376,19 +370,11 @@ export function PlayerProfileMenu() {
 							setFaction={setQuestFaction}
 						/>
 					) : (
-						<ProfileList activeMode={gameMode} profiles={profiles} isSwitching={isSwitching} onSelect={switchProfile} />
+						<ProfileList activeMode={gameMode} profiles={profiles} onSelect={switchProfile} />
 					)}
 				</div>
 			)}
 
-			{isSwitching && (
-				<div className="fixed inset-0 z-[100] flex items-center justify-center bg-shadow/75 backdrop-blur-sm">
-					<div className="flex items-center gap-3 rounded-md border border-highlight/10 bg-surface-raised px-5 py-4 text-sm font-medium text-foreground shadow-2xl">
-						<LoaderCircle className="animate-spin text-brand" size={18} />
-						Loading {profileName} character…
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }
@@ -492,14 +478,11 @@ function CharacterCustomizer({
 function ProfileList({
 	activeMode,
 	profiles,
-	isSwitching,
 	onSelect,
 }: {
 	activeMode: GameMode;
 
 	profiles: Record<GameMode, PlayerProfileState>;
-
-	isSwitching: boolean;
 
 	onSelect: (mode: GameMode) => void;
 }) {
@@ -512,8 +495,6 @@ function ProfileList({
 	const [showPast, setShowPast] = useState(false);
 
 	const [error, setError] = useState<string | null>(null);
-
-	const router = useRouter();
 
 	const past = SEASONS.filter((season) => season.id !== current.id && seasonalProfiles[season.id]);
 
@@ -532,8 +513,6 @@ function ProfileList({
 
 				if (seasonId === current.id) state.activateSeason(seasonId);
 				else state.selectSeason(seasonId);
-
-				router.refresh();
 			} else onSelect(mode);
 
 			setError(null);
@@ -565,7 +544,6 @@ function ProfileList({
 						type="button"
 						style={profileColorStyle(mode, season.id)}
 						onClick={() => select(mode, season.id)}
-						disabled={isSwitching}
 
 						className={cn(
 							"relative flex w-full items-center gap-3 overflow-hidden rounded border border-highlight/10 bg-shadow/25 p-3 text-left transition-colors before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_right,color-mix(in_srgb,var(--profile-color)_18%,transparent)_0%,transparent_72%)] before:opacity-0 before:transition-opacity hover:border-[color-mix(in_srgb,var(--profile-color)_30%,transparent)] hover:before:opacity-100 disabled:opacity-60",

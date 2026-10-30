@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { ModeLink } from "@/components/core/ModeLink";
 import { Check, OctagonX, TriangleAlert } from "lucide-react";
 import { STORY_CHAPTERS, STORY_DECISIONS, STORY_ENDING_BY_ID } from "@/lib/data/story";
+import { questPath } from "@/lib/entity-routes";
 import { cn } from "@/lib/utils";
 import { buildStoryFailureConditions, groupStoryFailureConditions } from "../story-failure-conditions";
 import type { StoryProgress } from "../story-progress";
@@ -63,7 +64,7 @@ export function StoryFailureConditions({
 												<div className="flex items-start gap-2">
 													<RiskIcon aria-hidden="true" className={cn("mt-0.5 size-3.5 shrink-0", tone)} />
 													<div className="min-w-0 flex-1">
-														<Link
+														<ModeLink
 															href={risk.href}
 															className={cn(
 																"block text-xs font-semibold leading-5 hover:underline",
@@ -71,7 +72,7 @@ export function StoryFailureConditions({
 															)}
 														>
 															{risk.title}
-														</Link>
+														</ModeLink>
 														<p className="text-xs leading-5">{risk.text}</p>
 														{muted && (
 															<span className="text-[11px]">
@@ -89,14 +90,14 @@ export function StoryFailureConditions({
 																	<p className="mt-1 leading-5">When: {risk.conditions.join("; ")}</p>
 																)}
 																{risk.quests.map((quest) => (
-																	<Link
+																	<ModeLink
 																		key={quest.id}
-																		href={`/quests/${quest.id}`}
+																		href={questPath(quest.id)}
 																		prefetch={false}
 																		className="mt-1 block underline underline-offset-2 hover:text-brand"
 																	>
 																		{quest.name}
-																	</Link>
+																	</ModeLink>
 																))}
 															</details>
 														)}

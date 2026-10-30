@@ -15,7 +15,7 @@ It includes identity, progression gates, prerequisite/failure relationships, and
 derived map/category/key flags plus objective search text. It excludes full
 objectives, item lists, rewards, and geometry, and performs no item or price reads.
 The summary type cannot be passed as a full detail record. The
-[quests layout](<../src/app/(data)/quests/layout.tsx>) prefetches that mode-keyed
+[quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) prefetches that mode-keyed
 Query once for the segment and the client wrapper consumes and refetches the same
 payload; parent layouts still load nothing. See [data layer](data-layer.md) for
 route delivery and release regeneration.
@@ -53,7 +53,7 @@ tool, not runtime authority; see [operations](operations.md).
 
 ## Workspace and client ownership
 
-The [quests layout](<../src/app/(data)/quests/layout.tsx>) renders
+The [quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) renders
 [QuestsClientPage](../src/features/quests/QuestsClientPage.tsx), which enters the current
 [QuestWorkspace](../src/features/quests/workspace/QuestWorkspace.tsx), backed by
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
@@ -73,10 +73,14 @@ On mobile the list hides while a quest route is active and "Back to quests" link
 the index. Below `lg`, [QuestMobileMenu](../src/features/quests/workspace/QuestMobileMenu.tsx)
 replaces the action bar and filter header: a floating pill opens views (including History)
 and filters. Log upload stays desktop-only, and global search replaces quest search. Scrolling panes end
-with `QuestMobileMenuSpacer` so the pill never covers the last row. [quest-routes](../src/features/quests/quest-routes.ts) builds hrefs;
-legacy `?quest=` links redirect permanently ([next.config](../next.config.ts), with a
-page-level fallback) and legacy `#quest-` fragments are translated client-side. The
-development fixture opts in with `?q=dev-test`, which is fetched client-side only.
+with `QuestMobileMenuSpacer` so the pill never covers the last row. Quest routes are
+mode-scoped (`/<mode>/quests/<id>`, see [architecture](architecture.md#mode-scoped-routes));
+[quest-routes](../src/features/quests/quest-routes.ts) builds hrefs. Legacy unprefixed
+`/quests?quest=` links redirect through the [proxy](../src/proxy.ts) and legacy
+`#quest-` fragments are translated client-side. `?view=` is read in its own Suspense
+boundary so quest pages keep their prerendered content. The development fixture opts
+in with `?q=dev-test`, which is fetched client-side only; production builds never
+read it.
 
 The outer [QuestActionsContext](../src/features/quests/QuestActionsContext.tsx) still owns
 shared quest actions and cascade confirmation; standard items in objectives and

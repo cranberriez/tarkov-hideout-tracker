@@ -1,5 +1,8 @@
-// Maps explorer (/maps): the maps it lists and the built-in visibility presets. Kept free of the map library so the
-// site nav can import it without pulling in calibration data.
+// Maps explorer (/<mode>/maps): the maps it lists and the built-in visibility presets. Kept free of the map library so
+// the site nav can import it without pulling in calibration data.
+
+import { modeHref } from "../entity-routes";
+import type { GameMode } from "../game-mode";
 
 /** Maps with interactive art, by tarkov.dev `normalizedName`, in display order. */
 export const MAP_EXPLORER_MAPS = [
@@ -28,10 +31,16 @@ export function isMapExplorerMapKey(value: string): value is MapExplorerMapKey {
 }
 
 /** The maps index opened with only Battle Pass documents and extracts showing. */
-export const DOCUMENT_MAPS_HREF = "/maps?preset=documents";
+export function documentMapsHref(mode: GameMode): string {
+	return `${modeHref(mode, "/maps")}?preset=documents`;
+}
 
-export function mapExplorerHref(key: MapExplorerMapKey, preset?: MapVisibilityPresetKey | null): string {
-	return `/maps/${key}${preset && preset !== DEFAULT_MAP_VISIBILITY_PRESET ? `?preset=${preset}` : ""}`;
+export function mapsIndexHref(mode: GameMode, preset?: MapVisibilityPresetKey | null): string {
+	return `${modeHref(mode, "/maps")}${preset && preset !== DEFAULT_MAP_VISIBILITY_PRESET ? `?preset=${preset}` : ""}`;
+}
+
+export function mapExplorerHref(mode: GameMode, key: MapExplorerMapKey, preset?: MapVisibilityPresetKey | null): string {
+	return `${modeHref(mode, `/maps/${key}`)}${preset && preset !== DEFAULT_MAP_VISIBILITY_PRESET ? `?preset=${preset}` : ""}`;
 }
 
 /**

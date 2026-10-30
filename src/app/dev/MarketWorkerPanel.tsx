@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { itemHref } from "@/lib/entity-routes";
+import { ModeLink } from "@/components/core/ModeLink";
+import { itemPath } from "@/lib/entity-routes";
 import { formatRoubles } from "@/lib/utils/market-price";
 import type { MarketMoverRow, MarketWorkerDashboard } from "@/server/db/postgres-dashboard";
 
@@ -203,9 +203,9 @@ function MoversTable({ title, movers }: { title: string; movers: MarketMoverRow[
 							{movers.map((mover) => (
 								<tr key={mover.itemId} className="border-t border-border">
 									<td className="py-1 pr-4">
-										<Link href={itemHref(mover.itemId)} className="text-brand hover:underline">
+										<ModeLink href={itemPath(mover.itemId)} className="text-brand hover:underline">
 											{mover.name}
-										</Link>
+										</ModeLink>
 									</td>
 									<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.currentLevel)}</td>
 									<td className="py-1 pr-4 text-right whitespace-nowrap">{formatRoubles(mover.marketValue)}</td>

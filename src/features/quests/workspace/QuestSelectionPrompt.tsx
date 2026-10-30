@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { Flag, SearchX } from "lucide-react";
 import { buttonClassName } from "@/components/ui/button";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { getLegacyQuestHashId, questHref } from "../quest-routes";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
@@ -19,13 +20,14 @@ function PaneMessage({ icon, children }: { icon: ReactNode; children: ReactNode 
 	);
 }
 
-/** `/quests` detail outlet. Also translates legacy `#quest-<id>` links, which never reach the server. */
+/** `/<mode>/quests` detail outlet. Also translates legacy `#quest-<id>` links, which never reach the server. */
 export function QuestSelectionPrompt() {
 	const router = useRouter();
+	const { mode } = useModeRoute();
 	useEffect(() => {
 		const questId = getLegacyQuestHashId(window.location.hash);
-		if (questId) router.replace(questHref(questId), { scroll: false });
-	}, [router]);
+		if (questId) router.replace(questHref(mode, questId), { scroll: false });
+	}, [router, mode]);
 
 	return (
 		<PaneMessage icon={<Flag size={24} />}>

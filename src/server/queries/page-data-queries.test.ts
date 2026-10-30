@@ -118,9 +118,10 @@ test("sitemap reads only default-mode quests and stations, and propagates read f
 		},
 	});
 	const paths = await getSitemapPaths(repository);
-	assert.ok(paths.includes("/quests/quest-1"));
-	assert.ok(paths.includes("/hideout/stations/workbench"));
-	assert.equal(paths.filter((path) => path === "/quests/quest-1").length, 1);
+	assert.ok(paths.includes("/pvp/quests/quest-1"));
+	assert.ok(paths.includes("/pvp/hideout/stations/workbench"));
+	assert.ok(paths.includes("/story"));
+	assert.equal(paths.filter((path) => path === "/pvp/quests/quest-1").length, 1);
 	assert.ok(!paths.includes("/settings"));
 	await assert.rejects(getSitemapPaths(createRepository({ stations: repository.hideout.getStations })));
 });
