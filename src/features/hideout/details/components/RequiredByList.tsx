@@ -37,6 +37,7 @@ export function RequiredByList({
 						<li key={dependent.id}>
 							<ModeLink
 								href={stationPath(dependent.id)}
+								prefetch={false}
 								className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-1 rounded-sm px-1.5 py-1.5 transition-colors hover:bg-highlight/5 focus-visible:outline-2 focus-visible:outline-brand"
 							>
 								<StationImage station={dependent} size={34} className="row-span-2" />

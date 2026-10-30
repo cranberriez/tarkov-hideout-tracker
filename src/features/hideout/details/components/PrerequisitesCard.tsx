@@ -88,6 +88,7 @@ export function PrerequisitesCard({
 							<li key={`st-${index}`}>
 								<ModeLink
 									href={stationPath(required.id)}
+									prefetch={false}
 									className={cn(
 										rowClassName,
 										"transition-colors hover:bg-highlight/5 focus-visible:outline-2 focus-visible:outline-brand",

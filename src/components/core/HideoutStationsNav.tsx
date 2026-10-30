@@ -41,6 +41,7 @@ export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
 					<Link
 						key={station.id}
 						href={href}
+						prefetch={false}
 						role="menuitem"
 						className={cn(
 							"flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",

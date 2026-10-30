@@ -57,13 +57,19 @@ The [quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) renders
 [QuestsClientPage](../src/features/quests/QuestsClientPage.tsx), which enters the current
 [QuestWorkspace](../src/features/quests/workspace/QuestWorkspace.tsx), backed by
 [QuestWorkspaceContext](../src/features/quests/workspace/QuestWorkspaceContext.tsx).
-The routed page is the workspace's detail outlet: `/quests` shows a selection prompt
-and `/quests/[questId]` renders [QuestDetailRoute](../src/features/quests/workspace/QuestDetailRoute.tsx),
+The URL is the only selection source: `/quests` shows a selection prompt and
+`/quests/[questId]` renders [QuestDetailRoute](../src/features/quests/workspace/QuestDetailRoute.tsx),
 which uses the selected quest's scoped detail query (independent of list filters),
-with loading/retry and in-pane not-found states. The route parameter is the only
-selection source: list rows are real links, so search, filters, group collapse, and
-list scroll persist across quest navigation, and Back/Forward select the matching
-quest. Workspace-initiated selection keeps an open visualizer; Back/Forward,
+with loading/retry and in-pane not-found states. Direct visits and reloads render the
+routed (cached, server-rendered) page. Inside the workspace, quest links stay real
+links, but a plain left click on any same-mode quest or index link (list rows, board,
+detail relations, command palette) only pushes native history, which Next syncs to
+`usePathname`; no route payload is fetched. The workspace's detail outlet then renders
+the selected quest itself from the loaded index plus its CDN-cached detail request,
+and keeps the tab title in step. Search, filters, group collapse, and list scroll
+persist across selection, and Back/Forward select the matching quest. Modified clicks
+and new tabs use the routes. Links to the quest index elsewhere do not prefetch: its
+route payload carries the whole quest index. Workspace-initiated selection keeps an open visualizer; Back/Forward,
 search, and shared links switch to Details. Completing a quest does not navigate.
 Workspace mode (Details, Trader board, Visualizer) is session state. The
 Quests nav entries link to `/quests?view=board|visualizer`; the provider applies

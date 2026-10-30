@@ -52,7 +52,7 @@ export function StationLink({
 			renderPreview={() => <StationPreviewCard station={station} />}
 		>
 			{(triggerProps) => (
-				<Link {...props} {...triggerProps} href={stationHref(routeMode, station.id)} className={className}>
+				<Link {...props} {...triggerProps} prefetch={false} href={stationHref(routeMode, station.id)} className={className}>
 					{children ?? station.name}
 				</Link>
 			)}

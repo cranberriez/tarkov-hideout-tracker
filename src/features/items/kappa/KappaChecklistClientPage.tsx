@@ -91,6 +91,7 @@ export function KappaChecklistClientPage({
 					{collectorQuest && (
 						<Link
 							href={questHref(gameMode, collectorQuest.id)}
+							prefetch={false}
 							aria-label="Open Collector quest"
 							className="inline-flex h-[46px] items-center gap-2 rounded-md border border-highlight/10 bg-shadow/30 px-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/40 hover:bg-brand/5 hover:text-foreground"
 						>

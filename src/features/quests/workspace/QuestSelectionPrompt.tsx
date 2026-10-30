@@ -60,7 +60,7 @@ export function QuestNotFound({
 		<PaneMessage icon={<SearchX size={24} />}>
 			<h1 className="text-sm font-semibold text-foreground">Quest not found</h1>
 			<p className="mt-2 text-sm text-subtle-foreground">{message}</p>
-			<Link href={indexHref} className={buttonClassName({ className: "mt-5" })}>
+			<Link href={indexHref} prefetch={false} className={buttonClassName({ className: "mt-5" })}>
 				Back to quests
 			</Link>
 		</PaneMessage>

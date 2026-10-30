@@ -239,13 +239,23 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 					onSelect={(result) => {
 						setSearchOpen(false);
 						if (result.kind === "item") openItemDetail(result.item);
-						else if (result.kind === "quest") router.push(questHref(routeMode, result.id), { scroll: false });
-						else router.push(stationHref(routeMode, result.id));
+						else if (result.kind === "quest") {
+							const href = questHref(routeMode, result.id);
+							// Inside the quest workspace, select in place (see QuestWorkspace) instead of a route fetch.
+							if (currentPage === "/quests" || currentPage.startsWith("/quests/"))
+								window.history.pushState(null, "", href);
+							else router.push(href, { scroll: false });
+						} else router.push(stationHref(routeMode, result.id));
 					}}
 				/>
 			)}
 		</>
 	);
+}
+
+/** Quest routes carry the whole quest index in their route payload, too large to prefetch from every page. */
+function navPrefetch(href: string) {
+	return href.startsWith("/quests") ? false : undefined;
 }
 
 function isNavItemActive(currentPage: string, item: NavItem) {
@@ -279,6 +289,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 		<div className="group/nav-menu relative">
 			<ModeLink
 				href={menu.href}
+				prefetch={navPrefetch(menu.href)}
 				aria-haspopup={hasChildren ? "menu" : undefined}
 				className={cn(
 					"flex items-center gap-2 rounded px-3 py-2 transition-colors",
@@ -304,6 +315,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 							<ModeLink
 								key={item.href}
 								href={item.href}
+								prefetch={navPrefetch(item.href)}
 								role="menuitem"
 								className={cn(
 									"flex items-center gap-2 rounded-sm px-2 py-2 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
@@ -346,7 +358,7 @@ function MobileNavSection({
 				asChild
 				className={cn("font-semibold", isNavMenuActive(currentPage, menu) && "bg-accent text-accent-foreground")}
 			>
-				<ModeLink href={menu.href} className="flex w-full items-center gap-2">
+				<ModeLink href={menu.href} prefetch={navPrefetch(menu.href)} className="flex w-full items-center gap-2">
 					<NavItemIcon item={menu} />
 					{menu.name}
 				</ModeLink>
@@ -357,7 +369,7 @@ function MobileNavSection({
 					asChild
 					className={cn("pl-6", currentPage === item.href && "bg-accent text-accent-foreground")}
 				>
-					<ModeLink href={item.href} className="flex w-full items-center gap-2">
+					<ModeLink href={item.href} prefetch={navPrefetch(item.href)} className="flex w-full items-center gap-2">
 						<NavItemIcon item={item} />
 						{item.name}
 						<NavItemBadge item={item} />
@@ -383,7 +395,7 @@ function SecondaryMenuItems({
 			asChild
 			className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
 		>
-			<ModeLink href={item.href} className="flex w-full items-center gap-2">
+			<ModeLink href={item.href} prefetch={navPrefetch(item.href)} className="flex w-full items-center gap-2">
 				<NavItemIcon item={item} />
 				{item.name}
 			</ModeLink>

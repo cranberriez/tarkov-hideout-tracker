@@ -767,8 +767,8 @@ mode-scoped compact search manifest for a trader portrait when the full quest is
 not already available. After sustained hover intent, they request that quest's
 full details and referenced item presentations through the shared per-quest cache;
 they show loading, missing-data and retry states. Quest links disable route prefetch,
-so merely listing links does not preload full quest records. Station links keep the
-default prefetch: station routes are ISR pages, so prefetches are cached responses. Items checklist rows do not open item hover cards in Icon,
+so merely listing links does not preload full quest records. Station links disable it
+too: each station route payload is 90–280 KB, and Hideout lists every station. Items checklist rows do not open item hover cards in Icon,
 Compact, or Expanded sizes. Alternatives inside an expanded any-of group likewise
 omit hover cards in Icon and Compact sizes; the Expanded layout retains them. Item
 previews prefer the square 512px image over the labeled grid image.

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { SearchParamListener } from "@/components/core/SearchParamListener";
 import { useModeRoute } from "@/lib/useModeRoute";
 import { decodeRouteParam } from "@/lib/utils/route-param";
@@ -10,6 +10,7 @@ import {
 	QUEST_VIEWS,
 	questsHref,
 	questHref as buildQuestHref,
+	selectedQuestIdFromPath,
 	type QuestView,
 } from "../quest-routes";
 import { useShallow } from "zustand/react/shallow";
@@ -56,6 +57,8 @@ interface QuestWorkspaceContextValue {
 	branchLineByQuestId: Map<string, QuestBranchLine>;
 	branchLinesByQuestId: Map<string, QuestBranchLine[]>;
 	selectedQuestId: string | null;
+	/** The quest the routed page segment rendered on the server; may differ after in-place selection. */
+	routedQuestId: string | null;
 	selectedTraderIds: Set<string>;
 	filterByTraderRequirements: boolean;
 	selectedMapKeys: Set<string>;
@@ -129,7 +132,6 @@ export function QuestWorkspaceProvider({
 	devQuery?: string | null;
 	children: ReactNode;
 }) {
-	const router = useRouter();
 	const gameMode = useUserStore((state) => state.gameMode);
 	const hydrated = useUserStoreHydrated();
 	const [storyProgress] = useStoryProgress(gameMode);
@@ -147,8 +149,11 @@ export function QuestWorkspaceProvider({
 	);
 	const [viewParam, setViewParam] = useState<string | null>(null);
 	const { mode: routeMode } = useModeRoute();
+	// The URL selects the quest; in-workspace selection only pushes history, so the routed
+	// page segment (`routedQuestId`) can lag behind it. See QuestWorkspace's detail outlet.
+	const selectedQuestId = selectedQuestIdFromPath(usePathname());
 	const params = useParams<{ questId?: string }>();
-	const selectedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
+	const routedQuestId = params?.questId ? decodeRouteParam(params.questId) : null;
 	const internalSelection = useRef<{ questId: string | null } | null>(null);
 	const [openFilter, setOpenFilter] = useState<QuestFilterSection>(null);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -321,8 +326,8 @@ export function QuestWorkspaceProvider({
 	const setSelectedQuestId = (questId: string | null) => {
 		if (questId === selectedQuestId) return;
 		markInternalSelection(questId);
-		const href = questId ? questHref(questId) : indexHref;
-		router.push(href, { scroll: false });
+		// Native history (synced by Next) selects without a server render; the outlet loads details.
+		window.history.pushState(null, "", questId ? questHref(questId) : indexHref);
 	};
 
 	const openQuestVisualizer = (lineId: string, focusQuestId: string | null = null) => {
@@ -380,6 +385,7 @@ export function QuestWorkspaceProvider({
 				branchLineByQuestId,
 				branchLinesByQuestId,
 				selectedQuestId,
+				routedQuestId,
 				selectedTraderIds,
 				filterByTraderRequirements,
 				selectedMapKeys,

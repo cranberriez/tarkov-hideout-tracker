@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { modeHref, splitModePath, switchModeHref } from "../../lib/entity-routes";
-import { getLegacyQuestHashId, questHref } from "./quest-routes";
+import { getLegacyQuestHashId, isQuestWorkspaceUrl, questHref, selectedQuestIdFromPath } from "./quest-routes";
 
 test("quest hrefs are mode-scoped, encode IDs and keep the development fixture query", () => {
 	assert.equal(questHref("PVP", "5936d90786f7742b1420ba5b"), "/pvp/quests/5936d90786f7742b1420ba5b");
@@ -15,6 +15,15 @@ test("only mode-scoped paths get a mode prefix, and switching keeps the path and
 	assert.deepEqual(splitModePath("/kord/hideout/stations/a"), { mode: "KORD", path: "/hideout/stations/a" });
 	assert.deepEqual(splitModePath("/settings"), { mode: null, path: "/settings" });
 	assert.equal(switchModeHref("/pvp/maps/customs", "?preset=documents", "PVE"), "/pve/maps/customs?preset=documents");
+});
+
+test("workspace URLs select quests per mode", () => {
+	assert.equal(selectedQuestIdFromPath("/pve/quests/a%2Fb"), "a/b");
+	assert.equal(selectedQuestIdFromPath("/pve/quests"), null);
+	assert.equal(selectedQuestIdFromPath("/pve/items/abc"), null);
+	assert.equal(isQuestWorkspaceUrl(new URL("https://x.test/pve/quests/abc?q=1"), "PVE"), true);
+	assert.equal(isQuestWorkspaceUrl(new URL("https://x.test/pvp/quests/abc"), "PVE"), false);
+	assert.equal(isQuestWorkspaceUrl(new URL("https://x.test/pve/quests/abc/extra"), "PVE"), false);
 });
 
 test("legacy quest fragments resolve to their quest ID", () => {
