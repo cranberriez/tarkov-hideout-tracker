@@ -27,7 +27,7 @@ export function ItemsQueryPage({
 	});
 	if (hydrated && !enabled) return <RouteLoader page="items" />;
 	const data = pageDataFromQuery(query.data, query.error, fallbackData);
-	if (!data && query.isPending) return <RouteLoader page="items" />;
+	if ((!data && query.isPending) || (query.isPlaceholderData && query.isFetching)) return <RouteLoader page="items" />;
 	if (!data)
 		return (
 			<DataQueryRetryProvider retry={() => void query.refetch()}>

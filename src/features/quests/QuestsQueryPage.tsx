@@ -31,7 +31,7 @@ export function QuestsQueryPage({
 	});
 	if (hydrated && !enabled) return <RouteLoader page="quests" />;
 	const data = pageDataFromQuery(query.data, query.error, fallbackData);
-	if (!data && query.isPending) return <RouteLoader page="quests" />;
+	if ((!data && query.isPending) || (query.isPlaceholderData && query.isFetching)) return <RouteLoader page="quests" />;
 	if (!data?.quests)
 		return (
 			<DataQueryRetryProvider retry={() => void query.refetch()}>
