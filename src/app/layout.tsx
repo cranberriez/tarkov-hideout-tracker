@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
-import { isIndexableHost, SITE_URL } from "@/lib/seo";
+import { IS_INDEXABLE_DEPLOYMENT, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 import { Navbar } from "@/components/core/Navbar";
 import { SetupModal } from "../features/setup/SetupModal";
@@ -21,15 +20,13 @@ export const viewport: Viewport = {
 	initialScale: 1,
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-	const index = isIndexableHost((await headers()).get("host"));
-	return {
-		metadataBase: new URL(SITE_URL),
-		title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
-		description: "Track Escape from Tarkov hideout upgrades, quests, required items, and progress for PVP, PVE, and KORD.",
-		robots: { index, follow: true },
-	};
-}
+// Build-time gate: reading the request host here would make every route dynamic and uncacheable.
+export const metadata: Metadata = {
+	metadataBase: new URL(SITE_URL),
+	title: { default: "Tarkov Hideout Tracker", template: "%s · Tarkov Hideout Tracker" },
+	description: "Track Escape from Tarkov hideout upgrades, quests, required items, and progress for PVP, PVE, and KORD.",
+	robots: { index: IS_INDEXABLE_DEPLOYMENT, follow: true },
+};
 
 export default function RootLayout({
 	children,

@@ -93,8 +93,9 @@ shower respect reduced motion. Entity-specific not-found views remain local to
 their routes.
 
 Search metadata uses `https://tarkovhideout.com` as the canonical origin.
-The root marks all other hosts (including dev and previews) `noindex`; settings
-are always `noindex`. Robots allows page crawling so engines can read that directive.
+Root metadata is `noindex` unless the build is a Vercel production deployment
+(`VERCEL_ENV`), so the layout never reads request headers; settings are always
+`noindex`. Robots allows page crawling so engines can read that directive.
 Only production hosts advertise the sitemap. The sitemap query lists public overview
 pages plus prepared quests and stations from the default PVP dataset, matching
 cookie-free visits; read failures propagate rather than publishing a partial sitemap.

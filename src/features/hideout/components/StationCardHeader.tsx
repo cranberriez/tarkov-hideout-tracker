@@ -60,6 +60,7 @@ export function StationCardHeader({
 				name={
 					<Link
 						href={stationHref(station.id)}
+						prefetch={false}
 						className="inline-flex items-center gap-0.5 rounded-xs transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
 					>
 						{station.name}
