@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { MAP_EXPLORER_MAPS } from "@/lib/cfg/map-explorer";
+import { MAP_EXPLORER_MAPS, mapExplorerHref } from "@/lib/cfg/map-explorer";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { CaretIcon, ExitFullscreenIcon, FullscreenIcon } from "./icons";
 
 export type FloorOption = { key: string; label: string };
@@ -74,6 +75,7 @@ export function MapSwitcher({
 	onToggleFullscreen: () => void;
 }) {
 	const [open, setOpen] = useState(false);
+	const { mode } = useModeRoute();
 	return (
 		<div className={`map-switch ${open ? "open" : ""}`}>
 			<div className="map-chip-row">
@@ -121,7 +123,7 @@ export function MapSwitcher({
 					{MAP_EXPLORER_MAPS.map((map) => (
 						<Link
 							key={map.key}
-							href={`/maps/${map.key}`}
+							href={mapExplorerHref(mode, map.key)}
 							aria-current={map.key === current ? "page" : undefined}
 							className={`floor-row ${map.key === current ? "active" : ""}`}
 							onClick={() => setOpen(false)}

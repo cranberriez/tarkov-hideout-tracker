@@ -23,7 +23,7 @@ export function HideoutQueryPage({
 	const query = useQuery({ ...hideoutPageQueryOptions(mode), enabled, placeholderData: fallbackData ?? undefined });
 	if (hydrated && !enabled) return <RouteLoader page="hideout" />;
 	const data = pageDataFromQuery(query.data, query.error, fallbackData);
-	if (!data && query.isPending) return <RouteLoader page="hideout" />;
+	if ((!data && query.isPending) || (query.isPlaceholderData && query.isFetching)) return <RouteLoader page="hideout" />;
 	if (!data)
 		return (
 			<DataQueryRetryProvider retry={() => void query.refetch()}>

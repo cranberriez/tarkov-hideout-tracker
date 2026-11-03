@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import type { QuestWorkspaceQuest } from "@/types/quests";
 import { useUIStore } from "@/lib/stores/useUIStore";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { cn } from "@/lib/utils";
+import { isQuestWorkspaceUrl } from "../quest-routes";
+import { QuestDetailRoute } from "./QuestDetailRoute";
+import { QuestSelectionPrompt } from "./QuestSelectionPrompt";
 import { useQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneLoading() {
@@ -38,11 +42,61 @@ const QuestVisualizerPane = dynamic(
 	{ ssr: false, loading: PaneLoading },
 );
 
+/**
+ * Quest links inside the workspace select in place: a plain left click on any same-mode link to
+ * the quest index or a quest pushes native history (which Next syncs to `usePathname`) instead of
+ * a route navigation, so no server render or route payload is fetched. Modified clicks, new tabs,
+ * direct visits and reloads still use the cached quest routes.
+ */
+function useInPlaceQuestLinks() {
+	const { mode } = useModeRoute();
+	useEffect(() => {
+		function onClick(event: MouseEvent) {
+			if (event.defaultPrevented || event.button !== 0) return;
+			if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+			const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+			if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute("download")) return;
+			if (anchor.target && anchor.target !== "_self") return;
+			const url = new URL(anchor.href);
+			if (url.origin !== window.location.origin || !isQuestWorkspaceUrl(url, mode)) return;
+			// Capture phase: Next's Link sees the prevented default and skips its navigation; link
+			// onClick handlers (selection marks, mode switches) still run.
+			event.preventDefault();
+			const href = `${url.pathname}${url.search}${url.hash}`;
+			const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+			if (href !== current) window.history.pushState(null, "", href);
+		}
+		document.addEventListener("click", onClick, true);
+		return () => document.removeEventListener("click", onClick, true);
+	}, [mode]);
+}
+
+/**
+ * Shows the routed page while it matches the URL's selection (direct visits keep their server-rendered
+ * detail); after in-place selection, renders the selected quest from the workspace index plus its
+ * CDN-cached detail request.
+ */
+function QuestDetailOutlet({ routed }: { routed: ReactNode }) {
+	const { selectedQuestId, routedQuestId, questsById } = useQuestWorkspace();
+	const selected = selectedQuestId ? questsById.get(selectedQuestId) : null;
+	// No navigation runs for in-place selection, so keep the tab title in step with the URL
+	// (same strings as the routes' metadata, including after Back to the routed quest).
+	useEffect(() => {
+		if (selectedQuestId && !selected) return;
+		document.title = selected
+			? `${selected.name} – ${selected.trader.name} Quest · Tarkov Hideout Tracker`
+			: "Escape from Tarkov Quests & Required Items · Tarkov Hideout Tracker";
+	}, [selected, selectedQuestId]);
+	if (selectedQuestId === routedQuestId) return routed;
+	return selectedQuestId ? <QuestDetailRoute key={selectedQuestId} questId={selectedQuestId} /> : <QuestSelectionPrompt />;
+}
+
 /** `children` is the routed detail outlet: the selection prompt or `/quests/[questId]`. */
 export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQuest[]; children: ReactNode }) {
 	const { mode, setMode, selectedQuestId, indexHref, markInternalSelection, consumeInternalSelection } =
 		useQuestWorkspace();
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
+	useInPlaceQuestLinks();
 	useEffect(() => {
 		document.body.classList.add("quest-workspace-active");
 		return () => document.body.classList.remove("quest-workspace-active");
@@ -91,6 +145,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					{mode === "details" && selectedQuestId && (
 						<Link
 							href={indexHref}
+							prefetch={false}
 							scroll={false}
 							onClick={() => markInternalSelection(null)}
 							data-quest-mobile-back-bar
@@ -104,7 +159,7 @@ export function QuestWorkspace({ quests, children }: { quests: QuestWorkspaceQue
 					) : mode === "visualizer" ? (
 						<QuestVisualizerPane />
 					) : (
-						children
+						<QuestDetailOutlet routed={children} />
 					)}
 				</section>
 			</div>

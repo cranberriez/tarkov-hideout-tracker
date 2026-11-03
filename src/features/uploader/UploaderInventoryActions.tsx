@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, PackagePlus, Undo2 } from "lucide-react";
+import { modeHref } from "@/lib/entity-routes";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useProfileStorageScope } from "@/lib/seasons/useProfileStorageScope";
 import { profileStorageScope } from "@/lib/seasons/profile-scope";
@@ -116,7 +117,7 @@ export function UploaderInventoryActions({
 						Undo
 					</button>
 					<button
-						onClick={() => router.push("/items/inventory")}
+						onClick={() => router.push(modeHref(mode, "/items/inventory"))}
 						className="flex items-center justify-center gap-1.5 rounded-sm border border-brand bg-brand px-3 py-2 text-xs font-semibold text-inverse transition-colors hover:bg-brand-hover"
 					>
 						<Check size={13} aria-hidden="true" />

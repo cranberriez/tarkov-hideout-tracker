@@ -31,7 +31,7 @@ account for existing users' data.
 | `tarkov-map-explorer-preferences-v1`            | [useMapExplorerPreferences](../src/features/maps/explorer/useMapExplorerPreferences.ts), Zustand persist **v1**; Maps explorer marker filters, three saved filter slots and panel/floor/split/art/valuable-loot toggles, shared by every map, profile and mode; not in backups or resets |
 | `tarkov-companion-sync-v1` | [useCompanionSyncStore](../src/lib/stores/useCompanionSyncStore.ts), Zustand persist **v2** (v1 `log` dropped); desktop companion pairing (port, token), sync cursor, handled event IDs per profile, queued and review quest events, per-event `feed` (newest first, 300), undo `batches` (50) and unknown-mode count. Latest position, `/v1/status` details and the raw protocol log (last 100 exchanges) are session-only. Account-wide, not in backups, untouched by every reset including Delete ALL data |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage                                                                                                    |
-| `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); active profile selection for server reads                                                                                                                                                                                                                      |
+| `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); client preference mirroring the active profile, read only by the [proxy](../src/proxy.ts) to redirect old unprefixed URLs                                                                                                                                       |
 
 Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Test), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
 Story chapter completion uses the existing mode-scoped progress writer and adds
@@ -181,13 +181,32 @@ existing consumers; the wrapped setter keeps them synchronized with the active
 profile. Shared display and filter preferences live outside the profile shape.
 Use existing actions rather than writing one side of that projection directly.
 
-Mode changes save/load the corresponding profile and synchronize the cookie.
-[ActiveGameModeSync](../src/components/core/ActiveGameModeSync.tsx) repairs the
-client/server selection after hydration using the store's current snapshot (the
-initial render can still contain the server-default mode after hydration finishes).
-This avoids alternating mode-cookie writes and refresh loops on missing routes.
-[active-game-mode.ts](../src/server/active-game-mode.ts)
-reads it for server queries. Dataset mapping is owned by [data layer](data-layer.md).
+Mode changes save/load the corresponding profile and write the
+`tarkov-active-game-mode` cookie. The cookie is only a client preference: the
+[proxy](../src/proxy.ts) uses it to send old unprefixed links to the saved mode,
+and [ActiveGameModeSync](../src/components/core/ActiveGameModeSync.tsx) repairs it
+after hydration from the store's current snapshot. Server rendering never reads it;
+mode-scoped pages take their dataset from the URL (see
+[architecture](architecture.md#mode-scoped-routes)). Dataset mapping is owned by
+[data layer](data-layer.md).
+
+On mode-scoped pages the URL is the source of truth for the rendered dataset, and
+[RouteGameModeSync](../src/components/core/RouteGameModeSync.tsx) keeps the active
+profile and the URL in step without overwriting progress:
+
+- **The URL's mode changes** (navigation, back button, shared link, first load):
+  the active profile follows it through `setGameMode`, the same save/load switch as
+  the profile menu. A KORD URL with no seasonal character switches nothing; a banner
+  offers to start the current season's character (explicit `activateSeason`) or to
+  view the active mode's page instead.
+- **The active profile changes while the URL stays** (profile menu, setup, quest
+  import, another tab's storage event): the page navigates to the same path in the
+  new mode. Callers that switch and navigate themselves (the raid notice's map
+  button) call `expectCallerModeNavigation` first.
+
+Comparing against the previous route and store values keeps the two directions
+from triggering each other. Mode-agnostic pages (Settings, Story, Sync) only use the
+active profile; their links target its mode.
 
 The new profile key takes precedence. When it is absent, the storage adapter reads
 the old key without changing its bytes. Existing v19–v25 profile saves retain their

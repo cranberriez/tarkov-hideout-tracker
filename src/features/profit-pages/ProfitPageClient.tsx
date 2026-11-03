@@ -22,6 +22,7 @@ import { ProfitProfileBanner } from "./components/ProfitProfileBanner";
 import { ProfitTable } from "./components/ProfitTable";
 import { TraderLevelsModal } from "./components/TraderLevelsModal";
 import { profitRecipeHref } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import type { ProfitPageKind, ProfitStationSource, SortDirection, SortKey } from "./types";
 import { PROFIT_KINDS } from "./profit-kinds";
 import { FLEA_UNLOCK_LEVEL, getProfileLockGaps } from "./utils/lock-summary";
@@ -47,6 +48,7 @@ interface ProfitPageClientProps {
 
 export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
 	const router = useRouter();
+	const { mode: routeMode } = useModeRoute();
 	const searchParams = useSearchParams();
 	const items = data.items;
 	const crafts = useMemo(() => data.crafts.filter(isTrackedCraft), [data.crafts]);
@@ -354,7 +356,7 @@ export function ProfitPageClient({ kind, data }: ProfitPageClientProps) {
 			</main>
 		);
 	function goToRecipe(method: "barter" | "craft", recipeId: string) {
-		const href = profitRecipeHref(method, recipeId);
+		const href = profitRecipeHref(routeMode, method, recipeId);
 		if (method !== kind) {
 			router.push(href);
 			return;

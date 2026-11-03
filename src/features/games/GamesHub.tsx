@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { ArrowRight, ArrowUpDown, Fingerprint, PackageSearch, Trophy, type LucideIcon } from "lucide-react";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { parseBestScore } from "./useBestScore";
@@ -56,9 +57,10 @@ function GameLink({ game }: { game: GameCard }) {
 	const [raw] = useStoredProfitValue(game.storageKey);
 	const [altRaw] = useStoredProfitValue(game.altStorageKey ?? game.storageKey);
 	const best = Math.max(game.parse(raw), game.parse(altRaw));
+	const { href } = useModeRoute();
 	return (
 		<Link
-			href={game.href}
+			href={href(game.href)}
 			className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
 		>
 			<game.Icon

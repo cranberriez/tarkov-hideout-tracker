@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { ModeLink } from "@/components/core/ModeLink";
 import { PackageOpen, Plus, ScanSearch, Search, X } from "lucide-react";
 import { DataLoadError, DataQueryRetryProvider } from "@/components/core/DataLoadError";
 import { RouteLoader } from "@/components/core/RouteLoader";
@@ -94,7 +94,7 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 					)}
 				</div>
 				<div className="flex gap-2 self-start sm:self-auto">
-					<Link
+					<ModeLink
 						href="/uploader"
 						className="inline-flex items-center gap-2 rounded border border-highlight/10 bg-shadow/40 px-3 py-2 text-sm font-semibold text-foreground hover:border-brand/50"
 					>
@@ -103,7 +103,7 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 						<span className="rounded-sm border border-brand/40 bg-brand/10 px-1.5 py-px text-[10px] uppercase tracking-wide text-brand">
 							Beta
 						</span>
-					</Link>
+					</ModeLink>
 					<button
 						type="button"
 						onClick={() => setQuickAddOpen(true)}
@@ -128,9 +128,9 @@ function InventoryView({ mode }: { mode: TarkovJsonGameMode }) {
 					<p className="mt-3 font-medium text-foreground">Your inventory is empty</p>
 					<p className="mt-1 text-sm text-muted-foreground">
 						Items you add from raids will show up here, or{" "}
-						<Link href="/uploader" className="text-brand underline-offset-2 hover:underline">
+						<ModeLink href="/uploader" className="text-brand underline-offset-2 hover:underline">
 							scan a stash screenshot
-						</Link>
+						</ModeLink>
 						.
 					</p>
 				</div>

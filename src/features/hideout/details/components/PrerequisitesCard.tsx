@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { Check, X } from "lucide-react";
 import { StationImage } from "@/components/entities/station-image";
 import { DetailSection } from "@/components/ui/detail-section";
-import { stationHref } from "@/lib/entity-routes";
+import { ModeLink } from "@/components/core/ModeLink";
+import { stationPath } from "@/lib/entity-routes";
 import { cn } from "@/lib/utils";
 import type { Station, StationLevel } from "@/types/hideout";
 import { findRequiredStation } from "../../station-model";
@@ -86,8 +86,8 @@ export function PrerequisitesCard({
 						);
 						return required ? (
 							<li key={`st-${index}`}>
-								<Link
-									href={stationHref(required.id)}
+								<ModeLink
+									href={stationPath(required.id)}
 									prefetch={false}
 									className={cn(
 										rowClassName,
@@ -95,7 +95,7 @@ export function PrerequisitesCard({
 									)}
 								>
 									{content}
-								</Link>
+								</ModeLink>
 							</li>
 						) : (
 							<li key={`st-${index}`} className={rowClassName}>

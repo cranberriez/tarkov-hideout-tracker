@@ -194,8 +194,9 @@ on the CDN, with mode isolated in the URL, except unpriced profit payloads: thos
 use `no-store` because their trader offers change independently of catalog content.
 Compatibility profit requests that
 include prices use 300 seconds for both. Partial responses and HTTP errors use
-`no-store`. These API headers do not cache initial server-page HTML/RSC payloads,
-which still select mode from the cookie and prefetch queries directly. Explicit unresolved
+`no-store`. Initial server-page HTML/RSC payloads are separate ISR responses per URL mode
+(see [architecture](architecture.md#mode-scoped-routes)); they prefetch the same
+unpriced queries directly and revalidate hourly. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 

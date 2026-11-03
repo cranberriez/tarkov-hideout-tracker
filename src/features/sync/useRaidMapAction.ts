@@ -1,7 +1,10 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { isMapExplorerMapKey } from "@/lib/cfg/map-explorer";
+import { expectCallerModeNavigation } from "@/components/core/RouteGameModeSync";
+import { isMapExplorerMapKey, mapExplorerHref } from "@/lib/cfg/map-explorer";
+import { splitModePath } from "@/lib/entity-routes";
+import type { GameMode } from "@/lib/game-mode";
 import type { RaidNoticeMap } from "@/lib/stores/useCompanionSyncStore";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { canSwitchToProfile, switchToProfile } from "./companion-actions";
@@ -18,9 +21,10 @@ export function useRaidMapAction(profile: ProfileKey | null, map: RaidNoticeMap 
 	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
 
 	const mapKey = map?.normalizedName && isMapExplorerMapKey(map.normalizedName) ? map.normalizedName : null;
-	const mapHref = mapKey ? `/maps/${mapKey}` : null;
 	const target = profile && profile !== activeProfileKey(gameMode, selectedSeasonId) ? profile : null;
-	const needsMap = !!mapHref && pathname !== mapHref;
+	const targetMode: GameMode = target ? (target.startsWith("KORD:") ? "KORD" : (target as GameMode)) : gameMode;
+	const mapHref = mapKey ? mapExplorerHref(targetMode, mapKey) : null;
+	const needsMap = !!mapKey && splitModePath(pathname).path !== `/maps/${mapKey}`;
 	const profileLabel = profile ? describeProfile(profile) : null;
 	/** A different profile that can't be switched to (a KORD season that isn't activated). */
 	const blocked = target !== null && !canSwitchToProfile(target);
@@ -31,8 +35,9 @@ export function useRaidMapAction(profile: ProfileKey | null, map: RaidNoticeMap 
 	else if (target) label = `Switch to ${profileLabel}`;
 
 	const go = () => {
+		if (target && needsMap) expectCallerModeNavigation();
 		if (target && !switchToProfile(target)) return;
-		if (needsMap) router.push(mapHref);
+		if (needsMap && mapHref) router.push(mapHref);
 		onDone?.();
 	};
 

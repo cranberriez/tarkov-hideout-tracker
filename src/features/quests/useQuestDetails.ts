@@ -1,14 +1,12 @@
 "use client";
 
 import { useQueries, type UseQueryResult } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { toTarkovJsonGameMode, type TarkovJsonGameMode } from "@/lib/game-mode";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { questDetailQueryOptions, type QuestDetailData } from "@/lib/query/quest-details";
 import { PartialDataError } from "@/lib/query/request";
-import { isDev } from "@/lib/is-dev";
-import { DEV_QUEST_QUERY } from "./dev-quest-fixture";
+import { useDevQuestQuery } from "./useDevQuestQuery";
 
 // TanStack structurally shares the combined arrays so map/model derivations remain stable.
 function combineDetails(results: UseQueryResult<QuestDetailData, Error>[]) {
@@ -45,8 +43,7 @@ export function useQuestDetails(
 	const mode = !hydrated && fallbackMode ? fallbackMode : activeMode;
 	const scopedFallback = fallbackMode && fallbackMode !== mode ? null : fallback;
 	const gameEnabled = useGameDataEnabled(mode);
-	const searchParams = useSearchParams();
-	const devQuery = isDev && searchParams.get("q") === DEV_QUEST_QUERY ? DEV_QUEST_QUERY : null;
+	const devQuery = useDevQuestQuery();
 	const uniqueIds = [...new Set(ids)].sort();
 	const result = useQueries({
 		queries: uniqueIds.map((id) => ({

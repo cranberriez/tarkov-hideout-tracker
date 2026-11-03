@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ModeLink } from "@/components/core/ModeLink";
 import { useMemo } from "react";
 import { ChevronRight } from "lucide-react";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
@@ -33,9 +33,9 @@ export function ItemDetailsPage({
 	return (
 		<main className="container mx-auto flex flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8">
 			<nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-subtle-foreground">
-				<Link href="/items" className="transition-colors hover:text-foreground">
+				<ModeLink href="/items" className="transition-colors hover:text-foreground">
 					Items
-				</Link>
+				</ModeLink>
 				<ChevronRight size={12} aria-hidden="true" />
 				<span aria-current="page" className="truncate text-muted-foreground">
 					{selectedItem.name}

@@ -2,10 +2,13 @@ export type GameMode = "PVP" | "PVE" | "KORD";
 export type TarkovJsonGameMode = "regular" | "pve" | "pvp-season";
 /** Raid-mode tag written to the game's quest logs. */
 export type RaidMode = "pvp" | "pve" | "kord";
+export type GameModeSlug = "pvp" | "pve" | "kord";
 
 export interface GameModeDefinition {
 	/** Tarkov JSON / catalog dataset for this profile. */
 	dataMode: TarkovJsonGameMode;
+	/** URL segment for mode-scoped routes (`/pvp/hideout`). */
+	slug: GameModeSlug;
 	raidMode: RaidMode;
 	label: string;
 	questImportTitle: string;
@@ -18,6 +21,7 @@ export interface GameModeDefinition {
 export const GAME_MODE_CONFIG: Readonly<Record<GameMode, GameModeDefinition>> = {
 	PVP: {
 		dataMode: "regular",
+		slug: "pvp",
 		raidMode: "pvp",
 		label: "PVP",
 		questImportTitle: "PVP Quests",
@@ -26,6 +30,7 @@ export const GAME_MODE_CONFIG: Readonly<Record<GameMode, GameModeDefinition>> = 
 	},
 	PVE: {
 		dataMode: "pve",
+		slug: "pve",
 		raidMode: "pve",
 		label: "PVE",
 		questImportTitle: "PVE Quests",
@@ -34,6 +39,7 @@ export const GAME_MODE_CONFIG: Readonly<Record<GameMode, GameModeDefinition>> = 
 	},
 	KORD: {
 		dataMode: "pvp-season",
+		slug: "kord",
 		raidMode: "kord",
 		label: "KORD",
 		questImportTitle: "KORD Seasonal Quests",
@@ -49,6 +55,15 @@ export const TARKOV_JSON_GAME_MODES: readonly TarkovJsonGameMode[] = GAME_MODES.
 export const DEFAULT_GAME_MODE: GameMode = "PVP";
 export const DEFAULT_TARKOV_JSON_GAME_MODE: TarkovJsonGameMode = GAME_MODE_CONFIG[DEFAULT_GAME_MODE].dataMode;
 export const ACTIVE_GAME_MODE_COOKIE = "tarkov-active-game-mode";
+
+export function gameModeSlug(mode: GameMode): GameModeSlug {
+	return GAME_MODE_CONFIG[mode].slug;
+}
+
+/** Exact, lowercase URL slugs only; anything else is not a mode route. */
+export function gameModeFromSlug(slug: string | null | undefined): GameMode | null {
+	return GAME_MODES.find((mode) => GAME_MODE_CONFIG[mode].slug === slug) ?? null;
+}
 
 export function isGameMode(value: unknown): value is GameMode {
 	return typeof value === "string" && Object.hasOwn(GAME_MODE_CONFIG, value);

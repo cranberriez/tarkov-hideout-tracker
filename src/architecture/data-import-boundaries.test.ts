@@ -79,7 +79,7 @@ test("quest browser-only surfaces leave the routed detail outlet server rendered
 	}
 	// An ssr:false workspace wrapper would also suppress its routed detail child.
 	for (const file of [
-		"app/(data)/quests/layout.tsx",
+		"app/(data)/[mode]/quests/layout.tsx",
 		"features/quests/QuestsQueryPage.tsx",
 		"features/quests/QuestsClientPage.tsx",
 		"features/quests/workspace/QuestDetailRoute.tsx",
@@ -89,7 +89,7 @@ test("quest browser-only surfaces leave the routed detail outlet server rendered
 	assert.match(workspace, /\{mode === "board" \? [\s\S]*?: \([\s\S]*?children/);
 	assert.match(
 		readSource("features/quests/workspace/QuestWorkspaceContext.tsx"),
-		/const requestedView = hydrated \? searchParams\.get\(QUEST_VIEW_PARAM\) : null/,
+		/const requestedView = hydrated \? viewParam : null/,
 	);
 });
 
@@ -131,6 +131,17 @@ test("removed global data boundaries stay deleted", () => {
 		removedPaths.filter((file) => existsSync(path.join(projectRoot, file))),
 		[],
 	);
+});
+
+test("mode-scoped routes take the mode from the URL, never from request cookies or headers", () => {
+	const violations = sourceFiles(path.join(sourceRoot, "app", "(data)", "[mode]"))
+		.filter((file) => {
+			const source = readFileSync(file, "utf8");
+			return moduleImports(source).includes("next/headers") || /cookies\(\)|headers\(\)/.test(source);
+		})
+		.map(relativePath);
+	assert.deepEqual(violations, []);
+	assert.equal(existsSync(path.join(sourceRoot, "server", "active-game-mode.ts")), false);
 });
 
 test("pages enter Tarkov data through queries rather than the concrete repository", () => {

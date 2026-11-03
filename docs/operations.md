@@ -160,7 +160,7 @@ npm run dev -- --port 3000
    their own progress and conversion status.
 
 The storage is localStorage, not cookies: the scheme, hostname **and port** must
-match throughout each trial. Cookies only help select the server-side game mode.
+match throughout each trial. The mode cookie only steers redirects of old unprefixed URLs.
 If 3000 is occupied, use another explicit port for **both** versions. To repeat a
 first-visit test, use another disposable browser profile; do not clear real player
 storage. Automated [storage regression tests](../src/lib/stores/user-state-storage.test.ts)

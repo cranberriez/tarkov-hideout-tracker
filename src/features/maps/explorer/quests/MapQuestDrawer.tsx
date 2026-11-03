@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Circle, Crown, ExternalLink, KeyRound, MapPin, X } from "lucide-react";
 import { compareQuestTradersByOrder } from "@/lib/cfg/questTraderOrder";
 import { questHref } from "@/lib/entity-routes";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { ItemSummary } from "@/types/items";
 import type { FullQuest, FullQuestObjective, QuestObjectiveShootType, QuestSummary } from "@/types/quests";
@@ -375,6 +376,7 @@ function QuestDetail({
 	onShowObjective: (questId: string, objectiveId: string) => void;
 }) {
 	const visited = useUserStore((state) => state.completedQuestObjectives[summary.id]);
+	const { mode } = useModeRoute();
 	const toggleVisited = useUserStore((state) => state.toggleQuestObjectiveCompletion);
 	const itemNames = useMemo(() => new Map(items.map((item) => [item.id, item.shortName || item.name])), [items]);
 	const prerequisites = summary.taskRequirements.map((requirement) => requirement.task.name);
@@ -400,7 +402,7 @@ function QuestDetail({
 					{summary.kappaRequired && <span className="quest-kappa">· Kappa</span>}
 					{summary.lightkeeperRequired && <span>· Lightkeeper</span>}
 				</p>
-				<Link className="quest-detail-link" href={questHref(summary.id)} prefetch={false}>
+				<Link className="quest-detail-link" href={questHref(mode, summary.id)} prefetch={false}>
 					Open quest page <ExternalLink size={12} />
 				</Link>
 

@@ -5,7 +5,8 @@ import { useBattlePassData } from "./BattlePassSeason";
 import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Map as MapIcon } from "lucide-react";
 import Link from "next/link";
-import { DOCUMENT_MAPS_HREF } from "@/lib/cfg/map-explorer";
+import { documentMapsHref } from "@/lib/cfg/map-explorer";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { coverCosts, planGoals, previewProgress, unlockedPages, type Costs } from "./lib/battle-pass-model";
 import { useBattlePass } from "./useBattlePass";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
@@ -37,6 +38,7 @@ function useSpread() {
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { pages, tiles, documentKeys, costSwaps } = useBattlePassData();
+	const { mode: routeMode } = useModeRoute();
 	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs, swapCost, resetCostSwaps }] =
 		useBattlePass();
 	// Session-only so costs are never edited by accident on a later visit.
@@ -202,7 +204,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				coverage={allProfilesCoverage}
 				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
 				headerAction={
-					<Link href={DOCUMENT_MAPS_HREF} className={buttonClassName({ tone: "brand" })}>
+					<Link href={documentMapsHref(routeMode)} className={buttonClassName({ tone: "brand" })}>
 						<MapIcon size={15} aria-hidden />
 						Document map
 					</Link>

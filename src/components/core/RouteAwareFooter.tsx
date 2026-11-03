@@ -1,10 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useModeRoute } from "@/lib/useModeRoute";
 import { Footer } from "./Footer";
 
 export function RouteAwareFooter() {
-	const pathname = usePathname();
+	const { path: pathname } = useModeRoute();
 	if (
 		pathname === "/uploader" ||
 		pathname === "/quests" ||

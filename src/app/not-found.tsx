@@ -6,6 +6,7 @@ import Image from "next/image";
 import { standardItemImageUrl } from "@/lib/utils/item-images";
 import { useRouter } from "next/navigation";
 import { ChevronsRight, TriangleAlert } from "lucide-react";
+import { useModeRoute } from "@/lib/useModeRoute";
 import styles from "./not-found.module.css";
 
 const bitcoinImage = standardItemImageUrl("59faff1d86f7746c51718c9c", "512");
@@ -24,6 +25,8 @@ const coins = [
 
 export default function NotFound() {
 	const router = useRouter();
+	const { href } = useModeRoute();
+	const hideoutHref = href("/hideout");
 
 	return (
 		<main className={styles.scene}>
@@ -57,7 +60,7 @@ export default function NotFound() {
 					<h1>Missing in action</h1>
 				</div>
 				<nav className={styles.actions} aria-label="Page recovery">
-					<Link href="/hideout" className={styles.primary}>
+					<Link href={hideoutHref} className={styles.primary}>
 						<ChevronsRight size={21} aria-hidden="true" /> Back to hideout
 					</Link>
 					<button
@@ -65,7 +68,7 @@ export default function NotFound() {
 						className={styles.secondary}
 						onClick={() => {
 							if (window.history.length > 1) router.back();
-							else router.replace("/hideout");
+							else router.replace(hideoutHref);
 						}}
 					>
 						Go back

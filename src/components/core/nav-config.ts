@@ -18,10 +18,11 @@ import {
 	ScrollText,
 	Wrench,
 } from "lucide-react";
-import { questViewHref } from "@/lib/entity-routes";
+import { questViewPath } from "@/lib/entity-routes";
 
 export interface NavItem {
 	name: string;
+	/** Mode-less path; mode-scoped pages are prefixed with the current mode where rendered (`useModeRoute`). */
 	href: string;
 	icon?: LucideIcon;
 	disabled?: boolean;
@@ -82,8 +83,8 @@ export const navMenus: NavMenu[] = [
 		href: "/quests",
 		icon: ScrollText,
 		children: [
-			{ name: "Trader Board", href: questViewHref("board"), icon: Columns3 },
-			{ name: "Visualizer", href: questViewHref("visualizer"), icon: GitBranch },
+			{ name: "Trader Board", href: questViewPath("board"), icon: Columns3 },
+			{ name: "Visualizer", href: questViewPath("visualizer"), icon: GitBranch },
 			{ name: "Story Chapters", href: "/story", icon: BookOpen },
 		],
 	},
