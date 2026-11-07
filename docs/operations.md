@@ -96,6 +96,22 @@ Set the variable to `0` or remove it, then restart the server to disable logging
 
 ## Validation
 
+### Local artwork generation
+
+`npm run dev` and `npm run build` run `npm run artwork:generate` first. The
+[generator](../scripts/generate-artwork.mjs) reads checked-in local artwork and
+creates WebP story hover previews and battle-pass variants under
+`public/images/generated-artwork/` (ignored by Git). No external storage or image
+downloads are needed. Run the generator after changing source artwork and include
+its updated feature manifests in the same commit. Warm runs reuse existing files.
+
+Generated URLs hash the encoded bytes and use a one-year immutable cache header.
+Story thumbnails and full-size dialogs retain their existing paths; provider-hosted
+item and map imagery is unchanged. Deploy with `npm run build` so every referenced
+variant exists. Invoking `next build` directly skips the generation lifecycle.
+
+### Checks
+
 Run from the repository root:
 
 ```bash

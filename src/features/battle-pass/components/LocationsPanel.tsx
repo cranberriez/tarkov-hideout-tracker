@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import Image from "next/image";
 import { Columns3, Map as MapIcon, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { generatedBattlePassArtwork } from "@/lib/generated-battle-pass-artwork";
 
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
@@ -13,6 +14,9 @@ import { MapGrid } from "./MapGrid";
 function MapHeading({ map }: { map: string }) {
 	const { mapThumbnails } = useBattlePassData();
 	const [failed, setFailed] = useState(false);
+	const [useOriginal, setUseOriginal] = useState(false);
+	const src = mapThumbnails[map.toLowerCase().replaceAll(" ", "-")];
+	const variant = generatedBattlePassArtwork(src)?.[0];
 	return (
 		<div className="mb-3 flex min-h-24 flex-col items-center gap-2 text-center">
 			{failed ? (
@@ -21,12 +25,13 @@ function MapHeading({ map }: { map: string }) {
 				</div>
 			) : (
 				<Image
-					src={mapThumbnails[map.toLowerCase().replaceAll(" ", "-")]}
+					src={!useOriginal ? (variant ?? src) : src}
+					unoptimized={!!variant && !useOriginal}
 					alt=""
 					width={480}
 					height={288}
 					sizes="(min-width: 1024px) 8vw, (min-width: 640px) 16vw, 50vw"
-					onError={() => setFailed(true)}
+					onError={() => (variant && !useOriginal ? setUseOriginal(true) : setFailed(true))}
 					className="h-14 w-full rounded-sm object-cover"
 				/>
 			)}
