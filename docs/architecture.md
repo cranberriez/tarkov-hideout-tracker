@@ -139,8 +139,11 @@ Individual items remain outside the sitemap. No artificial modification dates ar
 Keys and Station Goals routes are placeholders; Bitcoin Farm
 calculations live on its station page (see [profits](profits.md)). Check
 their [route implementations](<../src/app/(data)/>) before extending them.
-[Navbar](../src/components/core/Navbar.tsx) owns navigation. The desktop Hideout
-dropdown lists every station from the static
+[Navbar](../src/components/core/Navbar.tsx) owns navigation. Its links prefetch
+only after hover or keyboard focus, instead of loading
+every visible destination. Prefetch intent resets when the mode or destination
+changes; station detail links retain their explicit prefetch suppression. The
+desktop Hideout dropdown lists every station from the static
 [station list](../src/lib/data/static-stations.ts) in [stationOrder](../src/lib/cfg/stationOrder.ts),
 with bundled portraits and the saved level (a crown when maxed), so the shared
 layout still fetches no station data. The
