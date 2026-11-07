@@ -581,12 +581,13 @@ updates do not invalidate search. Identity responses are cached for 60 seconds o
 CDN; manifest responses for the current releaseId are immutable, and errors and 409s
 stay private, no-store.
 
-[Background search](../src/lib/search/useSearchManifest.tsx) starts after window
-load, browser idle scheduling, and profile hydration. Opening search earlier can
-start the same query immediately. TanStack retains the decoded index in session
-memory across navigation, with infinite freshness for a given revision. A separate
-five-minute identity query checks on an interval while visible and on stale
-focus/reconnect. A new revision loads a new manifest; the old revision is removed
+[Search loading](../src/lib/search/useSearchManifest.tsx) starts when search opens
+or a feature needs the index, after profile hydration. Quick Add waits for a nonempty
+query. Ordinary page visits do not download or poll search in the background.
+TanStack retains the decoded index in session memory across navigation, with
+infinite freshness for a given revision. The identity is stale after five minutes
+and refreshes on the next use or reconnect, without interval polling. A new revision
+loads a new manifest; the old revision is removed
 after successful replacement. The existing mode lifecycle cancels/removes the
 previous mode, including in-flight responses. Failures expose explicit retry;
 valid same-revision data can remain usable after an identity-check failure.

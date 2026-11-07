@@ -16,8 +16,8 @@ export function useItemSearchController({
 	query: string;
 	resultLimit: number;
 }) {
-	const result = useSearchManifest(mode, enabled);
 	const hasSearchIntent = enabled && !!query.trim();
+	const result = useSearchManifest(mode, hasSearchIntent);
 	const items = useMemo(
 		() => (hasSearchIntent && result.data ? searchManifestItems(result.data.itemIndex, query, resultLimit) : []),
 		[hasSearchIntent, result.data, query, resultLimit],
