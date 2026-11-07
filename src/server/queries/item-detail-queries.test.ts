@@ -11,6 +11,7 @@ import type { Trader } from "@/types/traders";
 import { getItemAcquisitionTreeData } from "./getItemAcquisitionTreeData";
 import { getItemRelationsData } from "./getItemRelationsData";
 import { getItemUsageData } from "./getItemUsageData";
+import { getItemDetailPageData } from "./getItemDetailPageData";
 
 function result<T>(data: T, updatedAt = 1): DataResult<T> {
 	return { data, updatedAt, diagnostics: { provider: "json" } };
@@ -95,6 +96,21 @@ function fullQuest(
 			: [],
 	};
 }
+
+test("item page identity reads only the requested item without mutable offers", async () => {
+	const repository = createRepository({
+		items: async (mode, ids, options) => {
+			assert.equal(mode, "pve");
+			assert.deepEqual(ids, ["item-a"]);
+			assert.deepEqual(options, { includeOffers: false });
+			return result({ "item-a": item("item-a") });
+		},
+	});
+	assert.deepEqual(await getItemDetailPageData("pve", "item-a", repository), {
+		item: item("item-a"),
+		error: null,
+	});
+});
 
 test("usage requests only records referenced by the selected item's recipes", async () => {
 	const calls = {

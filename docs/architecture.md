@@ -18,8 +18,13 @@ Sync, News, Battle Pass and Dev stay unprefixed. Route paths below omit the pref
 
 - **Server:** pages read the mode from `params` through
   [readRouteGameMode](../src/server/route-game-mode.ts) (unknown slugs 404) and
-  never read cookies or headers, so each mode × page is an ISR response
-  (`revalidate = 3600` in the `[mode]` layout; entity IDs render on first visit).
+  never read cookies or headers, so each mode × page can be cached separately;
+  entity IDs render on first visit. Client-data-only shells have no periodic
+  revalidation. The Hideout overview, Items and Kappa checklists, and station,
+  item and quest detail pages revalidate at two hours; profit lists and Craft
+  Planner retain a one-hour route default.
+  A shorter data-cache lifetime can revalidate a route sooner, including the
+  five-minute trader-offer reads used by several prefetched routes.
   Query strings are read only in the browser (`?preset=`, `?view=` through
   [SearchParamListener](../src/components/core/SearchParamListener.tsx),
   `?recipe=` in the price-gated profit table) so routes stay static.
@@ -645,10 +650,10 @@ At `lg` and above, the usage tab panel scrolls within a 700px maximum height.
 The shared item header presents requirement totals as a compact two-column
 text grid below `lg`, retaining the bordered summary on desktop.
 
-`/items/[itemId]` still exists but nothing links to it yet. It server-renders its
-initial Hideout rows: [getItemDetailViews](../src/server/queries/getItemDetailViews.ts)
-selects only the unpriced relations view; complete data is hydrated into the client
-query key and partial data is passed as a retryable fallback. Usage and acquisition
+`/items/[itemId]` still exists but nothing links to it yet. It server-renders the
+item's catalog identity without mutable trader offers. The existing client query
+loads relations after profile hydration, with explicit loading, partial-error and
+retry states. Usage and acquisition
 remain deferred until their tabs are selected, matching the dialog. Only the active
 panel renders. Profile-dependent status (available/locked
 badges, lock reasons, availability ordering, current station level, quest status) is

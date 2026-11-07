@@ -196,7 +196,9 @@ Compatibility profit requests that
 include prices use 300 seconds for both. Partial responses and HTTP errors use
 `no-store`. Initial server-page HTML/RSC payloads are separate ISR responses per URL mode
 (see [architecture](architecture.md#mode-scoped-routes)); they prefetch the same
-unpriced queries directly and revalidate hourly. Explicit unresolved
+unpriced queries directly. Client-data-only shells have no periodic regeneration;
+catalog-prefetched routes use explicit one- or two-hour defaults, with shorter
+underlying data-cache lifetimes able to trigger earlier revalidation. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
@@ -281,7 +283,12 @@ Item dialogs and direct item pages initially request relations for requirement
 totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
 graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
 when those requested graphs settle. Previously opened items do not expand the
-price request. The server item page prefetches relations only. Existing per-view,
+price request. The server item page reads only the item's catalog identity without
+mutable trader offers; relations load through the existing client query after profile
+hydration, with loading, partial-error and retry states. Station recipe graphs also
+load through their shared browser query rather than being embedded in station HTML.
+Items and Kappa checklist summaries also exclude unused trader purchase offers;
+their current sell prices still load separately. Existing per-view,
 mode/item/version server caching remains unchanged.
 
 Data GET routes read the mode from the `?mode=` query parameter through

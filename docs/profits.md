@@ -356,7 +356,7 @@ modeled in recipe profit.
 
 ## Generator fuel and Bitcoin Farm
 
-The station page's streamed recipe slot
+The station page's client-loaded recipe section
 ([StationRecipeSections](../src/features/hideout/details/crafts/StationRecipeSections.tsx))
 adds a Generator row and Bitcoin calculator on the Bitcoin Farm and a Fuel breakdown on
 the Generator, above Crafts. They wait for the saved profile like crafts, reuse the

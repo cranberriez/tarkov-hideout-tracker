@@ -11,6 +11,8 @@ import { getItemChecklistPageData } from "@/server/queries/getItemChecklistPageD
 import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
+export const revalidate = 7200;
+
 export async function generateMetadata({ params }: { params: ModeRouteParams }): Promise<Metadata> {
 	const { gameMode } = await readRouteGameMode(params);
 	return {

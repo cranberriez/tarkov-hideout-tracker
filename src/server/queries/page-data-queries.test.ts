@@ -283,7 +283,8 @@ test("item checklist remains usable with station data when quests fail", async (
 		quests: async () => {
 			throw new Error("quests unavailable");
 		},
-		items: async (_mode, ids) => {
+		items: async (_mode, ids, options) => {
+			assert.equal(options?.includeOffers, false);
 			requestedIds.push([...ids]);
 			return result({ "item-a": { id: "item-a", name: "A", normalizedName: "a" } });
 		},

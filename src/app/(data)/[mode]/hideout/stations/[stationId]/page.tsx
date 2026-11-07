@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cache, Suspense } from "react";
+import { cache } from "react";
 import { HydrationBoundary } from "@tanstack/react-query";
-import { StationCraftsSkeleton } from "@/features/hideout/details/crafts/StationCraftsSkeleton";
-import { prefetchStationCrafts, StationCraftsStream } from "@/features/hideout/details/crafts/StationCraftsStream";
+import { StationRecipeSections } from "@/features/hideout/details/crafts/StationRecipeSections";
 import { StationDetailQueryPage } from "@/features/hideout/details/StationDetailQueryPage";
 import { STATIC_STATIONS } from "@/lib/data/static-stations";
 import { stationPath } from "@/lib/entity-routes";
@@ -18,6 +17,8 @@ import { getCurrentPageRepository } from "@/server/queries/currentPageRepository
 interface StationPageProps {
 	params: Promise<{ mode: string; stationId: string }>;
 }
+
+export const revalidate = 7200;
 
 /** The static station list is small; stations missing from a mode prerender their 404. */
 export function generateStaticParams() {
@@ -46,8 +47,6 @@ export async function generateMetadata({ params }: StationPageProps): Promise<Me
 export default async function StationPage({ params }: StationPageProps) {
 	const { dataMode: activeMode } = await readRouteGameMode(params);
 	const stationId = decodeRouteParam((await params).stationId);
-	// Starts before the Hideout await so the recipe read overlaps it; resolved by the Suspense slot.
-	const craftsPrefetch = prefetchStationCrafts(activeMode, stationId);
 	const { gameMode, data } = await loadHideout(activeMode, stationId);
 	// Missing stations 404 only when the station list itself loaded.
 	if (data.stations && !data.stations.some((entry) => entry.id === stationId)) notFound();
@@ -65,11 +64,7 @@ export default async function StationPage({ params }: StationPageProps) {
 				mode={gameMode}
 				stationId={stationId}
 				fallbackData={fallbackData}
-				crafts={
-					<Suspense fallback={<StationCraftsSkeleton />}>
-						<StationCraftsStream mode={activeMode} prefetch={craftsPrefetch} />
-					</Suspense>
-				}
+				crafts={<StationRecipeSections mode={activeMode} fallbackData={null} />}
 			/>
 		</HydrationBoundary>
 	);

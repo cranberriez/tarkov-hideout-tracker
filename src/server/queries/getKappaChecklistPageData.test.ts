@@ -82,7 +82,8 @@ test("Kappa requests only the configured Collector and its give-item records in 
 		};
 		const repository: TarkovDataRepository = {
 			items: {
-				async getByIds(requestMode, ids) {
+				async getByIds(requestMode, ids, options) {
+					assert.equal(options?.includeOffers, false);
 					calls.itemByIds.push([requestMode, [...ids]]);
 					return result(items, 20);
 				},

@@ -14,7 +14,7 @@ export async function getItemDetailPageData(
 ): Promise<ItemDetailPageData> {
 	const dataRepository = repository ?? (await getDefaultRepository());
 	try {
-		const { data } = await dataRepository.items.getByIds(mode, [itemId]);
+		const { data } = await dataRepository.items.getByIds(mode, [itemId], { includeOffers: false });
 		return { item: data[itemId] ?? null, error: null };
 	} catch {
 		return { item: null, error: "Item data could not be loaded." };
