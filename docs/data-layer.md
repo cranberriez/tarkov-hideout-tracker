@@ -184,7 +184,7 @@ missing/failed presentation distinct from recipe and price availability.
 
 ## Lazy API reads and exceptions
 
-Hideout, Items, Quests, Kappa, and Profit server pages prefetch their named
+Hideout, Items, Kappa, and Profit server pages prefetch their named
 payload through a request-local QueryClient and hydrate the same mode-keyed query
 for the browser. The bounded `/api/page-data/*` routes capture the current database
 revision internally and support whole-payload refetches. Both profit lists and
@@ -200,8 +200,9 @@ unpriced queries directly and revalidate hourly. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
-Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v2`
-deliver only the quest index (unversioned requests also return the index). Summaries
+The quest workspace loads `/api/page-data/quests?mode=...&format=index-v2` in the
+browser instead of repeating its index in every detail page's HTML/RSC.
+The endpoint delivers only the quest index (unversioned requests also return the index). Summaries
 carry trader IDs only (`traderId`, and `traderId` on trader requirements); readers expand
 them through [quest-summary-payload](../src/lib/quests/quest-summary-payload.ts) against the
 bundled [trader list](../src/lib/data/traders.ts), never by reading the raw cache entry.

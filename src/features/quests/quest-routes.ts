@@ -1,4 +1,4 @@
-import { splitModePath } from "../../lib/entity-routes";
+import { questsHref, splitModePath } from "../../lib/entity-routes";
 import type { GameMode } from "../../lib/game-mode";
 import { decodeRouteParam } from "../../lib/utils/route-param";
 
@@ -24,4 +24,9 @@ export function selectedQuestIdFromPath(pathname: string): string | null {
 export function isQuestWorkspaceUrl(url: URL, mode: GameMode): boolean {
 	const { mode: urlMode, path } = splitModePath(url.pathname);
 	return urlMode === mode && /^\/quests(?:\/[^/]+)?\/?$/.test(path);
+}
+
+/** Missing-quest pages can render before the workspace provider has loaded. */
+export function questNotFoundIndexHref(mode: GameMode, workspaceIndexHref?: string): string {
+	return workspaceIndexHref ?? questsHref(mode);
 }

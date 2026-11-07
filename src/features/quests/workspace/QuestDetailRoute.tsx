@@ -1,18 +1,38 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { QuestDetailsPane } from "./QuestDetailsPane";
 import { QuestNotFound } from "./QuestSelectionPrompt";
-import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { useOptionalQuestWorkspace, useQuestWorkspace } from "./QuestWorkspaceContext";
 import { useQuestDetails } from "../useQuestDetails";
 import { QuestItemsProvider } from "../QuestActionsContext";
 import type { QuestDetailData } from "@/lib/query/quest-details";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
+
+/** Show the server identity while the workspace is loading or unavailable. */
+export function QuestDetailIdentity({ children }: { children: ReactNode }) {
+	return useOptionalQuestWorkspace() ? null : <div className="container mx-auto px-6 py-4">{children}</div>;
+}
 
 /**
  * `/quests/[questId]` content. Loads only the selected quest and its item presentations;
  * direct visits hydrate that same cache entry from the server route.
  */
 export function QuestDetailRoute({
+	questId,
+	fallbackData,
+	fallbackMode,
+}: {
+	questId: string;
+	fallbackData?: QuestDetailData | null;
+	fallbackMode?: TarkovJsonGameMode;
+}) {
+	const workspace = useOptionalQuestWorkspace();
+	if (!workspace) return null;
+	return <QuestDetailContent questId={questId} fallbackData={fallbackData} fallbackMode={fallbackMode} />;
+}
+
+function QuestDetailContent({
 	questId,
 	fallbackData,
 	fallbackMode,

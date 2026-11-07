@@ -15,9 +15,7 @@ It includes identity, progression gates, prerequisite/failure relationships, and
 derived map/category/key flags plus objective search text. It excludes full
 objectives, item lists, rewards, and geometry, and performs no item or price reads.
 The summary type cannot be passed as a full detail record. The
-[quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) prefetches that mode-keyed
-Query once for the segment and the client wrapper consumes and refetches the same
-payload; parent layouts still load nothing. See [data layer](data-layer.md) for
+[quests layout](<../src/app/(data)/[mode]/quests/layout.tsx>) mounts a client query for that mode-keyed index once per segment; the index is not serialized into route HTML. Parent layouts still load nothing. See [data layer](data-layer.md) for
 route delivery and release regeneration.
 
 [getQuestDetailsData](../src/server/queries/getQuestDetailsData.ts) reads only
@@ -68,8 +66,7 @@ detail relations, command palette) only pushes native history, which Next syncs 
 the selected quest itself from the loaded index plus its CDN-cached detail request,
 and keeps the tab title in step. Search, filters, group collapse, and list scroll
 persist across selection, and Back/Forward select the matching quest. Modified clicks
-and new tabs use the routes. Links to the quest index elsewhere do not prefetch: its
-route payload carries the whole quest index. Workspace-initiated selection keeps an open visualizer; Back/Forward,
+and new tabs use the routes. Links to the quest index elsewhere do not prefetch the route. Workspace-initiated selection keeps an open visualizer; Back/Forward,
 search, and shared links switch to Details. Completing a quest does not navigate.
 Workspace mode (Details, Trader board, Visualizer) is session state. The
 Quests nav entries link to `/quests?view=board|visualizer`; the provider applies
@@ -118,8 +115,7 @@ The workspace renders its list, filter controls, action bar and mobile menu in t
 browser; full visits do not render all list rows on the server. Board and visualizer
 component code also loads on demand in the browser, with a loading indicator in the
 selected pane. The persistent workspace and its providers stay outside these
-browser-only boundaries, so the selected quest's details and route metadata remain
-server rendered. URL-requested views apply after profile hydration. Shared quest
+browser-only boundaries, while route metadata and a compact quest identity remain server rendered. The interactive details appear once the workspace index loads. URL-requested views apply after profile hydration. Shared quest
 indexes remain available for complete prerequisite and filter derivation.
 Selected detail queries use the server route's mode until profile hydration, then
 switch to the active profile's mode without reusing a different mode's fallback.

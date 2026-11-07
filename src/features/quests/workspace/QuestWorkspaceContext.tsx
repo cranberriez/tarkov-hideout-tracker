@@ -483,6 +483,10 @@ export function QuestWorkspaceProvider({
 	);
 }
 
+export function useOptionalQuestWorkspace() {
+	return useContext(QuestWorkspaceContext);
+}
+
 export function useQuestWorkspace() {
 	const context = useContext(QuestWorkspaceContext);
 	if (!context) throw new Error("useQuestWorkspace must be used within QuestWorkspaceProvider");
