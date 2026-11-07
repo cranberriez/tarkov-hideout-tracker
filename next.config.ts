@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
 		],
 	},
 	allowedDevOrigins: ["192.168.2.13"],
+	async headers() {
+		return [
+			{
+				source: "/images/generated-artwork/:path*",
+				headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+			},
+		];
+	},
 	async rewrites() {
 		return [
 			{

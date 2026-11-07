@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "../game-mode";
 import { gameDataKey } from "../query/scope";
 import { fetchJson, ResponseValidationError } from "../query/request";
@@ -23,9 +23,17 @@ export function searchIdentityOptions(mode: TarkovJsonGameMode) {
 			return value;
 		},
 		staleTime: 5 * 60_000,
-		refetchInterval: 5 * 60_000,
 		gcTime: Infinity,
 	});
+}
+
+export function removeOldSearchManifests(client: QueryClient, mode: TarkovJsonGameMode, releaseId: string) {
+	const filters = {
+		queryKey: gameDataKey(mode, "search-manifest"),
+		predicate: (query: { queryKey: readonly unknown[] }) => query.queryKey[4] !== releaseId,
+	};
+	void client.cancelQueries(filters);
+	client.removeQueries(filters);
 }
 
 export function searchManifestOptions(mode: TarkovJsonGameMode, releaseId: string) {

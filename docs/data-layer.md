@@ -184,7 +184,7 @@ missing/failed presentation distinct from recipe and price availability.
 
 ## Lazy API reads and exceptions
 
-Hideout, Items, Quests, Kappa, and Profit server pages prefetch their named
+Hideout, Items, Kappa, and Profit server pages prefetch their named
 payload through a request-local QueryClient and hydrate the same mode-keyed query
 for the browser. The bounded `/api/page-data/*` routes capture the current database
 revision internally and support whole-payload refetches. Both profit lists and
@@ -196,12 +196,15 @@ Compatibility profit requests that
 include prices use 300 seconds for both. Partial responses and HTTP errors use
 `no-store`. Initial server-page HTML/RSC payloads are separate ISR responses per URL mode
 (see [architecture](architecture.md#mode-scoped-routes)); they prefetch the same
-unpriced queries directly and revalidate hourly. Explicit unresolved
+unpriced queries directly. Client-data-only shells have no periodic regeneration;
+catalog-prefetched routes use explicit one- or two-hour defaults, with shorter
+underlying data-cache lifetimes able to trigger earlier revalidation. Explicit unresolved
 IDs stay in successful payloads and visible warnings; domain errors produce usable
 partial payloads that remain retryable rather than reusable complete cache entries.
 
-Quest workspace hydration and `/api/page-data/quests?mode=...&format=index-v2`
-deliver only the quest index (unversioned requests also return the index). Summaries
+The quest workspace loads `/api/page-data/quests?mode=...&format=index-v2` in the
+browser instead of repeating its index in every detail page's HTML/RSC.
+The endpoint delivers only the quest index (unversioned requests also return the index). Summaries
 carry trader IDs only (`traderId`, and `traderId` on trader requirements); readers expand
 them through [quest-summary-payload](../src/lib/quests/quest-summary-payload.ts) against the
 bundled [trader list](../src/lib/data/traders.ts), never by reading the raw cache entry.
@@ -280,7 +283,12 @@ Item dialogs and direct item pages initially request relations for requirement
 totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
 graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
 when those requested graphs settle. Previously opened items do not expand the
-price request. The server item page prefetches relations only. Existing per-view,
+price request. The server item page reads only the item's catalog identity without
+mutable trader offers; relations load through the existing client query after profile
+hydration, with loading, partial-error and retry states. Station recipe graphs also
+load through their shared browser query rather than being embedded in station HTML.
+Items and Kappa checklist summaries also exclude unused trader purchase offers;
+their current sell prices still load separately. Existing per-view,
 mode/item/version server caching remains unchanged.
 
 Data GET routes read the mode from the `?mode=` query parameter through
@@ -581,12 +589,13 @@ updates do not invalidate search. Identity responses are cached for 60 seconds o
 CDN; manifest responses for the current releaseId are immutable, and errors and 409s
 stay private, no-store.
 
-[Background search](../src/lib/search/useSearchManifest.tsx) starts after window
-load, browser idle scheduling, and profile hydration. Opening search earlier can
-start the same query immediately. TanStack retains the decoded index in session
-memory across navigation, with infinite freshness for a given revision. A separate
-five-minute identity query checks on an interval while visible and on stale
-focus/reconnect. A new revision loads a new manifest; the old revision is removed
+[Search loading](../src/lib/search/useSearchManifest.tsx) starts when search opens
+or a feature needs the index, after profile hydration. Quick Add waits for a nonempty
+query. Ordinary page visits do not download or poll search in the background.
+TanStack retains the decoded index in session memory across navigation, with
+infinite freshness for a given revision. The identity is stale after five minutes
+and refreshes on the next use or reconnect, without interval polling. A new revision
+loads a new manifest; the old revision is removed
 after successful replacement. The existing mode lifecycle cancels/removes the
 previous mode, including in-flight responses. Failures expose explicit retry;
 valid same-revision data can remain usable after an identity-check failure.

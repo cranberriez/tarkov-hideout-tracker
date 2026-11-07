@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { modeHref, splitModePath, switchModeHref } from "../../lib/entity-routes";
-import { getLegacyQuestHashId, isQuestWorkspaceUrl, questHref, selectedQuestIdFromPath } from "./quest-routes";
+import { getLegacyQuestHashId, isQuestWorkspaceUrl, questHref, questNotFoundIndexHref, selectedQuestIdFromPath } from "./quest-routes";
 
 test("quest hrefs are mode-scoped, encode IDs and keep the development fixture query", () => {
 	assert.equal(questHref("PVP", "5936d90786f7742b1420ba5b"), "/pvp/quests/5936d90786f7742b1420ba5b");
@@ -30,4 +30,10 @@ test("legacy quest fragments resolve to their quest ID", () => {
 	assert.equal(getLegacyQuestHashId("#quest-abc"), "abc");
 	assert.equal(getLegacyQuestHashId("#objectives"), null);
 	assert.equal(getLegacyQuestHashId(""), null);
+});
+
+test("missing quest link works without a workspace and follows the route mode", () => {
+	assert.equal(questNotFoundIndexHref("PVE"), "/pve/quests");
+	assert.equal(questNotFoundIndexHref("PVP"), "/pvp/quests");
+	assert.equal(questNotFoundIndexHref("PVE", "/pve/quests?view=board"), "/pve/quests?view=board");
 });

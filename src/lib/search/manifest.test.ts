@@ -3,7 +3,7 @@ import test from "node:test";
 import { QueryClient } from "@tanstack/react-query";
 import { buildSearchManifest } from "./build-manifest";
 import { decodeSearchManifest, searchManifestItems, validateSearchManifest } from "./manifest";
-import { searchManifestOptions } from "./query";
+import { removeOldSearchManifests, searchIdentityOptions, searchManifestOptions } from "./query";
 import { removeGameDataScope } from "../query/scope";
 import { REMOVED_QUEST_IDS } from "../quests/removed-quests";
 import type { FullQuest } from "../../types/quests";
@@ -115,4 +115,20 @@ test("mode removal aborts a pending manifest and cannot accept its late response
 		globalThis.fetch = original;
 		client.clear();
 	}
+});
+
+test("identity checks do not poll and replacement removes only older manifests in the same mode", () => {
+	const client = new QueryClient();
+	assert.equal("refetchInterval" in searchIdentityOptions("regular"), false);
+	const old = searchManifestOptions("regular", "revision-a").queryKey;
+	const current = searchManifestOptions("regular", "revision-b").queryKey;
+	const otherMode = searchManifestOptions("pve", "revision-a").queryKey;
+	client.setQueryData(old, { releaseId: "revision-a" });
+	client.setQueryData(current, { releaseId: "revision-b" });
+	client.setQueryData(otherMode, { releaseId: "revision-a" });
+	removeOldSearchManifests(client, "regular", "revision-b");
+	assert.equal(client.getQueryData(old), undefined);
+	assert.ok(client.getQueryData(current));
+	assert.ok(client.getQueryData(otherMode));
+	client.clear();
 });

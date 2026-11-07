@@ -46,7 +46,7 @@ export async function getItemChecklistPageData(
 	}
 
 	const [itemsResult, pricesResult] = await Promise.allSettled([
-		dataRepository.items.getByIds(mode, itemIds),
+		dataRepository.items.getByIds(mode, itemIds, { includeOffers: false }),
 		options.includePrices === false
 			? Promise.resolve({ data: {}, updatedAt: null })
 			: dataRepository.prices.getCurrent(mode, itemIds),

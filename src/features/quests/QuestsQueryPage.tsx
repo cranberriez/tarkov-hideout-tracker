@@ -8,30 +8,32 @@ import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled, useUserStoreHydrated } from "@/lib/query/game-data";
 import { pageDataFromQuery, questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
-import type { QuestWorkspaceIndexData } from "@/types/quest-workspace";
 import { QuestsClientPage } from "./QuestsClientPage";
 import { useDevQuestQuery } from "./useDevQuestQuery";
 
-export function QuestsQueryPage({
-	mode,
-	fallbackData,
-	children,
-}: {
-	mode: TarkovJsonGameMode;
-	fallbackData: QuestWorkspaceIndexData | null;
-	children: ReactNode;
-}) {
+export function QuestsQueryPage({ mode, children }: { mode: TarkovJsonGameMode; children: ReactNode }) {
 	const devQuery = useDevQuestQuery();
 	const hydrated = useUserStoreHydrated();
 	const enabled = useGameDataEnabled(mode);
 	const query = useQuery({
 		...questWorkspacePageQueryOptions(mode, devQuery),
 		enabled,
-		placeholderData: devQuery ? undefined : (fallbackData ?? undefined),
 	});
-	if (hydrated && !enabled) return <RouteLoader page="quests" />;
-	const data = pageDataFromQuery(query.data, query.error, fallbackData);
-	if ((!data && query.isPending) || (query.isPlaceholderData && query.isFetching)) return <RouteLoader page="quests" />;
+	if (hydrated && !enabled)
+		return (
+			<>
+				<RouteLoader page="quests" />
+				{children}
+			</>
+		);
+	const data = pageDataFromQuery(query.data, query.error, null);
+	if ((!data && query.isPending) || (query.isPlaceholderData && query.isFetching))
+		return (
+			<>
+				<RouteLoader page="quests" />
+				{children}
+			</>
+		);
 	if (!data?.quests)
 		return (
 			<DataQueryRetryProvider retry={() => void query.refetch()}>
@@ -41,6 +43,7 @@ export function QuestsQueryPage({
 						messages={[data?.error ?? query.error?.message ?? "Quest index could not be loaded."]}
 					/>
 				</main>
+				{children}
 			</DataQueryRetryProvider>
 		);
 	return (

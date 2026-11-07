@@ -6,13 +6,11 @@ import { readRouteGameMode, type ModeRouteParams } from "@/server/route-game-mod
 
 /**
  * Mode-scoped data pages (`/pvp/hideout`, `/kord/quests/<id>`). The mode comes
- * from the URL only, so every mode × page is an ISR response the CDN can share.
- * Catalog content changes nightly; prices load separately on the client. Unknown
+ * from the URL only, so every mode × page can be shared by the CDN. Catalog
+ * pages set their own revalidation; client-data shells need no periodic rebuild. Unknown
  * slugs 404 from the render instead of `dynamicParams = false`, so that setting
  * cannot reach the entity routes below, which render unlisted IDs on demand.
  */
-export const revalidate = 3600;
-
 export function generateStaticParams() {
 	return GAME_MODES.map((mode) => ({ mode: GAME_MODE_CONFIG[mode].slug }));
 }

@@ -6,6 +6,7 @@ import { useState, type CSSProperties } from "react";
 import { FileText } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { generatedBattlePassArtwork } from "@/lib/generated-battle-pass-artwork";
 import styles from "../../battle-pass.module.css";
 
 /** Locations alone use the transparent item artwork, retaining the source fallback. */
@@ -17,7 +18,12 @@ export function LocationsDocumentArtwork({
 	className?: string;
 }) {
 	const { documentLocationArtwork, documentMarks } = useBattlePassData();
-	const sources = [...new Set([documentLocationArtwork[doc.key]?.image512pxLink, doc.img].filter(Boolean))];
+	const originals = [
+		...new Set([documentLocationArtwork[doc.key]?.image512pxLink, doc.img].filter((value): value is string => !!value)),
+	];
+	const sources = originals.flatMap((src) =>
+		[generatedBattlePassArtwork(src)?.[0], src].filter((value): value is string => !!value),
+	);
 	const [sourceIndex, setSourceIndex] = useState(0);
 	const src = sources[sourceIndex];
 	const mark = documentMarks[doc.key];
@@ -26,6 +32,7 @@ export function LocationsDocumentArtwork({
 			{src ? (
 				<Image
 					src={src}
+					unoptimized={src.startsWith("/images/generated-artwork/")}
 					fill
 					sizes="64px"
 					alt=""

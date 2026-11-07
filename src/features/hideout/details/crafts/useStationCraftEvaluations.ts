@@ -15,7 +15,7 @@ import type { ProfitPageData } from "@/types/contracts";
 import { useStationDetails } from "../StationDetailsContext";
 import type { CraftRecord } from "@/types/recipes";
 
-/** Station-scoped unpriced recipe graph; hydrated by StationCraftsStream. */
+/** Station-scoped unpriced recipe graph, loaded in the browser. */
 export function useStationCraftData(mode: TarkovJsonGameMode, fallbackData: ProfitPageData | null) {
 	const { station } = useStationDetails();
 	const enabled = useGameDataEnabled(mode);

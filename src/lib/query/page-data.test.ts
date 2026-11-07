@@ -72,7 +72,7 @@ test("quest requests cache the lean index and retain retryable failures", async 
 		globalThis.fetch = async (input) => {
 			const url = new URL(String(input), "http://localhost");
 			assert.equal(url.searchParams.get("mode"), "pve");
-			assert.equal(url.searchParams.get("format"), "index-v1");
+			assert.equal(url.searchParams.get("format"), "index-v2");
 			return Response.json(data);
 		};
 		const options = questWorkspacePageQueryOptions("pve");

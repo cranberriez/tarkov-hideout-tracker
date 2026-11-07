@@ -6,8 +6,8 @@ import { useEffect, type ReactNode } from "react";
 import { Flag, SearchX } from "lucide-react";
 import { buttonClassName } from "@/components/ui/button";
 import { useModeRoute } from "@/lib/useModeRoute";
-import { getLegacyQuestHashId, questHref } from "../quest-routes";
-import { useQuestWorkspace } from "./QuestWorkspaceContext";
+import { getLegacyQuestHashId, questHref, questNotFoundIndexHref } from "../quest-routes";
+import { useOptionalQuestWorkspace } from "./QuestWorkspaceContext";
 
 function PaneMessage({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 	return (
@@ -55,7 +55,9 @@ export function QuestNotFound({
 }: {
 	message?: string;
 }) {
-	const { indexHref } = useQuestWorkspace();
+	const workspace = useOptionalQuestWorkspace();
+	const { mode } = useModeRoute();
+	const indexHref = questNotFoundIndexHref(mode, workspace?.indexHref);
 	return (
 		<PaneMessage icon={<SearchX size={24} />}>
 			<h1 className="text-sm font-semibold text-foreground">Quest not found</h1>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ChevronDown, Menu, MessageSquare, Newspaper, Plus, RefreshCw, Search, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { questHref, stationHref } from "@/lib/entity-routes";
 import { useModeRoute } from "@/lib/useModeRoute";
@@ -119,7 +119,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 				<div className="container mx-auto px-3 py-3 sm:px-6 sm:py-4">
 					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
 						<div className="flex items-center justify-between gap-2 sm:gap-3">
-							<ModeLink href="/hideout" className="min-w-0 shrink-0">
+							<NavLink href="/hideout" className="min-w-0 shrink-0">
 								<div className="group flex min-w-0 items-center gap-3">
 									<div className="relative h-8 w-8 shrink-0 group-hover:animate-spin">
 										<Image
@@ -137,7 +137,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 										</span>
 									</div>
 								</div>
-							</ModeLink>
+							</NavLink>
 
 							<div className="flex items-center gap-1 sm:gap-2 lg:hidden">
 								<button
@@ -253,9 +253,28 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 	);
 }
 
-/** Quest routes carry the whole quest index in their route payload, too large to prefetch from every page. */
-function navPrefetch(href: string) {
-	return href.startsWith("/quests") ? false : undefined;
+/** Reset prefetch intent whenever the resolved destination changes. */
+function NavLink(props: ComponentProps<typeof ModeLink>) {
+	const { href } = useModeRoute();
+	return <IntentNavLink key={href(props.href)} {...props} />;
+}
+
+function IntentNavLink({ onMouseEnter, onFocus, ...props }: ComponentProps<typeof ModeLink>) {
+	const [active, setActive] = useState(false);
+	return (
+		<ModeLink
+			{...props}
+			prefetch={active ? null : false}
+			onMouseEnter={(event) => {
+				setActive(true);
+				onMouseEnter?.(event);
+			}}
+			onFocus={(event) => {
+				setActive(true);
+				onFocus?.(event);
+			}}
+		/>
+	);
 }
 
 function isNavItemActive(currentPage: string, item: NavItem) {
@@ -287,9 +306,8 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 
 	return (
 		<div className="group/nav-menu relative">
-			<ModeLink
+			<NavLink
 				href={menu.href}
-				prefetch={navPrefetch(menu.href)}
 				aria-haspopup={hasChildren ? "menu" : undefined}
 				className={cn(
 					"flex items-center gap-2 rounded px-3 py-2 transition-colors",
@@ -299,7 +317,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				<NavItemIcon item={menu} />
 				{menu.name}
 				{hasChildren && <ChevronDown size={14} className="opacity-60" />}
-			</ModeLink>
+			</NavLink>
 
 			{hasChildren && (
 				<div
@@ -312,10 +330,9 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 				>
 					<div className="rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
 						{visibleChildren.map((item) => (
-							<ModeLink
+							<NavLink
 								key={item.href}
 								href={item.href}
-								prefetch={navPrefetch(item.href)}
 								role="menuitem"
 								className={cn(
 									"flex items-center gap-2 rounded-sm px-2 py-2 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
@@ -325,7 +342,7 @@ function DesktopNavMenu({ menu, currentPage }: { menu: NavMenu; currentPage: str
 								<NavItemIcon item={item} />
 								{item.name}
 								<NavItemBadge item={item} />
-							</ModeLink>
+							</NavLink>
 						))}
 						{menu.panel === "hideout-stations" && (
 							<>
@@ -358,10 +375,10 @@ function MobileNavSection({
 				asChild
 				className={cn("font-semibold", isNavMenuActive(currentPage, menu) && "bg-accent text-accent-foreground")}
 			>
-				<ModeLink href={menu.href} prefetch={navPrefetch(menu.href)} className="flex w-full items-center gap-2">
+				<NavLink href={menu.href} className="flex w-full items-center gap-2">
 					<NavItemIcon item={menu} />
 					{menu.name}
-				</ModeLink>
+				</NavLink>
 			</DropdownMenuItem>
 			{visibleChildren.map((item) => (
 				<DropdownMenuItem
@@ -369,11 +386,11 @@ function MobileNavSection({
 					asChild
 					className={cn("pl-6", currentPage === item.href && "bg-accent text-accent-foreground")}
 				>
-					<ModeLink href={item.href} prefetch={navPrefetch(item.href)} className="flex w-full items-center gap-2">
+					<NavLink href={item.href} className="flex w-full items-center gap-2">
 						<NavItemIcon item={item} />
 						{item.name}
 						<NavItemBadge item={item} />
-					</ModeLink>
+					</NavLink>
 				</DropdownMenuItem>
 			))}
 		</>
@@ -395,10 +412,10 @@ function SecondaryMenuItems({
 			asChild
 			className={cn(isNavItemActive(currentPage, item) && "bg-accent text-accent-foreground")}
 		>
-			<ModeLink href={item.href} prefetch={navPrefetch(item.href)} className="flex w-full items-center gap-2">
+			<NavLink href={item.href} className="flex w-full items-center gap-2">
 				<NavItemIcon item={item} />
 				{item.name}
-			</ModeLink>
+			</NavLink>
 		</DropdownMenuItem>
 	);
 

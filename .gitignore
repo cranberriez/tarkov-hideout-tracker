@@ -61,3 +61,6 @@ src/lib/data/tasks-regular.json
 tarkov-hideout-test1.db
 tarkov-hideout-test1.db-shm
 tarkov-hideout-test1.db-wal
+
+# Generated at dev/build time from checked-in artwork
+/public/images/generated-artwork/

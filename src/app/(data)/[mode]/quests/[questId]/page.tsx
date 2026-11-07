@@ -6,7 +6,7 @@ import { questPath } from "@/lib/entity-routes";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { decodeRouteParam } from "@/lib/utils/route-param";
 import { isDev } from "@/lib/is-dev";
-import { QuestDetailRoute } from "@/features/quests/workspace/QuestDetailRoute";
+import { QuestDetailIdentity, QuestDetailRoute } from "@/features/quests/workspace/QuestDetailRoute";
 import { DEV_QUEST_FIXTURES, DEV_QUEST_QUERY } from "@/features/quests/dev-quest-fixture";
 import { SHOW_REMOVED_QUESTS } from "@/features/quests/quest-feature-flags";
 import { modeCanonical, readRouteGameMode } from "@/server/route-game-mode";
@@ -19,6 +19,8 @@ interface QuestPageProps {
 	params: Promise<{ mode: string; questId: string }>;
 	searchParams: Promise<{ q?: string }>;
 }
+
+export const revalidate = 7200;
 
 /** Rendered on first visit, then cached per mode until revalidation (ISR). */
 export function generateStaticParams() {
@@ -82,6 +84,26 @@ export default async function QuestPage(props: QuestPageProps) {
 	);
 	return (
 		<HydrationBoundary state={state}>
+			{data.quest && (
+				<QuestDetailIdentity>
+					<h1>{data.quest.name}</h1>
+					<p>
+						{data.quest.trader.name} quest{data.quest.map?.name ? ` on ${data.quest.map.name}` : ""}
+					</p>
+					{data.quest.minPlayerLevel ? <p>Minimum level: {data.quest.minPlayerLevel}</p> : null}
+					{data.quest.kappaRequired && <p>Required for Kappa</p>}
+					{data.quest.objectives.some((objective) => objective.description) && (
+						<section>
+							<h2>Objectives</h2>
+							<ul>
+								{data.quest.objectives.filter((objective) => objective.description).map((objective) => (
+									<li key={objective.id}>{objective.description}</li>
+								))}
+							</ul>
+						</section>
+					)}
+				</QuestDetailIdentity>
+			)}
 			<QuestDetailRoute questId={questId} fallbackData={fallbackData} fallbackMode={mode} />
 		</HydrationBoundary>
 	);

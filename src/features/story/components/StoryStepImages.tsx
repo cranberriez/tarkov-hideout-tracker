@@ -6,11 +6,11 @@ import { ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { FloatingPortal, useFloatingPreview } from "@/components/ui/floating-preview";
 import { cn } from "@/lib/utils";
+import { generatedStoryArtwork } from "@/lib/generated-story-artwork";
 import type { StoryImage } from "@/types/story";
 
 /**
- * Thumbnails are small pre-made files, so they skip optimization. The full image is
- * optimized and only requested once the hover preview or dialog renders it.
+ * Thumbnails and hover previews are pre-sized; full images load when the dialog opens.
  */
 function Thumbnail({ image, onOpen }: { image: StoryImage; onOpen: () => void }) {
 	const preview = useFloatingPreview({ placement: "right-start", openDelay: 150, closeDelay: 60 });
@@ -31,7 +31,8 @@ function Thumbnail({ image, onOpen }: { image: StoryImage; onOpen: () => void })
 				className="pointer-events-none w-[min(32rem,calc(100vw-1rem))] rounded-md border border-highlight/15 bg-surface-raised p-1.5 shadow-xl"
 			>
 				<Image
-					src={image.src}
+					src={generatedStoryArtwork(image.src) ?? image.src}
+					unoptimized
 					alt=""
 					width={1280}
 					height={720}

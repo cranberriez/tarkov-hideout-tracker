@@ -6,6 +6,8 @@ import { isCompleteProfitPageData, PAGE_DATA_STALE_TIME, profitPageQueryOptions 
 import { prefetchPageData } from "@/server/queries/prefetchPageData";
 import { getCurrentPageRepository } from "@/server/queries/currentPageRepository";
 
+export const revalidate = 3600;
+
 export default async function CraftPlannerPage({ params }: { params: ModeRouteParams }) {
 	const { dataMode: mode } = await readRouteGameMode(params);
 	const options = profitPageQueryOptions(mode);
