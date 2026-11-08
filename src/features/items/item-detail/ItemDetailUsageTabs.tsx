@@ -41,7 +41,7 @@ interface ItemDetailUsageTabsProps {
 	usedInBarters: ItemTraderOffer[];
 	usedInCrafts: ItemCraftRecipe[];
 	relationsLoading: boolean;
-	relationsError: string | null;
+	relationErrors: { hideout: string | null; quests: string | null };
 	onRetryRelations: () => void;
 	acquisitionLoading: boolean;
 	barterError: string | null;
@@ -83,7 +83,7 @@ export function ItemDetailUsageTabs({
 	usedInBarters,
 	usedInCrafts,
 	relationsLoading,
-	relationsError,
+	relationErrors,
 	onRetryRelations,
 	acquisitionLoading,
 	barterError,
@@ -184,13 +184,13 @@ export function ItemDetailUsageTabs({
 			>
 				<UsagePanel active={selectedTab === "hideout"}>
 					<>
-						{!relationsLoading && !relationsError && hideoutCount === 0 && (
+						{!relationsLoading && !relationErrors.hideout && hideoutCount === 0 && (
 							<p className="px-4 py-6 text-sm text-muted-foreground">No hideout requirements.</p>
 						)}
-						{(relationsLoading || relationsError) && (
+						{(relationsLoading || relationErrors.hideout) && (
 							<RelationState
 								loading={relationsLoading}
-								error={relationsError}
+								error={relationErrors.hideout}
 								loadingMessage="Loading hideout data…"
 								onRetry={onRetryRelations}
 							/>
@@ -208,13 +208,13 @@ export function ItemDetailUsageTabs({
 				</UsagePanel>
 				<UsagePanel active={selectedTab === "quests"}>
 					<>
-						{!relationsLoading && !relationsError && questCount === 0 && (
+						{!relationsLoading && !relationErrors.quests && questCount === 0 && (
 							<p className="px-4 py-6 text-sm text-muted-foreground">No matching quest requirements or rewards.</p>
 						)}
-						{(relationsLoading || relationsError) && (
+						{(relationsLoading || relationErrors.quests) && (
 							<RelationState
 								loading={relationsLoading}
-								error={relationsError}
+								error={relationErrors.quests}
 								loadingMessage="Loading quest data…"
 								onRetry={onRetryRelations}
 							/>
@@ -426,7 +426,7 @@ function ErrorState({
 		<div
 			className={`flex items-center justify-between gap-3 text-warning ${compact ? "border-b border-border-color px-4 py-2 text-xs" : "px-4 py-6 text-sm"}`}
 		>
-			<span>{message}</span>
+			<span className="min-w-0 wrap-anywhere">{message}</span>
 			<button
 				type="button"
 				onClick={onRetry}

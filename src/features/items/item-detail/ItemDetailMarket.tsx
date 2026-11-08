@@ -58,7 +58,7 @@ export function ItemDetailMarket({
 			title={isFiat ? "Exchange value" : "Market"}
 			className="border-t border-border-color"
 			aside={
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center justify-end gap-2">
 					{!isFiat &&
 						(minLevelForFlea != null || !hasFleaData) &&
 						(minLevelForFlea != null && hasFleaData ? (
@@ -93,11 +93,11 @@ export function ItemDetailMarket({
 							</span>
 						)}
 					</div>
-					<div className="flex items-end min-w-0 flex-1 justify-between">
+					<div className="flex min-w-0 flex-wrap items-end justify-between gap-x-2">
 						<div
 							className={`mt-1 flex-col items-start font-mono text-2xl font-semibold ${unstable ? "text-warning" : "text-foreground"}`}
 						>
-							<div>{formatRoubles(fleaPrice)}</div>
+							<div className="wrap-anywhere">{formatRoubles(fleaPrice)}</div>
 							{unstable && <span className="text-[10px] font-normal">value unstable</span>}
 						</div>
 						{marketPrice.changeLast48hPercent != null && <PriceChange value={marketPrice.changeLast48hPercent} />}
@@ -105,7 +105,7 @@ export function ItemDetailMarket({
 				</div>
 			)}
 
-			{marketTiming && <MarketTimingBanner timing={marketTiming} className="mt-2" />}
+			{marketTiming && <MarketTimingBanner timing={marketTiming} className="mt-2 wrap-anywhere" />}
 
 			{unstable && <ItemDetailPriceStability marketPrice={marketPrice} />}
 
@@ -120,7 +120,7 @@ export function ItemDetailMarket({
 					{details.map((detail) => (
 						<div key={detail.label} className="px-3 py-2.5">
 							<div className="text-[10px] uppercase tracking-wide text-muted-foreground">{detail.label}</div>
-							<div className="mt-1 font-mono text-sm text-foreground">{detail.value}</div>
+							<div className="mt-1 wrap-anywhere font-mono text-sm text-foreground">{detail.value}</div>
 						</div>
 					))}
 				</div>
@@ -144,7 +144,9 @@ export function ItemDetailMarket({
 									<span className="min-w-0 flex-1 truncate text-muted-foreground">
 										{traderInfo(offer.traderId).name}
 									</span>
-									<span className="shrink-0 font-mono text-foreground">{formatRoubles(totalRoubles)}</span>
+									<span className="min-w-0 wrap-anywhere text-right font-mono text-foreground">
+										{formatRoubles(totalRoubles)}
+									</span>
 								</div>
 							);
 						})}

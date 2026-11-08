@@ -12,6 +12,7 @@ import { DatabaseDataIntegrityError, DatabaseRecordNotFoundError } from "./error
 import { boundedReadCache } from "./read-cache";
 import {
 	getCachedCatalogItems,
+	getCachedItemsByIds,
 	getCachedQuests,
 	getCachedQuestsByIds,
 	getCachedStations,
@@ -107,6 +108,19 @@ export async function getItemView<ViewType extends ItemViewType>(
 				]
 			: (payload as ItemUsageData | ItemAcquisitionTreeData).items;
 	const itemIds = [...new Set(allItems.map((item) => item.id))];
+	if (viewType === "relations" && !includePrices) {
+		const relations = payload as ItemRelationsPayload;
+		// Requirements and rewards only need catalog summaries. Mutable trader offers
+		// load with usage, so an offer read cannot take down either relation tab.
+		const { data } = await getCachedItemsByIds(mode, expectedVersion, itemIds, { includeOffers: false });
+		const unpriced = (item: ItemSummary): ItemSummary => ({ ...(data[item.id] ?? item), marketPrice: null });
+		return {
+			...relations,
+			item: relations.item ? unpriced(relations.item) : null,
+			relatedItems: relations.relatedItems.map(unpriced),
+			freshness: { ...relations.freshness, pricesUpdatedAt: null },
+		} as ItemViewPayloads[ViewType];
+	}
 	const [catalogItems, priceResult, offersById] = await Promise.all([
 		viewType === "usage"
 			? Promise.resolve({ data: Object.fromEntries(allItems.map((item) => [item.id, item])) })

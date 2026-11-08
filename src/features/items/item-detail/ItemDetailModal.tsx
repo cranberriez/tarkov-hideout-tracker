@@ -86,7 +86,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 									</button>
 								</header>
 
-								<div className="flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+								<div className="flex min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
 									<div
 										className={`grid shrink-0 grid-cols-1 gap-0 lg:min-h-0 lg:flex-1 lg:shrink ${vm.showSidebar ? "lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]" : ""}`}
 									>
@@ -125,7 +125,7 @@ export function ItemDetailModalContent(props: ItemDetailModalProps) {
 											usedInBarters={vm.usedInBarters}
 											usedInCrafts={vm.usedInCrafts}
 											relationsLoading={vm.relationsLoading}
-											relationsError={vm.relationsError}
+											relationErrors={vm.relationErrors}
 											onRetryRelations={vm.retryRelations}
 											acquisitionLoading={vm.usageLoading}
 											barterError={vm.barterError}

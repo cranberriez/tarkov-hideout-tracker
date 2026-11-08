@@ -638,11 +638,13 @@ the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
 owns mode-aware relations, usage, and acquisition queries with partial-error handling.
 Relations load on open for header totals and the Hideout/Quests tabs. Traders and
-Crafting enable usage and acquisition queries only while selected, reusing the
-existing mode/item caches. Until then only the selected item's price is requested;
+Crafting enable usage and acquisition queries on the first visit for the current
+item and mode. The dialog keeps those queries and ingredient prices subscribed
+when switching tabs. Until then only the selected item's price is requested;
 recipe ingredient prices are deferred with those graphs. Tabs start on Hideout for
 each item/mode and do not automatically select an unloaded recipe tab. Unknown
-recipe counts are omitted, and empty tabs show explicit empty states.
+recipe counts are omitted, and empty tabs show explicit empty states. Hideout and
+Quests report errors for their own data, and a failed relations request affects both.
 Below `lg`, the item dialog fills the full dynamic viewport even with short or
 loading content. The dialog itself is the vertical scroll surface: Back, the
 header, inventory, market and the active usage tab all scroll together. Back occupies

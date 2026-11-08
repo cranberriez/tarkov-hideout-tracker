@@ -91,7 +91,7 @@ export function ItemDetailsPage({
 						usedInBarters={vm.usedInBarters}
 						usedInCrafts={vm.usedInCrafts}
 						relationsLoading={vm.relationsLoading}
-						relationsError={vm.relationsError}
+						relationErrors={vm.relationErrors}
 						onRetryRelations={vm.retryRelations}
 						acquisitionLoading={vm.usageLoading}
 						barterError={vm.barterError}

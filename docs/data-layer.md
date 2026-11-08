@@ -281,10 +281,12 @@ the previous price-hydrated payloads.
 
 Item dialogs and direct item pages initially request relations for requirement
 totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
-graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
-when those requested graphs settle. Previously opened items do not expand the
-price request. The server item page reads only the item's catalog identity without
-mutable trader offers; relations load through the existing client query after profile
+graphs are enabled on the first visit to Traders or Crafting for the current item;
+their ingredient prices follow when those requested graphs settle. Those queries
+stay enabled when switching tabs. The unpriced relations read uses catalog summaries
+by ID and leaves mutable trader offers to the usage read. Previously opened items
+do not expand the price request. The server item page reads only the item's catalog
+identity without mutable trader offers; relations load through the existing client query after profile
 hydration, with loading, partial-error and retry states. Station recipe graphs also
 load through their shared browser query rather than being embedded in station HTML.
 Items and Kappa checklist summaries also exclude unused trader purchase offers;

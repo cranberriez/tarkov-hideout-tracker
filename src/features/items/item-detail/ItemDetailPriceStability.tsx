@@ -36,15 +36,20 @@ export function ItemDetailPriceStability({ marketPrice }: { marketPrice: Current
 			{prices.length >= 2 && (
 				<div className="space-y-1.5" aria-label="Price comparison, bars share a zero baseline">
 					{prices.map(({ label, value }) => (
-						<div key={label} className="grid grid-cols-[78px_minmax(0,1fr)_56px] items-center gap-2 text-[10px]">
-							<span className="text-muted-foreground">{label}</span>
+						<div
+							key={label}
+							className="grid grid-cols-[minmax(0,4.875rem)_minmax(0,1fr)_minmax(0,3.5rem)] items-center gap-2 text-[10px]"
+						>
+							<span className="wrap-anywhere text-muted-foreground">{label}</span>
 							<span className="h-1 overflow-hidden rounded-full bg-highlight/5" aria-hidden="true">
 								<span
 									className={`block h-full rounded-full ${label === "Estimate" ? "bg-warning" : "bg-foreground/35"}`}
 									style={{ width: `${(value / maximum) * 100}%` }}
 								/>
 							</span>
-							<span className="text-right font-mono text-foreground/80">{formatCompactRoubles(value)} ₽</span>
+							<span className="wrap-anywhere text-right font-mono text-foreground/80">
+								{formatCompactRoubles(value)} ₽
+							</span>
 						</div>
 					))}
 				</div>

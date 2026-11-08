@@ -56,11 +56,13 @@ export function buildStationRequirements(
 	});
 }
 
-export function getItemRelationsError(
-	payload: ItemRelationsPayload | null,
-	requestError: string | null,
-): string | null {
-	if (requestError) return requestError;
-	const errors = payload ? Object.values(payload.errors).filter(Boolean) : [];
-	return errors.length > 0 ? errors.join(" ") : null;
+export function getItemRelationErrors(payload: ItemRelationsPayload | null, requestError: string | null) {
+	const errors = payload?.errors;
+	const missingItems = payload?.unresolvedItemIds?.length
+		? `Missing related item data (${payload.unresolvedItemIds.join(", ")}).`
+		: null;
+	return {
+		hideout: requestError ?? errors?.stations ?? null,
+		quests: requestError ?? ([errors?.quests, errors?.items, missingItems].filter(Boolean).join(" ") || null),
+	};
 }

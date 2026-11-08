@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { CurrentPrice } from "@/types/prices";
 import { ItemDetailInventory } from "./ItemDetailInventory";
 import { ItemDetailMarket } from "./ItemDetailMarket";
@@ -18,7 +18,7 @@ interface ItemDetailSidebarProps {
 	onAddItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 }
 
-export function ItemDetailSidebar({
+export const ItemDetailSidebar = memo(function ItemDetailSidebar({
 	itemId,
 	priceLoadState,
 	owned,
@@ -45,7 +45,7 @@ export function ItemDetailSidebar({
 	};
 
 	return (
-		<aside className="overflow-hidden border-b border-border-color bg-card/45 lg:border-r lg:border-b-0">
+		<aside className="min-w-0 overflow-hidden border-b border-border-color bg-card/45 lg:border-r lg:border-b-0">
 			<ItemDetailInventory
 				draftNonFir={draftNonFir}
 				draftFir={draftFir}
@@ -74,4 +74,4 @@ export function ItemDetailSidebar({
 			)}
 		</aside>
 	);
-}
+});

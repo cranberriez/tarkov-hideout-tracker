@@ -27,6 +27,8 @@ import { useUIStore } from "@/lib/stores/useUIStore";
 import type { ItemDetailModalProps } from "./ItemDetailModal";
 import type { UsageTab } from "./ItemDetailUsageTabs";
 
+const EMPTY_OWNED = { have: 0, haveFir: 0 };
+
 /** Profile values the item details read; subscribing to the whole store re-renders on any change. */
 function selectItemDetailState(state: ReturnType<typeof useUserStore.getState>) {
 	return {
@@ -85,10 +87,16 @@ export function useItemDetailsController({
 	const { craftingSkillLevel, hideoutManagementSkillLevel, ignorePlayerLevel } = useProfitOptions(store.gameMode);
 	const tarkovMode = mode ?? toTarkovJsonGameMode(store.gameMode);
 	const tabScope = `${tarkovMode}:${activeItemId}`;
-	const [tabSelection, setTabSelection] = useState<{ scope: string; tab: UsageTab } | null>(null);
-	const activeTab = tabSelection?.scope === tabScope ? tabSelection.tab : "hideout";
-	if (tabSelection?.scope !== tabScope) setTabSelection({ scope: tabScope, tab: "hideout" });
-	const loadRecipes = activeTab === "traders" || activeTab === "crafting";
+	const [tabSelection, setTabSelection] = useState<{ scope: string; tab: UsageTab; recipesOpened: boolean }>({
+		scope: tabScope,
+		tab: "hideout",
+		recipesOpened: false,
+	});
+	const sameScope = tabSelection.scope === tabScope;
+	const activeTab = sameScope ? tabSelection.tab : "hideout";
+	// Keep recipe queries and prices subscribed after the first visit for this item.
+	const loadRecipes = sameScope && tabSelection.recipesOpened;
+	if (!sameScope) setTabSelection({ scope: tabScope, tab: "hideout", recipesOpened: false });
 	const requests = useItemDetailRequestController({
 		activeItemId,
 		isOpen,
@@ -102,12 +110,11 @@ export function useItemDetailsController({
 	const unpricedItemsById = useMemo(
 		() =>
 			mergeItemDetailItems(
-				[...knownItems],
-				[],
-				acquisitionTree?.items,
-				itemUsage?.items,
+				knownItems,
 				itemRelations?.relatedItems,
 				itemRelations?.item ? [itemRelations.item] : [],
+				acquisitionTree?.items,
+				itemUsage?.items,
 			),
 		[acquisitionTree, knownItems, itemRelations, itemUsage],
 	);
@@ -148,42 +155,60 @@ export function useItemDetailsController({
 	const pricesReady = Object.values(prices.states).every((state) => state === "ready") && metadataReady;
 	const selectedItem = itemDetailsById[activeItemId] ?? null;
 	const selectedItemId = selectedItem?.id ?? activeItemId;
+	const purchaseOffers = selectedItem?.buyFromTrader;
 	const marketPrice = selectedItem?.marketPrice;
-	const stationRequirements = buildStationRequirements(itemRelations, store.stationLevels);
-	const questItemIndex = itemRelations?.questItemIndex ?? [];
-	const questRewardIndex = itemRelations?.questRewardIndex ?? [];
-	const questAnyOfGroups = itemRelations?.questAnyOfGroups ?? [];
-	const questAvailabilityQuests = itemRelations?.questAvailabilityQuests ?? [];
+	const stationRequirements = useMemo(
+		() => buildStationRequirements(itemRelations, store.stationLevels),
+		[itemRelations, store.stationLevels],
+	);
 	const isRouble = selectedItem?.normalizedName === "roubles";
 	const isFiat = selectedItem?.normalizedName === "dollars" || selectedItem?.normalizedName === "euros";
 	const relativeUpdatedAt = formatRelativeUpdatedAt(marketPrice?.updatedAt ?? null);
-	const owned = store.itemCounts[selectedItemId] ?? { have: 0, haveFir: 0 };
-	const questDerivationOptions = {
-		completedQuests: store.completedQuests,
-		failedQuests: store.failedQuests,
-		ignoredQuests: store.ignoredQuests,
-		pinnedQuests: store.pinnedQuests,
-		playerLevel: store.playerLevel,
-		prestigeLevel: store.prestigeLevel,
-		faction: store.questFaction,
-		traderLoyaltyLevels: store.questTraderLoyaltyLevels,
-		fenceReputation: store.questFenceReputation,
-		quests: questAvailabilityQuests,
-		visibilityMode: store.itemQuestVisibilityMode,
-		customLookahead: store.itemQuestCustomLookahead,
-		customLevelLookahead: store.itemQuestCustomLevelLookahead,
-		showFutureFir: store.itemShowFutureFir,
-		showIgnored: store.itemShowIgnored,
-		includeCompleted: true,
-	} as const;
-	const questItemEntry = selectedItem ? questItemIndex.find((entry) => entry.itemId === selectedItem.id) : null;
-	const questItemState = questItemEntry ? deriveQuestItemState(questItemEntry, questDerivationOptions) : null;
-	const questAnyOfGroupState = selectedItem
-		? deriveQuestAnyOfGroups(questAnyOfGroups, questDerivationOptions).filter((group) =>
-				group.itemIds.includes(selectedItem.id),
-			)
-		: [];
-	const questRewards = questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [];
+	const owned = store.itemCounts[selectedItemId] ?? EMPTY_OWNED;
+	const { questItemState, questAnyOfGroupState, questRewards } = useMemo(() => {
+		const questDerivationOptions = {
+			completedQuests: store.completedQuests,
+			failedQuests: store.failedQuests,
+			ignoredQuests: store.ignoredQuests,
+			pinnedQuests: store.pinnedQuests,
+			playerLevel: store.playerLevel,
+			prestigeLevel: store.prestigeLevel,
+			faction: store.questFaction,
+			traderLoyaltyLevels: store.questTraderLoyaltyLevels,
+			fenceReputation: store.questFenceReputation,
+			quests: itemRelations?.questAvailabilityQuests ?? [],
+			visibilityMode: store.itemQuestVisibilityMode,
+			customLookahead: store.itemQuestCustomLookahead,
+			customLevelLookahead: store.itemQuestCustomLevelLookahead,
+			showFutureFir: store.itemShowFutureFir,
+			showIgnored: store.itemShowIgnored,
+			includeCompleted: true,
+		} as const;
+		const questItemEntry = itemRelations?.questItemIndex.find((entry) => entry.itemId === selectedItemId);
+		const anyOfGroups = itemRelations?.questAnyOfGroups.filter((group) => group.itemIds.includes(selectedItemId));
+		return {
+			questItemState: questItemEntry ? deriveQuestItemState(questItemEntry, questDerivationOptions) : null,
+			questAnyOfGroupState: anyOfGroups?.length ? deriveQuestAnyOfGroups(anyOfGroups, questDerivationOptions) : [],
+			questRewards: itemRelations?.questRewardIndex.find((entry) => entry.itemId === selectedItemId)?.quests ?? [],
+		};
+	}, [
+		itemRelations,
+		selectedItemId,
+		store.completedQuests,
+		store.failedQuests,
+		store.ignoredQuests,
+		store.pinnedQuests,
+		store.playerLevel,
+		store.prestigeLevel,
+		store.questFaction,
+		store.questTraderLoyaltyLevels,
+		store.questFenceReputation,
+		store.itemQuestVisibilityMode,
+		store.itemQuestCustomLookahead,
+		store.itemQuestCustomLevelLookahead,
+		store.itemShowFutureFir,
+		store.itemShowIgnored,
+	]);
 	const demandSummary = summarizeItemDetailDemand({
 		stationRequirements,
 		completedRequirements: store.completedRequirements,
@@ -242,110 +267,122 @@ export function useItemDetailsController({
 			),
 		};
 	}, [itemUsage, recipeCalculator]);
-	const traders = new Map(questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]));
-	const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
-	const toBarterOffer = (barter: BarterRecord): ItemBarterOffer => {
-		const trader = itemUsage?.tradersById?.[barter.traderId] ?? traders.get(barter.traderId);
-		const unlock = barter.taskUnlockId
-			? (itemUsage?.taskUnlocksById?.[barter.taskUnlockId] ?? quests.get(barter.taskUnlockId))
-			: null;
-		return {
-			id: barter.id,
-			kind: "barter" as const,
-			trader: trader ?? {
-				id: barter.traderId,
-				name: "Unknown trader",
-				normalizedName: barter.traderId,
-			},
-			minTraderLevel: barter.minTraderLevel,
-			taskUnlock: barter.taskUnlockId
-				? { id: barter.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
-				: null,
-			requiredItems: barter.requiredItems.map((entry) => ({
+	const { traderOffers, crafts, usedInBarters, usedInCrafts } = useMemo(() => {
+		const questAvailabilityQuests = itemRelations?.questAvailabilityQuests ?? [];
+		const traders = new Map(questAvailabilityQuests.map((quest) => [quest.trader.id, quest.trader]));
+		const quests = new Map(questAvailabilityQuests.map((quest) => [quest.id, quest]));
+		const toBarterOffer = (barter: BarterRecord): ItemBarterOffer => {
+			const trader = itemUsage?.tradersById?.[barter.traderId] ?? traders.get(barter.traderId);
+			const unlock = barter.taskUnlockId
+				? (itemUsage?.taskUnlocksById?.[barter.taskUnlockId] ?? quests.get(barter.taskUnlockId))
+				: null;
+			return {
+				id: barter.id,
+				kind: "barter" as const,
+				trader: trader ?? {
+					id: barter.traderId,
+					name: "Unknown trader",
+					normalizedName: barter.traderId,
+				},
+				minTraderLevel: barter.minTraderLevel,
+				taskUnlock: barter.taskUnlockId
+					? { id: barter.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
+					: null,
+				requiredItems: barter.requiredItems.map((entry) => ({
+					item: itemDetailsById[entry.itemId] ?? {
+						id: entry.itemId,
+						name: "Unknown item",
+						normalizedName: entry.itemId,
+					},
+					count: entry.count,
+					isTool: entry.isTool,
+				})),
+				offeredCount: barter.offeredCount,
+				buyLimit: barter.buyLimit,
+			};
+		};
+		const traderOffers: ItemTraderOffer[] = (itemUsage?.barters ?? []).map(toBarterOffer);
+		const selectedItemPurchaseOffers: ItemTraderOffer[] = (purchaseOffers ?? []).map((offer, index) => {
+			const trader = itemUsage?.tradersById?.[offer.traderId] ?? traders.get(offer.traderId);
+			const unlock = offer.taskUnlockId
+				? (itemUsage?.taskUnlocksById?.[offer.taskUnlockId] ?? quests.get(offer.taskUnlockId))
+				: null;
+			return {
+				id: `buy-${selectedItemId}-${offer.traderId}-${index}`,
+				kind: "buy" as const,
+				trader: trader ?? {
+					id: offer.traderId,
+					name: "Unknown trader",
+					normalizedName: offer.traderId,
+				},
+				minTraderLevel: offer.minTraderLevel,
+				taskUnlock: offer.taskUnlockId
+					? {
+							id: offer.taskUnlockId,
+							name: unlock?.name ?? "Quest unlock",
+							wikiLink: unlock?.wikiLink,
+						}
+					: null,
+				offeredCount: 1,
+				buyLimit: offer.buyLimit,
+				price: offer.price,
+				priceRUB: offer.priceRUB,
+				currency: offer.currency,
+				requiredItems: [],
+			};
+		});
+		traderOffers.push(...selectedItemPurchaseOffers);
+		const toCraftRecipe = (craft: CraftRecord): ItemCraftRecipe => {
+			const station = itemUsage?.stationsById?.[craft.stationId];
+			const unlock = craft.taskUnlockId
+				? (itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ?? quests.get(craft.taskUnlockId))
+				: null;
+			const toAmount = (entry: (typeof craft.requiredItems)[number]) => ({
 				item: itemDetailsById[entry.itemId] ?? {
 					id: entry.itemId,
-					name: "Unknown item",
+					name: "Quest item",
 					normalizedName: entry.itemId,
 				},
 				count: entry.count,
 				isTool: entry.isTool,
-			})),
-			offeredCount: barter.offeredCount,
-			buyLimit: barter.buyLimit,
+			});
+			return {
+				id: craft.id,
+				station: station
+					? { ...station }
+					: { id: craft.stationId, name: "Unknown station", normalizedName: craft.stationId },
+				level: craft.level,
+				duration: craftingDuration(craft, craftingSkillLevel),
+				taskUnlock: craft.taskUnlockId
+					? { id: craft.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
+					: null,
+				requiredItems: craftRequiredItems(craft, hideoutManagementSkillLevel).map(toAmount),
+				requiredQuestItems: craft.requiredQuestItems.map(toAmount),
+				gameEditions: craft.gameEditions,
+				productCount: craft.productCount,
+			};
 		};
-	};
-	const traderOffers: ItemTraderOffer[] = (itemUsage?.barters ?? []).map(toBarterOffer);
-	const selectedItemPurchaseOffers: ItemTraderOffer[] = (selectedItem?.buyFromTrader ?? []).map((offer, index) => {
-		const trader = itemUsage?.tradersById?.[offer.traderId] ?? traders.get(offer.traderId);
-		const unlock = offer.taskUnlockId
-			? (itemUsage?.taskUnlocksById?.[offer.taskUnlockId] ?? quests.get(offer.taskUnlockId))
-			: null;
-		return {
-			id: `buy-${selectedItemId}-${offer.traderId}-${index}`,
-			kind: "buy" as const,
-			trader: trader ?? {
-				id: offer.traderId,
-				name: "Unknown trader",
-				normalizedName: offer.traderId,
-			},
-			minTraderLevel: offer.minTraderLevel,
-			taskUnlock: offer.taskUnlockId
-				? {
-						id: offer.taskUnlockId,
-						name: unlock?.name ?? "Quest unlock",
-						wikiLink: unlock?.wikiLink,
-					}
-				: null,
-			offeredCount: 1,
-			buyLimit: offer.buyLimit,
-			price: offer.price,
-			priceRUB: offer.priceRUB,
-			currency: offer.currency,
-			requiredItems: [],
-		};
-	});
-	traderOffers.push(...selectedItemPurchaseOffers);
-	const toCraftRecipe = (craft: CraftRecord): ItemCraftRecipe => {
-		const station = itemUsage?.stationsById?.[craft.stationId];
-		const unlock = craft.taskUnlockId
-			? (itemUsage?.taskUnlocksById?.[craft.taskUnlockId] ?? quests.get(craft.taskUnlockId))
-			: null;
-		const toAmount = (entry: (typeof craft.requiredItems)[number]) => ({
-			item: itemDetailsById[entry.itemId] ?? {
-				id: entry.itemId,
-				name: "Quest item",
-				normalizedName: entry.itemId,
-			},
-			count: entry.count,
-			isTool: entry.isTool,
-		});
-		return {
-			id: craft.id,
-			station: station
-				? { ...station }
-				: { id: craft.stationId, name: "Unknown station", normalizedName: craft.stationId },
-			level: craft.level,
-			duration: craftingDuration(craft, craftingSkillLevel),
-			taskUnlock: craft.taskUnlockId
-				? { id: craft.taskUnlockId, name: unlock?.name ?? "Quest unlock", wikiLink: unlock?.wikiLink }
-				: null,
-			requiredItems: craftRequiredItems(craft, hideoutManagementSkillLevel).map(toAmount),
-			requiredQuestItems: craft.requiredQuestItems.map(toAmount),
-			gameEditions: craft.gameEditions,
-			productCount: craft.productCount,
-		};
-	};
-	const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).filter(isTrackedCraft).map(toCraftRecipe);
-	const recipeOutput = (itemId: string): ItemSummary =>
-		itemDetailsById[itemId] ?? { id: itemId, name: "Unknown item", normalizedName: itemId };
-	const usedInBarters: ItemBarterOffer[] = (itemUsage?.usedInBarters ?? []).map((barter) => ({
-		...toBarterOffer(barter),
-		outputItem: recipeOutput(barter.offeredItemId),
-	}));
-	const usedInCrafts: ItemCraftRecipe[] = (itemUsage?.usedInCrafts ?? []).filter(isTrackedCraft).map((craft) => ({
-		...toCraftRecipe(craft),
-		outputItem: recipeOutput(craft.productItemId),
-	}));
+		const crafts: ItemCraftRecipe[] = (itemUsage?.crafts ?? []).filter(isTrackedCraft).map(toCraftRecipe);
+		const recipeOutput = (itemId: string): ItemSummary =>
+			itemDetailsById[itemId] ?? { id: itemId, name: "Unknown item", normalizedName: itemId };
+		const usedInBarters: ItemBarterOffer[] = (itemUsage?.usedInBarters ?? []).map((barter) => ({
+			...toBarterOffer(barter),
+			outputItem: recipeOutput(barter.offeredItemId),
+		}));
+		const usedInCrafts: ItemCraftRecipe[] = (itemUsage?.usedInCrafts ?? []).filter(isTrackedCraft).map((craft) => ({
+			...toCraftRecipe(craft),
+			outputItem: recipeOutput(craft.productItemId),
+		}));
+		return { traderOffers, crafts, usedInBarters, usedInCrafts };
+	}, [
+		itemRelations,
+		itemUsage,
+		purchaseOffers,
+		selectedItemId,
+		itemDetailsById,
+		craftingSkillLevel,
+		hideoutManagementSkillLevel,
+	]);
 	const usagePresentationError = itemUsage
 		? [itemUsage.itemsError, itemUsage.pricesError, itemUsage.presentationError]
 				.filter((error): error is string => Boolean(error))
@@ -364,7 +401,7 @@ export function useItemDetailsController({
 		hideout: { stationRequirements },
 		quests: {
 			relationsLoading: requests.relationsLoading,
-			relationsError: requests.relationsError,
+			relationErrors: requests.relationErrors,
 			itemState: questItemState,
 			anyOfGroups: questAnyOfGroupState,
 			rewards: questRewards,
@@ -420,12 +457,20 @@ export function useItemDetailsController({
 		tarkovMode,
 		addItemCounts: store.addItemCounts,
 		relationsLoading: requests.relationsLoading,
-		relationsError: requests.relationsError,
+		relationErrors: requests.relationErrors,
 		retryRelations: requests.retryRelations,
 		activeTab,
-		setActiveTab: (tab: UsageTab) => setTabSelection({ scope: tabScope, tab }),
+		setActiveTab: (tab: UsageTab) => {
+			if (tab !== activeTab) {
+				setTabSelection({
+					scope: tabScope,
+					tab,
+					recipesOpened: loadRecipes || tab === "traders" || tab === "crafting",
+				});
+			}
+		},
 		usageLoaded: itemUsage !== null,
-		initialDetailLoading: requests.relationsLoading && !requests.relationsError,
+		initialDetailLoading: requests.relationsLoading,
 		usageLoading: requests.usageLoading,
 		usageError: requests.usageError,
 		retryUsage: requests.retryUsage,
