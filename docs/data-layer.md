@@ -287,7 +287,8 @@ stay enabled when switching tabs. The unpriced relations read uses catalog summa
 by ID and leaves mutable trader offers to the usage read. Previously opened items
 do not expand the price request. The server item page reads only the item's catalog
 identity without mutable trader offers; relations load through the existing client query after profile
-hydration, with loading, partial-error and retry states. Station recipe graphs also
+hydration. Relations retry transient request failures once before showing an error.
+Partial results remain visible with a manual retry. Station recipe graphs also
 load through their shared browser query rather than being embedded in station HTML.
 Items and Kappa checklist summaries also exclude unused trader purchase offers;
 their current sell prices still load separately. Existing per-view,

@@ -84,6 +84,25 @@ test("detail domains reuse complete results independently", async () => {
 	}
 });
 
+test("the initial relations read recovers from a transient failure and caches the result", async () => {
+	const originalFetch = globalThis.fetch;
+	let calls = 0;
+	globalThis.fetch = async () => {
+		calls++;
+		return calls === 1 ? Response.json({ error: "Unavailable" }, { status: 503 }) : Response.json(relations);
+	};
+	const client = createQueryClient();
+	const options = { ...itemRelationsQueryOptions("regular", "item-12345678"), retryDelay: 0 };
+	try {
+		assert.deepEqual(await client.fetchQuery(options), relations);
+		assert.deepEqual(await client.fetchQuery(options), relations);
+		assert.equal(calls, 2);
+	} finally {
+		client.clear();
+		globalThis.fetch = originalFetch;
+	}
+});
+
 test("partial output remains on the error while another domain succeeds", async () => {
 	const originalFetch = globalThis.fetch;
 	const partial = { ...relations, errors: { ...relations.errors, quests: "Quest relations unavailable" } };
