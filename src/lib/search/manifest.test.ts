@@ -3,7 +3,7 @@ import test from "node:test";
 import { QueryClient } from "@tanstack/react-query";
 import { buildSearchManifest } from "./build-manifest";
 import { decodeSearchManifest, searchManifestItems, validateSearchManifest } from "./manifest";
-import { removeOldSearchManifests, searchIdentityOptions, searchManifestOptions } from "./query";
+import { searchManifestOptions } from "./query";
 import { removeGameDataScope } from "../query/scope";
 import { REMOVED_QUEST_IDS } from "../quests/removed-quests";
 import type { FullQuest } from "../../types/quests";
@@ -33,7 +33,7 @@ const fixture = () => ({
 
 test("round trip keeps identities and short names, omits optional images and excludes quests", () => {
 	const value = fixture();
-	const decoded = decodeSearchManifest(JSON.parse(JSON.stringify(value)), "regular", "revision-a");
+	const decoded = decodeSearchManifest(JSON.parse(JSON.stringify(value)), "regular");
 	assert.equal(decoded.items[0].iconLink, undefined);
 	assert.equal(decoded.items[0].categoryId, "electronics");
 	assert.equal(searchManifestItems(decoded.itemIndex, "GPU", 10)[0].id, "gpu");
@@ -64,29 +64,40 @@ test("malformed, empty, duplicate and cross-scope manifests are rejected", () =>
 	]) {
 		assert.throws(() => validateSearchManifest(bad, "regular"));
 	}
-	assert.throws(() => decodeSearchManifest(value, "pve", "revision-a"));
-	assert.throws(() => decodeSearchManifest(value, "regular", "revision-b"));
+	assert.throws(() => decodeSearchManifest(value, "pve"));
+	assert.throws(() => decodeSearchManifest({ ...value, releaseId: "" }, "regular"));
 });
 
-test("manifest is fetched once across searches and reopens, revision changes fetch anew", async () => {
+test("one request loads the current manifest, and reopens reuse it until stale", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const original = globalThis.fetch;
 	let requests = 0;
+	let releaseId = "revision-a";
+	const options = searchManifestOptions("regular");
 	globalThis.fetch = (async (url) => {
 		requests++;
-		const releaseId = new URL(String(url), "http://localhost").searchParams.get("releaseId");
+		const request = new URL(String(url), "http://localhost");
+		assert.equal(request.pathname, "/api/search");
+		assert.equal(request.searchParams.get("mode"), "regular");
+		assert.equal(request.searchParams.has("releaseId"), false);
+		assert.equal(request.searchParams.has("identity"), false);
 		return new Response(JSON.stringify({ ...fixture(), releaseId }));
 	}) as typeof fetch;
 	try {
-		const first = await client.fetchQuery(searchManifestOptions("regular", "revision-a"));
+		const first = await client.fetchQuery(options);
+		assert.equal(first.releaseId, "revision-a");
 		searchManifestItems(first.itemIndex, "gpu", 10);
 		searchManifestItems(first.itemIndex, "card", 50);
-		await client.fetchQuery(searchManifestOptions("regular", "revision-a"));
+		assert.equal(await client.fetchQuery(options), first);
 		assert.equal(requests, 1);
-		await client.fetchQuery(searchManifestOptions("regular", "revision-b"));
+
+		releaseId = "revision-b";
+		await client.invalidateQueries({ queryKey: options.queryKey });
+		const stale = await client.ensureQueryData({ ...options, revalidateIfStale: true });
+		assert.equal(stale.releaseId, "revision-a");
+		assert.equal((await client.fetchQuery(options)).releaseId, "revision-b");
 		assert.equal(requests, 2);
-		await removeGameDataScope(client, "regular");
-		assert.equal(client.getQueryCache().getAll().length, 0);
+		assert.equal(client.getQueryCache().getAll().length, 1);
 	} finally {
 		globalThis.fetch = original;
 		client.clear();
@@ -105,7 +116,7 @@ test("mode removal aborts a pending manifest and cannot accept its late response
 		});
 	}) as typeof fetch;
 	try {
-		const pending = client.fetchQuery(searchManifestOptions("regular", "revision-a")).catch(() => null);
+		const pending = client.fetchQuery(searchManifestOptions("regular")).catch(() => null);
 		await removeGameDataScope(client, "regular");
 		assert.equal(signal?.aborted, true);
 		finish(new Response(JSON.stringify(fixture())));
@@ -117,18 +128,21 @@ test("mode removal aborts a pending manifest and cannot accept its late response
 	}
 });
 
-test("identity checks do not poll and replacement removes only older manifests in the same mode", () => {
-	const client = new QueryClient();
-	assert.equal("refetchInterval" in searchIdentityOptions("regular"), false);
-	const old = searchManifestOptions("regular", "revision-a").queryKey;
-	const current = searchManifestOptions("regular", "revision-b").queryKey;
-	const otherMode = searchManifestOptions("pve", "revision-a").queryKey;
-	client.setQueryData(old, { releaseId: "revision-a" });
-	client.setQueryData(current, { releaseId: "revision-b" });
-	client.setQueryData(otherMode, { releaseId: "revision-a" });
-	removeOldSearchManifests(client, "regular", "revision-b");
-	assert.equal(client.getQueryData(old), undefined);
-	assert.ok(client.getQueryData(current));
-	assert.ok(client.getQueryData(otherMode));
-	client.clear();
+test("a failed refresh keeps the last valid manifest in its own mode", async () => {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const original = globalThis.fetch;
+	const options = searchManifestOptions("regular");
+	globalThis.fetch = async () => Response.json(fixture());
+	try {
+		const data = await client.fetchQuery(options);
+		await client.invalidateQueries({ queryKey: options.queryKey });
+		globalThis.fetch = async () => Response.json({ ...fixture(), releaseId: "revision-b", mode: "pve" });
+		await assert.rejects(client.fetchQuery(options));
+		assert.equal(client.getQueryData(options.queryKey), data);
+		assert.equal(client.getQueryData(searchManifestOptions("pve").queryKey), undefined);
+		assert.equal("refetchInterval" in options, false);
+	} finally {
+		globalThis.fetch = original;
+		client.clear();
+	}
 });

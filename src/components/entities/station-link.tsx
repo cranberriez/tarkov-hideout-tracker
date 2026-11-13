@@ -6,8 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { getStationPreviewUpgrade } from "@/features/hideout/station-preview-model";
 import { normalizeName } from "@/lib/utils/normalize-name";
-import type { decodeSearchManifest } from "@/lib/search/manifest";
-import { searchIdentityOptions, searchManifestOptions } from "@/lib/search/query";
+import { searchManifestOptions } from "@/lib/search/query";
 import { preloadHoverImage } from "@/components/ui/hover-preview-provider";
 import { stationHref } from "@/lib/entity-routes";
 import { useModeRoute } from "@/lib/useModeRoute";
@@ -52,7 +51,13 @@ export function StationLink({
 			renderPreview={() => <StationPreviewCard station={station} />}
 		>
 			{(triggerProps) => (
-				<Link {...props} {...triggerProps} prefetch={false} href={stationHref(routeMode, station.id)} className={className}>
+				<Link
+					{...props}
+					{...triggerProps}
+					prefetch={false}
+					href={stationHref(routeMode, station.id)}
+					className={className}
+				>
 					{children ?? station.name}
 				</Link>
 			)}
@@ -76,10 +81,7 @@ function StationPreviewCard({ station: supplied }: { station: Pick<Station, "id"
 	const cached = cachedPage?.stations?.find((entry) => entry.id === supplied.id);
 	const station = { ...cached, ...supplied, levels: supplied.levels ?? cached?.levels };
 	const maxLevel = station.levels?.length ? Math.max(...station.levels.map((level) => level.level)) : null;
-	const releaseId = client.getQueryData<{ releaseId: string }>(searchIdentityOptions(mode).queryKey)?.releaseId;
-	const manifest = releaseId
-		? client.getQueryData<ReturnType<typeof decodeSearchManifest>>(searchManifestOptions(mode, releaseId).queryKey)
-		: undefined;
+	const manifest = client.getQueryData(searchManifestOptions(mode).queryKey);
 	const stations =
 		cachedPage?.stations ??
 		(station.levels

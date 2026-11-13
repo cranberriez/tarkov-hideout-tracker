@@ -1,52 +1,20 @@
-import { queryOptions, type QueryClient } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "../game-mode";
 import { gameDataKey } from "../query/scope";
-import { fetchJson, ResponseValidationError } from "../query/request";
-import { decodeSearchManifest } from "./manifest";
+import { fetchJson } from "../query/request";
+import { decodeSearchManifest, SEARCH_MANIFEST_FORMAT } from "./manifest";
 
-export function searchIdentityOptions(mode: TarkovJsonGameMode) {
+export function searchManifestOptions(mode: TarkovJsonGameMode) {
 	return queryOptions({
-		queryKey: gameDataKey(mode, "search-identity", 1),
-		queryFn: async ({ signal }) => {
-			const value = await fetchJson<{ v: number; mode: string; releaseId: string }>(
-				`/api/search?mode=${mode}&identity=1`,
-				{ signal },
-			);
-			if (
-				!value ||
-				value.v !== 1 ||
-				value.mode !== mode ||
-				typeof value.releaseId !== "string" ||
-				!value.releaseId.trim()
-			)
-				throw new ResponseValidationError("Invalid search release identity");
-			return value;
-		},
-		staleTime: 5 * 60_000,
-		gcTime: Infinity,
-	});
-}
-
-export function removeOldSearchManifests(client: QueryClient, mode: TarkovJsonGameMode, releaseId: string) {
-	const filters = {
-		queryKey: gameDataKey(mode, "search-manifest"),
-		predicate: (query: { queryKey: readonly unknown[] }) => query.queryKey[4] !== releaseId,
-	};
-	void client.cancelQueries(filters);
-	client.removeQueries(filters);
-}
-
-export function searchManifestOptions(mode: TarkovJsonGameMode, releaseId: string) {
-	return queryOptions({
-		queryKey: gameDataKey(mode, "search-manifest", 4, releaseId),
+		queryKey: gameDataKey(mode, "search-manifest", SEARCH_MANIFEST_FORMAT),
 		queryFn: async ({ signal }) =>
 			decodeSearchManifest(
-				// `format` only separates CDN entries when the immutable body gains fields.
-				await fetchJson<unknown>(`/api/search?${new URLSearchParams({ mode, releaseId, format: "5" })}`, { signal }),
+				await fetchJson<unknown>(`/api/search?${new URLSearchParams({ mode, format: SEARCH_MANIFEST_FORMAT })}`, {
+					signal,
+				}),
 				mode,
-				releaseId,
 			),
-		staleTime: Infinity,
+		staleTime: 5 * 60_000,
 		gcTime: Infinity,
 	});
 }

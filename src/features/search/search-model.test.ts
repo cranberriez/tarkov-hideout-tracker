@@ -17,7 +17,6 @@ const manifest = decodeSearchManifest(
 		categories: [],
 	},
 	"regular",
-	"r1",
 );
 
 test("combined catalog ranks exact abbreviations first and preserves entity kinds", () => {

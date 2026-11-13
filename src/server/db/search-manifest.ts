@@ -6,7 +6,7 @@ import type { TarkovDataMode } from "@/types/common";
 import type { Trader } from "@/types/traders";
 import { buildSearchManifest } from "@/lib/search/build-manifest";
 import { QUEST_PREPARATION_REVISION } from "@/lib/quests/quest-preparation";
-import { validateSearchManifest } from "@/lib/search/manifest";
+import { SEARCH_MANIFEST_FORMAT, validateSearchManifest } from "@/lib/search/manifest";
 import { DatabaseTransientReadError } from "./errors";
 import { boundedReadCache } from "./read-cache";
 import { getCatalogVersion, withStableCatalogRead } from "./postgres-read";
@@ -115,7 +115,7 @@ export async function readSearchManifest(mode: TarkovDataMode, contentVersion: s
 		if ((await getCatalogVersion(mode)) !== contentVersion)
 			throw new DatabaseTransientReadError("Search revision changed");
 		const compressed = await boundedReadCache(
-			["compact-search", "5", QUEST_PREPARATION_REVISION, mode, contentVersion],
+			["compact-search", SEARCH_MANIFEST_FORMAT, QUEST_PREPARATION_REVISION, mode, contentVersion],
 			() => build(mode, contentVersion, getPostgresDb()),
 		);
 		return JSON.parse(gunzipSync(Buffer.from(compressed, "base64")).toString("utf8"));

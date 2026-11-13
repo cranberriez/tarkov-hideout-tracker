@@ -8,7 +8,7 @@ export const CacheControl = {
 	publicCdnHour: "public, max-age=300, s-maxage=3600",
 	/** Browser and CDN 5 minutes (priced profit page data). */
 	publicCdnFiveMinutes: "public, max-age=300, s-maxage=300",
-	/** Browser 30 seconds, CDN 1 minute (current catalog identity and data status). */
+	/** Browser 30 seconds, CDN 1 minute (current search manifest, catalog identity, and data status). */
 	shortLived: "public, max-age=30, s-maxage=60",
 	/** Release-addressed content that can never change (search manifest for a matching releaseId). */
 	immutable: "public, max-age=31536000, immutable",

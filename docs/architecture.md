@@ -348,7 +348,9 @@ It shows 10 results initially, expandable
 to 50, labels entity kinds, and shows quest trader names/portraits.
 
 The dialog traps focus, supports arrow navigation and Enter selection, closes on
-Escape, and restores focus to the opener on dismissal. Empty, loading, error/retry,
+Escape, and restores focus to the opener on dismissal. Highlight changes update the
+previous and next result rows. Arrow keys scroll the highlighted result into view,
+and pointer entry highlights without scrolling. Empty, loading, error/retry,
 and no-match states are explicit. Selecting an item opens the item-detail dialog;
 quest selection navigates to `/quests/[questId]` and opens the workspace detail
 pane, including on mobile or when already on the quest page.
