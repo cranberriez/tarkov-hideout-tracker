@@ -126,8 +126,10 @@ is not applied by the planner.
 
 The Locations dropdown defaults to one column per map, with the existing map
 preview artwork and square document tiles. Its Table toggle shows the map-overlap
-matrix. Both views use `spawnsPerRelevantType`: seven possible spawns of each
-relevant type, with Factory at five. These are spawn counts, not guaranteed pickups.
+matrix. Both views show seven possible spawns of each relevant type by default,
+five on Factory, and `?` on Icebreaker for unknown counts. These counts represent
+possible spawn locations. Icebreaker Medical document availability comes from
+the [Nov 12 game update](https://t.me/escapefromtarkovEN/6990).
 Locations alone uses a static [document artwork mapping](../src/features/battle-pass/lib/battle-pass-document-artwork.ts)
 verified against tarkov.dev's seasonal item data and English names. All eight
 document IDs have transparent `image512pxLink` artwork (512px on the longest side).
@@ -281,11 +283,14 @@ the previous price-hydrated payloads.
 
 Item dialogs and direct item pages initially request relations for requirement
 totals and Hideout/Quests, plus the selected item's price. Usage and acquisition
-graphs are enabled only on Traders/Crafting tabs; their ingredient prices follow
-when those requested graphs settle. Previously opened items do not expand the
-price request. The server item page reads only the item's catalog identity without
-mutable trader offers; relations load through the existing client query after profile
-hydration, with loading, partial-error and retry states. Station recipe graphs also
+graphs are enabled on the first visit to Traders or Crafting for the current item;
+their ingredient prices follow when those requested graphs settle. Those queries
+stay enabled when switching tabs. The unpriced relations read uses catalog summaries
+by ID and leaves mutable trader offers to the usage read. Previously opened items
+do not expand the price request. The server item page reads only the item's catalog
+identity without mutable trader offers; relations load through the existing client query after profile
+hydration. Relations retry transient request failures once before showing an error.
+Partial results remain visible with a manual retry. Station recipe graphs also
 load through their shared browser query rather than being embedded in station HTML.
 Items and Kappa checklist summaries also exclude unused trader purchase offers;
 their current sell prices still load separately. Existing per-view,
@@ -581,24 +586,23 @@ category as an index into a shared category ID list; the uploader groups those
 leaves for its category filter. A quest-only flag marks flea-banned items with
 no other provider type (quest notes, tapes, documents); Do I Need It? skips them.
 
-[/api/search](../src/app/api/search/route.ts) keeps identity=1 and the releaseId
-request/response field. The field now carries the string content version. A
-stale token returns 409. Builds verify their observed content version before
-caching; failed or mixed-version reads never enter the success cache. Pricing
-updates do not invalidate search. Identity responses are cached for 60 seconds on the
-CDN; manifest responses for the current releaseId are immutable, and errors and 409s
-stay private, no-store.
+[/api/search](../src/app/api/search/route.ts) resolves the current content version
+and returns the mode's manifest with its `releaseId` in one request. The current
+manifest has a 30-second browser lifetime and a 60-second CDN lifetime. Its ETag
+includes the mode, format, quest preparation revision, and content version.
+Builds verify their observed content version before caching. Pricing updates do
+not invalidate search. The `identity=1` and explicit `releaseId` requests remain
+available for compatibility. A mismatched explicit release returns 409, and a
+matching release response is immutable. Errors stay private, no-store.
 
 [Search loading](../src/lib/search/useSearchManifest.tsx) starts when search opens
 or a feature needs the index, after profile hydration. Quick Add waits for a nonempty
 query. Ordinary page visits do not download or poll search in the background.
-TanStack retains the decoded index in session memory across navigation, with
-infinite freshness for a given revision. The identity is stale after five minutes
-and refreshes on the next use or reconnect, without interval polling. A new revision
-loads a new manifest; the old revision is removed
-after successful replacement. The existing mode lifecycle cancels/removes the
-previous mode, including in-flight responses. Failures expose explicit retry;
-valid same-revision data can remain usable after an identity-check failure.
+TanStack retains one decoded manifest per active mode across navigation. After
+five minutes it serves that manifest immediately and refreshes on the next use
+or reconnect, without interval polling. A successful refresh replaces it. The
+existing mode lifecycle cancels and removes the previous mode, including in-flight
+responses. Failures expose explicit retry and keep the last valid results available.
 No player persistence changes are involved.
 
 Items carry `b: 1` when their leaf category is under Barter item (the junk-box

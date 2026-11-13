@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUp, CornerDownLeft, LoaderCircle, Package, ScrollText, Search, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -53,16 +53,16 @@ export function SearchPalette({
 		setLimit(10);
 		input.current?.focus();
 	};
-	const results = matches.slice(0, limit);
+	const results = useMemo(() => matches.slice(0, limit), [matches, limit]);
 	const activeIndex = Math.min(active, results.length - 1);
 	const optionId = (index: number) => `${listId}-${index}`;
-	useEffect(() => {
-		document.getElementById(`${listId}-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
-	}, [activeIndex, listId]);
-	const select = (result: SearchResult) => {
-		selected.current = true;
-		onSelect(result);
-	};
+	const select = useCallback(
+		(result: SearchResult) => {
+			selected.current = true;
+			onSelect(result);
+		},
+		[onSelect],
+	);
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
@@ -130,8 +130,12 @@ export function SearchPalette({
 							}
 							if (event.key === "ArrowDown" || event.key === "ArrowUp") {
 								event.preventDefault();
-								if (results.length)
-									setActive((activeIndex + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length);
+								if (results.length) {
+									const step = event.key === "ArrowDown" ? 1 : -1;
+									const nextIndex = (activeIndex + step + results.length) % results.length;
+									setActive(nextIndex);
+									document.getElementById(optionId(nextIndex))?.scrollIntoView({ block: "nearest" });
+								}
 							} else if (event.key === "Enter" && results[activeIndex]) {
 								event.preventDefault();
 								select(results[activeIndex]);
@@ -198,49 +202,16 @@ export function SearchPalette({
 					className="min-h-0 overflow-y-auto overscroll-contain"
 				>
 					{results.map((result, index) => (
-						<div
+						<SearchResultRow
 							key={`${result.kind}:${result.id}`}
 							id={optionId(index)}
-							role="option"
-							aria-selected={index === activeIndex}
-							onMouseMove={() => setActive(index)}
-							onMouseDown={(event) => event.preventDefault()}
-							onClick={() => select(result)}
-							className={cn(
-								"flex cursor-pointer items-center gap-3 border-l-2 px-4 py-3",
-								index === activeIndex ? "border-brand bg-brand/10" : "border-transparent hover:bg-accent",
-							)}
-						>
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded border border-border-color bg-background">
-								{result.iconLink ? (
-									<Image
-										src={result.iconLink}
-										alt=""
-										width={40}
-										height={40}
-										unoptimized
-										className="h-10 w-10 object-contain"
-									/>
-								) : result.kind === "item" ? (
-									<Package size={18} className="text-muted-foreground" />
-								) : (
-									<ScrollText size={18} className="text-muted-foreground" />
-								)}
-							</div>
-							<div className="min-w-0 flex-1">
-								<div className="truncate text-sm font-medium text-foreground">{result.name}</div>
-								<div className="mt-0.5 text-xs text-muted-foreground">
-									{result.kind === "quest"
-										? result.trader
-										: result.kind === "station"
-											? `Level ${stationLevels[result.id] ?? 0} / ${result.maxLevel}`
-											: result.item.shortName || "Item"}
-								</div>
-							</div>
-							<span className="shrink-0 rounded border border-border-color px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-								{result.kind}
-							</span>
-						</div>
+							result={result}
+							index={index}
+							active={index === activeIndex}
+							stationLevel={result.kind === "station" ? (stationLevels[result.id] ?? 0) : 0}
+							onHighlight={setActive}
+							onSelect={select}
+						/>
 					))}
 				</div>
 				{matches.length > limit && limit === 10 && (
@@ -276,3 +247,61 @@ export function SearchPalette({
 		</Dialog>
 	);
 }
+
+const SearchResultRow = memo(function SearchResultRow({
+	id,
+	result,
+	index,
+	active,
+	stationLevel,
+	onHighlight,
+	onSelect,
+}: {
+	id: string;
+	result: SearchResult;
+	index: number;
+	active: boolean;
+	stationLevel: number;
+	onHighlight: (index: number) => void;
+	onSelect: (result: SearchResult) => void;
+}) {
+	return (
+		<div
+			id={id}
+			role="option"
+			aria-selected={active}
+			onPointerEnter={(event) => {
+				if (event.pointerType !== "touch") onHighlight(index);
+			}}
+			onMouseDown={(event) => event.preventDefault()}
+			onClick={() => onSelect(result)}
+			className={cn(
+				"flex cursor-pointer items-center gap-3 border-l-2 px-4 py-3",
+				active ? "border-brand bg-brand/10" : "border-transparent hover:bg-accent",
+			)}
+		>
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded border border-border-color bg-background">
+				{result.iconLink ? (
+					<Image src={result.iconLink} alt="" width={40} height={40} unoptimized className="h-10 w-10 object-contain" />
+				) : result.kind === "item" ? (
+					<Package size={18} className="text-muted-foreground" />
+				) : (
+					<ScrollText size={18} className="text-muted-foreground" />
+				)}
+			</div>
+			<div className="min-w-0 flex-1">
+				<div className="truncate text-sm font-medium text-foreground">{result.name}</div>
+				<div className="mt-0.5 text-xs text-muted-foreground">
+					{result.kind === "quest"
+						? result.trader
+						: result.kind === "station"
+							? `Level ${stationLevel} / ${result.maxLevel}`
+							: result.item.shortName || "Item"}
+				</div>
+			</div>
+			<span className="shrink-0 rounded border border-border-color px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+				{result.kind}
+			</span>
+		</div>
+	);
+});

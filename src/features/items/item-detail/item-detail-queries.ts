@@ -2,7 +2,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { isPriceItemId } from "../../../lib/query/price-contract";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { gameDataKey } from "../../../lib/query/scope";
-import { fetchJson, requireComplete } from "../../../lib/query/request";
+import { fetchJson, requireComplete, shouldRetryRequest } from "../../../lib/query/request";
 import { isCompleteItemUsageData } from "../../../lib/utils/item-usage";
 import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } from "@/types/contracts";
 
@@ -39,7 +39,10 @@ function scopedItemViewQueryOptions<T>({
 		},
 		staleTime: DETAIL_STALE_TIME,
 		gcTime: DETAIL_GC_TIME,
-		retry: false,
+		retry:
+			domain === "relations"
+				? (failureCount, error) => failureCount === 0 && shouldRetryRequest(failureCount, error)
+				: false,
 		meta: { retentionGroup: "item-detail", inactiveQueryLimit: DETAIL_QUERY_LIMIT },
 	});
 }

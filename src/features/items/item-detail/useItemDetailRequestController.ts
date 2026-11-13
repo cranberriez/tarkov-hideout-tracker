@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import type { TarkovJsonGameMode } from "@/lib/game-mode";
 import { useGameDataEnabled } from "@/lib/query/game-data";
-import { PartialDataError } from "@/lib/query/request";
+import { PartialDataError, RequestError } from "@/lib/query/request";
 import type { ItemAcquisitionTreeData, ItemRelationsPayload, ItemUsageData } from "@/types/contracts";
-import { getItemRelationsError } from "./item-detail-data";
+import { getItemRelationErrors } from "./item-detail-data";
 import { itemAcquisitionQueryOptions, itemRelationsQueryOptions, itemUsageQueryOptions } from "./item-detail-queries";
 
 function partialPayload<T>(error: Error | null): T | null {
@@ -49,10 +49,10 @@ export function useItemDetailRequestController({
 		partialPayload<ItemRelationsPayload>(relationsQuery.error) ?? relationsQuery.data ?? initial?.relations ?? null;
 	const usage = partialPayload<ItemUsageData>(usageQuery.error) ?? usageQuery.data ?? initial?.usage ?? null;
 	const tree = partialPayload<ItemAcquisitionTreeData>(treeQuery.error) ?? treeQuery.data ?? initial?.tree ?? null;
-	const relationsRequestError = requestMessage(
-		relationsQuery.error,
-		"Hideout and quest relations could not be loaded.",
-	);
+	const relationsRequestError =
+		relationsQuery.error instanceof RequestError && relationsQuery.error.status === 404
+			? `Item relations for ${activeItemId} were not found in this mode.`
+			: requestMessage(relationsQuery.error, "Hideout and quest relations could not be loaded.");
 	const usageRequestError = requestMessage(usageQuery.error, "Trader and crafting data could not be loaded.");
 	const treeRequestError = requestMessage(treeQuery.error, "Profit recommendations could not be loaded.");
 	const treeDomainError = tree ? Object.values(tree.errors).filter(Boolean).join(" ") || null : null;
@@ -61,7 +61,7 @@ export function useItemDetailRequestController({
 
 	return {
 		relations,
-		relationsError: getItemRelationsError(relations, relationsRequestError),
+		relationErrors: getItemRelationErrors(relations, relationsRequestError),
 		relationsLoading: waiting(relations) || (enabled && relations === null && relationsQuery.isPending),
 		retryRelations: () => relationsQuery.refetch(),
 		usage,

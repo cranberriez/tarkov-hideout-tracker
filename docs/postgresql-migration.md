@@ -177,9 +177,10 @@ outside this database conversion.
 
 Two existing compatibility details need explicit handling:
 
-1. `/api/search` and its browser cache use `releaseId`. Keep that field temporarily
-   as the string representation of catalog_status.content_version, including the
-   existing stale-token 409 response. DataStatusPayload can expose the same token
+1. `/api/search` returns `releaseId` as the string representation of
+   catalog_status.content_version. The browser caches the current manifest by mode.
+   Compatibility requests that name a stale release still receive 409.
+   DataStatusPayload can expose the same token
    under its old field name. It is only cache identity; no release lifecycle,
    snapshot storage, historical lookup, activation, or rollback endpoint exists.
 2. ItemSummary.firstSeenReleaseId can map the imported legacy provenance string

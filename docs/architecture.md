@@ -348,7 +348,9 @@ It shows 10 results initially, expandable
 to 50, labels entity kinds, and shows quest trader names/portraits.
 
 The dialog traps focus, supports arrow navigation and Enter selection, closes on
-Escape, and restores focus to the opener on dismissal. Empty, loading, error/retry,
+Escape, and restores focus to the opener on dismissal. Highlight changes update the
+previous and next result rows. Arrow keys scroll the highlighted result into view,
+and pointer entry highlights without scrolling. Empty, loading, error/retry,
 and no-match states are explicit. Selecting an item opens the item-detail dialog;
 quest selection navigates to `/quests/[questId]` and opens the workspace detail
 pane, including on mobile or when already on the quest page.
@@ -638,11 +640,13 @@ the [item page](../src/features/items/item-detail/ItemDetailsPage.tsx); the
 [request controller](../src/features/items/item-detail/useItemDetailRequestController.ts)
 owns mode-aware relations, usage, and acquisition queries with partial-error handling.
 Relations load on open for header totals and the Hideout/Quests tabs. Traders and
-Crafting enable usage and acquisition queries only while selected, reusing the
-existing mode/item caches. Until then only the selected item's price is requested;
+Crafting enable usage and acquisition queries on the first visit for the current
+item and mode. The dialog keeps those queries and ingredient prices subscribed
+when switching tabs. Until then only the selected item's price is requested;
 recipe ingredient prices are deferred with those graphs. Tabs start on Hideout for
 each item/mode and do not automatically select an unloaded recipe tab. Unknown
-recipe counts are omitted, and empty tabs show explicit empty states.
+recipe counts are omitted, and empty tabs show explicit empty states. Hideout and
+Quests report errors for their own data, and a failed relations request affects both.
 Below `lg`, the item dialog fills the full dynamic viewport even with short or
 loading content. The dialog itself is the vertical scroll surface: Back, the
 header, inventory, market and the active usage tab all scroll together. Back occupies

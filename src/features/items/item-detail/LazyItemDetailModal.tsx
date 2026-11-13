@@ -31,6 +31,7 @@ export function ItemDetailModal({ entry, previousEntry, onBack, onClose }: ItemD
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent
 				showCloseButton={false}
+				overlayClassName="backdrop-blur-none"
 				aria-describedby={undefined}
 				className="pointer-events-none w-full overflow-visible border-0 bg-transparent p-0 shadow-none outline-none max-lg:pointer-events-auto max-lg:top-0 max-lg:left-0 max-lg:h-dvh max-lg:max-w-none max-lg:translate-x-0 max-lg:translate-y-0 max-lg:overflow-x-hidden max-lg:overflow-y-auto max-lg:rounded-none max-lg:bg-background lg:max-w-5xl"
 			>

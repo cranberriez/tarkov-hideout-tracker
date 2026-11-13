@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createQueryClient } from "../../../lib/query/client";
 import { PartialDataError } from "../../../lib/query/request";
+import type { ItemRelationsPayload } from "@/types/contracts";
+import { getItemRelationErrors } from "./item-detail-data";
 import { itemAcquisitionQueryOptions, itemRelationsQueryOptions, itemUsageQueryOptions } from "./item-detail-queries";
 
-const relations = {
+const relations: ItemRelationsPayload = {
 	item: null,
 	relatedItems: [],
 	unresolvedItemIds: [],
@@ -15,7 +17,7 @@ const relations = {
 	questAvailabilityQuests: [],
 	freshness: { itemsUpdatedAt: 1, pricesUpdatedAt: 1, stationsUpdatedAt: 1, questsUpdatedAt: 1 },
 	errors: { items: null, prices: null, stations: null, quests: null },
-} as const;
+};
 
 const usage = {
 	barters: [],
@@ -82,6 +84,25 @@ test("detail domains reuse complete results independently", async () => {
 	}
 });
 
+test("the initial relations read recovers from a transient failure and caches the result", async () => {
+	const originalFetch = globalThis.fetch;
+	let calls = 0;
+	globalThis.fetch = async () => {
+		calls++;
+		return calls === 1 ? Response.json({ error: "Unavailable" }, { status: 503 }) : Response.json(relations);
+	};
+	const client = createQueryClient();
+	const options = { ...itemRelationsQueryOptions("regular", "item-12345678"), retryDelay: 0 };
+	try {
+		assert.deepEqual(await client.fetchQuery(options), relations);
+		assert.deepEqual(await client.fetchQuery(options), relations);
+		assert.equal(calls, 2);
+	} finally {
+		client.clear();
+		globalThis.fetch = originalFetch;
+	}
+});
+
 test("partial output remains on the error while another domain succeeds", async () => {
 	const originalFetch = globalThis.fetch;
 	const partial = { ...relations, errors: { ...relations.errors, quests: "Quest relations unavailable" } };
@@ -99,12 +120,31 @@ test("partial output remains on the error while another domain succeeds", async 
 			relationResult.status === "rejected" && relationResult.reason.payload.errors.quests,
 			"Quest relations unavailable",
 		);
+		assert.deepEqual(getItemRelationErrors(partial, null), {
+			hideout: null,
+			quests: "Quest relations unavailable",
+		});
 		assert.equal(client.getQueryData(relationOptions.queryKey), undefined);
 		assert.equal(usageResult.status, "fulfilled");
 	} finally {
 		client.clear();
 		globalThis.fetch = originalFetch;
 	}
+});
+
+test("empty relations stay empty while real station and missing-item errors remain visible", () => {
+	assert.deepEqual(getItemRelationErrors(relations, null), { hideout: null, quests: null });
+	assert.deepEqual(
+		getItemRelationErrors(
+			{
+				...relations,
+				unresolvedItemIds: ["missing-alternate"],
+				errors: { ...relations.errors, stations: "Stations unavailable", prices: "Prices unavailable" },
+			},
+			null,
+		),
+		{ hideout: "Stations unavailable", quests: "Missing related item data (missing-alternate)." },
+	);
 });
 
 test("cancelling an inactive detail query aborts its request signal", async () => {

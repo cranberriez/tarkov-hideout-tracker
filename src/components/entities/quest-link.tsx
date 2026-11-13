@@ -12,8 +12,7 @@ import { toTarkovJsonGameMode } from "@/lib/game-mode";
 import { getQuestIssuingTraderLoyaltyLevel } from "@/lib/quests/quest-trader-gates";
 import { questWorkspacePageQueryOptions } from "@/lib/query/page-data";
 import { expandQuestSummaries } from "@/lib/quests/quest-summary-payload";
-import { decodeSearchManifest } from "@/lib/search/manifest";
-import { searchIdentityOptions, searchManifestOptions } from "@/lib/search/query";
+import { searchManifestOptions } from "@/lib/search/query";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { QuestWorkspaceQuest, FullQuestObjective } from "@/types/quests";
 import { useQuestDetails } from "@/features/quests/useQuestDetails";
@@ -49,8 +48,7 @@ export function QuestLink({
 		const cachedQuest = quest ?? expandQuestSummaries(workspace?.quests ?? []).find((entry) => entry.id === questId);
 		const suppliedImage = cachedQuest?.trader.image4xLink ?? cachedQuest?.trader.imageLink;
 		if (suppliedImage) return preloadHoverImage(suppliedImage);
-		const identity = await client.ensureQueryData(searchIdentityOptions(mode));
-		const manifest = await client.ensureQueryData(searchManifestOptions(mode, identity.releaseId));
+		const manifest = await client.ensureQueryData({ ...searchManifestOptions(mode), revalidateIfStale: true });
 		const traderId = cachedQuest?.trader.id ?? manifest.quests.find((entry) => entry.id === questId)?.traderId;
 		return preloadHoverImage(traderId ? manifest.traders[traderId]?.iconLink : null);
 	};
@@ -119,10 +117,7 @@ function QuestPreviewCard({
 	const quest = details.quests[0] ?? cachedQuest;
 	const client = useQueryClient();
 	const mode = toTarkovJsonGameMode(useUserStore((state) => state.gameMode));
-	const releaseId = client.getQueryData<{ releaseId: string }>(searchIdentityOptions(mode).queryKey)?.releaseId;
-	const manifest = releaseId
-		? client.getQueryData<ReturnType<typeof decodeSearchManifest>>(searchManifestOptions(mode, releaseId).queryKey)
-		: undefined;
+	const manifest = client.getQueryData(searchManifestOptions(mode).queryKey);
 	const traderId = quest?.trader.id ?? manifest?.quests.find((entry) => entry.id === questId)?.traderId;
 	const trader = traderId ? manifest?.traders[traderId] : undefined;
 	const itemNames = new Map(details.items.map((item) => [item.id, item.name]));

@@ -119,6 +119,9 @@ The Battle Pass overview and Season overview link to
 `/maps?preset=documents`, which opens maps with only documents and extracts shown.
 Location photos stay bundled under
 `public/images/battle-pass/map-assets/tarkovdoc.com/assets/previews`.
+Icebreaker's map shows the Battle Pass update and calls out that spawn mapping
+is in progress. The season location summary records availability independently
+of the positions used for pins.
 
 ## Validation
 

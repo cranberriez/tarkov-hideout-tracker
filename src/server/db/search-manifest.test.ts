@@ -40,7 +40,7 @@ const { getItemsByIds, getQuests, getRecipes, getStations, getTraders } =
 	await jiti.import<typeof import("./domain-data")>("./domain-data.ts");
 const { readSearchManifest } = await jiti.import<typeof import("./search-manifest")>("./search-manifest.ts");
 const { searchItems } = await jiti.import<typeof import("../queries/searchItems")>("../queries/searchItems.ts");
-const { getItemUsageView } = await jiti.import<typeof import("./item-views")>("./item-views.ts");
+const { getItemRelationsView, getItemUsageView } = await jiti.import<typeof import("./item-views")>("./item-views.ts");
 
 const modeList = ["regular", "pve", "pvp-season"] as const;
 const modeNames = { regular: "Standard", pve: "PvE Name", "pvp-season": "Season Name" };
@@ -290,6 +290,12 @@ test(
 				assert.equal(manifest.items[0].n, modeNames[mode]);
 				assert.equal(manifest.quests[0].id, "quest-stable-1");
 			}
+			const relations = await getItemRelationsView("regular", "item-stable-1", false);
+			assert.equal(relations.item?.name, modeNames.regular);
+			assert.equal(relations.item?.marketPrice, null);
+			assert.equal(relations.item?.buyFromTrader, undefined);
+			assert.deepEqual(relations.hideoutRequirements, []);
+			assert.deepEqual(relations.questItemIndex, []);
 			const usage = await getItemUsageView("regular", "item-stable-1", false);
 			assert.equal(usage.items[0].marketPrice, null, "prices=none leaves market hydration deferred");
 			assert.equal(

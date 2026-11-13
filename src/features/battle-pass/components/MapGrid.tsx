@@ -7,12 +7,11 @@ import { cn } from "@/lib/utils";
 
 export function MapGrid() {
 	const { documents, mapNames, mapOrder, locations } = useBattlePassData();
+	const spawnCounts: Record<string, number | null | undefined> = locations.spawnsPerRelevantType;
 	return (
 		<div className="overflow-x-auto rounded-lg bg-card p-3 sm:p-4">
 			<table className="mx-auto w-full min-w-[630px] max-w-5xl table-fixed border-separate border-spacing-1 text-xs">
-				<caption className="sr-only">
-					Possible document spawns per map: seven per relevant type, five on Factory
-				</caption>
+				<caption className="sr-only">Possible document spawns per map and type</caption>
 				<thead>
 					<tr>
 						<th scope="col" className="w-36 text-left font-normal text-subtle-foreground">
@@ -39,12 +38,12 @@ export function MapGrid() {
 							</th>
 							{documents.map((doc) => {
 								const relevant = mapNames[doc.key]?.includes(map);
-								const count =
-									map === "Factory" ? locations.spawnsPerRelevantType.factory : locations.spawnsPerRelevantType.default;
+								const mapKey = map.toLowerCase();
+								const count = Object.hasOwn(spawnCounts, mapKey) ? spawnCounts[mapKey] : spawnCounts.default;
 								return (
 									<td
 										key={doc.key}
-										aria-label={`${map}, ${documentDisplayName(doc.name)}: ${relevant ? count : 0}`}
+										aria-label={`${map}, ${documentDisplayName(doc.name)}: ${relevant ? (count ?? "unknown count") : 0}`}
 										className={cn(
 											"rounded text-center tabular-nums",
 											relevant
@@ -52,7 +51,7 @@ export function MapGrid() {
 												: "bg-surface-raised/25",
 										)}
 									>
-										<span aria-hidden>{relevant ? count : ""}</span>
+										<span aria-hidden>{relevant ? (count ?? "?") : ""}</span>
 									</td>
 								);
 							})}

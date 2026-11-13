@@ -4,6 +4,8 @@ import type { ItemSummary } from "../../types/items";
 import { normalizeName } from "../utils/normalize-name";
 import { ResponseValidationError } from "../query/request";
 
+export const SEARCH_MANIFEST_FORMAT = "5";
+
 const nonempty = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const object = (value: unknown): value is Record<string, unknown> =>
 	!!value && typeof value === "object" && !Array.isArray(value);
@@ -41,11 +43,10 @@ export function validateSearchManifest(value: unknown, mode: TarkovJsonGameMode)
 	return manifest;
 }
 
-export function decodeSearchManifest(value: unknown, mode: TarkovJsonGameMode, releaseId: string) {
+export function decodeSearchManifest(value: unknown, mode: TarkovJsonGameMode) {
 	const manifest = validateSearchManifest(value, mode);
-	if ((value as SearchManifestPayload).releaseId !== releaseId || !nonempty(releaseId)) {
-		throw new ResponseValidationError("Search manifest release changed");
-	}
+	const { releaseId } = value as SearchManifestPayload;
+	if (!nonempty(releaseId)) throw new ResponseValidationError("Invalid search manifest release");
 	const items: ItemSummary[] = manifest.items.map(({ id, nn, n, sn, ic, b, c, q }) => ({
 		id,
 		normalizedName: nn,
