@@ -152,6 +152,19 @@
 	align-items: center;
 	gap: 6px;
 }
+.map-explorer .map-document-note {
+	width: min(14rem, calc(100vw - 28px));
+	padding: 8px 12px;
+	border-radius: 9px;
+	background: var(--me-panel);
+	backdrop-filter: blur(8px);
+	font-size: 12px;
+	color: var(--me-muted);
+}
+.map-explorer .map-document-note a {
+	color: var(--me-text);
+	text-decoration: underline;
+}
 .map-explorer .map-chip-round {
 	width: 28px;
 	justify-content: center;

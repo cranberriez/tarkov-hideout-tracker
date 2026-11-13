@@ -126,8 +126,10 @@ is not applied by the planner.
 
 The Locations dropdown defaults to one column per map, with the existing map
 preview artwork and square document tiles. Its Table toggle shows the map-overlap
-matrix. Both views use `spawnsPerRelevantType`: seven possible spawns of each
-relevant type, with Factory at five. These are spawn counts, not guaranteed pickups.
+matrix. Both views show seven possible spawns of each relevant type by default,
+five on Factory, and `?` on Icebreaker for unknown counts. These counts represent
+possible spawn locations. Icebreaker Medical document availability comes from
+the [Nov 12 game update](https://t.me/escapefromtarkovEN/6990).
 Locations alone uses a static [document artwork mapping](../src/features/battle-pass/lib/battle-pass-document-artwork.ts)
 verified against tarkov.dev's seasonal item data and English names. All eight
 document IDs have transparent `image512pxLink` artwork (512px on the longest side).

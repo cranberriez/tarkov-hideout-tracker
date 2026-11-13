@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { MAP_EXPLORER_MAPS, mapExplorerHref } from "@/lib/cfg/map-explorer";
+import documentLocations from "@/lib/data/season-1-document-locations.json";
 import { useModeRoute } from "@/lib/useModeRoute";
 import { CaretIcon, ExitFullscreenIcon, FullscreenIcon } from "./icons";
 
@@ -118,6 +119,14 @@ export function MapSwitcher({
 					</button>
 				</div>
 			</div>
+			{current === "icebreaker" && !open && (
+				<p className="map-document-note">
+					{documentLocations.icebreakerUpdate.note}{" "}
+					<a href={documentLocations.icebreakerUpdate.sourceUrl} target="_blank" rel="noreferrer">
+						Game update ↗
+					</a>
+				</p>
+			)}
 			{open && (
 				<nav className="map-switch-list" aria-label="Maps">
 					{MAP_EXPLORER_MAPS.map((map) => (

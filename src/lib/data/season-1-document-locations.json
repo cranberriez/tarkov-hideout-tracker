@@ -1,7 +1,11 @@
 {
 	"checkedAt": "2026-10-09",
-	"corroboratingSourceUrl": "https://tarkovdoc.com/",
-	"spawnsPerRelevantType": { "default": 7, "factory": 5 },
+	"corroboratingSourceUrl": "https://tarkovdocsmap.com/",
+	"spawnsPerRelevantType": { "default": 7, "factory": 5, "icebreaker": null },
+	"icebreakerUpdate": {
+		"sourceUrl": "https://t.me/escapefromtarkovEN/6990",
+		"note": "Medical Battle Pass documents were added to Icebreaker in all modes on Nov 12. Seasonal mode also got more Battle Pass documents. Spawn counts are unknown and mapping the positions is a work in progress."
+	},
 	"mapsByDocumentKey": {
 		"financial": ["Customs", "Interchange", "Streets of Tarkov"],
 		"personnel": ["Reserve", "Lighthouse", "Icebreaker"],
@@ -9,7 +13,7 @@
 		"blueprints": ["Factory", "Interchange", "The Labyrinth"],
 		"test": ["Shoreline", "Woods", "Icebreaker"],
 		"user": ["Ground Zero", "Streets of Tarkov", "The Lab"],
-		"medical": ["Ground Zero", "The Lab", "The Labyrinth"],
+		"medical": ["Ground Zero", "The Lab", "The Labyrinth", "Icebreaker"],
 		"technical": ["Lighthouse", "Shoreline", "Woods"]
 	},
 	"classified": {

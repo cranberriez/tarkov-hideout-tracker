@@ -51,7 +51,7 @@ export function LocationsPanel() {
 					<h2 className="text-sm font-semibold text-foreground">Document locations</h2>
 					<p className="mt-1 text-xs text-muted-foreground">
 						{locations.spawnsPerRelevantType.default} possible spawns per type ·{" "}
-						{locations.spawnsPerRelevantType.factory} on Factory
+						{locations.spawnsPerRelevantType.factory} on Factory · ? on Icebreaker
 					</p>
 				</div>
 				<div role="group" aria-label="Locations view" className="flex gap-1">
@@ -73,6 +73,12 @@ export function LocationsPanel() {
 					</Button>
 				</div>
 			</div>
+			<p className="mb-4 text-xs text-muted-foreground">
+				{locations.icebreakerUpdate.note}{" "}
+				<a href={locations.icebreakerUpdate.sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-brand">
+					Game update ↗
+				</a>
+			</p>
 			<div id={viewId}>
 				{view === "table" ? (
 					<MapGrid />
