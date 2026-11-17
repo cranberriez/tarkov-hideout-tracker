@@ -10,6 +10,7 @@ import { useModeRoute } from "@/lib/useModeRoute";
 import { coverCosts, planGoals, previewProgress, unlockedPages, type Costs } from "./lib/battle-pass-model";
 import { useBattlePass } from "./useBattlePass";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
+import { usePurchasePlan } from "./usePurchasePlan";
 import { useProfileDocuments } from "./useProfileDocuments";
 import { DocumentDock } from "./components/DocumentDock";
 import { BattlePassOverview } from "./components/BattlePassOverview";
@@ -123,30 +124,18 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments, documentKeys],
 	);
 	// Overview-only: pages, the dock and previews keep using the active profile's stock.
-	const allProfilesCoverage = useMemo(
-		() =>
-			allProfiles
-				? coverCosts(
-						plan.costs,
-						{ ...progress.inventory, ...profileDocuments.total },
-						progress.classified,
-						useClassified,
-						progress.avoidedDocuments,
-						documentKeys,
-					)
-				: coverage,
-		[
-			allProfiles,
-			coverage,
-			plan.costs,
-			progress.inventory,
-			profileDocuments.total,
-			progress.classified,
-			useClassified,
-			progress.avoidedDocuments,
-			documentKeys,
-		],
-	);
+	const purchases = usePurchasePlan(allProfiles, plan.selected, profileDocuments);
+	const allProfilesCoverage =
+		purchases && typeof purchases !== "string"
+			? coverCosts(
+					plan.costs,
+					purchases.stock,
+					progress.classified,
+					useClassified,
+					progress.avoidedDocuments,
+					documentKeys,
+				)
+			: coverage;
 	const cumulativeCosts = useMemo(
 		() =>
 			cumulative
@@ -202,6 +191,9 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				{...{ scope, knownGoals, completedCount, remainingTotal, plan, selected, filler }}
 				{...{ allProfiles, setAllProfiles, profileDocuments }}
 				coverage={allProfilesCoverage}
+				purchaseStatus={typeof purchases === "string" ? purchases : undefined}
+				owners={purchases && typeof purchases !== "string" ? purchases.labels : undefined}
+				classifiedOwned={progress.classified}
 				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
 				headerAction={
 					<Link href={documentMapsHref(routeMode)} className={buttonClassName({ tone: "brand" })}>

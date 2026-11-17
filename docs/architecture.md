@@ -94,7 +94,7 @@ expanded planning panels can still scroll.
 The top overview groups completion, planning/display controls, plan totals, and
 an icon-and-quantity row of documents still to collect, and Breakdown. The row
 uses the same inventory and classified allocation as the totals, including
-classified documents needed for avoided types. With no saved goals, the plan
+classified documents needed for avoided types. A separate wildcard total shows how many more classified documents would cover every remaining cost after using the shared balance. All profiles assigns each whole reward to one character to maximize ordinary documents spent, and the breakdown shows those assignments. With no saved goals, the plan
 defaults to Everything; completed rewards remain excluded.
 The collect row, reward costs, planner breakdown, and document inventory all use
 the same DocumentChip: its hover label and glow identify the document, and

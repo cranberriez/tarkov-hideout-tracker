@@ -23,6 +23,9 @@ export function BattlePassOverview({
 	allProfiles,
 	setAllProfiles,
 	profileDocuments,
+	purchaseStatus,
+	owners,
+	classifiedOwned,
 	children,
 }: {
 	scope: "all" | "goals";
@@ -39,6 +42,9 @@ export function BattlePassOverview({
 	allProfiles: boolean;
 	setAllProfiles: (checked: boolean) => void;
 	profileDocuments: ProfileDocuments;
+	purchaseStatus?: string;
+	owners?: Record<string, string>;
+	classifiedOwned: number;
 	children: ReactNode;
 }) {
 	const { pages, tiles, documents, seasonId } = useBattlePassData();
@@ -102,12 +108,14 @@ export function BattlePassOverview({
 				</p>
 			) : (
 				<>
-					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-live="polite">
-						<Stat label="Plan" value={plan.total} />
-						<Stat label="Owned" value={coverage.ownedUsed} />
-						<Stat label="Classified" value={coverage.classifiedUsed} />
-						<Stat label="To collect" value={coverage.missing} accent />
-					</div>
+					{!purchaseStatus && (
+						<div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-live="polite">
+							<Stat label="Plan" value={plan.total} />
+							<Stat label="Owned" value={coverage.ownedUsed} />
+							<Stat label="Classified" value={coverage.classifiedUsed} />
+							<Stat label="To collect" value={coverage.missing} accent />
+						</div>
+					)}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between gap-3">
 							<h2 className="text-xs text-muted-foreground">Documents to collect{allProfiles && " · all profiles"}</h2>
@@ -123,7 +131,16 @@ export function BattlePassOverview({
 								All profiles
 							</Button>
 						</div>
-						{collect.length > 0 ? (
+						{purchaseStatus ? (
+							<p role="status">{purchaseStatus}</p>
+						) : (
+							<p className="text-sm">
+								<strong>{Math.max(0, plan.total - coverage.ownedUsed - classifiedOwned)} more classified needed</strong>
+								{" � "}
+								{plan.total - coverage.ownedUsed} required at current ordinary stock � {classifiedOwned} owned
+							</p>
+						)}
+						{purchaseStatus ? null : collect.length > 0 ? (
 							<div className="overflow-x-auto p-1">
 								<div
 									role="table"
@@ -166,80 +183,83 @@ export function BattlePassOverview({
 							<p className="text-xs text-success">All plan documents covered.</p>
 						)}
 					</div>
-					<details>
-						<summary className="w-fit cursor-pointer text-xs text-muted-foreground">
-							Breakdown · {plan.selected.length} rewards
-							{plan.fillerIds.length > 0 ? ` · ${plan.fillerIds.length} suggested` : ""}
-						</summary>
-						<div className="mt-4 grid gap-6 xl:grid-cols-2">
-							<div className="overflow-x-auto">
-								<table className="w-full text-right text-xs">
-									<caption className="sr-only">Plan document requirements</caption>
-									<thead className="text-subtle-foreground">
-										<tr>
-											<th className="text-left font-normal">Document</th>
-											<th className="font-normal">Need</th>
-											{allProfiles ? (
-												profileDocuments.profiles.map((profile) => (
-													<th key={profile.key} className="font-normal" style={{ color: profile.color }}>
-														{profile.label}
-													</th>
-												))
-											) : (
-												<th className="font-normal">Owned</th>
-											)}
-											<th className="font-normal">Classified</th>
-											<th className="font-normal">Missing</th>
-										</tr>
-									</thead>
-									<tbody>
-										{coverage.rows.map((row) => (
-											<tr key={row.key}>
-												<th className="py-1 text-left font-normal">
-													<DocumentChip doc={documents.find((doc) => doc.key === row.key)!} />
-												</th>
-												<td>{row.required}</td>
+					{!purchaseStatus && (
+						<details>
+							<summary className="w-fit cursor-pointer text-xs text-muted-foreground">
+								Breakdown · {plan.selected.length} rewards
+								{plan.fillerIds.length > 0 ? ` · ${plan.fillerIds.length} suggested` : ""}
+							</summary>
+							<div className="mt-4 grid gap-6 xl:grid-cols-2">
+								<div className="overflow-x-auto">
+									<table className="w-full text-right text-xs">
+										<caption className="sr-only">Plan document requirements</caption>
+										<thead className="text-subtle-foreground">
+											<tr>
+												<th className="text-left font-normal">Document</th>
+												<th className="font-normal">Need</th>
 												{allProfiles ? (
 													profileDocuments.profiles.map((profile) => (
-														<td key={profile.key}>{profile.inventory[row.key] ?? 0}</td>
+														<th key={profile.key} className="font-normal" style={{ color: profile.color }}>
+															{profile.label}
+														</th>
 													))
 												) : (
-													<td>{row.used}</td>
+													<th className="font-normal">Owned</th>
 												)}
-												<td className="text-special">
-													{row.classified || "—"}
-													{row.classifiedMissing > 0 && " (+" + row.classifiedMissing + " needed)"}
-												</td>
-												<td className={row.missing ? "text-warning" : "text-success"}>{row.missing}</td>
+												<th className="font-normal">Classified</th>
+												<th className="font-normal">Missing</th>
 											</tr>
+										</thead>
+										<tbody>
+											{coverage.rows.map((row) => (
+												<tr key={row.key}>
+													<th className="py-1 text-left font-normal">
+														<DocumentChip doc={documents.find((doc) => doc.key === row.key)!} />
+													</th>
+													<td>{row.required}</td>
+													{allProfiles ? (
+														profileDocuments.profiles.map((profile) => (
+															<td key={profile.key}>{profile.inventory[row.key] ?? 0}</td>
+														))
+													) : (
+														<td>{row.used}</td>
+													)}
+													<td className="text-special">
+														{row.classified || "—"}
+														{row.classifiedMissing > 0 && " (+" + row.classifiedMissing + " needed)"}
+													</td>
+													<td className={row.missing ? "text-warning" : "text-success"}>{row.missing}</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+								<div className="grid content-start gap-3 sm:grid-cols-2">
+									{pages
+										.filter((page) => page.cells.some((tile) => selected.has(tile.id)))
+										.map((page) => (
+											<div key={page.num}>
+												<h3 className="mb-2 text-xs font-semibold text-muted-foreground">Page {page.num}</h3>
+												<ul className="space-y-1">
+													{page.cells
+														.filter((tile) => selected.has(tile.id))
+														.map((tile) => (
+															<li key={tile.id} className="flex gap-2 text-xs">
+																<span className="min-w-0 flex-1 truncate" title={tile.displayName}>
+																	{tile.displayName}
+																</span>
+																{owners && <span>{owners[tile.id]}</span>}
+																{filler.has(tile.id) && <span className="text-info">Suggested</span>}
+																<span className="tabular-nums text-subtle-foreground">{tile.totalDocumentCost}</span>
+															</li>
+														))}
+												</ul>
+											</div>
 										))}
-									</tbody>
-								</table>
+								</div>
 							</div>
-							<div className="grid content-start gap-3 sm:grid-cols-2">
-								{pages
-									.filter((page) => page.cells.some((tile) => selected.has(tile.id)))
-									.map((page) => (
-										<div key={page.num}>
-											<h3 className="mb-2 text-xs font-semibold text-muted-foreground">Page {page.num}</h3>
-											<ul className="space-y-1">
-												{page.cells
-													.filter((tile) => selected.has(tile.id))
-													.map((tile) => (
-														<li key={tile.id} className="flex gap-2 text-xs">
-															<span className="min-w-0 flex-1 truncate" title={tile.displayName}>
-																{tile.displayName}
-															</span>
-															{filler.has(tile.id) && <span className="text-info">Suggested</span>}
-															<span className="tabular-nums text-subtle-foreground">{tile.totalDocumentCost}</span>
-														</li>
-													))}
-											</ul>
-										</div>
-									))}
-							</div>
-						</div>
-					</details>
+						</details>
+					)}
 				</>
 			)}
 		</section>

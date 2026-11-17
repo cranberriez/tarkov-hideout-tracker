@@ -106,8 +106,8 @@ stores the requested plan scope, Use classified, Cumulative costs, Possible
 progress, List view, Consume Docs from Inventory, Locations visibility,
 document-panel visibility, and All profiles in `tarkov-battle-pass-ui-preferences-v1`.
 **All profiles** is read-only: the overview's documents to collect and breakdown
-sum ordinary stock from PVP, PVE and the pass's seasonal character, with a row per
-profile. Pages, the document panel, previews and edits still use the active profile. These UI
+assign each planned reward to PVP, PVE or the pass's seasonal character to minimize
+classified spending. Each purchase uses its buyer's ordinary stock and the pass's shared classified balance. Pages, the document panel, previews and edits still use the active profile. These UI
 preferences survive navigation and reload and are shared across profiles and
 PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
 (displaying Everything when no goals exist). Reads normalize invalid fields

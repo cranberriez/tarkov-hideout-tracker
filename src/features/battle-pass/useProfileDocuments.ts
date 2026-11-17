@@ -25,10 +25,7 @@ export function useProfileDocuments() {
 			...profile,
 			inventory: profileDocumentCounts(counts, data.documentItemIds),
 		}));
-		const total: Record<string, number> = {};
-		for (const profile of profiles)
-			for (const [key, amount] of Object.entries(profile.inventory)) total[key] = (total[key] ?? 0) + amount;
-		return { profiles, total };
+		return { profiles };
 	}, [pvp, pve, seasonal, data]);
 }
 export type ProfileDocuments = ReturnType<typeof useProfileDocuments>;
