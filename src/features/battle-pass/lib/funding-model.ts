@@ -1,4 +1,5 @@
 import type { Tile } from "./battle-pass-model";
+export const CASH_TOLERANCE_CENTS = 10;
 export const DOCUMENT_PACKS = [
 	{ documents: 20, tarCoins: 500 },
 	{ documents: 40, tarCoins: 950 },
@@ -77,9 +78,6 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 		if (schedule(mid).feasible) high = mid;
 		else low = mid + 1;
 	}
-	// All currency pack sizes are multiples of 50. The first amount covering the
-	// minimum initial capital that minimizes cash is globally optimal.
-	// On equal cash, prefer more currency: it can never weaken the schedule.
 	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 	const unit = TARCOIN_PACKS.reduce((n, p) => gcd(n, p.tarCoins), 0);
 	const offerPack = TARCOIN_PACKS.find((p) => p.special)!;
@@ -98,80 +96,122 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 					previous[next] = k;
 				}
 			});
-	let bestCash = Infinity,
-		bestTC = 0,
-		bestRegular = 0,
-		special = false;
-	for (let tc = 0; tc <= max; tc++)
-		for (const offer of allowSpecial ? [false, true] : [false]) {
-			const total = tc + (offer ? offerPack.tarCoins / unit : 0),
-				cost = cash[tc] + (offer ? offerPack.cents : 0);
-			if (total >= target && (cost < bestCash || (cost === bestCash && total > bestTC))) {
-				bestCash = cost;
-				bestTC = total;
-				bestRegular = tc;
-				special = offer;
-			}
+	// Every pack costs more than the tolerance. A plan with a removable pack
+	// would therefore exceed the ceiling if the remaining packs cover the route.
+	const candidates = [];
+	for (let tc = 0; tc <= max; tc++) {
+		if (!Number.isFinite(cash[tc])) continue;
+		for (const special of allowSpecial ? [false, true] : [false]) {
+			const total = tc + (special ? offerPack.tarCoins / unit : 0);
+			if (total >= target)
+				candidates.push({ total, regularUnits: tc, special, cents: cash[tc] + (special ? offerPack.cents : 0) });
 		}
-
-	const documentCounts = claims.map(() => DOCUMENT_PACKS.map(() => 0));
-	const currencyCounts = TARCOIN_PACKS.map(() => 0);
-	const solved = schedule(bestTC * unit, true);
-	for (let path = solved.path; path; path = path.previous) documentCounts[path.index][path.pack]++;
-	while (bestRegular > 0) {
-		const k = previous[bestRegular];
-		if (k < 0) throw new Error("Missing currency pack choice");
-		currencyCounts[TARCOIN_PACKS.indexOf(regular[k])]++;
-		bestRegular -= regular[k].tarCoins / unit;
 	}
-	if (special) currencyCounts[TARCOIN_PACKS.indexOf(offerPack)]++;
-	const cashReceipt = buildCashReceipt(currencyCounts);
-	let balanceTarCoins = starting,
-		balanceDocuments = 0,
-		cashCents = 0,
-		totalDocuments = 0,
-		totalTarCoins = 0;
-	const first = claims.findIndex((c) => c.additionalClassified > 0);
-	const steps = claims.map((claim, index) => {
-		const documentPacks = DOCUMENT_PACKS.flatMap((pack, k) =>
-			documentCounts[index][k] ? [{ ...pack, count: documentCounts[index][k] }] : [],
-		);
-		const tarCoinPacks =
-			index === first
-				? TARCOIN_PACKS.flatMap((pack, k) => (currencyCounts[k] ? [{ ...pack, count: currencyCounts[k] }] : []))
-				: [];
-		for (const pack of tarCoinPacks) {
-			balanceTarCoins += pack.tarCoins * pack.count;
-			totalTarCoins += pack.tarCoins * pack.count;
-			cashCents += pack.cents * pack.count;
+	const minimum = candidates.reduce((best, option) =>
+		option.cents < best.cents || (option.cents === best.cents && option.total > best.total) ? option : best,
+	);
+	const recommended = candidates.reduce((best, option) => {
+		if (option.cents > minimum.cents + CASH_TOLERANCE_CENTS) return best;
+		return option.total > best.total || (option.total === best.total && option.cents < best.cents) ? option : best;
+	}, minimum);
+
+	function purchasePlan(choice: typeof minimum) {
+		const { total: bestTC, special } = choice;
+		let bestRegular = choice.regularUnits;
+		const documentCounts = claims.map(() => DOCUMENT_PACKS.map(() => 0));
+		const currencyCounts = TARCOIN_PACKS.map(() => 0);
+		const solved = schedule(bestTC * unit, true);
+		for (let path = solved.path; path; path = path.previous) documentCounts[path.index][path.pack]++;
+		while (bestRegular > 0) {
+			const k = previous[bestRegular];
+			if (k < 0) throw new Error("Missing currency pack choice");
+			currencyCounts[TARCOIN_PACKS.indexOf(regular[k])]++;
+			bestRegular -= regular[k].tarCoins / unit;
 		}
-		for (const pack of documentPacks) {
-			balanceTarCoins -= pack.tarCoins * pack.count;
-			balanceDocuments += pack.documents * pack.count;
-			totalDocuments += pack.documents * pack.count;
-		}
-		balanceDocuments -= claim.additionalClassified;
-		if (balanceTarCoins < 0 || balanceDocuments < 0)
-			throw new Error("Funding schedule spends unearned currency or unowned documents.");
-		balanceTarCoins += claim.tarCoins;
+		if (special) currencyCounts[TARCOIN_PACKS.indexOf(offerPack)]++;
+		const cashReceipt = buildCashReceipt(currencyCounts);
+		let balanceTarCoins = starting,
+			balanceDocuments = 0,
+			cashCents = 0,
+			totalDocuments = 0,
+			totalTarCoins = 0;
+		const first = claims.findIndex((c) => c.additionalClassified > 0);
+		const steps = claims.map((claim, index) => {
+			const documentPacks = DOCUMENT_PACKS.flatMap((pack, k) =>
+				documentCounts[index][k] ? [{ ...pack, count: documentCounts[index][k] }] : [],
+			);
+			const tarCoinPacks =
+				index === first
+					? TARCOIN_PACKS.flatMap((pack, k) => (currencyCounts[k] ? [{ ...pack, count: currencyCounts[k] }] : []))
+					: [];
+			for (const pack of tarCoinPacks) {
+				balanceTarCoins += pack.tarCoins * pack.count;
+				totalTarCoins += pack.tarCoins * pack.count;
+				cashCents += pack.cents * pack.count;
+			}
+			for (const pack of documentPacks) {
+				balanceTarCoins -= pack.tarCoins * pack.count;
+				balanceDocuments += pack.documents * pack.count;
+				totalDocuments += pack.documents * pack.count;
+			}
+			balanceDocuments -= claim.additionalClassified;
+			if (balanceTarCoins < 0 || balanceDocuments < 0)
+				throw new Error("Funding schedule spends unearned currency or unowned documents.");
+			balanceTarCoins += claim.tarCoins;
+			return {
+				rewardId: claim.rewardId,
+				documentPacks,
+				tarCoinPacks,
+				rewardTarCoins: claim.tarCoins,
+				balanceTarCoins,
+				balanceDocuments,
+			};
+		});
 		return {
-			rewardId: claim.rewardId,
-			documentPacks,
-			tarCoinPacks,
-			rewardTarCoins: claim.tarCoins,
+			cashCents,
+			cashReceipt,
+			steps,
+			totalDocuments,
+			totalTarCoins,
+			specialUsed: special,
 			balanceTarCoins,
 			balanceDocuments,
 		};
-	});
+	}
+	const plan = purchasePlan(recommended);
+	const cheapest = recommended.cents === minimum.cents ? null : purchasePlan(minimum);
 	return {
-		cashCents,
-		cashReceipt,
-		steps,
-		totalDocuments,
-		totalTarCoins,
-		specialUsed: special,
-		balanceTarCoins,
-		balanceDocuments,
+		...plan,
+		minimumCashCents: minimum.cents,
+		minimumPurchase: cheapest && {
+			cashCents: cheapest.cashCents,
+			cashReceipt: cheapest.cashReceipt,
+			totalTarCoins: cheapest.totalTarCoins,
+			balanceTarCoins: cheapest.balanceTarCoins,
+		},
 	};
 }
+/** Compare single bundles using the same classified-pack purchases and claims. */
+export function compareCurrencyBundles(plan: FundingPlan, allowSpecial: boolean) {
+	const { cashCents, totalTarCoins, balanceTarCoins, cashReceipt } = plan;
+	const larger = TARCOIN_PACKS.filter(
+		(pack) =>
+			cashCents > 0 && (!pack.special || allowSpecial) && pack.tarCoins > totalTarCoins && pack.cents > cashCents,
+	);
+	const nextPrice = Math.min(...larger.map((pack) => pack.cents));
+	return {
+		cashCents,
+		totalTarCoins,
+		balanceTarCoins,
+		cashReceipt,
+		minimumPurchase: plan.minimumPurchase,
+		alternatives: larger
+			.filter((pack) => pack.cents === nextPrice)
+			.map((pack) => ({
+				...pack,
+				balanceTarCoins: balanceTarCoins + pack.tarCoins - totalTarCoins,
+			})),
+	};
+}
+export type CurrencyComparison = ReturnType<typeof compareCurrencyBundles>;
 export type FundingPlan = ReturnType<typeof optimizeRouteFunding>;

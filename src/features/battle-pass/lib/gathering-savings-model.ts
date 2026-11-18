@@ -1,5 +1,5 @@
 import type { interpretDocumentRoute } from "./document-route-model";
-import { optimizeRouteFunding, rewardTarCoins } from "./funding-model";
+import { compareCurrencyBundles, type CurrencyComparison, optimizeRouteFunding, rewardTarCoins } from "./funding-model";
 import { gatheringDailyCap } from "./gathering-caps";
 
 export type SavingsRoute = ReturnType<typeof interpretDocumentRoute>;
@@ -9,6 +9,7 @@ export interface GatheringQuantity {
 	documentKey: string;
 	quantity: number;
 }
+export type GatheringFilters = Record<string, { disabled?: boolean; excluded?: string[] }>;
 export interface GatheringBreakpoint {
 	gathered: number;
 	quantities: GatheringQuantity[];
@@ -17,12 +18,13 @@ export interface GatheringBreakpoint {
 	cashCents: number;
 	savingsCents: number;
 	remainingClassified: number;
+	funding: CurrencyComparison;
 }
 
 /** Fixed selected rewards, owners and claim order. Gather matching shortages in
  * claim order; replay shared owned classified after ordinary stock every time.
  * This is a concrete gathering path, not an optimization over all gathering paths. */
-export function gatheringScenario(route: SavingsRoute, gathered: number) {
+export function gatheringScenario(route: SavingsRoute, gathered: number, filters: GatheringFilters = {}) {
 	let remaining = gathered;
 	let classified = route.claims.reduce((sum, claim) => sum + claim.classifiedUsed, 0);
 	const quantities: GatheringQuantity[] = [];
@@ -31,7 +33,8 @@ export function gatheringScenario(route: SavingsRoute, gathered: number) {
 		let shortfall = 0;
 		for (const [documentKey, cost] of Object.entries(claim.cost)) {
 			const missing = Math.max(0, cost - (claim.ordinaryUsed[documentKey] ?? 0));
-			const quantity = Math.min(remaining, missing);
+			const filter = filters[claim.profileKey];
+			const quantity = filter?.disabled || filter?.excluded?.includes(documentKey) ? 0 : Math.min(remaining, missing);
 			remaining -= quantity;
 			shortfall += missing - quantity;
 			if (quantity) {
@@ -60,18 +63,23 @@ export function buildGatheringSavings(
 	route: SavingsRoute,
 	startingTarCoins: number,
 	allowSpecial: boolean,
+	filters: GatheringFilters = {},
 ): GatheringBreakpoint[] {
 	const maximum = route.additionalClassified - 1;
 	if (maximum < 1) return [];
-	const cache = new Map<number, number>();
-	const cash = (count: number) => {
+	const cache = new Map<number, CurrencyComparison>();
+	const funding = (count: number) => {
 		if (!cache.has(count))
 			cache.set(
 				count,
-				optimizeRouteFunding(gatheringScenario(route, count).claims, startingTarCoins, allowSpecial).cashCents,
+				compareCurrencyBundles(
+					optimizeRouteFunding(gatheringScenario(route, count, filters).claims, startingTarCoins, allowSpecial),
+					allowSpecial,
+				),
 			);
 		return cache.get(count)!;
 	};
+	const cash = (count: number) => funding(count).cashCents;
 	const baseline = cash(0);
 	const minimum = cash(maximum);
 	const result: GatheringBreakpoint[] = [];
@@ -87,7 +95,7 @@ export function buildGatheringSavings(
 		}
 		count = low;
 		previous = cash(count);
-		const { claims, quantities } = gatheringScenario(route, count);
+		const { claims, quantities } = gatheringScenario(route, count, filters);
 		const windows: GatheringBreakpoint["windows"] = [];
 		for (const row of quantities) {
 			let profile = windows.find((item) => item.profileKey === row.profileKey);
@@ -110,6 +118,7 @@ export function buildGatheringSavings(
 			windows,
 			parallelWindows: Math.max(...windows.map((row) => row.windows)),
 			cashCents: previous,
+			funding: funding(count),
 			savingsCents: baseline - previous,
 			remainingClassified: claims.reduce((sum, claim) => sum + claim.additionalClassified, 0),
 		});

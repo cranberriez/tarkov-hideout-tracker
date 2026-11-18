@@ -6,6 +6,7 @@ import {
 	DOCUMENT_PACKS,
 	TARCOIN_PACKS,
 	buildCashReceipt,
+	compareCurrencyBundles,
 	optimizeRouteFunding,
 	type FundingClaim,
 } from "./funding-model";
@@ -17,7 +18,8 @@ async function fund(claims: FundingClaim[], starting = 0, special = false) {
 	assert.equal(result.Status, "Optimal");
 	const solved = interpretFunding(request, result.Columns);
 	const dp = optimizeRouteFunding(claims, starting, special);
-	assert.equal(dp.cashCents, solved.cashCents);
+	assert.equal(dp.minimumCashCents, solved.cashCents);
+	assert.ok(dp.cashCents >= solved.cashCents && dp.cashCents <= solved.cashCents + 10);
 	assert.equal(
 		dp.cashReceipt.reduce((sum, pack) => sum + pack.subtotalCents, 0),
 		dp.cashCents,
@@ -72,12 +74,13 @@ test("staged packs use reward income and beat bulk buying", async () => {
 	const staged = await fund([claim("a", 20, 500), claim("b", 20)]);
 	const bulk = await fund([claim("a", 40, 500)]);
 	assert.equal(staged.cashCents, 499);
-	assert.equal(bulk.cashCents, 998);
+	assert.equal(bulk.cashCents, 999);
 	assert.equal(staged.steps[1].documentPacks[0].documents, 20);
 });
 test("larger document pack can beat repeated small packs", async () => {
 	const r = await fund([claim("a", 75)]);
-	assert.equal(r.cashCents, 1996);
+	assert.equal(r.minimumCashCents, 1996);
+	assert.equal(r.cashCents, 1999);
 	assert.equal(r.steps[0].documentPacks[0].documents, 75);
 });
 test("one time offer is optional and appears at most once", async () => {
@@ -249,3 +252,15 @@ function interpretFunding(request: FundingRequest, columns: RouteColumns) {
 	});
 	return { cashCents, steps, totalDocuments, totalTarCoins, specialUsed, balanceTarCoins, balanceDocuments };
 }
+
+test("one-cent bundle upgrades show the ending wallet and respect offer availability", () => {
+	for (const offer of [false, true]) {
+		const plan = optimizeRouteFunding([claim("a", 40, 500)], 0, offer);
+		assert.deepEqual(
+			[plan.minimumCashCents, plan.cashCents, plan.totalTarCoins, plan.balanceTarCoins],
+			[998, 999, offer ? 2000 : 1100, offer ? 1550 : 650],
+		);
+		const cheapest = compareCurrencyBundles(plan, offer).minimumPurchase!;
+		assert.deepEqual([cheapest.cashCents, cheapest.totalTarCoins, cheapest.balanceTarCoins], [998, 1000, 550]);
+	}
+});

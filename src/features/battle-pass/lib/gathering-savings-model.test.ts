@@ -117,3 +117,34 @@ test("roughly 500 missing documents produce breakpoints without a per-document s
 	assert.ok(points.length > 0);
 	assert.ok(performance.now() - started < 10000);
 });
+
+test("mode and document exclusions change only eligible gathering", () => {
+	const input = route([
+		{ profile: "PVP", cost: 40, key: "medical", classified: 5 },
+		{ profile: "PVE", cost: 10, key: "medical" },
+		{ profile: "PVE", cost: 50, key: "financial" },
+	]);
+	const filters = { PVP: { disabled: true }, PVE: { excluded: ["medical"] } };
+	const scenario = gatheringScenario(input, 60, filters);
+	assert.deepEqual(
+		scenario.quantities.map((r) => [r.profileKey, r.documentKey, r.quantity]),
+		[["PVE", "financial", 50]],
+	);
+	assert.deepEqual(
+		scenario.claims.map((c) => c.additionalClassified),
+		[35, 10, 0],
+	);
+	const points = buildGatheringSavings(input, 0, true, filters);
+	assert.ok(points.length > 0);
+	assert.ok(points.every((p) => p.gathered <= 50 && p.remainingClassified === 95 - p.gathered));
+	assert.deepEqual(buildGatheringSavings(input, 0, true, { PVP: { disabled: true }, PVE: { disabled: true } }), []);
+});
+
+test("gathering past a one-cent minimum-price difference keeps the recommended purchase", () => {
+	const input = route([{ profile: "PVP", cost: 60 }]);
+	const points = buildGatheringSavings(input, 350, true);
+	assert.deepEqual(
+		points.map((p) => [p.gathered, p.cashCents]),
+		[[40, 499]],
+	);
+});

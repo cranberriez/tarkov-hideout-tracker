@@ -1,8 +1,15 @@
+import { CurrencyComparison } from "./CurrencyComparison";
 import { useId, useMemo, useState } from "react";
 import type { useDocumentRoute } from "../useDocumentRoute";
 import { useFundingSettings } from "../useFundingSettings";
 import { useRouteFunding } from "../useRouteFunding";
-import { DOCUMENT_PACKS, TARCOIN_PACKS, rewardTarCoins } from "../lib/funding-model";
+import {
+	CASH_TOLERANCE_CENTS,
+	DOCUMENT_PACKS,
+	TARCOIN_PACKS,
+	compareCurrencyBundles,
+	rewardTarCoins,
+} from "../lib/funding-model";
 import { TarCoin } from "./ui/TarCoin";
 import { Toggle } from "./ui/Toggle";
 import { GatheringSavings } from "./GatheringSavings";
@@ -58,9 +65,9 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				</Toggle>
 			</div>
 			<p className="text-xs text-muted-foreground">
-				Uses the supplied USD prices. Regional pricing, taxes and store offers may vary. Larger regular currency and
-				document packs cost less per unit, but this plan minimizes total cash for this route, including your balance and
-				rewards received along the way.
+				Uses the supplied USD prices. Regional pricing, taxes and store offers may vary. The plan recommends the most
+				TarCoins available within {usd(CASH_TOLERANCE_CENTS)} of the exact minimum for this route, including your
+				balance and claim rewards.
 			</p>
 			<details className="rounded-md border border-border p-3">
 				<summary className="cursor-pointer text-xs font-medium">Pack prices</summary>
@@ -98,30 +105,11 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				<>
 					<div className="rounded-md border border-border p-3" aria-live="polite">
 						<h4 className="text-sm font-semibold">Cash purchase receipt</h4>
-						{result.cashReceipt.length > 0 && (
-							<p className="mt-1 text-xs text-muted-foreground">
-								Buy these currency packs once before the document purchases below.
-							</p>
-						)}
-						<ul className="my-3 space-y-2 text-sm">
-							{result.cashReceipt.map((pack) => (
-								<li key={`${pack.tarCoins}-${pack.special}`}>
-									{pack.count} × {pack.tarCoins.toLocaleString()} <TarCoin /> pack
-									{pack.special && " (one-time offer)"} · {usd(pack.cents)} each ={" "}
-									<strong>{usd(pack.subtotalCents)}</strong>
-								</li>
-							))}
-						</ul>
-						{result.cashReceipt.length === 0 && <p className="my-3 text-xs">No cash purchases needed.</p>}
-						<p className="border-t border-border pt-2 text-sm">
-							<strong>Total additional cash: {usd(result.cashCents)}</strong> · {result.totalTarCoins.toLocaleString()}{" "}
-							<TarCoin /> purchased
+						<CurrencyComparison funding={compareCurrencyBundles(result, settings.allowSpecial)} />
+						<p className="mt-2 text-xs text-muted-foreground">
+							{result.balanceDocuments} purchased classified left after all claims
 						</p>
 					</div>
-					<p className="text-xs text-muted-foreground">
-						{result.balanceTarCoins.toLocaleString()} <TarCoin /> left · {result.balanceDocuments} purchased classified
-						left
-					</p>
 					<details className="rounded-md border border-border p-3">
 						<summary className="cursor-pointer text-sm font-medium">Document pack purchases and claims</summary>
 						<ol className="mt-3 max-h-96 space-y-3 overflow-auto text-sm">
