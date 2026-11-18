@@ -56,77 +56,12 @@ season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
 `tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 avoided document types, and document-type swaps (both defaulting to none for older saves).
-Document types per reward differ between players while quantities and totals do not, so
-`costSwaps` maps tile ID -> baseline document key -> replacement key. Swaps never change
-quantities. Choosing a type already on the reward exchanges the two lines’ types; setting a line back to its baseline type
-removes it, and all rewards can be reset to baseline. Editing is a session-only page
-mode and completed rewards are locked, since their documents were already consumed.
-[BattlePassSeason](../src/features/battle-pass/BattlePassSeason.tsx)
-applies swaps once, so planning, previews, cumulative costs and document consumption all
-use the player's costs; unknown tiles or targets are ignored but survive in the save. Collection
-preferences persist in the same save and are shared across modes. They only break
-equal-total-cost suggestion ties; explicit goals and minimum total cost remain
-authoritative. After ordinary inventory, avoided shortages become classified
-demand. When enabled, owned classified stock covers avoided types first, then
-other shortages, once across the plan. The top document section and floating document panel show the same live remaining
-ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
-in either view immediately update both. Known document item IDs read the selected seasonal character's inventory when
-using KORD or viewing a non-current pass. For the current pass in PVP/PVE, they
-read the active permanent profile. Explicit historical links never spend the new
-seasonal character's stock. An absent historical character supplies zero stock
-and is not created by editing the pass. Counts combine non-FiR and FiR stock. Missing records and
-tracked zeros both mean zero owned ordinary documents. Legacy account-wide
-ordinary balances remain saved but are inactive; they are never automatically
-assigned to a profile. Reads never copy balances between profiles or rewrite the
-account-wide save. Editing an ordinary balance uses the existing item count action,
-creating an absent profile record as needed and retaining FiR stock where possible.
-Classified balances remain account-wide and independent of profile inventory.
-It reuses the external-store storage helper, never writes on mount, and synchronizes
-between tabs. Battlepass saves remain independent of profile migrations, progression backups
-and Settings resets.
-
-Individual completion toggles only the selected tile. Page headers also offer
-Complete suggested (the currently suggested prerequisite tiles on that page)
-and Complete all (every tile on that page). Both add completion IDs without
-uncompleting existing rewards. The **Consume Docs from Inventory** toggle defaults
-off until changed and appears beside page navigation and below the
-document panel's total. When enabled, individual and bulk completion spend only
-newly completed rewards' actual document costs, using available non-FiR stock
-before FiR stock and never deducting more than is available. Missing ordinary
-inventory records spend nothing. Repeating a bulk completion spends nothing for
-already completed rewards; marking a reward incomplete does not refund documents.
-Classified allocation remains a preview and does not spend classified stock.
-Completion never infers prior completions or clears goals. This permits recording
-existing progress on a later page. Unknown saved IDs and inventory keys survive
-updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
-balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
-and classified allocation never spend stored balances.
-[useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts)
-stores the requested plan scope, Use classified, Cumulative costs, Possible
-progress, List view, Consume Docs from Inventory, Locations visibility,
-document-panel visibility, and All profiles in `tarkov-battle-pass-ui-preferences-v1`.
-**All profiles** is read-only: the overview's documents to collect and breakdown
-assign each planned reward to PVP, PVE or the pass's seasonal character to minimize
-classified spending. Each purchase uses its buyer's ordinary stock and the pass's shared classified balance. Pages, the document panel, previews and edits still use the active profile. These UI
-preferences survive navigation and reload and are shared across profiles and
-PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
-(displaying Everything when no goals exist). Reads normalize invalid fields
-without writing, edits preserve unknown preferences, and the external-store
-helper synchronizes open consumers and browser tabs. Page navigation position
-remains transient. No profile
-migration, backup, or reset scope changes.
-The **Possible progress** toggle previews
-the current plan in page and slot order with one shared owned-document pool,
-including classified stock only when **Use classified** is enabled. Classified
-allocation covers avoided shortages first within each reward. Only fully covered
-rewards count toward unlocking the next page; partial coverage never satisfies a
-prerequisite.
-Incomplete plan rewards show a green check for full coverage and a yellow `~`
-beside each partially covered document count. Yellow portions of the overview
-and page-minimap bars count full rewards plus the covered document fraction of
-partial rewards. Completed
-rewards contribute only to actual progress. This local preview does not change
-completion, goals, saved balances, or **Consume Docs from Inventory** behavior.
+The viewer changes only goal and completion IDs. Individual and bulk completion record claims
+without debiting any inventory, even if the player previously enabled document consumption.
+Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
+Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
+plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups
+and Settings resets. Future configuration requirements are in [Battle Pass document configuration](battle-pass-configuration.md).
 
 ### Companion sync
 

@@ -3,7 +3,7 @@ import { createContext, useContext, useMemo, type ReactNode, type CSSProperties 
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
 import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
-import { getBattlePassData, withCostSwaps, type BattlePassData } from "@/lib/battle-pass-seasons";
+import { getBattlePassData, type BattlePassData } from "@/lib/battle-pass-seasons";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { parseProgress, type Progress } from "./lib/battle-pass-model";
 const BattlePassSeasonContext = createContext<BattlePassData | null>(null);
@@ -23,11 +23,8 @@ function useSeasonSave(seasonId: SeasonId) {
 	const base = getBattlePassData(seasonId);
 	const [raw, write] = useStoredProfitValue(base.storageKey);
 	const stored = useMemo(() => parseProgress(raw), [raw]);
-	// Keyed by content so unrelated saves (completions, balances) keep the data identity stable.
-	const swapsKey = JSON.stringify(stored.costSwaps);
-	const data = useMemo(() => withCostSwaps(base, JSON.parse(swapsKey)), [base, swapsKey]);
 	const save = useMemo(() => ({ stored, write }), [stored, write]);
-	return { data, save };
+	return { data: base, save };
 }
 export function BattlePassSeason({
 	seasonId,

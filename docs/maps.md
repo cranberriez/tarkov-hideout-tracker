@@ -115,7 +115,7 @@ visible (see the library's [attribution](../src/features/maps/tarkov-map/ATTRIBU
 ## Battle-pass document maps
 
 Battle Pass document locations are a layer of the [maps explorer](#maps-explorer).
-The Battle Pass overview and Season overview link to
+The document map is available at
 `/maps?preset=documents`, which opens maps with only documents and extracts shown.
 Location photos stay bundled under
 `public/images/battle-pass/map-assets/tarkovdoc.com/assets/previews`.

@@ -1,28 +1,17 @@
 "use client";
-import { useBattlePassData } from "./BattlePassSeason";
+import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 
 /// <reference types="react/canary" />
 import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Map as MapIcon } from "lucide-react";
-import Link from "next/link";
-import { documentMapsHref } from "@/lib/cfg/map-explorer";
-import { useModeRoute } from "@/lib/useModeRoute";
-import { coverCosts, planGoals, previewProgress, unlockedPages, type Costs } from "./lib/battle-pass-model";
-import { useBattlePass } from "./useBattlePass";
+import { getSeason } from "@/lib/cfg/seasons";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "./components/ui/Toggle";
+import { parseProgress, selectGoalRewards, toggleId, unlockedPages } from "./lib/battle-pass-model";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
-import { usePurchasePlan } from "./usePurchasePlan";
-import { useProfileDocuments } from "./useProfileDocuments";
-import { DocumentDock } from "./components/DocumentDock";
-import { BattlePassOverview } from "./components/BattlePassOverview";
 import { PageNavigation } from "./components/PageNavigation";
-import { BattlePassToolbar } from "./components/BattlePassToolbar";
-import { LocationsPanel } from "./components/LocationsPanel";
 import { PageMinimap } from "./components/PageMinimap";
 import { RewardPage } from "./components/RewardPage";
-import { ConsumeDocumentsToggle } from "./components/ConsumeDocumentsToggle";
-import { CostEditBanner } from "./components/CostEditBanner";
 import { cn } from "@/lib/utils";
-import { buttonClassName } from "@/components/ui/button";
 import { battlePassSpreadStart } from "./lib/battle-pass-page-link";
 
 function useSpread() {
@@ -38,26 +27,21 @@ function useSpread() {
 }
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
-	const { pages, tiles, documentKeys, costSwaps } = useBattlePassData();
-	const { mode: routeMode } = useModeRoute();
-	const [progress, update, { completeTiles, toggleTile, consumeDocs, setConsumeDocs, swapCost, resetCostSwaps }] =
-		useBattlePass();
-	// Session-only so costs are never edited by accident on a later visit.
-	const [editCosts, setEditCosts] = useState(false);
-	const [
-		{ requestedScope, cumulative, useClassified, showPossibleProgress, showMaps, documentsOpen, listMode, allProfiles },
-		setPreference,
-	] = useBattlePassPreferences();
-	const setScope = (scope: "goals" | "all") => setPreference("requestedScope", scope);
-	const setCumulative = (checked: boolean) => setPreference("cumulative", checked);
-	const setUseClassified = (checked: boolean) => setPreference("useClassified", checked);
-	const setShowPossibleProgress = (checked: boolean) => setPreference("showPossibleProgress", checked);
-	const setShowMaps = (checked: boolean) => setPreference("showMaps", checked);
-	const setDocumentsOpen = (checked: boolean) => setPreference("documentsOpen", checked);
-	const setListMode = (checked: boolean) => setPreference("listMode", checked);
-	const setAllProfiles = (checked: boolean) => setPreference("allProfiles", checked);
-	const profileDocuments = useProfileDocuments();
-	const scope = progress.goals.length === 0 ? "all" : requestedScope;
+	const { pages, tiles, seasonId } = useBattlePassData();
+	const { stored: progress, write } = useBattlePassSave();
+	const [{ listMode, requestedScope }, setPreference] = useBattlePassPreferences();
+	const scope = progress.goals.length ? requestedScope : "all";
+	const updateIds = (field: "completed" | "goals", transform: (ids: string[]) => string[]) =>
+		write((raw) => {
+			const stored = parseProgress(raw);
+			let saved;
+			try {
+				saved = JSON.parse(raw ?? "{}");
+			} catch {
+				saved = {};
+			}
+			return JSON.stringify({ version: 1, ...saved, [field]: transform(stored[field]) });
+		});
 	const [start, setStart] = useState((initialPage ?? 1) - 1);
 	const pendingPage = useRef(initialPage);
 	const spread = useSpread();
@@ -102,150 +86,63 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [first, go, listMode]);
 	const plan = useMemo(
-		() =>
-			planGoals(
-				scope === "all" ? tiles.map((tile) => tile.id) : progress.goals,
-				progress.completed,
-				pages,
-				progress.avoidedDocuments,
-			),
-		[progress.goals, progress.completed, progress.avoidedDocuments, scope, pages, tiles],
+		() => selectGoalRewards(progress.goals, progress.completed, pages),
+		[progress.goals, progress.completed, pages],
 	);
-	const coverage = useMemo(
-		() =>
-			coverCosts(
-				plan.costs,
-				progress.inventory,
-				progress.classified,
-				useClassified,
-				progress.avoidedDocuments,
-				documentKeys,
-			),
-		[plan.costs, progress.inventory, progress.classified, useClassified, progress.avoidedDocuments, documentKeys],
-	);
-	// Overview-only: pages, the dock and previews keep using the active profile's stock.
-	const purchases = usePurchasePlan(allProfiles, plan.selected, profileDocuments);
-	const allProfilesCoverage =
-		purchases && typeof purchases !== "string"
-			? coverCosts(
-					plan.costs,
-					purchases.stock,
-					progress.classified,
-					useClassified,
-					progress.avoidedDocuments,
-					documentKeys,
-				)
-			: coverage;
-	const cumulativeCosts = useMemo(
-		() =>
-			cumulative
-				? new Map(
-						tiles.map((tile) => [
-							tile.id,
-							planGoals([tile.id], progress.completed, pages, progress.avoidedDocuments).costs,
-						]),
-					)
-				: new Map<string, Costs>(),
-		[cumulative, progress.completed, progress.avoidedDocuments, pages, tiles],
-	);
-	const possibleProgress = useMemo(
-		() =>
-			previewProgress(
-				plan.selected,
-				progress.completed,
-				progress.inventory,
-				progress.classified,
-				useClassified,
-				progress.avoidedDocuments,
-				pages,
-			),
-		[
-			plan.selected,
-			progress.completed,
-			progress.inventory,
-			progress.classified,
-			useClassified,
-			progress.avoidedDocuments,
-			pages,
-		],
-	);
-	const possibleFractions = showPossibleProgress ? possibleProgress.fractions : new Map<string, number>();
 	const complete = new Set(progress.completed);
 	const goals = new Set(progress.goals);
-	const filler = new Set(plan.fillerIds);
-	const selected = new Set(plan.selected.map((tile) => tile.id));
+	const filler = new Set(scope === "goals" ? plan.fillerIds : []);
 	const openPages = unlockedPages(progress.completed, pages);
 	const completedCount = tiles.filter((tile) => complete.has(tile.id)).length;
 	const remainingTotal = tiles
 		.filter((tile) => !complete.has(tile.id))
 		.reduce((n, tile) => n + tile.totalDocumentCost, 0);
-	const knownGoals = tiles.filter((tile) => goals.has(tile.id));
+	const goalTotal = plan.selected.reduce((sum, tile) => sum + tile.totalDocumentCost, 0);
+	const displayedTotal = scope === "goals" ? goalTotal : remainingTotal;
 	const visible = listMode ? pages : pages.slice(first, first + spread);
 	return (
 		<main className={cn("container mx-auto space-y-4 px-4 pt-6 sm:px-6", listMode ? "pb-8" : "pb-28")}>
-			<DocumentDock
-				{...{ documentsOpen, setDocumentsOpen, progress, update, coverage, scope, plan, consumeDocs, setConsumeDocs }}
-			/>
-
-			<BattlePassOverview
-				{...{ scope, knownGoals, completedCount, remainingTotal, plan, selected, filler }}
-				{...{ allProfiles, setAllProfiles, profileDocuments }}
-				coverage={allProfilesCoverage}
-				purchaseStatus={typeof purchases === "string" ? purchases : undefined}
-				owners={purchases && typeof purchases !== "string" ? purchases.labels : undefined}
-				classifiedOwned={progress.classified}
-				possibleCount={showPossibleProgress ? possibleProgress.total : 0}
-				headerAction={
-					<Link href={documentMapsHref(routeMode)} className={buttonClassName({ tone: "brand" })}>
-						<MapIcon size={15} aria-hidden />
-						Document map
-					</Link>
-				}
-			>
-				<BattlePassToolbar
-					goalCount={knownGoals.length}
-					{...{
-						scope,
-						setScope,
-						useClassified,
-						setUseClassified,
-						showPossibleProgress,
-						setShowPossibleProgress,
-						cumulative,
-						setCumulative,
-						listMode,
-						setListMode,
-						showMaps,
-						setShowMaps,
-						editCosts,
-						setEditCosts,
-					}}
-				/>
-			</BattlePassOverview>
-			{editCosts && (
-				<CostEditBanner
-					editedCount={tiles.filter((tile) => costSwaps[tile.id]).length}
-					resetAll={resetCostSwaps}
-					close={() => setEditCosts(false)}
-				/>
-			)}
-			{showMaps && (
-				<div id="document-locations-panel">
-					<LocationsPanel />
+			<section aria-label="Battle pass overview" className="space-y-3 rounded-xl bg-card p-4">
+				<p className="text-xs uppercase tracking-widest text-brand">{getSeason(seasonId).title}</p>
+				<h1 className="text-2xl font-semibold">Battle Pass</h1>
+				<p aria-live="polite">
+					{completedCount} / {tiles.length} rewards claimed &middot; {displayedTotal}{" "}
+					{displayedTotal === 1 ? "document" : "documents"} for{" "}
+					{scope === "goals" ? "remaining goals and prerequisites" : "unclaimed rewards"}
+				</p>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						size="xs"
+						variant="ghost"
+						selected={scope === "all"}
+						aria-pressed={scope === "all"}
+						onClick={() => setPreference("requestedScope", "all")}
+					>
+						Everything
+					</Button>
+					<Button
+						size="xs"
+						variant="ghost"
+						disabled={!progress.goals.length}
+						selected={scope === "goals"}
+						aria-pressed={scope === "goals"}
+						onClick={() => setPreference("requestedScope", "goals")}
+					>
+						Goals
+					</Button>
+					<Toggle checked={listMode} onChange={(checked) => setPreference("listMode", checked)}>
+						List view
+					</Toggle>
 				</div>
-			)}
-
-			<div className="grid items-center gap-2 md:grid-cols-[1fr_auto_1fr]">
-				{!listMode && (
-					<div className="md:col-start-2">
-						<PageNavigation {...{ first, lastStart, go }} />
-					</div>
+				{plan.unresolvedIds.length > 0 && (
+					<p role="alert">{plan.unresolvedIds.length} saved goals unavailable; excluded from totals.</p>
 				)}
-				<div className="justify-self-end md:col-start-3">
-					<ConsumeDocumentsToggle checked={consumeDocs} onChange={setConsumeDocs} />
+			</section>
+			{!listMode && (
+				<div className="flex justify-center">
+					<PageNavigation {...{ first, lastStart, go }} />
 				</div>
-			</div>
-
+			)}
 			<div
 				className={cn(
 					"grid items-start",
@@ -255,32 +152,15 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				{visible.map((page) => (
 					<RewardPage
 						key={page.num}
-						{...{
-							page,
-							complete,
-							goals,
-							filler,
-							openPages,
-							cumulative,
-							cumulativeCosts,
-							update,
-							completeTiles,
-							toggleTile,
-						}}
-						inventory={progress.inventory}
-						possibleFractions={possibleFractions}
-						possibleAllocations={showPossibleProgress ? possibleProgress.allocations : undefined}
-						swapCost={editCosts ? swapCost : undefined}
+						{...{ page, complete, goals, filler, openPages }}
+						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}
+						toggleTile={(id) => updateIds("completed", (ids) => toggleId(ids, id))}
+						completeTiles={(added) => updateIds("completed", (ids) => [...new Set([...ids, ...added])])}
 					/>
 				))}
 			</div>
 
-			{!listMode && (
-				<PageMinimap
-					{...{ first, spread, complete, goals, openPages, go }}
-					possibleProgress={showPossibleProgress ? possibleProgress.pageProgress : []}
-				/>
-			)}
+			{!listMode && <PageMinimap {...{ first, spread, complete, goals, openPages, go }} possibleProgress={[]} />}
 		</main>
 	);
 }

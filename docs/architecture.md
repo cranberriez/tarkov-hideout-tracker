@@ -91,24 +91,10 @@ Reward and document artwork is bundled in `public/images/battle-pass` and render
 with lazy-loaded Next.js `Image` components, including the existing unavailable-image fallbacks.
 Reward rows adapt to viewport height with a readable minimum; short screens and
 expanded planning panels can still scroll.
-The top overview groups completion, planning/display controls, plan totals, and
-an icon-and-quantity row of documents still to collect, and Breakdown. The row
-uses the same inventory and classified allocation as the totals, including
-classified documents needed for avoided types. A separate wildcard total shows how many more classified documents would cover every remaining cost after using the shared balance. All profiles assigns each whole reward to one character to maximize ordinary documents spent, and the breakdown shows those assignments. With no saved goals, the plan
-defaults to Everything; completed rewards remain excluded.
-The collect row, reward costs, planner breakdown, and document inventory all use
-the same DocumentChip: its hover label and glow identify the document, and
-clicking opens map names from the shared location data. Classified documents
-show their Expansion Hub source instead.
-Location dropdowns are non-modal: clicking another chip switches directly to it,
-and clicking elsewhere dismisses the dropdown without blocking that click.
-Page navigation is centered above the reward cards, with the document
-consumption toggle aligned right and retained in list view. The same toggle also
-appears below Total in the document panel. Reward document costs turn green with
-a checkmark when the effective owned balance covers that displayed cost.
-Locations expands below the overview with map columns and an optional comparison table.
-The overview's Document map link opens the [maps explorer](maps.md#battle-pass-document-maps)
-with the Documents preset.
+The default Battle Pass viewer shows each reward's total document cost, claimed rewards, goals,
+and prerequisite suggestions. Everything totals unclaimed rewards; Goals totals outstanding goals
+and the cheapest outstanding prerequisites. These are purchase costs before inventory.
+See [Battle Pass document configuration](battle-pass-configuration.md) for the proposed configured view.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
