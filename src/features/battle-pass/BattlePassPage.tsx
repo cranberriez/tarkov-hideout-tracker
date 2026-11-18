@@ -310,14 +310,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					<PageNavigation {...{ first, lastStart, go }} />
 				</div>
 			)}
-			{!costSetup.editing && (
-				<DocumentRoutePanel
-					inventory={documentInventory}
-					route={route}
-					costs={configurationStatus.costs}
-					scopeLabel={scope === "goals" ? "Goals and prerequisites" : "Everything"}
-				/>
-			)}
+			{!costSetup.editing && <DocumentRoutePanel inventory={documentInventory} route={route} />}
 			{!listMode && (
 				<PageMinimap
 					{...{ first, spread, complete, goals, openPages, go }}

@@ -3,7 +3,7 @@ export function TarCoin() {
 		<span
 			role="img"
 			aria-label="TarCoins"
-			className="mx-1 inline-flex size-4 rotate-45 items-center justify-center rounded-[2px] border border-amber-300 bg-amber-400/20 align-middle text-amber-300"
+			className="mx-1 inline-flex size-3.5 rotate-45 items-center justify-center rounded-[2px] bg-amber-400 align-middle text-black"
 		>
 			<span aria-hidden className="-rotate-45 text-[8px] font-bold leading-none">
 				TC

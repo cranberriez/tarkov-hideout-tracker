@@ -1,3 +1,4 @@
+import { Files } from "lucide-react";
 import { useFundingSettings } from "../useFundingSettings";
 import { CurrencyComparison } from "./CurrencyComparison";
 import { useEffect, useMemo, useState } from "react";
@@ -70,21 +71,18 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 			: null;
 	const highlight = current?.breakpoints?.find((point) => point.savingsCents >= 499) ?? current?.breakpoints?.at(-1);
 	return (
-		<section className="space-y-3 rounded-md border border-border p-3">
-			<h4 className="text-sm font-medium">Save cash by gathering</h4>
+		<section className="mt-7 space-y-4 border-t border-border pt-6">
+			<h3 className="flex items-center gap-2 text-base font-semibold">
+				<Files className="size-4 text-brand" aria-hidden />
+				Save cash by gathering
+			</h3>
 			<p className="text-xs text-muted-foreground">
-				For this fixed route and claim order. Listed quantities are cumulative additions to current stock.
-			</p>
-			<p className="text-xs text-muted-foreground">
-				Acquisition caps per 24 hours, across all document types: PVP {GATHERING_DAILY_CAPS.PVP}, PVE{" "}
-				{GATHERING_DAILY_CAPS.PVE}, seasonal {GATHERING_DAILY_CAPS.seasonal}. Acquisition periods assume the full cap is
-				available; profiles run in parallel.
+				Daily caps · PVP {GATHERING_DAILY_CAPS.PVP} · PVE {GATHERING_DAILY_CAPS.PVE} · Seasonal{" "}
+				{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel.
 			</p>
 			<details>
 				<summary className="cursor-pointer text-xs font-medium">Choose modes and documents to gather</summary>
-				<p className="mt-2 text-xs text-muted-foreground">
-					Your gathering choices are saved on this device for each mode.
-				</p>
+				<p className="mt-2 text-xs text-muted-foreground">Saved on this device.</p>
 				<div className="mt-2 space-y-3">
 					{options.map(([key, group]) => {
 						const filter = filters[key] ?? {};
@@ -127,9 +125,7 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 					{current.error}
 				</p>
 			) : !current.breakpoints?.length ? (
-				<p className="text-xs text-muted-foreground">
-					These gathering choices yield no cash reduction before the route is fully covered.
-				</p>
+				<p className="text-xs text-muted-foreground">No partial gathering option reduces cash with these choices.</p>
 			) : (
 				<>
 					{highlight && (
@@ -142,9 +138,7 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 						</div>
 					)}
 					<details>
-						<summary className="cursor-pointer text-xs font-medium">
-							Exact quantities and all savings breakpoints
-						</summary>
+						<summary className="cursor-pointer text-xs font-medium">All gathering options</summary>
 						<ol className="max-h-96 space-y-3 overflow-auto text-xs">
 							{current.breakpoints.map((point) => (
 								<li key={point.gathered} className="space-y-1 border-b border-border pb-3 last:border-0">
@@ -162,10 +156,7 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 											)
 											.join(" · ")}
 									</p>
-									<p className="text-muted-foreground">
-										{point.remainingClassified} classified still needed from packs, funded by cash, wallet and route
-										rewards.
-									</p>
+									<p className="text-muted-foreground">{point.remainingClassified} classified needed from packs.</p>
 								</li>
 							))}
 						</ol>

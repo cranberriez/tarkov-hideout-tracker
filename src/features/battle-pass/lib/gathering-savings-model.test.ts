@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildGatheringSavings, gatheringScenario, type SavingsRoute } from "./gathering-savings-model";
+import {
+	buildGatheringSavings,
+	gatheringScenario,
+	minimumFreeGatheringDays,
+	type SavingsRoute,
+} from "./gathering-savings-model";
 import { optimizeRouteFunding } from "./funding-model";
 import { gatheringDailyCap } from "./gathering-caps";
 
@@ -147,4 +152,21 @@ test("gathering past a one-cent minimum-price difference keeps the recommended p
 		points.map((p) => [p.gathered, p.cashCents]),
 		[[40, 499]],
 	);
+});
+
+test("cash-free days use parallel caps, saved filters and only available reward currency", () => {
+	const input = route([
+		{ profile: "PVP", cost: 26 },
+		{ profile: "PVE", cost: 16 },
+	]);
+	assert.equal(minimumFreeGatheringDays(input, 0, {}), 2);
+	assert.equal(minimumFreeGatheringDays(input, 500, {}), 1);
+	assert.equal(minimumFreeGatheringDays(input, 1680, {}), 0);
+	assert.equal(minimumFreeGatheringDays(input, 0, { PVE: { disabled: true } }), null);
+	const earned = route([
+		{ profile: "PVP", cost: 1, owned: 1, coins: 500 },
+		{ profile: "PVE", cost: 20 },
+	]);
+	assert.equal(minimumFreeGatheringDays(earned, 0, { PVE: { disabled: true } }), 0);
+	assert.equal(minimumFreeGatheringDays(route([{ profile: "PVE", cost: 20, coins: 500 }]), 0, {}), 2);
 });

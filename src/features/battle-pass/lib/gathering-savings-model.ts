@@ -24,7 +24,13 @@ export interface GatheringBreakpoint {
 /** Fixed selected rewards, owners and claim order. Gather matching shortages in
  * claim order; replay shared owned classified after ordinary stock every time.
  * This is a concrete gathering path, not an optimization over all gathering paths. */
-export function gatheringScenario(route: SavingsRoute, gathered: number, filters: GatheringFilters = {}) {
+export function gatheringScenario(
+	route: SavingsRoute,
+	gathered: number,
+	filters: GatheringFilters = {},
+	days = Infinity,
+) {
+	const gatheredByProfile = new Map<string, number>();
 	let remaining = gathered;
 	let classified = route.claims.reduce((sum, claim) => sum + claim.classifiedUsed, 0);
 	const quantities: GatheringQuantity[] = [];
@@ -34,7 +40,11 @@ export function gatheringScenario(route: SavingsRoute, gathered: number, filters
 		for (const [documentKey, cost] of Object.entries(claim.cost)) {
 			const missing = Math.max(0, cost - (claim.ordinaryUsed[documentKey] ?? 0));
 			const filter = filters[claim.profileKey];
-			const quantity = filter?.disabled || filter?.excluded?.includes(documentKey) ? 0 : Math.min(remaining, missing);
+			const collected = gatheredByProfile.get(claim.profileKey) ?? 0;
+			const capacity = days * gatheringDailyCap(claim.profileKey) - collected;
+			const quantity =
+				filter?.disabled || filter?.excluded?.includes(documentKey) ? 0 : Math.min(remaining, missing, capacity);
+			gatheredByProfile.set(claim.profileKey, collected + quantity);
 			remaining -= quantity;
 			shortfall += missing - quantity;
 			if (quantity) {
@@ -55,6 +65,29 @@ export function gatheringScenario(route: SavingsRoute, gathered: number, filters
 		};
 	});
 	return { claims, quantities };
+}
+
+/** Matching the earliest eligible shortages first minimizes every prefix deficit
+ * for a given number of days on this route. Reward coins arrive after each claim. */
+export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, filters: GatheringFilters) {
+	const free = (days: number) => {
+		const { claims } = gatheringScenario(route, Infinity, filters, days);
+		return optimizeRouteFunding(claims, wallet, false).cashCents === 0;
+	};
+	if (!route.additionalClassified || free(0)) return 0;
+	const totals = new Map<string, number>();
+	for (const row of gatheringScenario(route, Infinity, filters).quantities)
+		totals.set(row.profileKey, (totals.get(row.profileKey) ?? 0) + row.quantity);
+	let low = 1,
+		high = 0;
+	for (const [key, quantity] of totals) high = Math.max(high, Math.ceil(quantity / gatheringDailyCap(key)));
+	if (!high || !free(high)) return null;
+	while (low < high) {
+		const mid = Math.floor((low + high) / 2);
+		if (free(mid)) high = mid;
+		else low = mid + 1;
+	}
+	return low;
 }
 
 /** Binary-search each next cash drop on the monotone gathering path. Avoids one

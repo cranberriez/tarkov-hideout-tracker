@@ -1,3 +1,4 @@
+import { Wallet } from "lucide-react";
 import { CurrencyComparison } from "./CurrencyComparison";
 import { useId, useMemo, useState } from "react";
 import type { useDocumentRoute } from "../useDocumentRoute";
@@ -33,13 +34,11 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 	);
 	const result = useRouteFunding(claims, settings.startingTarCoins, settings.allowSpecial);
 	return (
-		<div className="space-y-3 border-t border-border pt-4">
-			<h3 className="text-sm font-semibold">Fund this document route</h3>
-			<p className="text-xs text-muted-foreground">
-				Estimate for the selected destination, reward scope and claim order above. Reward TarCoins become available
-				after each claim. Balance and offer availability are shared across seasons and profiles; this preview does not
-				change them.
-			</p>
+		<div className="space-y-4 border-t border-border pt-6">
+			<h3 className="flex items-center gap-2 text-base font-semibold">
+				<Wallet className="size-4 text-brand" aria-hidden />
+				Route funding
+			</h3>
 			<div className="flex flex-wrap items-end gap-3">
 				<label htmlFor={id} className="grid gap-1 text-xs text-muted-foreground">
 					<span>
@@ -65,9 +64,7 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				</Toggle>
 			</div>
 			<p className="text-xs text-muted-foreground">
-				Uses the supplied USD prices. Regional pricing, taxes and store offers may vary. The plan recommends the most
-				TarCoins available within {usd(CASH_TOLERANCE_CENTS)} of the exact minimum for this route, including your
-				balance and claim rewards.
+				Most TarCoins within {usd(CASH_TOLERANCE_CENTS)} of the minimum. Prices in USD before tax.
 			</p>
 			<details className="rounded-md border border-border p-3">
 				<summary className="cursor-pointer text-xs font-medium">Pack prices</summary>
@@ -96,7 +93,7 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				</div>
 			</details>
 			{!route ? (
-				<p className="text-xs text-muted-foreground">A purchase schedule appears once the document route is ready.</p>
+				<p className="text-xs text-muted-foreground">Waiting for a claim route.</p>
 			) : typeof result === "string" ? (
 				<p role="status" className="text-sm">
 					{result}
@@ -104,11 +101,9 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 			) : (
 				<>
 					<div className="rounded-md border border-border p-3" aria-live="polite">
-						<h4 className="text-sm font-semibold">Cash purchase receipt</h4>
+						<h4 className="mb-2 text-sm font-semibold">Purchase receipt</h4>
 						<CurrencyComparison funding={compareCurrencyBundles(result, settings.allowSpecial)} />
-						<p className="mt-2 text-xs text-muted-foreground">
-							{result.balanceDocuments} purchased classified left after all claims
-						</p>
+						<p className="mt-2 text-xs text-muted-foreground">{result.balanceDocuments} classified documents left</p>
 					</div>
 					<details className="rounded-md border border-border p-3">
 						<summary className="cursor-pointer text-sm font-medium">Document pack purchases and claims</summary>
