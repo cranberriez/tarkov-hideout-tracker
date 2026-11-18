@@ -1,107 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { useBattlePassData, useBattlePassSave } from "../BattlePassSeason";
-import type { RewardConfiguration } from "../lib/battle-pass-configuration";
-import { rewardCostStatus } from "../lib/battle-pass-configuration";
 import type { useDocumentInventory } from "../useDocumentInventory";
 import { useDocumentRoute } from "../useDocumentRoute";
 import { Toggle } from "./ui/Toggle";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
-import { useUserStore } from "@/lib/stores/useUserStore";
 import type { Costs } from "../lib/battle-pass-model";
+import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { RouteFundingPanel } from "./RouteFundingPanel";
 
 export function DocumentRoutePanel({
 	inventory,
-	configuration,
+	route,
 	costs,
 	scopeLabel,
 }: {
 	inventory: ReturnType<typeof useDocumentInventory>;
-	configuration: RewardConfiguration;
+	route: ReturnType<typeof useDocumentRouteController>;
 	costs: Costs | null;
 	scopeLabel: string;
 }) {
-	const { pages, tiles, documentKeys, documents, seasonId } = useBattlePassData();
-	const seasonalAvailable = useUserStore((state) => !!state.seasonalProfiles[seasonId]);
+	const { pages, tiles, documents } = useBattlePassData();
 	const { stored } = useBattlePassSave();
-	const [destination, setDestination] = useState("finish");
-	const [buyAll, setBuyAll] = useState(false);
-	const [allProfiles, setAllProfiles] = useState(true);
-	const destinationIds = [...new Set([...stored.goals, ...(pages.at(-1)?.cells.map((tile) => tile.id) ?? [])])];
-	const selectedGoal =
-		destination === "owned"
-			? "owned"
-			: destination === "goals" && stored.goals.length
-				? "goals"
-				: destination !== "finish" && destinationIds.includes(destination)
-					? destination
-					: "finish";
-	const input = useMemo(() => {
-		const invalidRewardIds: string[] = [];
-		const configuredPages = pages.map((page) => ({
-			...page,
-			cells: page.cells.map((tile) => {
-				const status = rewardCostStatus(tile, configuration[tile.id], documentKeys);
-				if (!status.costs) invalidRewardIds.push(tile.id);
-				return {
-					...tile,
-					cost: status.costs ?? {},
-					totalDocumentCost: Object.values(status.costs ?? {}).reduce((a, b) => a + b, 0),
-				};
-			}),
-		}));
-		return {
-			pages: configuredPages,
-			profiles: allProfiles
-				? inventory.profiles.filter((profile) => profile.key !== seasonId || seasonalAvailable)
-				: [inventory.selectedProfile],
-			completedIds: stored.completed,
-			goalIds:
-				selectedGoal === "finish" || selectedGoal === "owned"
-					? []
-					: selectedGoal === "goals"
-						? stored.goals
-						: [selectedGoal],
-			finishSeason: selectedGoal === "finish",
-			buyAll: selectedGoal === "owned" ? false : buyAll,
-			mostRewardsNow: selectedGoal === "owned",
-			classified: stored.classified,
-			useClassified: inventory.preferences.useClassified,
-			invalidRewardIds,
-		};
-	}, [
-		pages,
-		configuration,
-		documentKeys,
-		allProfiles,
-		inventory.profiles,
-		inventory.selectedProfile,
-		stored.completed,
+	const {
+		result,
 		selectedGoal,
+		destinationIds,
 		buyAll,
-		inventory.preferences.useClassified,
-		stored.classified,
-		stored.goals,
-		seasonId,
-		seasonalAvailable,
-	]);
-	const result = useDocumentRoute(input, allProfiles || inventory.available);
-	const lastRelevantPage =
-		selectedGoal === "finish" || selectedGoal === "owned"
-			? pages.length - 1
-			: pages.findLastIndex((page) => page.cells.some((tile) => input.goalIds.includes(tile.id)));
-	const incompleteCount = pages
-		.slice(0, lastRelevantPage + 1)
-		.reduce(
-			(count, page) =>
-				count +
-				page.cells.filter((tile) => !stored.completed.includes(tile.id) && input.invalidRewardIds.includes(tile.id))
-					.length,
-			0,
-		);
+		allProfiles,
+		setDestination,
+		setBuyAll,
+		setAllProfiles,
+		incompleteCount,
+	} = route;
 	return (
 		<section aria-labelledby="docs-breakdown-heading" className="space-y-4 rounded-lg bg-card p-4">
 			<h2 id="docs-breakdown-heading" className="text-sm font-semibold">

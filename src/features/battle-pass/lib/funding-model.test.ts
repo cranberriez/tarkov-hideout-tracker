@@ -2,7 +2,13 @@ import type { RouteColumns } from "./document-route-model";
 import test from "node:test";
 import assert from "node:assert/strict";
 import loadHighs from "highs";
-import { DOCUMENT_PACKS, TARCOIN_PACKS, optimizeRouteFunding, type FundingClaim } from "./funding-model";
+import {
+	DOCUMENT_PACKS,
+	TARCOIN_PACKS,
+	buildCashReceipt,
+	optimizeRouteFunding,
+	type FundingClaim,
+} from "./funding-model";
 async function fund(claims: FundingClaim[], starting = 0, special = false) {
 	const request = buildFundingModel(claims, starting, special);
 	if (!request.model) return interpretFunding(request, {});
@@ -12,8 +18,45 @@ async function fund(claims: FundingClaim[], starting = 0, special = false) {
 	const solved = interpretFunding(request, result.Columns);
 	const dp = optimizeRouteFunding(claims, starting, special);
 	assert.equal(dp.cashCents, solved.cashCents);
+	assert.equal(
+		dp.cashReceipt.reduce((sum, pack) => sum + pack.subtotalCents, 0),
+		dp.cashCents,
+	);
+	assert.equal(
+		dp.cashReceipt.reduce((sum, pack) => sum + pack.tarCoins * pack.count, 0),
+		dp.totalTarCoins,
+	);
+	assert.ok(
+		dp.cashReceipt.filter((pack) => pack.special).reduce((sum, pack) => sum + pack.count, 0) <= (special ? 1 : 0),
+	);
 	return dp;
 }
+test("receipt quantities multiply unit prices: illustrative 4,700 TC receipt totals $34.96", () => {
+	const receipt = buildCashReceipt([1, 2, 0, 0, 0, 0, 1]);
+	assert.deepEqual(
+		receipt.map((pack) => [pack.count, pack.cents, pack.subtotalCents]),
+		[
+			[1, 499, 499],
+			[2, 999, 1998],
+			[1, 999, 999],
+		],
+	);
+	assert.equal(
+		receipt.reduce((sum, pack) => sum + pack.subtotalCents, 0),
+		3496,
+	);
+	assert.equal(
+		receipt.reduce((sum, pack) => sum + pack.tarCoins * pack.count, 0),
+		4700,
+	);
+});
+test("equal cash prefers the stronger currency bundle", () => {
+	const plan = optimizeRouteFunding([claim("a", 60)], 350, true);
+	// 1,100 regular TC and 2,000 offer TC each cost $9.99.
+	assert.equal(plan.cashCents, 999);
+	assert.equal(plan.totalTarCoins, 2000);
+	assert.equal(plan.specialUsed, true);
+});
 const claim = (rewardId: string, additionalClassified: number, tarCoins = 0): FundingClaim => ({
 	rewardId,
 	page: 1,

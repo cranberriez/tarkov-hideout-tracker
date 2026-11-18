@@ -85,7 +85,7 @@ document location menus. Positive whole quantities for recognized saved document
 types stay visible even when the reward is incomplete. Such rewards
 show Costs incomplete; this never makes them eligible for verified totals or
 inventory deductions. Invalid or empty entries remain saved for correction in Setup Costs.
-The document-cost breakdown sits below the reward pages and Previous/Next controls,
+The **Docs Breakdown** section shows its current scope below the heading and sits below the reward pages and Previous/Next controls,
 leaving the area above the rewards for inventory and setup.
 A verified plan document breakdown requires valid costs for every unclaimed reward
 in Everything, or every
@@ -128,7 +128,7 @@ classified is enabled. Every reward in a claim must have valid configured costs;
 otherwise the claim is recorded without any deduction and an explicit message
 explains why. Missing seasonal profiles also skip deductions with a message.
 Repeated claims never spend twice, and unclaiming never refunds documents. Setup
-does not consume documents. Per-profile purchase assignments remain future work.
+does not consume documents. The [route optimizer](battle-pass-optimizer.md) can show the recommended claiming profile beneath a reward’s completion control. Select that profile in Document inventory when recording the claim with consumption enabled.
 
 Entries persist in `tarkov-battle-pass-costs-{seasonId}-v1`, by stable reward ID,
 shared by all profiles. Each season starts empty and retains its own entries.

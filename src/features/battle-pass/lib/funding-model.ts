@@ -21,6 +21,11 @@ export interface FundingClaim {
 	additionalClassified: number;
 	tarCoins: number;
 }
+export function buildCashReceipt(counts: number[]) {
+	return TARCOIN_PACKS.flatMap((pack, k) =>
+		counts[k] ? [{ ...pack, count: counts[k], subtotalCents: pack.cents * counts[k] }] : [],
+	);
+}
 export function rewardTarCoins(tile: Tile) {
 	return tile.rewards.reduce(
 		(sum, reward) => sum + (reward.type === "tarcoin" ? Math.max(0, Math.floor(reward.value ?? 0)) : 0),
@@ -74,6 +79,7 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 	}
 	// All currency pack sizes are multiples of 50. The first amount covering the
 	// minimum initial capital that minimizes cash is globally optimal.
+	// On equal cash, prefer more currency: it can never weaken the schedule.
 	const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 	const unit = TARCOIN_PACKS.reduce((n, p) => gcd(n, p.tarCoins), 0);
 	const offerPack = TARCOIN_PACKS.find((p) => p.special)!;
@@ -100,7 +106,7 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 		for (const offer of allowSpecial ? [false, true] : [false]) {
 			const total = tc + (offer ? offerPack.tarCoins / unit : 0),
 				cost = cash[tc] + (offer ? offerPack.cents : 0);
-			if (total >= target && (cost < bestCash || (cost === bestCash && total < bestTC))) {
+			if (total >= target && (cost < bestCash || (cost === bestCash && total > bestTC))) {
 				bestCash = cost;
 				bestTC = total;
 				bestRegular = tc;
@@ -119,6 +125,7 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 		bestRegular -= regular[k].tarCoins / unit;
 	}
 	if (special) currencyCounts[TARCOIN_PACKS.indexOf(offerPack)]++;
+	const cashReceipt = buildCashReceipt(currencyCounts);
 	let balanceTarCoins = starting,
 		balanceDocuments = 0,
 		cashCents = 0,
@@ -156,6 +163,15 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 			balanceDocuments,
 		};
 	});
-	return { cashCents, steps, totalDocuments, totalTarCoins, specialUsed: special, balanceTarCoins, balanceDocuments };
+	return {
+		cashCents,
+		cashReceipt,
+		steps,
+		totalDocuments,
+		totalTarCoins,
+		specialUsed: special,
+		balanceTarCoins,
+		balanceDocuments,
+	};
 }
 export type FundingPlan = ReturnType<typeof optimizeRouteFunding>;

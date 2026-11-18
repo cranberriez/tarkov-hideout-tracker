@@ -26,6 +26,7 @@ export function RewardPage({
 	completeTiles,
 	toggleTile,
 	costSetup,
+	recommendedProfiles,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -35,6 +36,7 @@ export function RewardPage({
 	toggleGoal: (id: string) => void;
 	completeTiles: (ids: string[]) => void;
 	toggleTile: (id: string) => void;
+	recommendedProfiles: Map<string, { label: string; color: string } | undefined>;
 	costSetup: {
 		editing: boolean;
 		configuration: RewardConfiguration;
@@ -106,6 +108,7 @@ export function RewardPage({
 								done={complete.has(tile.id)}
 								goal={goals.has(tile.id)}
 								filler={filler.has(tile.id)}
+								recommendedProfile={recommendedProfiles.get(tile.id)}
 								editing={costSetup.editing}
 								costErrors={status.errors}
 								costWarning={!status.valid}

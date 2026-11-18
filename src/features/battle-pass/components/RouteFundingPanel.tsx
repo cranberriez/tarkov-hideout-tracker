@@ -5,6 +5,7 @@ import { useRouteFunding } from "../useRouteFunding";
 import { DOCUMENT_PACKS, TARCOIN_PACKS, rewardTarCoins } from "../lib/funding-model";
 import { TarCoin } from "./ui/TarCoin";
 import { Toggle } from "./ui/Toggle";
+import { GatheringSavings } from "./GatheringSavings";
 
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -57,7 +58,9 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				</Toggle>
 			</div>
 			<p className="text-xs text-muted-foreground">
-				Uses the supplied USD prices. Regional pricing, taxes and store offers may vary.
+				Uses the supplied USD prices. Regional pricing, taxes and store offers may vary. Larger regular currency and
+				document packs cost less per unit, but this plan minimizes total cash for this route, including your balance and
+				rewards received along the way.
 			</p>
 			<details className="rounded-md border border-border p-3">
 				<summary className="cursor-pointer text-xs font-medium">Pack prices</summary>
@@ -93,12 +96,34 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 				</p>
 			) : (
 				<>
-					<p className="text-sm" aria-live="polite">
-						<strong>{usd(result.cashCents)} additional cash</strong> · {result.balanceTarCoins.toLocaleString()}{" "}
-						<TarCoin /> left · {result.balanceDocuments} purchased classified left
+					<div className="rounded-md border border-border p-3" aria-live="polite">
+						<h4 className="text-sm font-semibold">Cash purchase receipt</h4>
+						{result.cashReceipt.length > 0 && (
+							<p className="mt-1 text-xs text-muted-foreground">
+								Buy these currency packs once before the document purchases below.
+							</p>
+						)}
+						<ul className="my-3 space-y-2 text-sm">
+							{result.cashReceipt.map((pack) => (
+								<li key={`${pack.tarCoins}-${pack.special}`}>
+									{pack.count} × {pack.tarCoins.toLocaleString()} <TarCoin /> pack
+									{pack.special && " (one-time offer)"} · {usd(pack.cents)} each ={" "}
+									<strong>{usd(pack.subtotalCents)}</strong>
+								</li>
+							))}
+						</ul>
+						{result.cashReceipt.length === 0 && <p className="my-3 text-xs">No cash purchases needed.</p>}
+						<p className="border-t border-border pt-2 text-sm">
+							<strong>Total additional cash: {usd(result.cashCents)}</strong> · {result.totalTarCoins.toLocaleString()}{" "}
+							<TarCoin /> purchased
+						</p>
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{result.balanceTarCoins.toLocaleString()} <TarCoin /> left · {result.balanceDocuments} purchased classified
+						left
 					</p>
 					<details className="rounded-md border border-border p-3">
-						<summary className="cursor-pointer text-sm font-medium">Purchases and claims</summary>
+						<summary className="cursor-pointer text-sm font-medium">Document pack purchases and claims</summary>
 						<ol className="mt-3 max-h-96 space-y-3 overflow-auto text-sm">
 							{result.steps.map((step, index) => (
 								<li key={step.rewardId} className="space-y-1 border-b border-border pb-3 last:border-0 last:pb-0">
@@ -108,16 +133,10 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 											· {route.claims.find((claim) => claim.rewardId === step.rewardId)?.profileLabel}
 										</span>
 									</p>
-									{step.tarCoinPacks.map((pack, i) => (
-										<p key={i} className="text-xs">
-											Buy {pack.count} × {pack.tarCoins.toLocaleString()} <TarCoin /> for {usd(pack.cents * pack.count)}
-											{pack.special && <span className="ml-1 text-amber-300">· one-time offer</span>}
-										</p>
-									))}
 									{step.documentPacks.map((pack, i) => (
 										<p key={i} className="text-xs">
-											Buy {pack.count} × {pack.documents} classified for {(pack.tarCoins * pack.count).toLocaleString()}{" "}
-											<TarCoin />
+											Buy {pack.count} × {pack.documents} classified · {pack.tarCoins.toLocaleString()} <TarCoin /> each
+											= {(pack.tarCoins * pack.count).toLocaleString()} <TarCoin />
 										</p>
 									))}
 									<p className="text-xs text-muted-foreground">
@@ -135,6 +154,13 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 							))}
 						</ol>
 					</details>
+					{result.cashCents > 0 && (
+						<GatheringSavings
+							route={route}
+							startingTarCoins={settings.startingTarCoins}
+							allowSpecial={settings.allowSpecial}
+						/>
+					)}
 				</>
 			)}
 		</div>

@@ -11,6 +11,7 @@ export interface BattlePassPreferences {
 	documentsOpen: boolean;
 	documentInventoryExpanded: boolean;
 	allProfiles: boolean;
+	showProfileRecommendations: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -24,6 +25,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	documentsOpen: false,
 	documentInventoryExpanded: true,
 	allProfiles: false,
+	showProfileRecommendations: true,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

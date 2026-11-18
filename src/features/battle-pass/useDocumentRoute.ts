@@ -23,13 +23,15 @@ export function useDocumentRoute(input: DocumentRouteInput, enabled = true) {
 		worker.postMessage({ model: request.model });
 		return () => worker.terminate();
 	}, [request, enabled]);
-	if (!enabled)
-		return "This seasonal character is not activated. Select an available inventory profile or include all profiles.";
-	if (request.unresolvedIds.length)
-		return `Unavailable saved goals: ${request.unresolvedIds.join(", ")}. Select an available destination.`;
-	if (!request.model) return interpretDocumentRoute(request, {});
-	if (result?.request !== request) return "Calculating document route…";
-	if (!result.columns)
-		return "Could not calculate a complete route. Configure costs for the destination and enough rewards on every preceding page, then try again.";
-	return interpretDocumentRoute(request, result.columns);
+	return useMemo(() => {
+		if (!enabled)
+			return "This seasonal character is not activated. Select an available inventory profile or include all profiles.";
+		if (request.unresolvedIds.length)
+			return `Unavailable saved goals: ${request.unresolvedIds.join(", ")}. Select an available destination.`;
+		if (!request.model) return interpretDocumentRoute(request, {});
+		if (result?.request !== request) return "Calculating document route…";
+		if (!result.columns)
+			return "Could not calculate a complete route. Configure costs for the destination and enough rewards on every preceding page, then try again.";
+		return interpretDocumentRoute(request, result.columns);
+	}, [enabled, request, result]);
 }

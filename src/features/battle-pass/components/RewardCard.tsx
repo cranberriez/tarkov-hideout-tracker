@@ -26,6 +26,7 @@ export function RewardCard({
 	costsIncomplete = false,
 	requiredTypes,
 	onTypeCountChange,
+	recommendedProfile,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -43,6 +44,7 @@ export function RewardCard({
 	costsIncomplete?: boolean;
 	requiredTypes: number;
 	onTypeCountChange?: (count: number) => void;
+	recommendedProfile?: { label: string; color: string };
 }) {
 	const [adjustingTypes, setAdjustingTypes] = useState(false);
 	const [typeCount, setTypeCount] = useState("");
@@ -114,6 +116,18 @@ export function RewardCard({
 							icon={<Check size={19} strokeWidth={done ? 3 : 1.8} />}
 						/>
 					</div>
+					{!done && !editing && recommendedProfile && (
+						<span
+							className="absolute right-2 top-12 z-10 rounded px-2 py-1 text-[10px] font-semibold"
+							style={{
+								color: recommendedProfile.color,
+								backgroundColor: `color-mix(in srgb, ${recommendedProfile.color} 18%, var(--card))`,
+							}}
+							title={`Recommended claiming profile: ${recommendedProfile.label}`}
+						>
+							{recommendedProfile.label}
+						</span>
+					)}
 				</div>
 				<div
 					className={cn(

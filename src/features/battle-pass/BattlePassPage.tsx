@@ -19,6 +19,8 @@ import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuratio
 import { DocumentRoutePanel } from "./components/DocumentRoutePanel";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
+import { useDocumentRouteController } from "./useDocumentRouteController";
+import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
 
 function headerControlClass(selected: boolean) {
@@ -47,7 +49,16 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const costSetup = useBattlePassConfiguration(seasonId, tiles);
 	const documentInventory = useDocumentInventory(costSetup.configuration);
 	const { stored: progress, write } = useBattlePassSave();
-	const [{ listMode, requestedScope }, setPreference] = useBattlePassPreferences();
+	const [{ listMode, requestedScope, showProfileRecommendations }, setPreference] = useBattlePassPreferences();
+	const route = useDocumentRouteController(documentInventory, costSetup.configuration, !costSetup.editing);
+	const recommendedProfiles = new Map(
+		showProfileRecommendations && !costSetup.editing && typeof route.result !== "string" && route.result
+			? route.result.claims.map(
+					(claim) =>
+						[claim.rewardId, documentInventory.profiles.find((profile) => profile.key === claim.profileKey)] as const,
+				)
+			: [],
+	);
 	const scope = progress.goals.length ? requestedScope : "all";
 	const updateIds = (field: "completed" | "goals", transform: (ids: string[]) => string[]) =>
 		write((raw) => {
@@ -178,6 +189,12 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						>
 							List view
 						</Button>
+						<Toggle
+							checked={showProfileRecommendations}
+							onChange={(value) => setPreference("showProfileRecommendations", value)}
+						>
+							Profile recommendations
+						</Toggle>
 					</div>
 					{plan.unresolvedIds.length > 0 && (
 						<p role="alert">{plan.unresolvedIds.length} saved goals unavailable; excluded from totals.</p>
@@ -280,6 +297,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						key={page.num}
 						{...{ page, complete, goals, filler, openPages }}
 						costSetup={costSetup}
+						recommendedProfiles={recommendedProfiles}
 						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}
 						toggleTile={(id) => documentInventory.claim([id], true)}
 						completeTiles={(added) => documentInventory.claim(added)}
@@ -295,7 +313,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			{!costSetup.editing && (
 				<DocumentRoutePanel
 					inventory={documentInventory}
-					configuration={costSetup.configuration}
+					route={route}
 					costs={configurationStatus.costs}
 					scopeLabel={scope === "goals" ? "Goals and prerequisites" : "Everything"}
 				/>

@@ -10,7 +10,11 @@ Each claim draws ordinary documents from one profile. Including all profiles let
 
 ## Funding the route
 
-Enter the current global TarCoin balance and enable the one-time offer if it is still available. For the selected claim order, the calculator finds the lowest additional cash spend at the USD prices below. Each claim must be affordable before its reward TarCoins become available. Open **Purchases and claims** to see the pack quantities, when to buy them, and the remaining balances. Completed rewards earn no additional TarCoins in the preview.
+Enter the current global TarCoin balance and enable the one-time offer if it is still available. The cash recommendation lists the quantity, price per TarCoin pack, and subtotal for each pack size. The subtotals add up to the cash needed for the selected claim order. The schedule then shows how to spend those TarCoins on classified documents. Reward TarCoins become available after the corresponding claim.
+
+**Save cash by gathering** shows how additional ordinary documents would change that receipt. Each alternative starts from current inventory and keeps the same rewards, claiming profiles, and order. Gather the cumulative quantities in a single row to reach its cash total. The list ends before gathering would fully cover the route. A row can still cost $0 when an existing TarCoin balance or reward income covers the remaining documents.
+
+Each profile has a separate acquisition limit across all document types in a 24-hour period. PVP can collect 25, PVE can collect 15, and a seasonal character can collect 40. The estimate assumes the full allowance is available on each listed profile and counts periods in parallel. Edit these values in [gathering-caps.ts](../src/features/battle-pass/lib/gathering-caps.ts).
 
 | Classified documents | TarCoins |
 | ---: | ---: |

@@ -69,3 +69,14 @@ test("all shared UI preferences survive edits and reload while retaining unknown
 	assert.equal(updated.requestedScope, "all");
 	assert.deepEqual(updated.future, ["retained"]);
 });
+
+test("profile recommendation visibility preserves existing preferences and unknown fields", () => {
+	assert.equal(parsePreferences(null).showProfileRecommendations, true);
+	const raw = JSON.stringify({ consumeDocs: true, future: { retained: true } });
+	const hidden = updatePreference(raw, "showProfileRecommendations", false);
+	assert.equal(parsePreferences(hidden).showProfileRecommendations, false);
+	assert.equal(parsePreferences(hidden).consumeDocs, true);
+	assert.deepEqual(parsePreferences(hidden).future, { retained: true });
+	assert.equal(parsePreferences(updatePreference(hidden, "showMaps", true)).showProfileRecommendations, false);
+	assert.equal(parsePreferences('{"showProfileRecommendations":"false"}').showProfileRecommendations, true);
+});
