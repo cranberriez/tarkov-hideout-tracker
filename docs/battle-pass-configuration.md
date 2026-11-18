@@ -1,6 +1,44 @@
 # Battle Pass document configuration
 
-Status: proposed for validation against Season 2. The shipped viewer supports browsing rewards, selecting goals and recording claims. In Season 1 (KORD), players can rely on a reward's total cost and number of distinct document types. Its document types and the quantity of each must come from the player's game.
+Status: Season 1 cost setup is implemented. Season 2 remains a test placeholder;
+validate its reward totals and type counts against live rewards before replacing
+the copied data. In Season 1 (KORD), players can rely on a reward's total cost and
+number of distinct document types. Its document types and quantities come from
+the player's game.
+
+## Current read-only overview
+
+Season 1 ends Monday, December 7, 2026 at **1:00 AM Pacific Standard Time**
+(`America/Los_Angeles`), stored as `2026-12-07T09:00:00Z`. The banner explicitly
+displays Pacific time; Season 2's end remains unannounced.
+
+The banner shows remaining total document costs for Everything and, when goals
+are selected, Goals including the cheapest outstanding prerequisites. Claimed
+rewards are excluded. The orange “Classified only” row shows the alternative
+cost of paying entirely with classified documents at 1:1, before owned inventory.
+It does not infer a document-type breakdown or an inventory-adjusted shortfall.
+Plan scope uses flat filled buttons, with a label and separator before List view.
+An advisory above the rewards explains that document types vary between players;
+its emphasized Setup Costs action opens a local draft. In setup mode the advisory
+replaces the advisory with scope validation and Save/Cancel controls. Validation
+appears only while editing, with foreground text and a red warning or green check
+icon on a normal card surface. A faint matching glow fades out over the left 20%.
+The reward artwork, bento layout and card dimensions remain unchanged. Compact
+document slots sit inside each unclaimed card beneath its title, filling a row
+with up to six slots before wrapping. Document types are represented by icons
+in the picker, slots, saved costs and summaries. Duplicate types or quantities
+exceeding the reward's total replace its document-total label with an error;
+empty or underfilled slots have no per-card warning text and still leave the
+scope unconfigured. Goal and claim actions remain visible but disabled during setup.
+Cancel asks for confirmation only
+when there are unsaved changes. Claimed rewards need no setup and cannot be edited.
+Previous/Next controls and their Q/E key hints sit below the reward pages.
+The fixed minimap stays above page-transition snapshots and document pickers.
+Pages with any unclaimed reward whose costs are not fully set show a yellow warning
+icon in place of their lock/goal icon. Duplicate types or excess quantities take
+priority and replace that warning with a red “!”, including errors on pages outside
+the visible spread. Claimed rewards do not need setup. Pickers reserve space above
+the minimap; document slots and inline quantity inputs stay 32px tall.
 
 ## Entering a reward cost
 
@@ -8,9 +46,21 @@ Status: proposed for validation against Season 2. The shipped viewer supports br
 2. Selecting a slot opens the full document list upward. Selecting a document displays it beside an immediately focused quantity input.
 3. Enter a positive whole quantity and press Enter to save and collapse the slot. Reopening a slot allows corrections. Keep partial entries as drafts.
 4. A reward is configured when its slots contain the required number of distinct types and their quantities add up to its known total. If either check fails, show what remains to fix.
+5. Save retains partial entries for later correction. Clear in the document picker removes a slot's entry.
+   Closing a slot does not persist the draft; the banner's Save commits it.
 
 ## Planning and season scope
 
-Use the configured reward costs for the detailed document view, inventory coverage, classified estimates and per-profile purchase assignments. A plan with any unconfigured required reward, including a suggested prerequisite, can show its total price but cannot claim a verified document breakdown or spend against inferred costs.
+The viewer shows configured costs on individual rewards. A verified plan document
+breakdown requires valid costs for every unclaimed reward in Everything, or every
+outstanding goal and suggested prerequisite in Goals. The advisory reports how
+many required rewards still need costs; unresolved saved goals also block a
+verified goal breakdown. Total-only planning remains available during partial setup.
+Inventory coverage and per-profile purchase assignments are future consumers of
+verified costs; setup and claims never consume documents.
 
-Persist entries locally by season ID and stable reward ID. All profiles share that season's reward configuration. The next season starts with empty slots; old entries stay with their original season. Existing type swaps do not establish verified quantities. Confirm the invariants against the live Season 2 rewards before implementing this flow.
+Entries persist in `tarkov-battle-pass-costs-{seasonId}-v1`, by stable reward ID,
+shared by all profiles. Each season starts empty and retains its own entries.
+Existing type swaps do not establish verified quantities. Save merges only edited
+rewards into the latest record, preserving unrelated records and fields; conflicting
+edits to the same reward in another tab are reported instead of overwritten.

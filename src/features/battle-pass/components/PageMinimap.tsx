@@ -1,6 +1,6 @@
 "use client";
 import { useBattlePassData } from "../BattlePassSeason";
-import { Flag, LockKeyhole } from "lucide-react";
+import { Flag, LockKeyhole, TriangleAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
@@ -13,6 +13,8 @@ export function PageMinimap({
 	openPages,
 	go,
 	possibleProgress,
+	errorPages = new Set<number>(),
+	unsetPages = new Set<number>(),
 }: {
 	first: number;
 	spread: number;
@@ -21,6 +23,8 @@ export function PageMinimap({
 	openPages: boolean[];
 	go: (to: number) => void;
 	possibleProgress: number[];
+	errorPages?: Set<number>;
+	unsetPages?: Set<number>;
 }) {
 	const { pages } = useBattlePassData();
 	return (
@@ -32,18 +36,32 @@ export function PageMinimap({
 					const possible = possibleProgress[index] ?? 0;
 					const goalCount = page.cells.filter((tile) => goals.has(tile.id) && !complete.has(tile.id)).length;
 					const current = index >= first && index < first + spread;
+					const hasErrors = errorPages.has(page.num);
+					const hasUnset = unsetPages.has(page.num);
 					return (
 						<button
 							key={page.num}
 							type="button"
 							onClick={() => go(index)}
-							aria-label={`Page ${page.num}: ${done} of ${total} claimed${possible > 0 ? `, ${possible.toFixed(1)} additional reward equivalents possible` : ""}${goalCount ? `, ${goalCount} goals` : ""}${openPages[index] ? "" : ", locked"}`}
+							aria-label={`Page ${page.num}: ${done} of ${total} claimed${possible > 0 ? `, ${possible.toFixed(1)} additional reward equivalents possible` : ""}${goalCount ? `, ${goalCount} goals` : ""}${openPages[index] ? "" : ", locked"}${hasErrors ? ", document cost errors" : hasUnset ? ", document costs not fully set" : ""}`}
 							aria-current={current ? "true" : undefined}
 							className={cn(styles.mini, current && styles.miniCurrent)}
 						>
 							<span className="flex items-center justify-between text-[10px] tabular-nums">
 								<span>{String(page.num).padStart(2, "0")}</span>
-								{!openPages[index] ? (
+								{hasErrors ? (
+									<span
+										className="text-xs font-bold leading-none text-danger"
+										aria-hidden
+										title="Document costs need fixing"
+									>
+										!
+									</span>
+								) : hasUnset ? (
+									<span title="Document costs not fully set">
+										<TriangleAlert size={10} className="text-warning" aria-hidden />
+									</span>
+								) : !openPages[index] ? (
 									<LockKeyhole size={10} />
 								) : goalCount > 0 ? (
 									<Flag size={10} className="text-brand" fill="currentColor" />

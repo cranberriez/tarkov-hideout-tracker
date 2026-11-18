@@ -56,12 +56,24 @@ season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
 `tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 avoided document types, and document-type swaps (both defaulting to none for older saves).
-The viewer changes only goal and completion IDs. Individual and bulk completion record claims
+The viewer's progression save changes only goal and completion IDs. Individual and bulk completion record claims
 without debiting any inventory, even if the player previously enabled document consumption.
 Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
 Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
 plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups
-and Settings resets. Future configuration requirements are in [Battle Pass document configuration](battle-pass-configuration.md).
+and Settings resets.
+
+[useBattlePassConfiguration](../src/features/battle-pass/useBattlePassConfiguration.ts)
+owns a separate `tarkov-battle-pass-costs-{seasonId}-v1` save with `{ version: 1,
+rewards: { [stableRewardId]: [{ key, quantity }] } }`. Quantities are strings so
+partial inputs survive Save. All profiles share each season's configuration;
+other seasons, legacy progress and saved type swaps are untouched. Draft edits
+stay local until Save, and Cancel confirms before discarding changed drafts.
+Save merges edited reward records into the latest value and rejects same-reward
+conflicts. Unknown records and fields are preserved. This save uses the existing
+cross-tab storage subscription and is outside progression backups and Settings
+resets. Validity is derived at read time; only complete, valid scope costs produce
+a plan document breakdown. See [Battle Pass document configuration](battle-pass-configuration.md).
 
 ### Companion sync
 

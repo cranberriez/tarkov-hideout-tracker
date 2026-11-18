@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { type PassPage } from "../lib/battle-pass-model";
 
 import { RewardCard } from "./RewardCard";
+import { RewardCostEditor } from "./RewardCostEditor";
+import { rewardCostStatus, type RewardConfiguration, type CostEntry } from "../lib/battle-pass-configuration";
 import styles from "../battle-pass.module.css";
 
 export function RewardPage({
@@ -18,6 +20,7 @@ export function RewardPage({
 	toggleGoal,
 	completeTiles,
 	toggleTile,
+	costSetup,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -27,8 +30,13 @@ export function RewardPage({
 	toggleGoal: (id: string) => void;
 	completeTiles: (ids: string[]) => void;
 	toggleTile: (id: string) => void;
+	costSetup: {
+		editing: boolean;
+		configuration: RewardConfiguration;
+		change: (id: string, entries: CostEntry[]) => void;
+	};
 }) {
-	const { pages, tileSpans } = useBattlePassData();
+	const { pages, tileSpans, documentKeys } = useBattlePassData();
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 	const suggestedIds = page.cells
@@ -57,26 +65,28 @@ export function RewardPage({
 							</span>
 						)}
 					</div>
-					<div className="ml-auto flex items-center gap-1">
-						<Button
-							size="xs"
-							variant="ghost"
-							disabled={suggestedIds.length === 0}
-							aria-label={`Complete suggested: Page ${page.num}`}
-							onClick={() => completeTiles(suggestedIds)}
-						>
-							Complete suggested
-						</Button>
-						<Button
-							size="xs"
-							variant="ghost"
-							disabled={doneCount === page.cells.length}
-							aria-label={`Complete all: Page ${page.num}`}
-							onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
-						>
-							Complete all
-						</Button>
-					</div>
+					{
+						<div className="ml-auto flex items-center gap-1">
+							<Button
+								size="xs"
+								variant="ghost"
+								disabled={costSetup.editing || suggestedIds.length === 0}
+								aria-label={`Complete suggested: Page ${page.num}`}
+								onClick={() => completeTiles(suggestedIds)}
+							>
+								Complete suggested
+							</Button>
+							<Button
+								size="xs"
+								variant="ghost"
+								disabled={costSetup.editing || doneCount === page.cells.length}
+								aria-label={`Complete all: Page ${page.num}`}
+								onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
+							>
+								Complete all
+							</Button>
+						</div>
+					}
 				</header>
 				<div className={styles.rewardGrid}>
 					{page.cells.map((tile) => (
@@ -88,6 +98,18 @@ export function RewardPage({
 							done={complete.has(tile.id)}
 							goal={goals.has(tile.id)}
 							filler={filler.has(tile.id)}
+							editing={costSetup.editing}
+							costErrors={rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys).errors}
+							editor={
+								costSetup.editing && !complete.has(tile.id) ? (
+									<RewardCostEditor
+										tile={tile}
+										entries={costSetup.configuration[tile.id]}
+										onChange={(entries) => costSetup.change(tile.id, entries)}
+									/>
+								) : undefined
+							}
+							configuredCosts={rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys).costs}
 							toggleGoal={() => toggleGoal(tile.id)}
 							toggleDone={() => toggleTile(tile.id)}
 						/>

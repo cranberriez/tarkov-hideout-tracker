@@ -214,15 +214,16 @@
 	outline-offset: 2px;
 }
 .rewardGrid {
+	--reward-row-height: clamp(240px, 32dvh, 300px);
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	grid-auto-rows: clamp(240px, 32dvh, 300px);
+	grid-auto-rows: var(--reward-row-height);
 	gap: 12px;
 }
 @media (min-width: 1100px) {
 	.rewardGrid {
 		/* Leave room around rewards for navigation, the summary, and the minimap. */
-		grid-auto-rows: clamp(180px, calc((100dvh - 460px) / 3), 300px);
+		--reward-row-height: clamp(180px, calc((100dvh - 460px) / 3), 300px);
 	}
 }
 .card {
@@ -291,12 +292,13 @@
 .minimap {
 	position: fixed;
 	inset: auto 0 0 0;
-	z-index: 30;
+	z-index: 80;
+	view-transition-name: battle-pass-minimap;
 	/* Fixed overlays must not inherit the page's space-y flow margins. */
 	margin: 0;
 	padding: 10px 0;
 	border-top: 1px solid var(--border);
-	background: color-mix(in srgb, var(--background) 92%, transparent);
+	background: var(--background);
 	backdrop-filter: blur(8px);
 }
 .mini {
@@ -319,6 +321,18 @@
 .mini:focus-visible {
 	outline: 2px solid var(--brand);
 	outline-offset: 2px;
+}
+/* Named overlay snapshots stay above the sliding page snapshots. */
+::view-transition-group(battle-pass-minimap) {
+	z-index: 80;
+	animation: none;
+}
+::view-transition-old(battle-pass-minimap) {
+	display: none;
+}
+::view-transition-new(battle-pass-minimap) {
+	animation: none;
+	mix-blend-mode: normal;
 }
 ::view-transition-new(.slideInRight) {
 	animation: slideFromRight 260ms ease-out both;

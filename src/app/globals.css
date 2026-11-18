@@ -43,6 +43,8 @@
 
 	/* Warning: unmet prerequisites, caution and partial/missing-data notices. */
 	--warning: oklch(0.828 0.16 84.429);
+	/* Classified documents: wildcard currency and classified-only battle pass costs. */
+	--classified: oklch(0.77 0.165 55);
 
 	/* Found in raid: Tarkov's FiR orange for FiR requirements, counts and markers. Kept distinct from warning yellow and craft orange. */
 	--fir: oklch(0.77 0.165 64);
@@ -153,6 +155,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.62 0.15 150);
 	--warning: oklch(0.6 0.13 65);
+	--classified: oklch(0.55 0.14 50);
 	--fir: oklch(0.6 0.15 52);
 	--danger: oklch(0.59 0.2 27);
 	--info: oklch(0.57 0.13 245);
@@ -179,6 +182,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.84 0.18 150);
 	--warning: oklch(0.87 0.15 88);
+	--classified: oklch(0.82 0.15 55);
 	--fir: oklch(0.82 0.16 66);
 	--danger: oklch(0.76 0.17 22);
 	--info: oklch(0.8 0.12 232);
@@ -206,6 +210,7 @@
 	--color-accent-alternate: var(--accent-alternate);
 	--color-success: var(--success);
 	--color-warning: var(--warning);
+	--color-classified: var(--classified);
 	--color-fir: var(--fir);
 	--color-danger: var(--danger);
 	--color-danger-foreground: var(--danger-foreground);
