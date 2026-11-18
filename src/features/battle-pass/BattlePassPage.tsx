@@ -16,8 +16,7 @@ import { cn } from "@/lib/utils";
 import { battlePassSpreadStart } from "./lib/battle-pass-page-link";
 import { useBattlePassConfiguration } from "./useBattlePassConfiguration";
 import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuration";
-import { documentDisplayName } from "./lib/battle-pass-display";
-import { DocumentIcon } from "./components/ui/DocumentIcon";
+import { DocumentRoutePanel } from "./components/DocumentRoutePanel";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
 import { useDocumentInventory } from "./useDocumentInventory";
@@ -44,7 +43,7 @@ function useSpread() {
 }
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
-	const { pages, tiles, seasonId, documentKeys, documents } = useBattlePassData();
+	const { pages, tiles, seasonId, documentKeys } = useBattlePassData();
 	const costSetup = useBattlePassConfiguration(seasonId, tiles);
 	const documentInventory = useDocumentInventory(costSetup.configuration);
 	const { stored: progress, write } = useBattlePassSave();
@@ -293,21 +292,13 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					<PageNavigation {...{ first, lastStart, go }} />
 				</div>
 			)}
-			{!costSetup.editing && configurationStatus.ready && required.length > 0 && (
-				<section aria-label="Plan document costs" className="rounded-lg bg-card p-4">
-					<h2 className="mb-2 text-sm font-semibold">
-						{scope === "goals" ? "Goals and prerequisites" : "Everything"} · document costs
-					</h2>
-					<ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-						{Object.entries(configurationStatus.costs!).map(([key, amount]) => (
-							<li key={key} className="flex items-center gap-2">
-								<DocumentIcon documentKey={key} className="size-7 shrink-0" />
-								<strong className="tabular-nums">{amount}</strong>{" "}
-								{documentDisplayName(documents.find((doc) => doc.key === key)!.name)}
-							</li>
-						))}
-					</ul>
-				</section>
+			{!costSetup.editing && (
+				<DocumentRoutePanel
+					inventory={documentInventory}
+					configuration={costSetup.configuration}
+					costs={configurationStatus.costs}
+					scopeLabel={scope === "goals" ? "Goals and prerequisites" : "Everything"}
+				/>
 			)}
 			{!listMode && (
 				<PageMinimap
