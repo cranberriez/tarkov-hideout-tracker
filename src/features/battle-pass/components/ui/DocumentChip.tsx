@@ -86,12 +86,6 @@ export function DocumentChip({
 									</span>
 								)}
 								{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
-								{original && (
-									<span
-										aria-hidden
-										className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-warning ring-2 ring-card"
-									/>
-								)}
 							</span>
 							{amount !== undefined && (
 								<span
@@ -114,7 +108,6 @@ export function DocumentChip({
 						<span className={cn(styles.label, styles.documentLabel)}>
 							<span>
 								{displayName}
-								{changedFrom && <span className="mt-0.5 block text-[10px] text-warning">{changedFrom}</span>}
 								<span className="mt-0.5 block text-[10px] text-muted-foreground">
 									{swap ? (swap.locked ? "Completed: locked" : "Click to change type") : "Click for locations"}
 								</span>
@@ -140,7 +133,12 @@ export function DocumentChip({
 								<span className="font-medium text-foreground">{displayName}</span> with
 							</DropdownMenuLabel>
 							{swap.options.map((option) => (
-								<DropdownMenuItem key={option.key} onSelect={() => swap.onSelect(option.key)} className="gap-2">
+								<DropdownMenuItem
+									key={option.key}
+									disabled={option.key === doc.key}
+									onSelect={() => swap.onSelect(option.key)}
+									className="gap-2"
+								>
 									<span
 										aria-hidden
 										className="relative h-8 w-8 shrink-0"
@@ -159,9 +157,6 @@ export function DocumentChip({
 									{option.key === swap.baseline && <span className="text-[10px] text-muted-foreground">Original</span>}
 								</DropdownMenuItem>
 							))}
-							{swap.options.length === 0 && (
-								<p className="px-2 py-1.5 text-xs text-muted-foreground">Every other type is already on this reward.</p>
-							)}
 						</>
 					)}
 				</DropdownMenuContent>

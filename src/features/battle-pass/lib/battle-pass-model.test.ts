@@ -294,12 +294,22 @@ test("preview applies wildcards to avoided shortages first within each reward", 
 test("cost swaps keep quantities, merge targets, reset to baseline and survive reloads", () => {
 	const cost = { user: 5, medical: 3, project: 2 };
 	assert.deepEqual(applyCostSwaps(cost, { project: "user", medical: "unknown" }), { user: 7, medical: 3 });
-	let swaps = setCostSwap({}, "a", "user", "financial");
-	swaps = setCostSwap(swaps, "a", "medical", "test");
+	let swaps = setCostSwap({}, "a", "user", "financial", { user: 2, medical: 1 });
+	swaps = setCostSwap(swaps, "a", "medical", "test", { user: 2, medical: 1 });
 	assert.deepEqual(swaps, { a: { user: "financial", medical: "test" } });
-	swaps = setCostSwap(setCostSwap(swaps, "a", "user", "user"), "a", "medical", "medical");
+	swaps = setCostSwap(setCostSwap(swaps, "a", "user", "user", { user: 2, medical: 1 }), "a", "medical", "medical", {
+		user: 2,
+		medical: 1,
+	});
 	assert.deepEqual(swaps, {});
 	const saved = parseProgress(JSON.stringify({ costSwaps: { a: { user: "test", bad: 4, same: "same" }, b: [] } }));
 	assert.deepEqual(saved.costSwaps, { a: { user: "test" } });
 	assert.deepEqual(parseProgress(JSON.stringify({ completed: [] })).costSwaps, {});
+});
+
+test("choosing an occupied type exchanges both lines and can be reversed", () => {
+	const baseline = { medical: 3, financial: 1 };
+	const swapped = setCostSwap({}, "reward", "medical", "financial", baseline);
+	assert.deepEqual(applyCostSwaps(baseline, swapped.reward), { financial: 3, medical: 1 });
+	assert.deepEqual(setCostSwap(swapped, "reward", "medical", "medical", baseline), {});
 });

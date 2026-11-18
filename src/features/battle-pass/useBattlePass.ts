@@ -94,10 +94,13 @@ export function useBattlePass() {
 	const swapCost = useCallback(
 		(tileId: string, from: string, to: string) =>
 			commit((stored) => ({
-				progress: { ...stored, costSwaps: setCostSwap(stored.costSwaps, tileId, from, to) },
+				progress: {
+					...stored,
+					costSwaps: setCostSwap(stored.costSwaps, tileId, from, to, data.baselineCosts[tileId], data.documentKeys),
+				},
 				changes: [],
 			})),
-		[commit],
+		[commit, data],
 	);
 	const resetCostSwaps = useCallback(
 		() => commit((stored) => ({ progress: { ...stored, costSwaps: {} }, changes: [] })),

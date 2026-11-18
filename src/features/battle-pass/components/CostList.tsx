@@ -34,7 +34,6 @@ export function CostList({
 			? Object.keys(baselineCosts[tileId] ?? {}).map((key) => [swappedKey(key, costSwaps[tileId], documentKeys), key])
 			: [],
 	);
-	const options = documents.filter((doc) => !(costs[doc.key] > 0));
 	return (
 		<div
 			className={cn(
@@ -50,7 +49,9 @@ export function CostList({
 						key={doc.key}
 						doc={doc}
 						original={baseline !== doc.key ? documents.find((entry) => entry.key === baseline)?.name : undefined}
-						swap={onSwap && { options, baseline, locked: swapLocked, onSelect: (to) => onSwap(baseline, to) }}
+						swap={
+							onSwap && { options: documents, baseline, locked: swapLocked, onSelect: (to) => onSwap(baseline, to) }
+						}
 						amount={costs[doc.key]}
 						fulfilled={(inventory[doc.key] ?? 0) >= costs[doc.key]}
 						partial={previewEnabled && (inventory[doc.key] ?? 0) > 0 && (inventory[doc.key] ?? 0) < costs[doc.key]}

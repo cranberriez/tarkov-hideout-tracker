@@ -108,8 +108,21 @@ export function swappedKey(key: string, swaps: Record<string, string> | undefine
 	return swaps && keys.includes(swaps[key]) ? swaps[key] : key;
 }
 /** Setting a line back to its baseline type removes the swap. */
-export function setCostSwap(swaps: CostSwaps, tileId: string, from: string, to: string): CostSwaps {
+export function setCostSwap(
+	swaps: CostSwaps,
+	tileId: string,
+	from: string,
+	to: string,
+	baseline: Costs,
+	keys = documentKeys,
+): CostSwaps {
 	const tile = { ...swaps[tileId] };
+	const current = swappedKey(from, tile, keys);
+	if (current === to) return swaps;
+	// Exchange types when the target is already used by another cost line.
+	const other = Object.keys(baseline).find((key) => key !== from && swappedKey(key, tile, keys) === to);
+	if (other === current) delete tile[other];
+	else if (other) tile[other] = current;
 	if (to === from) delete tile[from];
 	else tile[from] = to;
 	const result = { ...swaps };

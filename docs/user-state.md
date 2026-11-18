@@ -58,7 +58,7 @@ goal tile IDs, retained legacy ordinary-document balances, a classified-document
 avoided document types, and document-type swaps (both defaulting to none for older saves).
 Document types per reward differ between players while quantities and totals do not, so
 `costSwaps` maps tile ID -> baseline document key -> replacement key. Swaps never change
-quantities and a reward never repeats a type; setting a line back to its baseline type
+quantities. Choosing a type already on the reward exchanges the two lines’ types; setting a line back to its baseline type
 removes it, and all rewards can be reset to baseline. Editing is a session-only page
 mode and completed rewards are locked, since their documents were already consumed.
 [BattlePassSeason](../src/features/battle-pass/BattlePassSeason.tsx)
