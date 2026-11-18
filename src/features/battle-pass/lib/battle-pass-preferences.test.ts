@@ -2,6 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { defaultPreferences, parsePreferences, updatePreference } from "./battle-pass-preferences";
 
+test("document locations default collapsed and remember both toggle states without replacing preferences", () => {
+	assert.equal(parsePreferences(null).showMaps, false);
+	assert.equal(parsePreferences(JSON.stringify({ listMode: true })).showMaps, false);
+	let raw = JSON.stringify({ listMode: true, future: { retained: true } });
+	for (const expanded of [true, false]) {
+		raw = updatePreference(raw, "showMaps", expanded);
+		const restored = parsePreferences(raw);
+		assert.equal(restored.showMaps, expanded);
+		assert.equal(restored.listMode, true);
+		assert.deepEqual(restored.future, { retained: true });
+	}
+});
+
 test("preference reads normalize fields independently without changing saved bytes", () => {
 	assert.deepEqual(parsePreferences(null), defaultPreferences);
 	assert.deepEqual(parsePreferences("invalid"), defaultPreferences);

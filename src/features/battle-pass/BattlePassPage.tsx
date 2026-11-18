@@ -6,7 +6,6 @@ import { addTransitionType, startTransition, useCallback, useEffect, useMemo, us
 import { getSeason } from "@/lib/cfg/seasons";
 import { Button } from "@/components/ui/button";
 import { CircleAlert, CircleCheck, Info, SlidersHorizontal } from "lucide-react";
-import { Toggle } from "./components/ui/Toggle";
 import { parseProgress, selectGoalRewards, toggleId, unlockedPages } from "./lib/battle-pass-model";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
 import { PageNavigation } from "./components/PageNavigation";
@@ -19,6 +18,16 @@ import { useBattlePassConfiguration } from "./useBattlePassConfiguration";
 import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuration";
 import { documentDisplayName } from "./lib/battle-pass-display";
 import { DocumentIcon } from "./components/ui/DocumentIcon";
+import { LocationsPanel } from "./components/LocationsPanel";
+
+function headerControlClass(selected: boolean) {
+	return cn(
+		"h-10 rounded-md border-transparent px-4 text-sm font-medium hover:border-transparent",
+		selected
+			? "bg-brand/15 text-brand hover:bg-brand/20"
+			: "bg-surface-raised/50 text-muted-foreground hover:bg-surface-raised hover:text-foreground",
+	);
+}
 
 function useSpread() {
 	const [spread, setSpread] = useState(2);
@@ -133,10 +142,11 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					</p>
 					<div className="flex flex-wrap items-center gap-2">
 						<div role="group" aria-label="Plan scope" className="flex flex-wrap items-center gap-2">
-							<span className="text-xs text-muted-foreground">Plan</span>
+							<span className="text-sm text-muted-foreground">Plan</span>
 							<Button
-								size="xs"
+								size="md"
 								variant="soft"
+								className={headerControlClass(scope === "all")}
 								selected={scope === "all"}
 								aria-pressed={scope === "all"}
 								onClick={() => setPreference("requestedScope", "all")}
@@ -144,8 +154,9 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 								Everything
 							</Button>
 							<Button
-								size="xs"
+								size="md"
 								variant="soft"
+								className={headerControlClass(scope === "goals")}
 								disabled={!progress.goals.length}
 								selected={scope === "goals"}
 								aria-pressed={scope === "goals"}
@@ -155,9 +166,16 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 							</Button>
 						</div>
 						<span aria-hidden className="mx-1 h-5 w-px bg-border" />
-						<Toggle checked={listMode} onChange={(checked) => setPreference("listMode", checked)}>
+						<Button
+							size="md"
+							variant="soft"
+							className={headerControlClass(listMode)}
+							selected={listMode}
+							aria-pressed={listMode}
+							onClick={() => setPreference("listMode", !listMode)}
+						>
 							List view
-						</Toggle>
+						</Button>
 					</div>
 					{plan.unresolvedIds.length > 0 && (
 						<p role="alert">{plan.unresolvedIds.length} saved goals unavailable; excluded from totals.</p>
@@ -169,6 +187,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					remainingTotal={remainingTotal}
 				/>
 			</section>
+			<LocationsPanel />
 			<div
 				className={cn(
 					"flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3",

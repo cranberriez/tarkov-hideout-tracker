@@ -3,16 +3,22 @@ import { useBattlePassData } from "../BattlePassSeason";
 
 import { useId, useState } from "react";
 import Image from "next/image";
-import { Columns3, Map as MapIcon, Table2 } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronRight, Columns3, Map as MapIcon, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generatedBattlePassArtwork } from "@/lib/generated-battle-pass-artwork";
+import { documentMapsHref, MAP_EXPLORER_MAPS, mapExplorerHref } from "@/lib/cfg/map-explorer";
+import { useModeRoute } from "@/lib/useModeRoute";
 
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { LocationsDocumentArtwork } from "./ui/LocationsDocumentArtwork";
 import { MapGrid } from "./MapGrid";
+import { useBattlePassPreferences } from "../useBattlePassPreferences";
 
 function MapHeading({ map }: { map: string }) {
 	const { mapThumbnails } = useBattlePassData();
+	const { mode } = useModeRoute();
+	const explorerMap = MAP_EXPLORER_MAPS.find((entry) => entry.name === map);
 	const [failed, setFailed] = useState(false);
 	const [useOriginal, setUseOriginal] = useState(false);
 	const src = mapThumbnails[map.toLowerCase().replaceAll(" ", "-")];
@@ -35,27 +41,67 @@ function MapHeading({ map }: { map: string }) {
 					className="h-14 w-full rounded-sm object-cover"
 				/>
 			)}
-			<h3 className="text-xs leading-4 font-semibold text-foreground">{map}</h3>
+			<h3 className="text-xs leading-4 font-semibold text-foreground">
+				{explorerMap ? (
+					<Link
+						href={mapExplorerHref(mode, explorerMap.key, "documents")}
+						prefetch={false}
+						aria-label={`${map} document map`}
+						className="underline underline-offset-2 hover:text-brand"
+					>
+						{map}
+					</Link>
+				) : (
+					map
+				)}
+			</h3>
 		</div>
 	);
 }
 
 export function LocationsPanel() {
 	const { documents, locations, mapNames, mapOrder } = useBattlePassData();
+	const { mode } = useModeRoute();
 	const [view, setView] = useState<"columns" | "table">("columns");
+	const [{ showMaps: expanded }, setPreference] = useBattlePassPreferences();
+	const panelId = useId();
 	const viewId = useId();
 	return (
 		<section aria-label="Document locations" className="rounded-lg bg-card p-3 sm:p-4">
-			<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-				<div>
-					<h2 className="text-sm font-semibold text-foreground">Document locations</h2>
-					<p className="mt-1 text-xs text-muted-foreground">
-						{locations.spawnsPerRelevantType.default} possible spawns per type ·{" "}
-						{locations.spawnsPerRelevantType.factory} on Factory · ? on Icebreaker
-					</p>
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div className="flex items-center gap-3">
+					<Button
+						iconOnly
+						size="sm"
+						aria-label={expanded ? "Hide document locations" : "Show document locations"}
+						aria-expanded={expanded}
+						aria-controls={panelId}
+						onClick={() => setPreference("showMaps", !expanded)}
+					>
+						{expanded ? (
+							<ChevronDown className="size-4" aria-hidden />
+						) : (
+							<ChevronRight className="size-4" aria-hidden />
+						)}
+					</Button>
+					<div>
+						<h2 className="text-sm font-semibold text-foreground">Document locations</h2>
+						<p className="mt-1 text-xs text-muted-foreground">
+							{locations.spawnsPerRelevantType.default} possible spawns per type ·{" "}
+							{locations.spawnsPerRelevantType.factory} on Factory · ? on Icebreaker
+						</p>
+					</div>
 				</div>
 				<div role="group" aria-label="Locations view" className="flex gap-1">
+					<Link
+						href={documentMapsHref(mode)}
+						prefetch={false}
+						className="mr-2 inline-flex items-center gap-1 text-xs text-brand underline underline-offset-2"
+					>
+						<MapIcon className="size-3.5" aria-hidden /> Document map
+					</Link>
 					<Button
+						hidden={!expanded}
 						selected={view === "columns"}
 						aria-pressed={view === "columns"}
 						aria-controls={viewId}
@@ -64,6 +110,7 @@ export function LocationsPanel() {
 						<Columns3 className="size-3.5" aria-hidden /> Columns
 					</Button>
 					<Button
+						hidden={!expanded}
 						selected={view === "table"}
 						aria-pressed={view === "table"}
 						aria-controls={viewId}
@@ -73,48 +120,60 @@ export function LocationsPanel() {
 					</Button>
 				</div>
 			</div>
-			<p className="mb-4 text-xs text-muted-foreground">
-				{locations.icebreakerUpdate.note}{" "}
-				<a href={locations.icebreakerUpdate.sourceUrl} target="_blank" rel="noreferrer" className="underline hover:text-brand">
-					Game update ↗
-				</a>
-			</p>
-			<div id={viewId}>
-				{view === "table" ? (
-					<MapGrid />
-				) : (
-					<>
-						<div className="overflow-x-auto pb-2">
-							<div className="grid min-w-[1056px] grid-cols-12 items-stretch gap-2">
-								{mapOrder.map((map) => (
-									<section key={map} aria-label={map} className="min-w-0 rounded bg-surface-raised/40 px-1 py-2">
-										<MapHeading map={map} />
-										<div className="flex flex-col gap-3">
-											{documents
-												.filter((doc) => mapNames[doc.key]?.includes(map))
-												.map((doc) => (
-													<figure key={doc.key} title={documentDisplayName(doc.name)}>
-														<div className="aspect-square w-full">
-															<LocationsDocumentArtwork doc={doc} className="h-full w-full" />
-														</div>
-														<figcaption className="mt-1.5 text-center text-[11px] leading-3.5 text-muted-foreground">
-															{documentDisplayName(doc.name)}
-														</figcaption>
-													</figure>
-												))}
-										</div>
-									</section>
-								))}
+			<div id={panelId} hidden={!expanded} className="mt-4">
+				<p className="mb-4 text-xs text-muted-foreground">
+					{locations.icebreakerUpdate.note}{" "}
+					<a
+						href={locations.icebreakerUpdate.sourceUrl}
+						target="_blank"
+						rel="noreferrer"
+						className="underline hover:text-brand"
+					>
+						Game update ↗
+					</a>
+				</p>
+				<div id={viewId}>
+					{view === "table" ? (
+						<MapGrid />
+					) : (
+						<>
+							<div className="overflow-x-auto pb-2">
+								<div className="grid min-w-[1056px] grid-cols-12 items-stretch gap-2">
+									{mapOrder.map((map) => (
+										<section key={map} aria-label={map} className="min-w-0 rounded bg-surface-raised/40 px-1 py-2">
+											<MapHeading map={map} />
+											<div className="flex flex-col gap-3">
+												{documents
+													.filter((doc) => mapNames[doc.key]?.includes(map))
+													.map((doc) => (
+														<figure key={doc.key} title={documentDisplayName(doc.name)}>
+															<div className="aspect-square w-full">
+																<LocationsDocumentArtwork doc={doc} className="h-full w-full" />
+															</div>
+															<figcaption className="mt-1.5 text-center text-[11px] leading-3.5 text-muted-foreground">
+																{documentDisplayName(doc.name)}
+															</figcaption>
+														</figure>
+													))}
+											</div>
+										</section>
+									))}
+								</div>
 							</div>
-						</div>
-						<div className="mt-3 flex flex-wrap justify-between gap-2 text-[11px] text-subtle-foreground">
-							<span>Possible spawns, not guaranteed pickups.</span>
-							<a href={locations.corroboratingSourceUrl} target="_blank" rel="noreferrer" className="hover:text-brand">
-								Spawn guides ↗
-							</a>
-						</div>
-					</>
-				)}
+							<div className="mt-3 flex flex-wrap justify-between gap-2 text-[11px] text-subtle-foreground">
+								<span>Possible spawns, not guaranteed pickups.</span>
+								<a
+									href={locations.corroboratingSourceUrl}
+									target="_blank"
+									rel="noreferrer"
+									className="hover:text-brand"
+								>
+									Spawn guides ↗
+								</a>
+							</div>
+						</>
+					)}
+				</div>
 			</div>
 		</section>
 	);

@@ -8,6 +8,15 @@ the player's game.
 
 ## Current read-only overview
 
+The document locations panel above the rewards shows each map's document types,
+with Columns and Table views. Document map opens the maps index with the Documents
+preset; map headings in Columns view open that map with the same preset in the
+currently selected game mode.
+The square arrow beside the heading collapses the locations content while keeping
+the heading, spawn summary and Document map link available. It starts collapsed
+unless the shared Battle Pass `showMaps` preference records an expanded panel.
+Toggling persists across visits and reloads; the selected view stays local to the panel.
+
 Season 1 ends Monday, December 7, 2026 at **1:00 AM Pacific Standard Time**
 (`America/Los_Angeles`), stored as `2026-12-07T09:00:00Z`. The banner explicitly
 displays Pacific time; Season 2's end remains unannounced.
@@ -17,7 +26,9 @@ are selected, Goals including the cheapest outstanding prerequisites. Claimed
 rewards are excluded. The orange “Classified only” row shows the alternative
 cost of paying entirely with classified documents at 1:1, before owned inventory.
 It does not infer a document-type breakdown or an inventory-adjusted shortfall.
-Plan scope uses flat filled buttons, with a label and separator before List view.
+Plan scope and List view use matching 40px-tall rounded, borderless buttons with
+14px labels and a muted surface fill, tinted brand when selected. The Plan label
+also uses 14px text, with a separator before List view.
 An advisory above the rewards explains that document types vary between players;
 its emphasized Setup Costs action opens a local draft. In setup mode the advisory
 replaces the advisory with scope validation and Save/Cancel controls. Validation
