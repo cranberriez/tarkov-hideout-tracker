@@ -9,6 +9,7 @@ export interface BattlePassPreferences {
 	consumeDocs: boolean;
 	showMaps: boolean;
 	documentsOpen: boolean;
+	documentInventoryExpanded: boolean;
 	allProfiles: boolean;
 }
 
@@ -21,6 +22,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	consumeDocs: false,
 	showMaps: false,
 	documentsOpen: false,
+	documentInventoryExpanded: true,
 	allProfiles: false,
 };
 

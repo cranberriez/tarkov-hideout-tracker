@@ -99,7 +99,9 @@ export function DocumentChip({
 											<FileText className={large ? "h-10 w-10" : "h-8 w-8"} />
 										</span>
 									)}
-									{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
+									{mark && doc.key !== "classified" && (
+										<span aria-hidden className={styles.mark} data-shape={mark.shape} />
+									)}
 								</span>
 								{amount !== undefined && (
 									<span

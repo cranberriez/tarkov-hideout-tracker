@@ -2,6 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { defaultPreferences, parsePreferences, updatePreference } from "./battle-pass-preferences";
 
+test("inventory expansion defaults open and roundtrips independently of location visibility and player preferences", () => {
+	assert.equal(parsePreferences(null).documentInventoryExpanded, true);
+	assert.equal(parsePreferences(JSON.stringify({ showMaps: false })).documentInventoryExpanded, true);
+	let raw = JSON.stringify({ showMaps: true, consumeDocs: true, future: { retained: true } });
+	for (const expanded of [false, true]) {
+		raw = updatePreference(raw, "documentInventoryExpanded", expanded);
+		const restored = parsePreferences(raw);
+		assert.equal(restored.documentInventoryExpanded, expanded);
+		assert.equal(restored.showMaps, true);
+		assert.equal(restored.consumeDocs, true);
+		assert.deepEqual(restored.future, { retained: true });
+	}
+	assert.equal(parsePreferences('{"documentInventoryExpanded":"false"}').documentInventoryExpanded, true);
+});
+
 test("document locations default collapsed and remember both toggle states without replacing preferences", () => {
 	assert.equal(parsePreferences(null).showMaps, false);
 	assert.equal(parsePreferences(JSON.stringify({ listMode: true })).showMaps, false);

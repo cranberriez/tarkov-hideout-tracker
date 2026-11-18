@@ -78,7 +78,13 @@ choices remain shared within the season. The document icons retain location menu
 
 The compact header holds the title, Use classified, Consume Docs from Inventory,
 and an adjoining, profile-colored PVP/PVE/seasonal button group, wrapping when
-needed. The selected profile uses high-contrast foreground text with its profile
+needed. The profile buttons match the 32px height of the other header controls.
+The square arrow beside the title persists expanded/collapsed state in the shared
+`documentInventoryExpanded` preference, defaulting to expanded. Collapsing replaces
+the editor with small document images, colored type markers and owned counts;
+names, inputs, shortfalls and collection controls are hidden. The header controls
+remain available. Classified icons omit the redundant corner star.
+The selected profile uses high-contrast foreground text with its profile
 color retained in the border and fill. Classified markers, controls and costs use
 the dedicated purple theme color, distinct from ordinary document colors.
 Document names and their colored shape marks sit above square artwork;
