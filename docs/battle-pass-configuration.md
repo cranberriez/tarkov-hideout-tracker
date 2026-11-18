@@ -10,8 +10,12 @@ the player's game.
 
 The document locations panel above the rewards shows each map's document types,
 with Grid and Table views. Grid shows one tile per map: the map image fills the
-tile, its name sits top-left, and its document types line the bottom over a dark
-gradient. Document map opens the maps index with the Documents preset; map names
+tile, its name sits top-left (green with an arrow on hover), and its document
+types line the bottom as labelled rows over a dark gradient. A row of every
+document type above the grid toggles a local, multi-select filter: selections
+get a thin border in the document's colour, maps with none of them dim, and the
+square X clears the selection. Personnel, Technical and User artwork is drawn 5%
+larger without changing its layout box. Document map opens the maps index with the Documents preset; map names
 in Grid view open that map with the same preset in the currently selected game
 mode. Both views end with the Icebreaker/Medical update warning and its sources.
 The square arrow beside the heading collapses the locations content while keeping
