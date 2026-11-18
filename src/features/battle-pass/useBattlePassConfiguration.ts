@@ -1,9 +1,11 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
+import type { Tile } from "./lib/battle-pass-model";
 import type { SeasonId } from "@/lib/cfg/seasons";
 import {
 	mergeConfiguration,
+	resizeRewardCost,
 	parseConfiguration,
 	type CostEntry,
 	type RewardConfiguration,
@@ -28,10 +30,21 @@ export function useBattlePassConfiguration(seasonId: SeasonId) {
 			setEditing((current) => {
 				if (!current) return current;
 				const draft = { ...current.draft };
-				if (entries.every((entry) => !entry.key && !entry.quantity)) delete draft[id];
+				const cost = draft[id];
+				if (cost && !Array.isArray(cost)) draft[id] = { ...cost, entries };
+				else if (entries.every((entry) => !entry.key && !entry.quantity)) delete draft[id];
 				else draft[id] = entries;
 				return { ...current, draft };
 			}),
+		changeTypeCount: (tile: Tile, count: number) =>
+			setEditing((current) =>
+				current
+					? {
+							...current,
+							draft: { ...current.draft, [tile.id]: resizeRewardCost(current.draft[tile.id], count) },
+						}
+					: current,
+			),
 		save: () => {
 			if (!editing) return;
 			try {

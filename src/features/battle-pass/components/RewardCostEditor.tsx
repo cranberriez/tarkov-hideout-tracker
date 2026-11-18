@@ -128,16 +128,15 @@ function CostSlot({
 export function RewardCostEditor({
 	tile,
 	entries,
+	requiredTypes,
 	onChange,
 }: {
 	tile: Tile;
 	entries: CostEntry[] | undefined;
+	requiredTypes: number;
 	onChange: (entries: CostEntry[]) => void;
 }) {
-	const slots = Array.from(
-		{ length: Object.keys(tile.cost).length },
-		(_, index) => entries?.[index] ?? { key: "", quantity: "" },
-	);
+	const slots = Array.from({ length: requiredTypes }, (_, index) => entries?.[index] ?? { key: "", quantity: "" });
 	return (
 		<div
 			className="grid gap-1"

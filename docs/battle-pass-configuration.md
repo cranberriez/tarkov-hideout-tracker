@@ -2,8 +2,8 @@
 
 Status: Season 1 cost setup is implemented. Season 2 remains a test placeholder;
 validate its reward totals and type counts against live rewards before replacing
-the copied data. In Season 1 (KORD), players can rely on a reward's total cost and
-number of distinct document types. Its document types and quantities come from
+the copied data. In Season 1 (KORD), players can rely on a reward's total cost; the expected
+number of distinct document types can be adjusted to match their game. Its document types and quantities come from
 the player's game.
 
 ## Current read-only overview
@@ -54,6 +54,12 @@ the minimap; document slots and inline quantity inputs stay 32px tall.
 ## Entering a reward cost
 
 1. In edit mode, show one dashed slot with a plus icon for each required type. Start unconfigured rewards with empty slots.
+   The cogwheel left of the document total replaces the slots with
+   **Document Types: [input] Done**. It starts at the expected count (or saved
+   override), accepts whole numbers from 1–10, and Done restores that many slots.
+   Increasing retains existing entries and adds empty slots; decreasing retains
+   the leading entries. The banner Save commits the override with the costs;
+   Cancel discards it. Totals remain unchanged.
 2. Selecting a slot opens the full document list upward. Selecting a document displays it beside an immediately focused quantity input.
 3. Enter a positive whole quantity and press Enter to save and collapse the slot. Reopening a slot allows corrections. Keep partial entries as drafts.
 4. A reward is configured when its slots contain the required number of distinct types and their quantities add up to its known total. If either check fails, show what remains to fix.

@@ -4,11 +4,16 @@ import { useBattlePassData } from "../BattlePassSeason";
 import { ViewTransition } from "react";
 import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type PassPage } from "../lib/battle-pass-model";
+import { type Tile, type PassPage } from "../lib/battle-pass-model";
 
 import { RewardCard } from "./RewardCard";
 import { RewardCostEditor } from "./RewardCostEditor";
-import { rewardCostStatus, type RewardConfiguration, type CostEntry } from "../lib/battle-pass-configuration";
+import {
+	rewardCostStatus,
+	rewardEntries,
+	type RewardConfiguration,
+	type CostEntry,
+} from "../lib/battle-pass-configuration";
 import styles from "../battle-pass.module.css";
 
 export function RewardPage({
@@ -34,6 +39,7 @@ export function RewardPage({
 		editing: boolean;
 		configuration: RewardConfiguration;
 		change: (id: string, entries: CostEntry[]) => void;
+		changeTypeCount: (tile: Tile, count: number) => void;
 	};
 }) {
 	const { pages, tileSpans, documentKeys } = useBattlePassData();
@@ -93,7 +99,7 @@ export function RewardPage({
 						const status = rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys);
 						return (
 							<RewardCard
-								key={tile.id}
+								key={`${tile.id}:${costSetup.editing}`}
 								tile={tile}
 								span={tileSpans[tile.id]}
 								pageNumber={page.num}
@@ -102,12 +108,19 @@ export function RewardPage({
 								filler={filler.has(tile.id)}
 								editing={costSetup.editing}
 								costErrors={status.errors}
+								requiredTypes={status.requiredTypes}
+								onTypeCountChange={
+									costSetup.editing && !complete.has(tile.id)
+										? (count) => costSetup.changeTypeCount(tile, count)
+										: undefined
+								}
 								costsIncomplete={status.hasEntries && !status.valid}
 								editor={
 									costSetup.editing && !complete.has(tile.id) ? (
 										<RewardCostEditor
 											tile={tile}
-											entries={costSetup.configuration[tile.id]}
+											entries={rewardEntries(costSetup.configuration[tile.id])}
+											requiredTypes={status.requiredTypes}
 											onChange={(entries) => costSetup.change(tile.id, entries)}
 										/>
 									) : undefined

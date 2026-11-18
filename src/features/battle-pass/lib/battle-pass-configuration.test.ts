@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getBattlePassData } from "../../../lib/battle-pass-seasons";
 import { selectGoalRewards } from "./battle-pass-model";
-import { configuredPlan, mergeConfiguration, parseConfiguration, rewardCostStatus } from "./battle-pass-configuration";
+import {
+	configuredPlan,
+	mergeConfiguration,
+	parseConfiguration,
+	rewardCostStatus,
+	resizeRewardCost,
+	rewardEntries,
+	rewardTypeCount,
+} from "./battle-pass-configuration";
 
 const data = getBattlePassData("season-1");
 const first = data.tiles[0];
@@ -15,8 +23,14 @@ test("saved document slot order survives reload and display derivation", () => {
 	const saved = parseConfiguration(mergeConfiguration(null, {}, { [tile.id]: ordered }));
 	const status = rewardCostStatus(tile, saved[tile.id], data.documentKeys);
 	assert.equal(status.valid, true);
-	assert.deepEqual(Object.keys(status.displayCosts), ordered.map((entry) => entry.key));
-	assert.deepEqual(Object.keys(status.costs!), ordered.map((entry) => entry.key));
+	assert.deepEqual(
+		Object.keys(status.displayCosts),
+		ordered.map((entry) => entry.key),
+	);
+	assert.deepEqual(
+		Object.keys(status.costs!),
+		ordered.map((entry) => entry.key),
+	);
 });
 
 test("partial page-four entries remain displayable without becoming verified costs", () => {
@@ -140,4 +154,57 @@ test("concurrent edits to the same reward are rejected and other seasons do not 
 	assert.equal(configuredPlan([second.tiles[0]], saved, second.documentKeys).ready, false);
 	assert.deepEqual(parseConfiguration(JSON.stringify({ costSwaps: { [first.id]: { financial: "medical" } } })), {});
 	assert.deepEqual(parseConfiguration("broken"), {});
+});
+
+test("type count overrides roundtrip and govern verified plans without changing totals", () => {
+	const tile = data.pages.at(-1)!.cells[0];
+	assert.equal(Object.keys(tile.cost).length, 1);
+	const override = resizeRewardCost(undefined, 5);
+	const quantities = [tile.totalDocumentCost - 4, 1, 1, 1, 1];
+	const cost = {
+		...(!Array.isArray(override) ? override : { typeCount: 5 }),
+		entries: data.documentKeys.slice(0, 5).map((key, i) => ({ key, quantity: String(quantities[i]) })),
+	};
+	const saved = parseConfiguration(mergeConfiguration(null, {}, { [tile.id]: cost }));
+	assert.equal(rewardTypeCount(tile, saved[tile.id]), 5);
+	assert.equal(rewardCostStatus(tile, saved[tile.id], data.documentKeys).valid, true);
+	assert.equal(configuredPlan([tile], saved, data.documentKeys).ready, true);
+	assert.equal(rewardCostStatus(tile, cost.entries, data.documentKeys).valid, false);
+	assert.equal(rewardCostStatus(tile, { ...cost, entries: cost.entries.slice(0, 4) }, data.documentKeys).valid, false);
+	assert.equal(
+		rewardCostStatus(tile, { ...cost, entries: cost.entries.map((e) => ({ ...e, quantity: "1" })) }, data.documentKeys)
+			.valid,
+		false,
+	);
+});
+
+test("resizing retains leading entries and saves an empty overridden slot count", () => {
+	const original = entries(data.pages.at(-1)!.cells[1]);
+	const grown = resizeRewardCost(original, original.length + 1);
+	assert.deepEqual(rewardEntries(grown)?.slice(0, original.length), original);
+	assert.deepEqual(rewardEntries(grown)?.at(-1), { key: "", quantity: "" });
+	assert.deepEqual(rewardEntries(resizeRewardCost(grown, 1)), original.slice(0, 1));
+	const empty = resizeRewardCost(undefined, 10);
+	const saved = parseConfiguration(mergeConfiguration(null, {}, { [first.id]: empty }));
+	assert.equal(rewardTypeCount(first, saved[first.id]), 10);
+	assert.equal(rewardCostStatus(first, saved[first.id], data.documentKeys).valid, false);
+	for (const count of [0, 11, -1, 1.5, NaN]) assert.throws(() => resizeRewardCost(undefined, count));
+	for (const typeCount of [0, 11, 1.5, "5", null]) {
+		const parsed = parseConfiguration(JSON.stringify({ rewards: { [first.id]: { entries: [], typeCount } } }));
+		assert.equal(rewardTypeCount(first, parsed[first.id]), Object.keys(first.cost).length);
+	}
+});
+
+test("type count edits preserve unrelated saves and reject concurrent edits to the same reward", () => {
+	const baseline = { [first.id]: entries(first) };
+	const draft = { [first.id]: resizeRewardCost(baseline[first.id], 2) };
+	const raw = JSON.stringify({ version: 1, extra: true, rewards: { ...baseline, unknown: { future: true } } });
+	const saved = mergeConfiguration(raw, baseline, draft);
+	assert.equal(JSON.parse(saved).extra, true);
+	assert.deepEqual(JSON.parse(saved).rewards.unknown, { future: true });
+	assert.throws(
+		() => mergeConfiguration(saved, baseline, { [first.id]: resizeRewardCost(undefined, 3) }),
+		/another tab/,
+	);
+	assert.equal(rewardTypeCount(first, parseConfiguration(raw)[first.id]), Object.keys(first.cost).length);
 });

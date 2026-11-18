@@ -75,7 +75,10 @@ and Settings resets.
 
 [useBattlePassConfiguration](../src/features/battle-pass/useBattlePassConfiguration.ts)
 owns a separate `tarkov-battle-pass-costs-{seasonId}-v1` save with `{ version: 1,
-rewards: { [stableRewardId]: [{ key, quantity }] } }`. Quantities are strings so
+rewards: { [stableRewardId]: [{ key, quantity }] } }`. Rewards with a custom type
+count use `{ entries: [{ key, quantity }], typeCount }` instead of the array;
+older arrays retain the dataset type count. Counts are whole numbers from 1–10.
+Quantities are strings so
 partial inputs survive Save. All profiles share each season's configuration;
 other seasons, legacy progress and saved type swaps are untouched. Draft edits
 stay local until Save, and Cancel confirms before discarding changed drafts.

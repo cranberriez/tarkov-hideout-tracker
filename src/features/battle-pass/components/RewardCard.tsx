@@ -1,5 +1,5 @@
-import { Flag, Check, CircleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { Flag, Check, CircleAlert, Settings } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { type Tile } from "../lib/battle-pass-model";
 import { Artwork } from "./ui/Artwork";
 import { ActionChip } from "./ui/ActionChip";
@@ -23,6 +23,8 @@ export function RewardCard({
 	editing = false,
 	costErrors = [],
 	costsIncomplete = false,
+	requiredTypes,
+	onTypeCountChange,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -37,7 +39,12 @@ export function RewardCard({
 	editing?: boolean;
 	costErrors?: string[];
 	costsIncomplete?: boolean;
+	requiredTypes: number;
+	onTypeCountChange?: (count: number) => void;
 }) {
+	const [adjustingTypes, setAdjustingTypes] = useState(false);
+	const [typeCount, setTypeCount] = useState("");
+	const validTypeCount = /^\d+$/.test(typeCount) && Number(typeCount) >= 1 && Number(typeCount) <= 10;
 	const label = `Page ${pageNumber}, ${tile.displayName}`;
 	const name = tile.displayName + (tile.rewards[0].type === "tarcoin" ? ` ×${tile.rewards[0].value}` : "");
 	return (
@@ -95,31 +102,82 @@ export function RewardCard({
 						<h3 title={name} className={cn(styles.cardTitle, "min-w-0 truncate text-base font-semibold")}>
 							{name}
 						</h3>
-						{editing && costErrors.length ? (
-							<span
-								role="alert"
-								title={costErrors.join(" · ")}
-								className="flex max-w-[60%] items-start gap-1 text-[10px] text-foreground"
-							>
-								<CircleAlert size={12} className="mt-0.5 shrink-0 text-danger" aria-hidden />
-								{costErrors.join(" · ")}
-							</span>
-						) : (
-							<span
-								title="Total documents"
-								className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-subtle-foreground"
-							>
-								<DocumentIcon className="size-3" />
-								{tile.totalDocumentCost} docs
-							</span>
-						)}
+						<div className="flex shrink-0 items-center gap-1">
+							{onTypeCountChange && (
+								<button
+									type="button"
+									className="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+									aria-label={`Adjust document types: ${tile.displayName}`}
+									title="Adjust document types"
+									onClick={() => {
+										setTypeCount(String(requiredTypes));
+										setAdjustingTypes(true);
+									}}
+								>
+									<Settings size={13} aria-hidden />
+								</button>
+							)}
+							{editing && costErrors.length ? (
+								<span
+									role="alert"
+									title={costErrors.join(" · ")}
+									className="flex max-w-[60%] items-start gap-1 text-[10px] text-foreground"
+								>
+									<CircleAlert size={12} className="mt-0.5 shrink-0 text-danger" aria-hidden />
+									{costErrors.join(" · ")}
+								</span>
+							) : (
+								<span
+									title="Total documents"
+									className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-subtle-foreground"
+								>
+									<DocumentIcon className="size-3" />
+									{tile.totalDocumentCost} docs
+								</span>
+							)}
+						</div>
 					</div>
-					{editor}
+					{adjustingTypes && onTypeCountChange ? (
+						<form
+							className="flex h-8 items-center gap-2 text-xs"
+							onSubmit={(event) => {
+								event.preventDefault();
+								if (!validTypeCount) return;
+								onTypeCountChange(Number(typeCount));
+								setAdjustingTypes(false);
+							}}
+						>
+							<label className="flex min-w-0 items-center gap-2">
+								<span className="shrink-0">Document Types:</span>
+								<input
+									type="number"
+									min={1}
+									max={10}
+									step={1}
+									required
+									autoFocus
+									value={typeCount}
+									aria-label={`Document type count: ${tile.displayName}`}
+									className="h-8 w-14 min-w-0 rounded border border-border bg-background px-2 text-foreground focus-visible:outline-2 focus-visible:outline-brand"
+									onChange={(event) => setTypeCount(event.target.value)}
+								/>
+							</label>
+							<button
+								type="submit"
+								disabled={!validTypeCount}
+								className="ml-auto h-8 cursor-pointer rounded bg-surface-raised px-2 font-medium disabled:opacity-50"
+							>
+								Done
+							</button>
+						</form>
+					) : (
+						editor
+					)}
 					{configuredCosts && !editing && <CostList costs={configuredCosts} inventory={{}} wide={span === "wide"} />}
 					{costsIncomplete && !editing && (
 						<p
 							className="text-[11px] text-warning"
-							title={`Use Setup Costs to enter ${Object.keys(tile.cost).length} distinct document types totaling ${tile.totalDocumentCost}. ${costErrors.join(" · ")}`}
+							title={`Use Setup Costs to enter ${requiredTypes} distinct document types totaling ${tile.totalDocumentCost}. ${costErrors.join(" · ")}`}
 						>
 							Costs incomplete
 						</p>

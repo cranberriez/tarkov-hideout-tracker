@@ -1,7 +1,29 @@
 import type { Costs, Tile } from "./battle-pass-model";
 
 export type CostEntry = { key: string; quantity: string };
-export type RewardConfiguration = Record<string, CostEntry[]>;
+export type RewardCost = CostEntry[] | { entries: CostEntry[]; typeCount: number };
+export type RewardConfiguration = Record<string, RewardCost>;
+
+export function rewardEntries(cost: RewardCost | undefined): CostEntry[] | undefined {
+	return Array.isArray(cost) ? cost : cost?.entries;
+}
+
+export function rewardTypeCount(tile: Tile, cost: RewardCost | undefined): number {
+	const count = !Array.isArray(cost) ? cost?.typeCount : undefined;
+	return typeof count === "number" && Number.isInteger(count) && count >= 1 && count <= 10
+		? count
+		: Object.keys(tile.cost).length;
+}
+
+export function resizeRewardCost(cost: RewardCost | undefined, typeCount: number): RewardCost {
+	if (!Number.isInteger(typeCount) || typeCount < 1 || typeCount > 10)
+		throw new Error("Document types must be a whole number from 1 to 10.");
+	const entries = rewardEntries(cost);
+	return {
+		typeCount,
+		entries: Array.from({ length: typeCount }, (_, index) => entries?.[index] ?? { key: "", quantity: "" }),
+	};
+}
 
 function object(value: unknown): Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -14,29 +36,29 @@ function decode(raw: string | null) {
 	}
 }
 export function parseConfiguration(raw: string | null): RewardConfiguration {
-	return Object.fromEntries(
-		Object.entries(object(decode(raw).rewards)).flatMap(([id, entries]) =>
-			Array.isArray(entries)
-				? [
-						[
-							id,
-							entries.map((entry) => {
-								const value = object(entry);
-								return {
-									key: typeof value.key === "string" ? value.key : "",
-									quantity: typeof value.quantity === "string" ? value.quantity : "",
-								};
-							}),
-						],
-					]
-				: [],
-		),
-	);
+	const rewards: RewardConfiguration = {};
+	for (const [id, saved] of Object.entries(object(decode(raw).rewards))) {
+		const slots = Array.isArray(saved) ? saved : object(saved).entries;
+		if (!Array.isArray(slots)) continue;
+		const entries = slots.map((entry) => {
+			const value = object(entry);
+			return {
+				key: typeof value.key === "string" ? value.key : "",
+				quantity: typeof value.quantity === "string" ? value.quantity : "",
+			};
+		});
+		const count = object(saved).typeCount;
+		rewards[id] =
+			typeof count === "number" && Number.isInteger(count) && count >= 1 && count <= 10
+				? { entries, typeCount: count }
+				: entries;
+	}
+	return rewards;
 }
 
-export function rewardCostStatus(tile: Tile, entries: CostEntry[] | undefined, documentKeys: string[]) {
-	const requiredTypes = Object.keys(tile.cost).length;
-	const slots = entries ?? [];
+export function rewardCostStatus(tile: Tile, cost: RewardCost | undefined, documentKeys: string[]) {
+	const requiredTypes = rewardTypeCount(tile, cost);
+	const slots = rewardEntries(cost) ?? [];
 	const validEntries = slots.filter(
 		({ key, quantity }) =>
 			documentKeys.includes(key) && /^[1-9]\d*$/.test(quantity) && Number.isSafeInteger(Number(quantity)),
