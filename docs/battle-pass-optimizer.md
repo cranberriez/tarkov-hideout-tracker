@@ -2,13 +2,15 @@
 
 ## Document route
 
-The document breakdown should let a player choose a reward destination or finish the season, and choose between required rewards and buying every reward through that destination. Reaching the next page requires buying all but one reward on the current page. Count rewards already bought across profiles.
+In **Battle Pass → Docs Breakdown**, select a final-page reward, a saved goal, all saved goals, or **Finish the season**. In the required-rewards scope, finishing means claiming the final page and enough prerequisites to reach it. Select **All rewards through destination** with **Finish the season** to buy every outstanding reward. The controls recalculate the preview as inventory, costs, and selections change.
 
-Plan each claim against one profile’s inventory. The player can include all profiles and can allow owned classified documents as a last resort. Prefer a route that reaches the goal with the documents on hand, including higher-priced rewards when the player owns enough of the matching document. Show the claim order, claiming profile, progress possible now and additional classified documents needed.
+To see how far current inventory can take you, choose **Most rewards with owned documents**. Each new page requires all but one reward on the preceding page. Already claimed rewards count toward the gate across all profiles.
+
+Each claim draws ordinary documents from one profile. Including all profiles lets the solver assign different claims to different inventories. A higher-priced prerequisite can be cheaper to fund when its document types match stock on hand. Turning on **Use classified** lets the solver spend the season’s shared classified balance after matching ordinary documents. The preview lists the claiming profile, rewards accessible with current stock, and additional classified documents needed for the route.
 
 ## Funding the route
 
-After verifying and committing the document route, extend the breakdown with a global starting TarCoin balance and a purchase schedule. Credit reward TarCoins only after the player can claim that reward. Compare bulk purchases with smaller packs along the route, minimizing cash spend using the supplied USD prices. Identify the one-time offer separately. Represent TarCoins with a small gold diamond containing TC.
+Enter the current global TarCoin balance and enable the one-time offer if it is still available. For the selected claim order, the calculator finds the lowest additional cash spend at the USD prices below. Each claim must be affordable before its reward TarCoins become available. Open **Purchases and claims** to see the pack quantities, when to buy them, and the remaining balances. Completed rewards earn no additional TarCoins in the preview.
 
 | Classified documents | TarCoins |
 | ---: | ---: |

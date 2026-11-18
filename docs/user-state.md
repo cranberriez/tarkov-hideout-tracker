@@ -48,6 +48,8 @@ maintain a copied interface in documentation.
 
 ## Profiles, hydration, and setup
 
+The battle-pass funding calculator shares the starting TarCoin balance and one-time offer availability across profiles and seasons. Its [settings hook](../src/features/battle-pass/useFundingSettings.ts) merges edits into `tarkov-battle-pass-funding-v1`. A new calculator starts at zero with the offer disabled. Calculating a route spends no inventory and makes no change to the saved balance or offer availability.
+
 ### Battle pass progress
 
 [useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
