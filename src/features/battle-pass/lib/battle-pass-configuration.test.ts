@@ -9,6 +9,51 @@ const first = data.tiles[0];
 const entries = (tile: typeof first) =>
 	Object.entries(tile.cost).map(([key, amount]) => ({ key, quantity: String(amount) }));
 
+test("saved document slot order survives reload and display derivation", () => {
+	const tile = data.pages[3].cells[1];
+	const ordered = entries(tile).reverse();
+	const saved = parseConfiguration(mergeConfiguration(null, {}, { [tile.id]: ordered }));
+	const status = rewardCostStatus(tile, saved[tile.id], data.documentKeys);
+	assert.equal(status.valid, true);
+	assert.deepEqual(Object.keys(status.displayCosts), ordered.map((entry) => entry.key));
+	assert.deepEqual(Object.keys(status.costs!), ordered.map((entry) => entry.key));
+});
+
+test("partial page-four entries remain displayable without becoming verified costs", () => {
+	const tile = data.pages[3].cells[1];
+	const partial = entries(tile).slice(0, -1);
+	const saved = parseConfiguration(mergeConfiguration(null, {}, { [tile.id]: partial }));
+	const status = rewardCostStatus(tile, saved[tile.id], data.documentKeys);
+	assert.equal(status.valid, false);
+	assert.equal(status.costs, null);
+	assert.equal(status.hasEntries, true);
+	assert.deepEqual(
+		status.displayCosts,
+		Object.fromEntries(partial.map(({ key, quantity }) => [key, Number(quantity)])),
+	);
+	assert.equal(configuredPlan([tile], saved, data.documentKeys).costs, null);
+	assert.deepEqual(saved[tile.id], partial);
+});
+
+test("displayed saved costs omit invalid inputs and retain duplicate validation", () => {
+	const status = rewardCostStatus(
+		first,
+		[
+			{ key: "financial", quantity: "2" },
+			{ key: "financial", quantity: "3" },
+			{ key: "medical", quantity: "" },
+			{ key: "user", quantity: "0" },
+			{ key: "unknown", quantity: "4" },
+		],
+		data.documentKeys,
+	);
+	assert.deepEqual(status.displayCosts, { financial: 5 });
+	assert.equal(status.costs, null);
+	assert.ok(status.errors.includes("Duplicate document types"));
+	assert.equal(rewardCostStatus(first, undefined, data.documentKeys).hasEntries, false);
+	assert.deepEqual(rewardCostStatus(first, undefined, data.documentKeys).displayCosts, {});
+});
+
 test("configuration requires positive integer quantities, distinct known types and the exact total", () => {
 	assert.equal(rewardCostStatus(first, undefined, data.documentKeys).valid, false);
 	assert.equal(rewardCostStatus(first, entries(first), data.documentKeys).valid, true);

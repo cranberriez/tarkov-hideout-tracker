@@ -58,12 +58,16 @@ export function rewardCostStatus(tile: Tile, entries: CostEntry[] | undefined, d
 		validEntries.length === requiredTypes &&
 		distinct === requiredTypes &&
 		total === tile.totalDocumentCost;
+	const displayCosts: Costs = {};
+	for (const { key, quantity } of validEntries) displayCosts[key] = (displayCosts[key] ?? 0) + Number(quantity);
 	return {
 		errors,
 		valid,
 		requiredTypes,
 		distinct,
 		total,
+		displayCosts,
+		hasEntries: slots.some((entry) => entry.key !== "" || entry.quantity !== ""),
 		costs: valid ? (Object.fromEntries(slots.map(({ key, quantity }) => [key, Number(quantity)])) as Costs) : null,
 	};
 }

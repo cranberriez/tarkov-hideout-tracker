@@ -27,7 +27,10 @@ export function CostList({
 	swapLocked?: boolean;
 }) {
 	const { documents, documentKeys, baselineCosts, costSwaps } = useBattlePassData();
-	const shown = documents.filter((doc) => (costs[doc.key] ?? 0) > 0);
+	const shown = Object.entries(costs).flatMap(([key, amount]) => {
+		const doc = documents.find((entry) => entry.key === key);
+		return doc && amount > 0 ? [doc] : [];
+	});
 	// Current document type -> the snapshot line it replaces.
 	const baselineOf = new Map(
 		tileId

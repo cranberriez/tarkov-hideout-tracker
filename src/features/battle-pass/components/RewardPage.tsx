@@ -89,31 +89,35 @@ export function RewardPage({
 					}
 				</header>
 				<div className={styles.rewardGrid}>
-					{page.cells.map((tile) => (
-						<RewardCard
-							key={tile.id}
-							tile={tile}
-							span={tileSpans[tile.id]}
-							pageNumber={page.num}
-							done={complete.has(tile.id)}
-							goal={goals.has(tile.id)}
-							filler={filler.has(tile.id)}
-							editing={costSetup.editing}
-							costErrors={rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys).errors}
-							editor={
-								costSetup.editing && !complete.has(tile.id) ? (
-									<RewardCostEditor
-										tile={tile}
-										entries={costSetup.configuration[tile.id]}
-										onChange={(entries) => costSetup.change(tile.id, entries)}
-									/>
-								) : undefined
-							}
-							configuredCosts={rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys).costs}
-							toggleGoal={() => toggleGoal(tile.id)}
-							toggleDone={() => toggleTile(tile.id)}
-						/>
-					))}
+					{page.cells.map((tile) => {
+						const status = rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys);
+						return (
+							<RewardCard
+								key={tile.id}
+								tile={tile}
+								span={tileSpans[tile.id]}
+								pageNumber={page.num}
+								done={complete.has(tile.id)}
+								goal={goals.has(tile.id)}
+								filler={filler.has(tile.id)}
+								editing={costSetup.editing}
+								costErrors={status.errors}
+								costsIncomplete={status.hasEntries && !status.valid}
+								editor={
+									costSetup.editing && !complete.has(tile.id) ? (
+										<RewardCostEditor
+											tile={tile}
+											entries={costSetup.configuration[tile.id]}
+											onChange={(entries) => costSetup.change(tile.id, entries)}
+										/>
+									) : undefined
+								}
+								configuredCosts={Object.keys(status.displayCosts).length ? status.displayCosts : null}
+								toggleGoal={() => toggleGoal(tile.id)}
+								toggleDone={() => toggleTile(tile.id)}
+							/>
+						);
+					})}
 				</div>
 			</section>
 		</ViewTransition>

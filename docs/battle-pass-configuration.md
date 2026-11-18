@@ -62,8 +62,14 @@ the minimap; document slots and inline quantity inputs stay 32px tall.
 
 ## Planning and season scope
 
-The viewer shows configured costs on individual rewards. A verified plan document
-breakdown requires valid costs for every unclaimed reward in Everything, or every
+The viewer shows configured costs on individual rewards using the original compact
+artwork-and-quantity chips in the player's saved slot order, with hover labels and
+document location menus. Positive whole quantities for recognized saved document
+types stay visible even when the reward is incomplete. Such rewards
+show Costs incomplete; this never makes them eligible for verified totals or
+inventory deductions. Invalid or empty entries remain saved for correction in Setup Costs.
+A verified plan document breakdown requires valid costs for every unclaimed reward
+in Everything, or every
 outstanding goal and suggested prerequisite in Goals. The advisory reports how
 many required rewards still need costs; unresolved saved goals also block a
 verified goal breakdown. Total-only planning remains available during partial setup.

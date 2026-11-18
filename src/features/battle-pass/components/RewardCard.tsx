@@ -1,11 +1,10 @@
 import { Flag, Check, CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { type Tile } from "../lib/battle-pass-model";
-import { useBattlePassData } from "../BattlePassSeason";
-import { documentDisplayName } from "../lib/battle-pass-display";
 import { Artwork } from "./ui/Artwork";
 import { ActionChip } from "./ui/ActionChip";
 import { DocumentIcon } from "./ui/DocumentIcon";
+import { CostList } from "./CostList";
 
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
@@ -23,6 +22,7 @@ export function RewardCard({
 	editor,
 	editing = false,
 	costErrors = [],
+	costsIncomplete = false,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -36,8 +36,8 @@ export function RewardCard({
 	editor?: ReactNode;
 	editing?: boolean;
 	costErrors?: string[];
+	costsIncomplete?: boolean;
 }) {
-	const { documents } = useBattlePassData();
 	const label = `Page ${pageNumber}, ${tile.displayName}`;
 	const name = tile.displayName + (tile.rewards[0].type === "tarcoin" ? ` ×${tile.rewards[0].value}` : "");
 	return (
@@ -115,18 +115,14 @@ export function RewardCard({
 						)}
 					</div>
 					{editor}
-					{configuredCosts && !editing && (
-						<ul
-							className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground"
-							aria-label="Configured documents"
+					{configuredCosts && !editing && <CostList costs={configuredCosts} inventory={{}} wide={span === "wide"} />}
+					{costsIncomplete && !editing && (
+						<p
+							className="text-[11px] text-warning"
+							title={`Use Setup Costs to enter ${Object.keys(tile.cost).length} distinct document types totaling ${tile.totalDocumentCost}. ${costErrors.join(" · ")}`}
 						>
-							{Object.entries(configuredCosts).map(([key, quantity]) => (
-								<li key={key} className="flex items-center gap-1">
-									<DocumentIcon documentKey={key} className="size-6 shrink-0" />
-									{quantity} × {documentDisplayName(documents.find((doc) => doc.key === key)!.name)}
-								</li>
-							))}
-						</ul>
+							Costs incomplete
+						</p>
 					)}
 				</div>
 			</div>
