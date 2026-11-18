@@ -90,6 +90,29 @@ export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, fi
 	return low;
 }
 
+export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filters: GatheringFilters) {
+	const days = minimumFreeGatheringDays(route, wallet, filters);
+	if (days === null) return null;
+	let low = 0,
+		high = days ? route.additionalClassified : 0;
+	// In the fastest window, stop as soon as the wallet and earned coins
+	// cover the remaining claims. Later eligible documents are unnecessary.
+	while (low < high) {
+		const count = Math.floor((low + high) / 2);
+		const { claims } = gatheringScenario(route, count, filters, days);
+		if (optimizeRouteFunding(claims, wallet, false).cashCents === 0) high = count;
+		else low = count + 1;
+	}
+	const { quantities } = gatheringScenario(route, low, filters, days);
+	const modes = new Map<string, { label: string; documents: GatheringQuantity[] }>();
+	for (const row of quantities) {
+		const mode = modes.get(row.profileKey) ?? { label: row.profileLabel, documents: [] };
+		mode.documents.push(row);
+		modes.set(row.profileKey, mode);
+	}
+	return { days, total: low, modes };
+}
+
 /** Binary-search each next cash drop on the monotone gathering path. Avoids one
  * funding solve per document, and runs only on demand in a dedicated worker. */
 export function buildGatheringSavings(

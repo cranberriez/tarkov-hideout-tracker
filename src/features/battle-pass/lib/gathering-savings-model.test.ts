@@ -1,3 +1,4 @@
+import { cashFreeGatheringPlan } from "./gathering-savings-model";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -169,4 +170,23 @@ test("cash-free days use parallel caps, saved filters and only available reward 
 	]);
 	assert.equal(minimumFreeGatheringDays(earned, 0, { PVE: { disabled: true } }), 0);
 	assert.equal(minimumFreeGatheringDays(route([{ profile: "PVE", cost: 20, coins: 500 }]), 0, {}), 2);
+});
+
+test("fastest plan lists only the documents needed after free funding, by allowed mode", () => {
+	const input = route([
+		{ profile: "PVP", cost: 31, key: "medical" },
+		{ profile: "PVE", cost: 25, key: "technical" },
+	]);
+	const plan = cashFreeGatheringPlan(input, 500, {});
+	assert.equal(plan?.days, 1);
+	assert.equal(plan.total, 36);
+	assert.deepEqual(
+		[...plan.modes].map(([key, mode]) => [key, mode.documents.map((row) => [row.documentKey, row.quantity])]),
+		[
+			["PVP", [["medical", 25]]],
+			["PVE", [["technical", 11]]],
+		],
+	);
+	assert.equal(cashFreeGatheringPlan(input, 500, { PVE: { excluded: ["technical"] } }), null);
+	assert.equal(cashFreeGatheringPlan(input, 2000, {})?.total, 0);
 });
