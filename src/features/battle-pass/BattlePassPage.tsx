@@ -49,10 +49,19 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const costSetup = useBattlePassConfiguration(seasonId, tiles);
 	const documentInventory = useDocumentInventory(costSetup.configuration);
 	const { stored: progress, write } = useBattlePassSave();
-	const [{ listMode, requestedScope, showProfileRecommendations }, setPreference] = useBattlePassPreferences();
-	const route = useDocumentRouteController(documentInventory, costSetup.configuration, !costSetup.editing);
+	const [{ listMode, requestedScope, showProfileRecommendations, optimizerEnabled }, setPreference] =
+		useBattlePassPreferences();
+	const route = useDocumentRouteController(
+		documentInventory,
+		costSetup.configuration,
+		optimizerEnabled && !costSetup.editing,
+	);
 	const recommendedProfiles = new Map(
-		showProfileRecommendations && !costSetup.editing && typeof route.result !== "string" && route.result
+		optimizerEnabled &&
+			showProfileRecommendations &&
+			!costSetup.editing &&
+			typeof route.result !== "string" &&
+			route.result
 			? route.result.claims.map(
 					(claim) =>
 						[claim.rewardId, documentInventory.profiles.find((profile) => profile.key === claim.profileKey)] as const,
@@ -190,7 +199,9 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 							List view
 						</Button>
 						<Toggle
-							checked={showProfileRecommendations}
+							disabled={!optimizerEnabled}
+							title={optimizerEnabled ? undefined : "Enable the docs optimizer to see recommendations"}
+							checked={optimizerEnabled && showProfileRecommendations}
 							onChange={(value) => setPreference("showProfileRecommendations", value)}
 						>
 							Profile recommendations
@@ -310,7 +321,14 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					<PageNavigation {...{ first, lastStart, go }} />
 				</div>
 			)}
-			{!costSetup.editing && <DocumentRoutePanel inventory={documentInventory} route={route} />}
+			{!costSetup.editing && (
+				<DocumentRoutePanel
+					inventory={documentInventory}
+					route={route}
+					enabled={optimizerEnabled}
+					onEnabledChange={(value) => setPreference("optimizerEnabled", value)}
+				/>
+			)}
 			{!listMode && (
 				<PageMinimap
 					{...{ first, spread, complete, goals, openPages, go }}

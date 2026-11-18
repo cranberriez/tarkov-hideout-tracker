@@ -21,9 +21,13 @@ type Route = Exclude<ReturnType<typeof useDocumentRoute>, string | null>;
 export function DocumentRoutePanel({
 	inventory,
 	route,
+	enabled,
+	onEnabledChange,
 }: {
 	inventory: ReturnType<typeof useDocumentInventory>;
 	route: ReturnType<typeof useDocumentRouteController>;
+	enabled: boolean;
+	onEnabledChange: (enabled: boolean) => void;
 }) {
 	const { pages, tiles, documents } = useBattlePassData();
 	const { stored } = useBattlePassSave();
@@ -54,111 +58,127 @@ export function DocumentRoutePanel({
 			: { tone: "warning", label: "Needs setup", Icon: CircleAlert };
 	return (
 		<section aria-labelledby="docs-breakdown-heading" className="space-y-4 rounded-lg bg-card p-3 sm:p-5">
-			<h2 id="docs-breakdown-heading" className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-				<Layers3 className="size-5 text-brand" aria-hidden />
-				Docs breakdown
-			</h2>
-			<section
-				aria-labelledby="route-config-heading"
-				className={cn(
-					"space-y-4 rounded-lg p-4",
-					ready && incompleteCount === 0 ? "bg-surface-raised/40" : "bg-brand/[0.07]",
-				)}
-			>
-				<div className="flex flex-wrap items-center justify-between gap-2">
-					<h3 id="route-config-heading" className="text-base font-semibold">
-						Route configuration
-					</h3>
-					<span
-						role="status"
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<h2 id="docs-breakdown-heading" className="flex items-center gap-2 text-xl font-semibold tracking-tight">
+					<Layers3 className="size-5 text-brand" aria-hidden />
+					Docs breakdown
+				</h2>
+				<Toggle indicator className="h-9 text-sm" checked={enabled} onChange={onEnabledChange}>
+					Optimizer
+				</Toggle>
+			</div>
+			{enabled ? (
+				<>
+					<section
+						aria-labelledby="route-config-heading"
 						className={cn(
-							"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-							state.tone === "success" && "bg-success/15 text-success",
-							state.tone === "warning" && "bg-warning/15 text-warning",
-							state.tone === "muted" && "bg-surface-raised text-muted-foreground",
+							"space-y-4 rounded-lg p-4",
+							ready && incompleteCount === 0 ? "bg-surface-raised/40" : "bg-brand/[0.07]",
 						)}
 					>
-						<state.Icon className={cn("size-3.5", state.tone === "muted" && "animate-spin")} aria-hidden />
-						{state.label}
-					</span>
-				</div>
-				<div className="flex flex-wrap items-end gap-x-6 gap-y-4">
-					<label className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
-						Destination
-						<select
-							value={selectedGoal}
-							onChange={(event) => setDestination(event.target.value)}
-							className={cn(flatField, "w-full min-w-0 sm:max-w-sm")}
-						>
-							<option value="finish">Finish the season</option>
-							<option value="owned">Most rewards with owned documents</option>
-							{stored.goals.length > 0 && <option value="goals">All saved goals</option>}
-							{destinationIds.map((id) => {
-								const tile = tiles.find((reward) => reward.id === id);
-								const page = pages.find((page) => page.cells.some((reward) => reward.id === id));
-								return (
-									<option key={id} value={id}>
-										{tile ? `${tile.displayName} (Page ${page?.num})` : `Unavailable goal (${id})`}
-									</option>
-								);
-							})}
-						</select>
-					</label>
-					{selectedGoal !== "owned" && (
-						<div className={fieldLabel}>
-							<span>Rewards</span>
-							<Segmented
-								label="Rewards"
-								value={buyAll ? "all" : "required"}
-								onChange={(value) => setBuyAll(value === "all")}
-								options={[
-									{ value: "required", label: "Required" },
-									{ value: "all", label: "All through destination" },
-								]}
-							/>
-						</div>
-					)}
-					<div className={fieldLabel}>
-						<span>Inventory</span>
-						<div className="flex flex-wrap gap-2">
-							<Toggle indicator className="h-9 text-sm" checked={allProfiles} onChange={setAllProfiles}>
-								All profiles
-							</Toggle>
-							<Toggle
-								indicator
-								className="h-9 text-sm"
-								checked={inventory.preferences.useClassified}
-								onChange={(value) => inventory.setPreference("useClassified", value)}
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<h3 id="route-config-heading" className="text-base font-semibold">
+								Route configuration
+							</h3>
+							<span
+								role="status"
+								className={cn(
+									"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+									state.tone === "success" && "bg-success/15 text-success",
+									state.tone === "warning" && "bg-warning/15 text-warning",
+									state.tone === "muted" && "bg-surface-raised text-muted-foreground",
+								)}
 							>
-								Use classified
-							</Toggle>
+								<state.Icon className={cn("size-3.5", state.tone === "muted" && "animate-spin")} aria-hidden />
+								{state.label}
+							</span>
 						</div>
-					</div>
-					<FundingInputs />
-				</div>
-				{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
-					<div className="space-y-1 text-xs">
-						{selectedGoal === "finish" && !buyAll && (
-							<p className="text-muted-foreground">Includes the final page and its prerequisites.</p>
-						)}
-						{incompleteCount > 0 && (
-							<p className="text-warning">
-								{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
-								{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards are
-								included.
-							</p>
-						)}
-					</div>
-				) : null}
-			</section>
-			{shownRoute ? (
-				<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
-					<RouteSummary route={shownRoute} />
-					<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
-					<RouteFundingPanel route={shownRoute} />
-				</div>
+						<div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+							<label className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
+								Destination
+								<select
+									value={selectedGoal}
+									onChange={(event) => setDestination(event.target.value)}
+									className={cn(flatField, "w-full min-w-0 sm:max-w-sm")}
+								>
+									<option value="finish">Finish the season</option>
+									<option value="owned">Most rewards with owned documents</option>
+									{stored.goals.length > 0 && <option value="goals">All saved goals</option>}
+									{destinationIds.map((id) => {
+										const tile = tiles.find((reward) => reward.id === id);
+										const page = pages.find((page) => page.cells.some((reward) => reward.id === id));
+										return (
+											<option key={id} value={id}>
+												{tile ? `${tile.displayName} (Page ${page?.num})` : `Unavailable goal (${id})`}
+											</option>
+										);
+									})}
+								</select>
+							</label>
+							{selectedGoal !== "owned" && (
+								<div className={fieldLabel}>
+									<span>Rewards</span>
+									<Segmented
+										label="Rewards"
+										value={buyAll ? "all" : "required"}
+										onChange={(value) => setBuyAll(value === "all")}
+										options={[
+											{ value: "required", label: "Required" },
+											{ value: "all", label: "All through destination" },
+										]}
+									/>
+								</div>
+							)}
+							<div className={fieldLabel}>
+								<span>Inventory</span>
+								<div className="flex flex-wrap gap-2">
+									<Toggle indicator className="h-9 text-sm" checked={allProfiles} onChange={setAllProfiles}>
+										All profiles
+									</Toggle>
+									<Toggle
+										indicator
+										className="h-9 text-sm"
+										checked={inventory.preferences.useClassified}
+										onChange={(value) => inventory.setPreference("useClassified", value)}
+									>
+										Use classified
+									</Toggle>
+								</div>
+							</div>
+							<FundingInputs />
+						</div>
+						{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
+							<div className="space-y-1 text-xs">
+								{selectedGoal === "finish" && !buyAll && (
+									<p className="text-muted-foreground">Includes the final page and its prerequisites.</p>
+								)}
+								{incompleteCount > 0 && (
+									<p className="text-warning">
+										{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
+										{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards
+										are included.
+									</p>
+								)}
+							</div>
+						) : null}
+					</section>
+					{shownRoute ? (
+						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
+							<RouteSummary route={shownRoute} />
+							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
+							<RouteFundingPanel route={shownRoute} />
+						</div>
+					) : (
+						<RouteSkeleton
+							message={typeof result === "string" ? result : CALCULATING_ROUTE}
+							calculating={calculating}
+						/>
+					)}
+				</>
 			) : (
-				<RouteSkeleton message={typeof result === "string" ? result : CALCULATING_ROUTE} calculating={calculating} />
+				<p className="text-sm text-muted-foreground">
+					Enable the optimizer to plan claim order, funding and profile recommendations.
+				</p>
 			)}
 		</section>
 	);

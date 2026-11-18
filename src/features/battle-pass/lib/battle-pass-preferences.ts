@@ -12,6 +12,8 @@ export interface BattlePassPreferences {
 	documentInventoryExpanded: boolean;
 	allProfiles: boolean;
 	showProfileRecommendations: boolean;
+	/** Runs the docs-breakdown route optimizer and its reward-card profile recommendations. */
+	optimizerEnabled: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -26,6 +28,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	documentInventoryExpanded: true,
 	allProfiles: false,
 	showProfileRecommendations: true,
+	optimizerEnabled: false,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

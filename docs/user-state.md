@@ -50,7 +50,7 @@ maintain a copied interface in documentation.
 
 The battle-pass funding calculator shares the starting TarCoin balance and one-time offer availability across profiles and seasons. Its [settings hook](../src/features/battle-pass/useFundingSettings.ts) merges edits into `tarkov-battle-pass-funding-v1`. The same key stores gathering choices by route profile key (PVP, PVE, or seasonal ID) and document key. Each edit merges into the latest saved profile settings, including profiles absent from the current route. Older saves and new profiles allow every document by default. A new calculator starts at zero with the offer disabled. Calculating a route spends no inventory and makes no change to the saved balance or offer availability.
 
-The battle-pass UI preference `showProfileRecommendations` defaults to true across profiles and seasons. It controls the visibility of the route’s claiming-profile labels on reward cards. The selected inventory profile still determines where recording a claim deducts documents.
+The battle-pass UI preference `optimizerEnabled` defaults to false across profiles and seasons, including saves written before it existed. While it is off, the docs-breakdown route optimizer does not run and reward cards show no claiming-profile recommendations. The battle-pass UI preference `showProfileRecommendations` defaults to true and applies only while the optimizer is enabled. It controls the visibility of the route’s claiming-profile labels on reward cards. The selected inventory profile still determines where recording a claim deducts documents.
 
 ### Battle pass progress
 
