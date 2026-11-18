@@ -5,10 +5,15 @@ import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { useFundingSettings } from "../useFundingSettings";
 import { cashFreeGatheringPlan, type SavingsRoute } from "../lib/gathering-savings-model";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { syncValue } from "./ui/field";
 
 export function RouteSummary({ route }: { route: SavingsRoute }) {
 	const panelId = useId();
 	const [showDocuments, setShowDocuments] = useState(false);
+	const typesId = useId();
+	const [showTypes, setShowTypes] = useState(false);
 	const { startingTarCoins, gatheringFilters } = useFundingSettings();
 	const plan = useMemo(
 		() => cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters),
@@ -25,70 +30,104 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 	const firstShortfall = route.claims.findIndex((claim) => !claim.possibleNow || claim.classifiedUsed > 0);
 	const ordinaryClaims = firstShortfall < 0 ? route.claims.length : firstShortfall;
 	return (
-		<>
+		<div className="space-y-2">
 			<dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-				<div className="col-span-2 rounded-lg border border-brand/25 bg-brand/5 p-4 lg:row-span-2">
-					<dt className="text-sm font-medium">Documents needed</dt>
-					<dd className="mt-1 text-4xl font-semibold tracking-tight tabular-nums">{total.toLocaleString()}</dd>
-					<dd className="mt-4 space-y-1.5 text-xs">
-						<div className="flex justify-between gap-2">
-							<span>{owned.toLocaleString()} covered by inventory</span>
-							<strong>{percent}%</strong>
-						</div>
-						<div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
-							<div className="h-full bg-brand" style={{ width: `${percent}%` }} />
-						</div>
-						<p className="text-muted-foreground">
-							{ordinary} ordinary · {route.classifiedUsed} classified
-						</p>
+				<div className="col-span-2 flex flex-col gap-4 rounded-lg bg-brand/[0.07] p-4 lg:row-span-2">
+					<div className="flex items-start justify-between gap-2">
+						<dt className="text-sm font-medium text-muted-foreground">Documents needed</dt>
 						{total > 0 && (
-							<details className="mt-3">
-								<summary className="cursor-pointer font-medium">Needed by document type</summary>
-								<ul className="mt-2 grid gap-y-1 sm:grid-cols-2">
-									{[...byType].map(([key, count]) => (
-										<li key={key} className="flex items-center gap-1">
-											<DocumentIcon documentKey={key} className="size-5 shrink-0" />
-											<strong>{count}</strong>{" "}
-											{documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key)}
-										</li>
-									))}
-								</ul>
-							</details>
+							<Button
+								size="xs"
+								variant="ghost"
+								tone="brand"
+								className="-mt-1 -mr-2"
+								aria-expanded={showTypes}
+								aria-controls={typesId}
+								onClick={() => setShowTypes((open) => !open)}
+							>
+								By type
+								<ChevronDown className={cn("size-3.5 transition-transform", showTypes && "rotate-180")} aria-hidden />
+							</Button>
+						)}
+					</div>
+					{total > 0 && (
+						<dd id={typesId} hidden={!showTypes} className={syncValue}>
+							<ul className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+								{[...byType].map(([key, count]) => (
+									<li key={key} className="flex items-center gap-1.5">
+										<DocumentIcon documentKey={key} className="size-5 shrink-0" />
+										<strong className="tabular-nums">{count}</strong>
+										{documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key)}
+									</li>
+								))}
+							</ul>
+						</dd>
+					)}
+					<dd className={cn("mt-auto space-y-3", syncValue)}>
+						<span className="block text-4xl font-semibold leading-none tracking-tight tabular-nums">
+							{total.toLocaleString()}
+						</span>
+						<div className="space-y-1.5 text-xs">
+							<div className="flex justify-between gap-2">
+								<span>
+									{owned.toLocaleString()} covered by inventory{" "}
+									<span className="text-muted-foreground">
+										({ordinary} ordinary, {route.classifiedUsed} classified)
+									</span>
+								</span>
+								<strong>{percent}%</strong>
+							</div>
+							<div aria-hidden className="h-1.5 overflow-hidden rounded-full bg-highlight/10">
+								<div className="h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+							</div>
+						</div>
+					</dd>
+				</div>
+				<div className="flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
+					<dt className="text-xs text-muted-foreground">Additional classified needed</dt>
+					<dd className={cn("mt-auto text-2xl font-semibold leading-none tabular-nums text-classified", syncValue)}>
+						{route.additionalClassified}
+					</dd>
+				</div>
+				<div className="flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
+					<dt className="text-xs text-muted-foreground">Claims before using classified</dt>
+					<dd className={cn("mt-auto", syncValue)}>
+						<span className="text-2xl font-semibold leading-none tabular-nums">
+							{ordinaryClaims}
+							<span className="text-sm font-normal text-muted-foreground"> / {route.claims.length}</span>
+						</span>
+						{route.possibleNow > ordinaryClaims && (
+							<span className="block text-xs text-muted-foreground">{route.possibleNow} with owned classified</span>
 						)}
 					</dd>
 				</div>
-				<div className="rounded-lg border border-border p-3">
-					<dt className="text-xs text-muted-foreground">Additional classified needed</dt>
-					<dd className="text-2xl font-semibold tabular-nums text-classified">{route.additionalClassified}</dd>
-				</div>
-				<div className="rounded-lg border border-border p-3">
-					<dt className="text-xs text-muted-foreground">Claims before using classified</dt>
-					<dd className="text-2xl font-semibold tabular-nums">
-						{ordinaryClaims}
-						<span className="text-sm font-normal text-muted-foreground"> / {route.claims.length}</span>
-					</dd>
-					{route.possibleNow > ordinaryClaims && (
-						<dd className="text-xs text-muted-foreground">{route.possibleNow} with owned classified</dd>
-					)}
-				</div>
-				<div className="col-span-2 rounded-lg border border-border bg-surface-raised/50 p-3">
+				<div className="col-span-2 flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
 					<dt className="text-xs text-muted-foreground">Fastest cash-free finish</dt>
-					<dd className="mt-1 flex flex-wrap items-center justify-between gap-2">
+					<dd className={cn("mt-auto flex flex-wrap items-end justify-between gap-2", syncValue)}>
 						{plan && plan.days > 0 ? (
 							<>
-								<span>
-									<strong>
+								<span className="flex flex-wrap items-baseline gap-x-3">
+									<strong className="text-lg leading-none">
 										{plan.days} gathering {plan.days === 1 ? "day" : "days"}
-									</strong>{" "}
-									· {plan.total} {plan.total === 1 ? "document" : "documents"}
+									</strong>
+									<span className="text-sm text-muted-foreground">
+										{plan.total} {plan.total === 1 ? "document" : "documents"}
+									</span>
 								</span>
 								<Button
 									size="xs"
+									variant="ghost"
+									tone="brand"
+									className="-mr-2 -mb-1"
 									aria-expanded={showDocuments}
 									aria-controls={panelId}
 									onClick={() => setShowDocuments((open) => !open)}
 								>
 									{showDocuments ? "Hide documents" : "Show documents"}
+									<ChevronDown
+										className={cn("size-3.5 transition-transform", showDocuments && "rotate-180")}
+										aria-hidden
+									/>
 								</Button>
 							</>
 						) : (
@@ -102,7 +141,7 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 					id={panelId}
 					hidden={!showDocuments}
 					aria-label="Cash-free gathering plan"
-					className="rounded-lg border border-border bg-surface-raised/50 p-3"
+					className="rounded-lg bg-surface-raised/30 p-4"
 				>
 					<h3 className="mb-1 text-sm font-semibold">Documents to gather</h3>
 					<p className="mb-3 text-xs text-muted-foreground">
@@ -111,7 +150,7 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{[...plan.modes].map(([key, mode]) => (
 							<section key={key}>
-								<h3 className="mb-1 text-sm font-semibold">{mode.label}</h3>
+								<h4 className="mb-1 text-sm font-semibold">{mode.label}</h4>
 								<ul className="space-y-1 text-xs">
 									{mode.documents.map((row) => (
 										<li key={row.documentKey} className="flex items-center gap-1.5">
@@ -128,6 +167,6 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 					</div>
 				</section>
 			)}
-		</>
+		</div>
 	);
 }

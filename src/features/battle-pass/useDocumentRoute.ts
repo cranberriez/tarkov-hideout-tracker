@@ -6,6 +6,8 @@ import {
 	type RouteColumns,
 } from "./lib/document-route-model";
 
+export const CALCULATING_ROUTE = "Calculating document route…";
+
 export function useDocumentRoute(input: DocumentRouteInput, enabled = true) {
 	const request = useMemo(() => buildDocumentRouteModel(input), [input]);
 	const [result, setResult] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
@@ -29,7 +31,7 @@ export function useDocumentRoute(input: DocumentRouteInput, enabled = true) {
 		if (request.unresolvedIds.length)
 			return `Unavailable saved goals: ${request.unresolvedIds.join(", ")}. Select an available destination.`;
 		if (!request.model) return interpretDocumentRoute(request, {});
-		if (result?.request !== request) return "Calculating document route…";
+		if (result?.request !== request) return CALCULATING_ROUTE;
 		if (!result.columns)
 			return "Could not calculate a complete route. Configure costs for the destination and enough rewards on every preceding page, then try again.";
 		return interpretDocumentRoute(request, result.columns);

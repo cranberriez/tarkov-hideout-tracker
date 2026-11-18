@@ -11,6 +11,10 @@ import {
 } from "../lib/gathering-savings-model";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
+import { Disclosure, SubDisclosure } from "./ui/Disclosure";
+import { Toggle } from "./ui/Toggle";
+import { syncValue } from "./ui/field";
+import { cn } from "@/lib/utils";
 
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -33,7 +37,7 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 		<ul className="space-y-1 text-xs">
 			{point.windows.map((profile) => (
 				<li key={profile.profileKey}>
-					<strong>{profile.profileLabel}</strong> ·{" "}
+					<strong>{profile.profileLabel}:</strong>{" "}
 					{point.quantities
 						.filter((row) => row.profileKey === profile.profileKey)
 						.map((row) => `${row.quantity} ${name(row.documentKey)}`)
@@ -69,100 +73,112 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 		result.input.filters === filters
 			? result
 			: null;
-	const highlight = current?.breakpoints?.find((point) => point.savingsCents >= 499) ?? current?.breakpoints?.at(-1);
+	// Keep the previous answer on screen while the worker recalculates, so the section keeps its height.
+	const shown = current ?? result;
+	const highlight = shown?.breakpoints?.find((point) => point.savingsCents >= 499) ?? shown?.breakpoints?.at(-1);
 	return (
-		<section className="mt-7 space-y-4 border-t border-border pt-6">
-			<h3 className="flex items-center gap-2 text-base font-semibold">
-				<Files className="size-4 text-brand" aria-hidden />
-				Save cash by gathering
-			</h3>
-			<p className="text-xs text-muted-foreground">
-				Daily caps · PVP {GATHERING_DAILY_CAPS.PVP} · PVE {GATHERING_DAILY_CAPS.PVE} · Seasonal{" "}
-				{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel.
-			</p>
-			<details>
-				<summary className="cursor-pointer text-xs font-medium">Choose modes and documents to gather</summary>
-				<p className="mt-2 text-xs text-muted-foreground">Saved on this device.</p>
-				<div className="mt-2 space-y-3">
-					{options.map(([key, group]) => {
-						const filter = filters[key] ?? {};
-						return (
-							<fieldset key={key} className="text-xs">
-								<legend>
-									<label>
-										<input
-											type="checkbox"
-											checked={!filter.disabled}
-											onChange={(event) => setGatheringChoice(key, event.target.checked)}
-										/>{" "}
-										Gather in {group.label}
-									</label>
-								</legend>
-								<div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-									{group.keys.map((doc) => (
-										<label key={doc}>
-											<input
-												type="checkbox"
-												disabled={filter.disabled}
-												checked={!filter.disabled && !filter.excluded?.includes(doc)}
-												onChange={(event) => setGatheringChoice(key, event.target.checked, doc)}
-											/>{" "}
-											{name(doc)}
-										</label>
-									))}
-								</div>
-							</fieldset>
-						);
-					})}
-				</div>
-			</details>
-			{!current ? (
+		<Disclosure
+			syncing={!!result && !current}
+			title="Save cash by gathering"
+			icon={<Files className="size-4 text-brand" aria-hidden />}
+			meta={
+				highlight ? (
+					<span className={cn("text-sm font-semibold text-success", syncValue)}>
+						Save {usd(highlight.savingsCents)}
+					</span>
+				) : !shown ? (
+					"Calculating…"
+				) : null
+			}
+		>
+			{!shown ? (
 				<p role="status" className="text-xs">
 					Calculating gathering savings…
 				</p>
-			) : current.error ? (
+			) : shown.error ? (
 				<p role="status" className="text-xs">
-					{current.error}
+					{shown.error}
 				</p>
-			) : !current.breakpoints?.length ? (
+			) : !shown.breakpoints?.length ? (
 				<p className="text-xs text-muted-foreground">No partial gathering option reduces cash with these choices.</p>
 			) : (
-				<>
-					{highlight && (
-						<div className="space-y-2 rounded-md bg-muted p-3 text-sm" aria-live="polite">
+				highlight && (
+					<div className={cn("space-y-2 rounded-md bg-success/[0.07] p-3 text-sm", syncValue)} aria-live="polite">
+						<p>
 							<strong>
 								Gather {highlight.gathered} more documents to save {usd(highlight.savingsCents)}.
 							</strong>{" "}
-							Cash drops to {usd(highlight.cashCents)} · {periods(highlight.parallelWindows)} of 24 hours.
-							{quantities(highlight)}
-						</div>
-					)}
-					<details>
-						<summary className="cursor-pointer text-xs font-medium">All gathering options</summary>
+							<span className="text-muted-foreground">
+								Cash drops to {usd(highlight.cashCents)} over {periods(highlight.parallelWindows)} of 24 hours.
+							</span>
+						</p>
+						{quantities(highlight)}
+					</div>
+				)
+			)}
+			<div className="flex flex-col gap-3">
+				<SubDisclosure title="Modes and documents to gather">
+					<p className="mb-3 text-xs text-muted-foreground">
+						Daily caps: PVP {GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal{" "}
+						{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel. Saved on this device.
+					</p>
+					<div className="space-y-3">
+						{options.map(([key, group]) => {
+							const filter = filters[key] ?? {};
+							return (
+								<fieldset key={key} className="flex flex-wrap items-center gap-2">
+									<legend className="sr-only">{group.label}</legend>
+									<Toggle
+										indicator
+										className="font-semibold"
+										checked={!filter.disabled}
+										onChange={(value) => setGatheringChoice(key, value)}
+									>
+										{group.label}
+									</Toggle>
+									<span aria-hidden className="mx-1 h-4 w-px bg-border" />
+									{group.keys.map((doc) => (
+										<Toggle
+											key={doc}
+											indicator
+											disabled={filter.disabled}
+											checked={!filter.disabled && !filter.excluded?.includes(doc)}
+											onChange={(value) => setGatheringChoice(key, value, doc)}
+										>
+											{name(doc)}
+										</Toggle>
+									))}
+								</fieldset>
+							);
+						})}
+					</div>
+				</SubDisclosure>
+				{shown?.breakpoints && shown.breakpoints.length > 0 && (
+					<SubDisclosure title="All gathering options">
 						<ol className="max-h-96 space-y-3 overflow-auto text-xs">
-							{current.breakpoints.map((point) => (
-								<li key={point.gathered} className="space-y-1 border-b border-border pb-3 last:border-0">
+							{shown.breakpoints.map((point) => (
+								<li key={point.gathered} className="space-y-1 rounded-md bg-surface-raised/30 p-3">
 									<p className="font-medium">
-										Gather {point.gathered} total · {usd(point.cashCents)} cash · save {usd(point.savingsCents)}
+										Gather {point.gathered} total: {usd(point.cashCents)} cash, save {usd(point.savingsCents)}
 									</p>
 									{quantities(point)}
 									<CurrencyComparison funding={point.funding} />
 									<p className="text-muted-foreground">
-										{periods(point.parallelWindows)} in parallel ·{" "}
+										{periods(point.parallelWindows)} in parallel.{" "}
 										{point.windows
 											.map(
 												(row) =>
 													`${row.profileLabel}: ${periods(row.windows)} (${row.quantity} documents, cap ${row.cap})`,
 											)
-											.join(" · ")}
+											.join("; ")}
 									</p>
 									<p className="text-muted-foreground">{point.remainingClassified} classified needed from packs.</p>
 								</li>
 							))}
 						</ol>
-					</details>
-				</>
-			)}
-		</section>
+					</SubDisclosure>
+				)}
+			</div>
+		</Disclosure>
 	);
 }
