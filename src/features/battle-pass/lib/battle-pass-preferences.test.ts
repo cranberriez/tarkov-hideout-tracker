@@ -51,7 +51,6 @@ test("all shared UI preferences survive edits and reload while retaining unknown
 		"cumulative",
 		"showPossibleProgress",
 		"listMode",
-		"consumeDocs",
 		"showMaps",
 		"documentsOpen",
 	] as const) {
@@ -59,13 +58,11 @@ test("all shared UI preferences survive edits and reload while retaining unknown
 	}
 	const restored = parsePreferences(raw);
 	assert.equal(restored.requestedScope, "all");
-	assert.equal(restored.consumeDocs, true);
 	assert.equal(restored.documentsOpen, true);
 	assert.deepEqual(restored.future, ["retained"]);
 	assert.deepEqual(parsePreferences(JSON.stringify(restored)), restored);
 	const updated = parsePreferences(updatePreference(raw, "showPossibleProgress", false));
 	assert.equal(updated.showPossibleProgress, false);
-	assert.equal(updated.consumeDocs, true);
 	assert.equal(updated.requestedScope, "all");
 	assert.deepEqual(updated.future, ["retained"]);
 });

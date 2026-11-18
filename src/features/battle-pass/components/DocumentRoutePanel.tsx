@@ -9,8 +9,6 @@ import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lucide-react";
 import { RouteSummary } from "./RouteSummary";
-import { DocumentNeedsSummary } from "./DocumentNeedsSummary";
-import type { Costs } from "../lib/battle-pass-model";
 import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
 import { Disclosure } from "./ui/Disclosure";
@@ -25,16 +23,11 @@ export function DocumentRoutePanel({
 	route,
 	enabled,
 	onEnabledChange,
-	costs,
-	scopeLabel,
 }: {
 	inventory: ReturnType<typeof useDocumentInventory>;
 	route: ReturnType<typeof useDocumentRouteController>;
 	enabled: boolean;
 	onEnabledChange: (enabled: boolean) => void;
-	/** Configured costs for the page plan scope, or null when incomplete. */
-	costs: Costs | null;
-	scopeLabel: string;
 }) {
 	const { pages, tiles, documents } = useBattlePassData();
 	const { stored } = useBattlePassSave();
@@ -183,7 +176,9 @@ export function DocumentRoutePanel({
 					)}
 				</>
 			) : (
-				<DocumentNeedsSummary inventory={inventory} costs={costs} scopeLabel={scopeLabel} />
+				<p className="text-sm text-muted-foreground">
+					Enable the optimizer to plan claim order, funding and profile recommendations.
+				</p>
 			)}
 		</section>
 	);

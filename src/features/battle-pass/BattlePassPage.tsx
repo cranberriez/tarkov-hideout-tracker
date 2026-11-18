@@ -47,7 +47,7 @@ function useSpread() {
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { pages, tiles, seasonId, documentKeys } = useBattlePassData();
 	const costSetup = useBattlePassConfiguration(seasonId, tiles);
-	const documentInventory = useDocumentInventory(costSetup.configuration);
+	const documentInventory = useDocumentInventory();
 	const { stored: progress, write } = useBattlePassSave();
 	const [{ listMode, requestedScope, showProfileRecommendations, optimizerEnabled }, setPreference] =
 		useBattlePassPreferences();
@@ -327,8 +327,6 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					route={route}
 					enabled={optimizerEnabled}
 					onEnabledChange={(value) => setPreference("optimizerEnabled", value)}
-					costs={configurationStatus.costs}
-					scopeLabel={scope === "goals" ? "your goals" : "all unclaimed rewards"}
 				/>
 			)}
 			{!listMode && (

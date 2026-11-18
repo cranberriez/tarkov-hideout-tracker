@@ -51,7 +51,7 @@ fully filled slots whose numeric quantities fall short show a red “!” and er
 text there instead. The document-total label remains visible. Empty or partially
 filled slots keep the warning without per-card error text. These notices are
 advisory: editing, Save, navigation and later claims remain available; incomplete
-costs still cannot supply verified plan totals or inventory deductions. Goal and claim actions remain visible but disabled during setup.
+costs still cannot supply verified plan totals. Goal and claim actions remain visible but disabled during setup.
 Cancel asks for confirmation only
 when there are unsaved changes. Claimed rewards need no setup and cannot be edited.
 Previous/Next controls and their Q/E key hints sit below the reward pages.
@@ -83,8 +83,7 @@ The viewer shows configured costs on individual rewards using the original compa
 artwork-and-quantity chips in the player's saved slot order, with hover labels and
 document location menus. Positive whole quantities for recognized saved document
 types stay visible even when the reward is incomplete. Such rewards
-show Costs incomplete; this never makes them eligible for verified totals or
-inventory deductions. Invalid or empty entries remain saved for correction in Setup Costs.
+show Costs incomplete; this never makes them eligible for verified totals. Invalid or empty entries remain saved for correction in Setup Costs.
 The **Docs Breakdown** section shows its current scope below the heading and sits below the reward pages and Previous/Next controls,
 leaving the area above the rewards for inventory and setup.
 A verified plan document breakdown requires valid costs for every unclaimed reward
@@ -101,8 +100,7 @@ character item inventory (including FiR stock); reducing a total preserves FiR
 until non-FiR stock is exhausted. Classified balance and Collect/Use classified
 choices remain shared within the season. The document icons retain location menus.
 
-The compact header holds the title, Use classified, Consume Docs from Inventory,
-and an adjoining, profile-colored PVP/PVE/seasonal button group, wrapping when
+The compact header holds the title, Use classified, and an adjoining, profile-colored PVP/PVE/seasonal button group, wrapping when
 needed. The profile buttons match the 32px height of the other header controls.
 The square arrow beside the title persists expanded/collapsed state in the shared
 `documentInventoryExpanded` preference, defaulting to expanded. Collapsing hides
@@ -117,18 +115,20 @@ ordinary artwork is slightly inset while Classified keeps its compact icon.
 Titles use compact spacing and shorten blueprints to BP & Tech. Owned inputs have
 a border and spacing beneath their labels. Collect controls are flat, borderless,
 and subtly tinted by collection state. The row omits repeated plan totals and
-setup/editing helper text; Need appears only for a positive shortfall from fully
-configured scope costs. Avoided types move their remaining
+setup/editing helper text. With fully configured scope costs, the header shows
+covered and missing totals with a bar (also while collapsed), and each type with
+a requirement shows Need, its shortfall or Covered, and a thin coverage bar. Avoided types move their remaining
 deficit into Classified Need; owned wildcards are allocated once when enabled.
 During cost setup, shortfalls are hidden until the draft is saved or cancelled.
 
-With consumption enabled, newly claimed rewards deduct available ordinary stock
-from the inventory selected in this row, then shared classified stock when Use
-classified is enabled. Every reward in a claim must have valid configured costs;
-otherwise the claim is recorded without any deduction and an explicit message
-explains why. Missing seasonal profiles also skip deductions with a message.
-Repeated claims never spend twice, and unclaiming never refunds documents. Setup
-does not consume documents. The [route optimizer](battle-pass-optimizer.md) can show the recommended claiming profile beneath a reward’s completion control. Select that profile in Document inventory when recording the claim with consumption enabled.
+The **All** button after the profile buttons is a view, not a profile. Each
+ordinary tile shows one owned input per mode (the seasonal input is disabled until
+that character is activated), and the header totals and Need bars use the sum of
+active profiles.
+
+Claiming or unclaiming a reward only records progress; it never changes owned
+document counts, so players keep their numbers up to date themselves. The
+[route optimizer](battle-pass-optimizer.md) can show the recommended claiming profile beneath a reward’s completion control.
 
 Entries persist in `tarkov-battle-pass-costs-{seasonId}-v1`, by stable reward ID,
 shared by all profiles. Each season starts empty and retains its own entries.

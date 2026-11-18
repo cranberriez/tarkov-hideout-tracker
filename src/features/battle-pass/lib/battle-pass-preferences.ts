@@ -6,7 +6,6 @@ export interface BattlePassPreferences {
 	cumulative: boolean;
 	showPossibleProgress: boolean;
 	listMode: boolean;
-	consumeDocs: boolean;
 	showMaps: boolean;
 	documentsOpen: boolean;
 	documentInventoryExpanded: boolean;
@@ -22,7 +21,6 @@ export const defaultPreferences: BattlePassPreferences = {
 	cumulative: false,
 	showPossibleProgress: false,
 	listMode: false,
-	consumeDocs: false,
 	showMaps: false,
 	documentsOpen: false,
 	documentInventoryExpanded: true,

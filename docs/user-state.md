@@ -54,7 +54,7 @@ The battle-pass UI preference `optimizerEnabled` defaults to false across profil
 
 ### Battle pass progress
 
-[useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
+[useBattlePassSave](../src/features/battle-pass/BattlePassSeason.tsx) owns
 `tarkov-battle-pass-{seasonId}-v1`, an independent account-wide save for each
 season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
 `tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
@@ -67,11 +67,9 @@ The owner keeps the active projection synchronized, preserves other profiles and
 does not create missing seasonal characters. Classified balance and collection
 choices still live in the shared pass save. UI edits merge changed fields into the
 latest save, retaining unknown fields and legacy ordinary balances.
-Individual and bulk claims deduct available documents only when Consume Docs from
-Inventory is enabled and every newly claimed reward has valid configured costs.
-The inline row's selected profile supplies ordinary stock; shared classified stock
-is used only when Use classified is enabled. Missing profiles or configuration skip
-deductions and show an explicit message. Unclaiming never refunds stock.
+Individual and bulk claims only record completed reward IDs; they never change
+profile item counts or the classified balance. The retired `consumeDocs` UI
+preference stays in saved preferences but no longer has any effect.
 Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
 Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
 plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups

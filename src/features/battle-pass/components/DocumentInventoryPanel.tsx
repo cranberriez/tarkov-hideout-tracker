@@ -9,7 +9,6 @@ import { coverCosts, type Costs } from "../lib/battle-pass-model";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { DocumentChip } from "./ui/DocumentChip";
 import { Toggle } from "./ui/Toggle";
-import { ConsumeDocumentsToggle } from "./ConsumeDocumentsToggle";
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
 
@@ -44,18 +43,22 @@ export function DocumentInventoryPanel({
 }) {
 	const { documents, documentKeys } = useBattlePassData();
 	const { profiles, selectedProfile, selectProfile, available, progress, preferences, setPreference } = inventory;
+	const { viewAll, availableProfiles } = inventory;
 	const expanded = preferences.documentInventoryExpanded;
 	const panelId = useId();
 	const coverage = costs
 		? coverCosts(
 				costs,
-				selectedProfile.inventory,
+				viewAll ? inventory.combinedInventory : selectedProfile.inventory,
 				progress.classified,
 				preferences.useClassified,
 				progress.avoidedDocuments,
 				documentKeys,
 			)
 		: null;
+	const needed = coverage?.rows.reduce((n, row) => n + row.required, 0) ?? 0;
+	const covered = coverage ? coverage.ownedUsed + coverage.classifiedUsed : 0;
+	const percent = needed ? Math.round((100 * covered) / needed) : 0;
 	return (
 		<section aria-label="Document inventory" className={cn("rounded-lg bg-card p-3 sm:p-4", expanded && "space-y-4")}>
 			<div className="flex flex-wrap items-center justify-between gap-3">
@@ -75,6 +78,18 @@ export function DocumentInventoryPanel({
 						)}
 					</Button>
 					<h2 className="text-sm font-semibold">Document inventory</h2>
+					{coverage && needed > 0 && (
+						<p
+							className="text-sm"
+							aria-label={`${covered} of ${needed} documents covered, ${coverage.missing} missing`}
+						>
+							<strong className="tabular-nums">{covered.toLocaleString()}</strong>
+							<span className="text-muted-foreground"> / {needed.toLocaleString()} covered</span>
+							{coverage.missing > 0 && (
+								<strong className="ml-3 text-warning tabular-nums">{coverage.missing} missing</strong>
+							)}
+						</p>
+					)}
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<Toggle
@@ -85,40 +100,39 @@ export function DocumentInventoryPanel({
 					>
 						Use classified
 					</Toggle>
-					<ConsumeDocumentsToggle
-						checked={preferences.consumeDocs}
-						onChange={(value) => setPreference("consumeDocs", value)}
-					/>
 					<div role="group" aria-label="Document inventory profile" className="inline-flex shrink-0">
-						{profiles.map((profile) => (
-							<Button
-								key={profile.key}
-								size="sm"
-								variant="ghost"
-								className="rounded-none border-0 px-3 first:rounded-l-md last:rounded-r-md"
-								style={{
-									backgroundColor: `color-mix(in srgb, ${profile.color} ${selectedProfile.key === profile.key ? "22%" : "8%"}, transparent)`,
-									color: selectedProfile.key === profile.key ? "var(--foreground)" : undefined,
-									boxShadow: selectedProfile.key === profile.key ? `inset 0 0 0 1px ${profile.color}` : undefined,
-								}}
-								aria-pressed={selectedProfile.key === profile.key}
-								onClick={() => selectProfile(profile.key)}
-							>
-								{profile.label}
-							</Button>
-						))}
+						{[...profiles, { key: "all", label: "All", color: "var(--brand)" }].map((profile) => {
+							const selected = profile.key === "all" ? viewAll : !viewAll && selectedProfile.key === profile.key;
+							return (
+								<Button
+									key={profile.key}
+									size="sm"
+									variant="ghost"
+									className="rounded-none border-0 px-3 first:rounded-l-md last:rounded-r-md"
+									style={{
+										backgroundColor: `color-mix(in srgb, ${profile.color} ${selected ? "22%" : "8%"}, transparent)`,
+										color: selected ? "var(--foreground)" : undefined,
+										boxShadow: selected ? `inset 0 0 0 1px ${profile.color}` : undefined,
+									}}
+									title={profile.key === "all" ? "Combined inventory across every active profile" : undefined}
+									aria-pressed={selected}
+									onClick={() => selectProfile(profile.key)}
+								>
+									{profile.label}
+								</Button>
+							);
+						})}
 					</div>
 				</div>
 			</div>
-			{!available && (
+			{coverage && needed > 0 && (
+				<div aria-hidden className={cn("h-1.5 overflow-hidden rounded-full bg-highlight/10", !expanded && "mt-3")}>
+					<div className="h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
+				</div>
+			)}
+			{!available && !viewAll && (
 				<p role="status" className="text-sm text-warning">
 					Activate this seasonal character in Setup to edit its inventory.
-				</p>
-			)}
-			{expanded && preferences.consumeDocs && (
-				<p className="text-xs text-muted-foreground">
-					Claims deduct available documents from {selectedProfile.label} and, with Use classified enabled, the shared
-					classified balance. All rewards in a claim need configured costs. Unclaiming does not refund documents.
 				</p>
 			)}
 			{/* TODO: Redesign the collapsed document inventory summary before restoring it.
@@ -158,25 +172,57 @@ export function DocumentInventoryPanel({
 								<div className="mx-auto w-[88%]">
 									<DocumentChip doc={doc} inventory />
 								</div>
-								<label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-									Owned
-									<input
-										type="number"
-										min={0}
-										max={99999}
-										step={1}
-										inputMode="numeric"
-										disabled={!available}
-										aria-label={`${selectedProfile.label} ${label} owned`}
-										value={selectedProfile.inventory[doc.key] ?? 0}
-										onChange={(event) => inventory.setOwned(doc.key, Number(event.target.value))}
-										className="h-9 w-full rounded border border-border bg-surface-raised text-center text-sm text-foreground tabular-nums outline-brand disabled:opacity-40"
-									/>
-								</label>
-								{row && row.missing > 0 && (
-									<p className="text-xs text-muted-foreground" aria-label={`${label} still needed`}>
-										Need <strong className="text-foreground tabular-nums">{row.missing}</strong>
-									</p>
+								{viewAll ? (
+									<div className="flex flex-col gap-1 text-xs text-muted-foreground">
+										Owned
+										{profiles.map((profile) => {
+											const active = availableProfiles.some((entry) => entry.key === profile.key);
+											return (
+												<label key={profile.key} className="flex items-center gap-2">
+													<span
+														className="w-9 shrink-0 truncate font-medium"
+														style={{ color: profile.color }}
+														title={profile.label}
+													>
+														{profile.label}
+													</span>
+													<input
+														type="number"
+														min={0}
+														max={99999}
+														step={1}
+														inputMode="numeric"
+														disabled={!active}
+														aria-label={`${profile.label} ${label} owned`}
+														value={profile.inventory[doc.key] ?? 0}
+														onChange={(event) =>
+															inventory.setOwnedFor(profile.key, doc.key, Number(event.target.value))
+														}
+														className="h-7 w-full min-w-0 rounded border border-border bg-surface-raised text-center text-sm text-foreground tabular-nums outline-brand disabled:opacity-40"
+													/>
+												</label>
+											);
+										})}
+									</div>
+								) : (
+									<label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+										Owned
+										<input
+											type="number"
+											min={0}
+											max={99999}
+											step={1}
+											inputMode="numeric"
+											disabled={!available}
+											aria-label={`${selectedProfile.label} ${label} owned`}
+											value={selectedProfile.inventory[doc.key] ?? 0}
+											onChange={(event) => inventory.setOwned(doc.key, Number(event.target.value))}
+											className="h-9 w-full rounded border border-border bg-surface-raised text-center text-sm text-foreground tabular-nums outline-brand disabled:opacity-40"
+										/>
+									</label>
+								)}
+								{row && row.required > 0 && (
+									<NeedMeter label={label} owned={row.used} required={row.required} missing={row.missing} />
 								)}
 								<Button
 									size="xs"
@@ -216,19 +262,54 @@ export function DocumentInventoryPanel({
 								className="h-9 w-full rounded border border-border bg-surface-raised text-center text-sm text-foreground tabular-nums outline-brand"
 							/>
 						</label>
-						{coverage && coverage.classifiedMissing > 0 && (
-							<p className="text-xs text-muted-foreground" aria-label="Classified Docs still needed">
-								Need <strong className="text-foreground tabular-nums">{coverage.classifiedMissing}</strong>
-							</p>
+						{coverage && coverage.classifiedUsed + coverage.classifiedMissing > 0 && (
+							<NeedMeter
+								classified
+								label="Classified Docs"
+								owned={coverage.classifiedUsed}
+								required={coverage.classifiedUsed + coverage.classifiedMissing}
+								missing={coverage.classifiedMissing}
+							/>
 						)}
 					</div>
 				</div>
 			</div>
-			{inventory.notice && (
-				<p role="status" className="text-sm text-warning">
-					{inventory.notice}
-				</p>
-			)}
 		</section>
+	);
+}
+
+/** Need against the plan scope: requirement, shortfall, and a thin coverage bar. */
+function NeedMeter({
+	label,
+	owned,
+	required,
+	missing,
+	classified = false,
+}: {
+	label: string;
+	owned: number;
+	required: number;
+	missing: number;
+	classified?: boolean;
+}) {
+	return (
+		<div className="space-y-1 text-xs" aria-label={`${label}: ${owned} of ${required} needed covered`}>
+			<p className="flex items-baseline justify-between gap-2">
+				<span className="text-muted-foreground">
+					Need <strong className="text-foreground tabular-nums">{required}</strong>
+				</span>
+				{missing > 0 ? (
+					<strong className="text-warning tabular-nums">−{missing}</strong>
+				) : (
+					<strong className="text-success">Covered</strong>
+				)}
+			</p>
+			<div aria-hidden className="h-1 overflow-hidden rounded-full bg-highlight/10">
+				<div
+					className={cn("h-full rounded-full", classified ? "bg-classified" : "bg-brand")}
+					style={{ width: `${Math.min(100, Math.round((100 * owned) / required))}%` }}
+				/>
+			</div>
+		</div>
 	);
 }
