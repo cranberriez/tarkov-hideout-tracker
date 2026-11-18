@@ -327,6 +327,8 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					route={route}
 					enabled={optimizerEnabled}
 					onEnabledChange={(value) => setPreference("optimizerEnabled", value)}
+					costs={configurationStatus.costs}
+					scopeLabel={scope === "goals" ? "your goals" : "all unclaimed rewards"}
 				/>
 			)}
 			{!listMode && (
