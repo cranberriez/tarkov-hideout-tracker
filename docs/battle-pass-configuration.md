@@ -9,9 +9,11 @@ the player's game.
 ## Current read-only overview
 
 The document locations panel above the rewards shows each map's document types,
-with Columns and Table views. Document map opens the maps index with the Documents
-preset; map headings in Columns view open that map with the same preset in the
-currently selected game mode.
+with Grid and Table views. Grid shows one tile per map: the map image fills the
+tile, its name sits top-left, and its document types line the bottom over a dark
+gradient. Document map opens the maps index with the Documents preset; map names
+in Grid view open that map with the same preset in the currently selected game
+mode. Both views end with the Icebreaker/Medical update warning and its sources.
 The square arrow beside the heading collapses the locations content while keeping
 the heading, spawn summary and Document map link available. It starts collapsed
 unless the shared Battle Pass `showMaps` preference records an expanded panel.

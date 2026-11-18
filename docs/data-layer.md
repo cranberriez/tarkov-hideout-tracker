@@ -124,8 +124,8 @@ and EFT Docs Map. Classified documents come from the Expansion Hub and replace
 one required document each; the separate five-for-one ordinary-document exchange
 is not applied by the planner.
 
-The Locations dropdown defaults to one column per map, with the existing map
-preview artwork and square document tiles. Its Table toggle shows the map-overlap
+The Locations dropdown defaults to a grid with one map-image tile per map and its
+document artwork overlaid along the bottom. Its Table toggle shows the map-overlap
 matrix. Both views show seven possible spawns of each relevant type by default,
 five on Factory, and `?` on Icebreaker for unknown counts. These counts represent
 possible spawn locations. Icebreaker Medical document availability comes from
