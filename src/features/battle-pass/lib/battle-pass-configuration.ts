@@ -111,6 +111,31 @@ export function configuredPlan(
 	return { ready, missingIds, costs: ready ? costs : null };
 }
 
+/** Defaults are a separate source selection; custom reward records are never replaced. */
+export function defaultsEnabled(raw: string | null): boolean {
+	return decode(raw).useDefaults === true;
+}
+
+export function setDefaultsEnabled(raw: string | null, enabled: boolean): string {
+	return JSON.stringify({ version: 1, ...decode(raw), useDefaults: enabled });
+}
+
+export function defaultConfiguration(tiles: Tile[]): RewardConfiguration {
+	return Object.fromEntries(
+		tiles.map((tile) => [
+			tile.id,
+			Object.entries(tile.cost).map(([key, quantity]) => ({ key, quantity: String(quantity) })),
+		]),
+	);
+}
+
+export function hasCustomConfiguration(configuration: RewardConfiguration, tiles: Tile[]): boolean {
+	return tiles.some(({ id }) => {
+		const cost = configuration[id];
+		return cost && (!Array.isArray(cost) || cost.some(({ key, quantity }) => key !== "" || quantity !== ""));
+	});
+}
+
 /** Merge only edited rewards into the latest save. Never replace concurrent edits silently. */
 export function mergeConfiguration(raw: string | null, baseline: RewardConfiguration, draft: RewardConfiguration) {
 	const root = decode(raw);

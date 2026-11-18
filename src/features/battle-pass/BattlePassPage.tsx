@@ -5,7 +5,7 @@ import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { addTransitionType, startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSeason } from "@/lib/cfg/seasons";
 import { Button } from "@/components/ui/button";
-import { CircleAlert, CircleCheck, Info, SlidersHorizontal } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, Info, SlidersHorizontal } from "lucide-react";
 import { parseProgress, selectGoalRewards, toggleId, unlockedPages } from "./lib/battle-pass-model";
 import { useBattlePassPreferences } from "./useBattlePassPreferences";
 import { PageNavigation } from "./components/PageNavigation";
@@ -45,7 +45,7 @@ function useSpread() {
 
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { pages, tiles, seasonId, documentKeys, documents } = useBattlePassData();
-	const costSetup = useBattlePassConfiguration(seasonId);
+	const costSetup = useBattlePassConfiguration(seasonId, tiles);
 	const documentInventory = useDocumentInventory(costSetup.configuration);
 	const { stored: progress, write } = useBattlePassSave();
 	const [{ listMode, requestedScope }, setPreference] = useBattlePassPreferences();
@@ -227,6 +227,12 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						<p className="flex items-start gap-2 text-sm">
 							<Info size={16} className="mt-0.5 shrink-0" aria-hidden />
 							The document types required for each reward vary between players.
+							{costSetup.usingDefaults && " (Defaults may be wrong for you.)"}
+						</p>
+					)}
+					{!costSetup.editing && costSetup.error && (
+						<p role="alert" className="text-sm text-danger">
+							{costSetup.error}
 						</p>
 					)}
 				</div>
@@ -240,10 +246,22 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						</Button>
 					</div>
 				) : (
-					<Button variant="solid" size="sm" onClick={costSetup.begin}>
-						<SlidersHorizontal size={14} aria-hidden />
-						Setup Costs
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							variant="soft"
+							size="sm"
+							className="border-transparent hover:border-transparent"
+							aria-pressed={costSetup.usingDefaults}
+							onClick={costSetup.toggleDefaults}
+						>
+							{costSetup.usingDefaults && <Check size={14} aria-hidden />}
+							Use Defaults
+						</Button>
+						<Button variant="solid" size="sm" onClick={costSetup.begin}>
+							<SlidersHorizontal size={14} aria-hidden />
+							Setup Costs
+						</Button>
+					</div>
 				)}
 			</div>
 			{!costSetup.editing && configurationStatus.ready && required.length > 0 && (

@@ -30,7 +30,13 @@ Plan scope and List view use matching 40px-tall rounded, borderless buttons with
 14px labels and a muted surface fill, tinted brand when selected. The Plan label
 also uses 14px text, with a separator before List view.
 An advisory above the rewards explains that document types vary between players;
-its emphasized Setup Costs action opens a local draft. In setup mode the advisory
+its emphasized Setup Costs action opens a local draft. The gray, borderless Use Defaults
+button to its left toggles the cost source, with a checkmark while active. Defaults
+may be incorrect, as the advisory notes when active. Enabling confirms only when
+custom costs or type-count overrides exist. Toggling never overwrites custom
+records: turning defaults off restores them, including partial entries. The source
+selection persists per season. Setup Costs always opens the saved custom draft;
+Save selects custom costs and Cancel retains the previous source. In setup mode the advisory
 replaces the advisory with scope validation and Save/Cancel controls. Validation
 appears only while editing, with foreground text and a red warning or green check
 icon on a normal card surface. A faint matching glow fades out over the left 20%.

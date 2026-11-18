@@ -82,6 +82,12 @@ Quantities are strings so
 partial inputs survive Save. All profiles share each season's configuration;
 other seasons, legacy progress and saved type swaps are untouched. Draft edits
 stay local until Save, and Cancel confirms before discarding changed drafts.
+Use Defaults stores a separate season-scoped `useDefaults` boolean in this save,
+defaulting to false. Enabling it confirms only when custom entries or type-count
+overrides exist. It selects dataset defaults for display, planning and claims
+without changing saved custom records; disabling restores those records exactly.
+Setup Costs always edits the custom records; Save selects custom costs, while
+Cancel retains the prior source. Other seasons, unknown fields and progress remain untouched.
 Save merges edited reward records into the latest value and rejects same-reward
 conflicts. Unknown records and fields are preserved. This save uses the existing
 cross-tab storage subscription and is outside progression backups and Settings

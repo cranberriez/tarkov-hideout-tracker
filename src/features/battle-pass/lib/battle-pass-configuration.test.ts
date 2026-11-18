@@ -4,6 +4,10 @@ import { getBattlePassData } from "../../../lib/battle-pass-seasons";
 import { selectGoalRewards } from "./battle-pass-model";
 import {
 	configuredPlan,
+	defaultConfiguration,
+	defaultsEnabled,
+	setDefaultsEnabled,
+	hasCustomConfiguration,
 	mergeConfiguration,
 	parseConfiguration,
 	rewardCostStatus,
@@ -207,4 +211,47 @@ test("type count edits preserve unrelated saves and reject concurrent edits to t
 		/another tab/,
 	);
 	assert.equal(rewardTypeCount(first, parseConfiguration(raw)[first.id]), Object.keys(first.cost).length);
+});
+
+test("default source toggle preserves custom costs, partial inputs, type counts and unknown records", () => {
+	const custom = { [first.id]: resizeRewardCost([{ key: "medical", quantity: "" }], 5) };
+	const raw = JSON.stringify({ version: 1, future: true, rewards: { ...custom, unknown: { future: "keep" } } });
+	assert.equal(defaultsEnabled(raw), false);
+	assert.equal(defaultsEnabled(null), false);
+	assert.equal(defaultsEnabled('{"useDefaults":"true"}'), false);
+	const enabled = setDefaultsEnabled(raw, true);
+	assert.equal(defaultsEnabled(enabled), true);
+	assert.deepEqual(parseConfiguration(enabled), custom);
+	assert.deepEqual(JSON.parse(enabled).rewards, JSON.parse(raw).rewards);
+	assert.equal(JSON.parse(enabled).future, true);
+	const restored = setDefaultsEnabled(enabled, false);
+	assert.equal(defaultsEnabled(restored), false);
+	assert.deepEqual(parseConfiguration(restored), custom);
+	assert.deepEqual(JSON.parse(restored).rewards, JSON.parse(raw).rewards);
+	// Saving custom edits while defaults are active preserves the source flag until explicitly switched.
+	const baseline = parseConfiguration(enabled);
+	const edited = mergeConfiguration(enabled, baseline, { ...baseline, [first.id]: entries(first) });
+	assert.equal(defaultsEnabled(edited), true);
+	assert.deepEqual(parseConfiguration(setDefaultsEnabled(edited, false))[first.id], entries(first));
+});
+
+test("defaults configure the selected season without becoming saved custom entries", () => {
+	for (const seasonId of ["season-1", "season-2"] as const) {
+		const season = getBattlePassData(seasonId);
+		const defaults = defaultConfiguration(season.tiles);
+		assert.equal(configuredPlan(season.tiles, defaults, season.documentKeys).ready, true);
+		for (const reward of season.tiles) assert.deepEqual(defaults[reward.id], entries(reward));
+	}
+	const enabled = setDefaultsEnabled(null, true);
+	assert.deepEqual(parseConfiguration(enabled), {});
+	assert.deepEqual(parseConfiguration(setDefaultsEnabled(enabled, false)), {});
+});
+
+test("confirmation detection includes partial costs and custom counts, but excludes empty and unknown records", () => {
+	assert.equal(hasCustomConfiguration({}, data.tiles), false);
+	assert.equal(hasCustomConfiguration({ [first.id]: [{ key: "", quantity: "" }] }, data.tiles), false);
+	assert.equal(hasCustomConfiguration({ unknown: entries(first) }, data.tiles), false);
+	assert.equal(hasCustomConfiguration({ [first.id]: entries(first) }, data.tiles), true);
+	assert.equal(hasCustomConfiguration({ [first.id]: [{ key: "medical", quantity: "" }] }, data.tiles), true);
+	assert.equal(hasCustomConfiguration({ [first.id]: resizeRewardCost(undefined, 5) }, data.tiles), true);
 });
