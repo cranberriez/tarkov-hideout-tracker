@@ -19,6 +19,8 @@ import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuratio
 import { documentDisplayName } from "./lib/battle-pass-display";
 import { DocumentIcon } from "./components/ui/DocumentIcon";
 import { LocationsPanel } from "./components/LocationsPanel";
+import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
+import { useDocumentInventory } from "./useDocumentInventory";
 
 function headerControlClass(selected: boolean) {
 	return cn(
@@ -44,6 +46,7 @@ function useSpread() {
 export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { pages, tiles, seasonId, documentKeys, documents } = useBattlePassData();
 	const costSetup = useBattlePassConfiguration(seasonId);
+	const documentInventory = useDocumentInventory(costSetup.configuration);
 	const { stored: progress, write } = useBattlePassSave();
 	const [{ listMode, requestedScope }, setPreference] = useBattlePassPreferences();
 	const scope = progress.goals.length ? requestedScope : "all";
@@ -187,6 +190,10 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					remainingTotal={remainingTotal}
 				/>
 			</section>
+			<DocumentInventoryPanel
+				inventory={documentInventory}
+				costs={costSetup.editing ? null : configurationStatus.costs}
+			/>
 			<LocationsPanel />
 			<div
 				className={cn(
@@ -267,8 +274,8 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						{...{ page, complete, goals, filler, openPages }}
 						costSetup={costSetup}
 						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}
-						toggleTile={(id) => updateIds("completed", (ids) => toggleId(ids, id))}
-						completeTiles={(added) => updateIds("completed", (ids) => [...new Set([...ids, ...added])])}
+						toggleTile={(id) => documentInventory.claim([id], true)}
+						completeTiles={(added) => documentInventory.claim(added)}
 					/>
 				))}
 			</div>

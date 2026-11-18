@@ -7,12 +7,14 @@ export function Toggle({
 	icon,
 	children,
 	title,
+	className,
 }: {
 	checked: boolean;
 	onChange: (checked: boolean) => void;
 	icon?: ReactNode;
 	children: ReactNode;
 	title?: string;
+	className?: string;
 }) {
 	return (
 		<label
@@ -20,6 +22,7 @@ export function Toggle({
 			className={cn(
 				"flex h-8 cursor-pointer items-center gap-2 rounded-md px-2.5 text-xs transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-brand",
 				checked ? "bg-brand/15 text-brand" : "bg-surface-raised/50 text-muted-foreground hover:text-foreground",
+				className,
 			)}
 		>
 			<input

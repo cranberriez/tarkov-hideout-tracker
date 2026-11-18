@@ -56,8 +56,18 @@ season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
 `tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 avoided document types, and document-type swaps (both defaulting to none for older saves).
-The viewer's progression save changes only goal and completion IDs. Individual and bulk completion record claims
-without debiting any inventory, even if the player previously enabled document consumption.
+The inline document inventory edits ordinary counts in the selected PVP/PVE/seasonal
+character's existing item inventory without changing the active character. Permanent
+profile edits use `addItemCountsForProfile`; seasonal edits use `addItemCountsForSeason`.
+The owner keeps the active projection synchronized, preserves other profiles and
+does not create missing seasonal characters. Classified balance and collection
+choices still live in the shared pass save. UI edits merge changed fields into the
+latest save, retaining unknown fields and legacy ordinary balances.
+Individual and bulk claims deduct available documents only when Consume Docs from
+Inventory is enabled and every newly claimed reward has valid configured costs.
+The inline row's selected profile supplies ordinary stock; shared classified stock
+is used only when Use classified is enabled. Missing profiles or configuration skip
+deductions and show an explicit message. Unclaiming never refunds stock.
 Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
 Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
 plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups

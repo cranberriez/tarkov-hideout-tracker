@@ -88,7 +88,7 @@ export function DocumentInventory({
 					step={1}
 					inputMode="numeric"
 					aria-label="Classified Docs owned"
-					className="h-9 w-full min-w-0 rounded bg-special/10 text-center text-sm tabular-nums outline-brand"
+					className="h-9 w-full min-w-0 rounded bg-classified/10 text-center text-sm tabular-nums outline-brand"
 					value={progress.classified}
 					onChange={(event) =>
 						update((current) => ({ ...current, classified: normalizeCount(Number(event.target.value)) }))

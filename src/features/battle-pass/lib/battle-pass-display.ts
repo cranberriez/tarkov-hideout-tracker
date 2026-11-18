@@ -33,7 +33,7 @@ export const documentMarks: Record<string, { color: string; shape: string }> = {
 	user: { color: "#f97316", shape: "pentagon" },
 	medical: { color: "#4ade80", shape: "cross" },
 	technical: { color: "#facc15", shape: "hexagon" },
-	classified: { color: "#fb923c", shape: "star" },
+	classified: { color: "var(--classified)", shape: "star" },
 };
 
 /** Tiles that take an extra grid slot so every page fills a 2x3 grid. */

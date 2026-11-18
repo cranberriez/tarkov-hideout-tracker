@@ -23,7 +23,7 @@ displays Pacific time; Season 2's end remains unannounced.
 
 The banner shows remaining total document costs for Everything and, when goals
 are selected, Goals including the cheapest outstanding prerequisites. Claimed
-rewards are excluded. The orange “Classified only” row shows the alternative
+rewards are excluded. The purple “Classified only” row shows the alternative
 cost of paying entirely with classified documents at 1:1, before owned inventory.
 It does not infer a document-type breakdown or an inventory-adjusted shortfall.
 Plan scope and List view use matching 40px-tall rounded, borderless buttons with
@@ -67,8 +67,37 @@ breakdown requires valid costs for every unclaimed reward in Everything, or ever
 outstanding goal and suggested prerequisite in Goals. The advisory reports how
 many required rewards still need costs; unresolved saved goals also block a
 verified goal breakdown. Total-only planning remains available during partial setup.
-Inventory coverage and per-profile purchase assignments are future consumers of
-verified costs; setup and claims never consume documents.
+The Document inventory row above Document locations edits ordinary documents for
+PVP, PVE, or this pass's seasonal character. Its three profile buttons change only
+the inventory being shown and edited; they never switch the active character.
+Unactivated seasonal inventories cannot be edited. The selector defaults to the
+active profile and stays local to the page. Ordinary counts use the existing
+character item inventory (including FiR stock); reducing a total preserves FiR
+until non-FiR stock is exhausted. Classified balance and Collect/Use classified
+choices remain shared within the season. The document icons retain location menus.
+
+The compact header holds the title, Use classified, Consume Docs from Inventory,
+and an adjoining, profile-colored PVP/PVE/seasonal button group, wrapping when
+needed. The selected profile uses high-contrast foreground text with its profile
+color retained in the border and fill. Classified markers, controls and costs use
+the dedicated purple theme color, distinct from ordinary document colors.
+Document names and their colored shape marks sit above square artwork;
+ordinary artwork is slightly inset while Classified keeps its compact icon.
+Titles use compact spacing and shorten blueprints to BP & Tech. Owned inputs have
+a border and spacing beneath their labels. Collect controls are flat, borderless,
+and subtly tinted by collection state. The row omits repeated plan totals and
+setup/editing helper text; Need appears only for a positive shortfall from fully
+configured scope costs. Avoided types move their remaining
+deficit into Classified Need; owned wildcards are allocated once when enabled.
+During cost setup, shortfalls are hidden until the draft is saved or cancelled.
+
+With consumption enabled, newly claimed rewards deduct available ordinary stock
+from the inventory selected in this row, then shared classified stock when Use
+classified is enabled. Every reward in a claim must have valid configured costs;
+otherwise the claim is recorded without any deduction and an explicit message
+explains why. Missing seasonal profiles also skip deductions with a message.
+Repeated claims never spend twice, and unclaiming never refunds documents. Setup
+does not consume documents. Per-profile purchase assignments remain future work.
 
 Entries persist in `tarkov-battle-pass-costs-{seasonId}-v1`, by stable reward ID,
 shared by all profiles. Each season starts empty and retains its own entries.

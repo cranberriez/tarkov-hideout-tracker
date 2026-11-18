@@ -224,7 +224,7 @@ export function BattlePassOverview({
 													) : (
 														<td>{row.used}</td>
 													)}
-													<td className="text-special">
+													<td className="text-classified">
 														{row.classified || "—"}
 														{row.classifiedMissing > 0 && " (+" + row.classifiedMissing + " needed)"}
 													</td>

@@ -2,6 +2,31 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { useUserStore } from "./useUserStore";
 
+test("targeted permanent inventory edits never select a profile and keep the active projection synchronized", () => {
+	useUserStore.getState().resetAll();
+	useUserStore.getState().setGameMode("KORD");
+	useUserStore.getState().setPlayerLevel(42);
+	const before = useUserStore.getState();
+	before.addItemCountsForProfile("PVP", "document-a", 3, 2);
+	let state = useUserStore.getState();
+	assert.equal(state.gameMode, "KORD");
+	assert.equal(state.selectedSeasonId, before.selectedSeasonId);
+	assert.equal(state.playerLevel, 42);
+	assert.deepEqual(state.itemCounts, before.itemCounts);
+	assert.deepEqual(state.seasonalProfiles, before.seasonalProfiles);
+	assert.deepEqual(state.profiles.PVP.itemCounts["document-a"], { have: 3, haveFir: 2 });
+	assert.deepEqual(state.profiles.PVE, before.profiles.PVE);
+	state.setGameMode("PVP");
+	useUserStore.getState().addItemCountsForProfile("PVP", "document-a", -1, 0);
+	state = useUserStore.getState();
+	assert.deepEqual(state.itemCounts["document-a"], { have: 2, haveFir: 2 });
+	assert.deepEqual(state.profiles.PVP.itemCounts, state.itemCounts);
+	state.addItemCountsForProfile("PVE", "document-a", 7, 0);
+	assert.equal(useUserStore.getState().gameMode, "PVP");
+	assert.deepEqual(useUserStore.getState().itemCounts["document-a"], { have: 2, haveFir: 2 });
+	assert.deepEqual(useUserStore.getState().profiles.PVE.itemCounts["document-a"], { have: 7, haveFir: 0 });
+});
+
 test("keeps character progress isolated when switching profiles", () => {
 	const store = useUserStore.getState();
 	store.resetAll();
