@@ -108,6 +108,7 @@ export function RewardPage({
 								filler={filler.has(tile.id)}
 								editing={costSetup.editing}
 								costErrors={status.errors}
+								costWarning={!status.valid}
 								requiredTypes={status.requiredTypes}
 								onTypeCountChange={
 									costSetup.editing && !complete.has(tile.id)

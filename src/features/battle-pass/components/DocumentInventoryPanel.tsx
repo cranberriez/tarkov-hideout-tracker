@@ -57,7 +57,7 @@ export function DocumentInventoryPanel({
 			)
 		: null;
 	return (
-		<section aria-label="Document inventory" className="space-y-4 rounded-lg bg-card p-3 sm:p-4">
+		<section aria-label="Document inventory" className={cn("rounded-lg bg-card p-3 sm:p-4", expanded && "space-y-4")}>
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-3">
 					<Button
@@ -121,6 +121,7 @@ export function DocumentInventoryPanel({
 					classified balance. All rewards in a claim need configured costs. Unclaiming does not refund documents.
 				</p>
 			)}
+			{/* TODO: Redesign the collapsed document inventory summary before restoring it.
 			{!expanded && (
 				<ul aria-label="Document inventory totals" className="flex flex-wrap gap-2">
 					{[...documents, { key: "classified", name: "Classified Docs" }].map((doc) => {
@@ -144,6 +145,7 @@ export function DocumentInventoryPanel({
 					})}
 				</ul>
 			)}
+			*/}
 			<div id={panelId} hidden={!expanded}>
 				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9">
 					{documents.map((doc) => {

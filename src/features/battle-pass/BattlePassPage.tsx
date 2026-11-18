@@ -198,12 +198,17 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			<div
 				className={cn(
 					"flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3",
-					costSetup.editing ? "bg-card text-foreground" : "bg-warning/10 text-warning",
+					costSetup.editing
+						? "bg-card text-foreground"
+						: configurationStatus.ready && !costSetup.error
+							? "bg-card text-muted-foreground"
+							: "bg-warning/10 text-warning",
 				)}
 				style={
-					costSetup.editing
+					costSetup.editing && (!configurationStatus.ready || costSetup.error)
 						? {
-								backgroundImage: `linear-gradient(90deg, color-mix(in oklab, var(--${configurationStatus.ready && !costSetup.error ? "success" : "danger"}) 14%, transparent), transparent 20%)`,
+								backgroundImage:
+									"linear-gradient(90deg, color-mix(in oklab, var(--danger) 14%, transparent), transparent 20%)",
 							}
 						: undefined
 				}
@@ -264,22 +269,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					</div>
 				)}
 			</div>
-			{!costSetup.editing && configurationStatus.ready && required.length > 0 && (
-				<section aria-label="Plan document costs" className="rounded-lg bg-card p-4">
-					<h2 className="mb-2 text-sm font-semibold">
-						{scope === "goals" ? "Goals and prerequisites" : "Everything"} · document costs
-					</h2>
-					<ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-						{Object.entries(configurationStatus.costs!).map(([key, amount]) => (
-							<li key={key} className="flex items-center gap-2">
-								<DocumentIcon documentKey={key} className="size-7 shrink-0" />
-								<strong className="tabular-nums">{amount}</strong>{" "}
-								{documentDisplayName(documents.find((doc) => doc.key === key)!.name)}
-							</li>
-						))}
-					</ul>
-				</section>
-			)}
+
 			<div
 				className={cn(
 					"grid items-start",
@@ -302,6 +292,22 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				<div className="flex justify-center">
 					<PageNavigation {...{ first, lastStart, go }} />
 				</div>
+			)}
+			{!costSetup.editing && configurationStatus.ready && required.length > 0 && (
+				<section aria-label="Plan document costs" className="rounded-lg bg-card p-4">
+					<h2 className="mb-2 text-sm font-semibold">
+						{scope === "goals" ? "Goals and prerequisites" : "Everything"} · document costs
+					</h2>
+					<ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+						{Object.entries(configurationStatus.costs!).map(([key, amount]) => (
+							<li key={key} className="flex items-center gap-2">
+								<DocumentIcon documentKey={key} className="size-7 shrink-0" />
+								<strong className="tabular-nums">{amount}</strong>{" "}
+								{documentDisplayName(documents.find((doc) => doc.key === key)!.name)}
+							</li>
+						))}
+					</ul>
+				</section>
 			)}
 			{!listMode && (
 				<PageMinimap

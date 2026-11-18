@@ -39,20 +39,25 @@ selection persists per season. Setup Costs always opens the saved custom draft;
 Save selects custom costs and Cancel retains the previous source. In setup mode the advisory
 replaces the advisory with scope validation and Save/Cancel controls. Validation
 appears only while editing, with foreground text and a red warning or green check
-icon on a normal card surface. A faint matching glow fades out over the left 20%.
+icon on a normal card surface. A faint red glow fades out over the left 20% while setup needs attention.
+Once the selected scope is fully configured without errors, the bar uses a neutral
+card background, including outside setup; the setup buttons remain available.
 The reward artwork, bento layout and card dimensions remain unchanged. Compact
 document slots sit inside each unclaimed card beneath its title, filling a row
 with up to six slots before wrapping. Document types are represented by icons
-in the picker, slots, saved costs and summaries. Duplicate types or quantities
-exceeding the reward's total replace its document-total label with an error;
-empty or underfilled slots have no per-card warning text and still leave the
-scope unconfigured. Goal and claim actions remain visible but disabled during setup.
+in the picker, slots, saved costs and summaries. While editing, incomplete unclaimed rewards show the same yellow warning triangle
+as the minimap in their top-left corner. Duplicate types, excess quantities, or
+fully filled slots whose numeric quantities fall short show a red “!” and error
+text there instead. The document-total label remains visible. Empty or partially
+filled slots keep the warning without per-card error text. These notices are
+advisory: editing, Save, navigation and later claims remain available; incomplete
+costs still cannot supply verified plan totals or inventory deductions. Goal and claim actions remain visible but disabled during setup.
 Cancel asks for confirmation only
 when there are unsaved changes. Claimed rewards need no setup and cannot be edited.
 Previous/Next controls and their Q/E key hints sit below the reward pages.
 The fixed minimap stays above page-transition snapshots and document pickers.
 Pages with any unclaimed reward whose costs are not fully set show a yellow warning
-icon in place of their lock/goal icon. Duplicate types or excess quantities take
+icon in place of their lock/goal icon. Duplicate types, excess quantities or fully entered totals that are too low take
 priority and replace that warning with a red “!”, including errors on pages outside
 the visible spread. Claimed rewards do not need setup. Pickers reserve space above
 the minimap; document slots and inline quantity inputs stay 32px tall.
@@ -80,6 +85,8 @@ document location menus. Positive whole quantities for recognized saved document
 types stay visible even when the reward is incomplete. Such rewards
 show Costs incomplete; this never makes them eligible for verified totals or
 inventory deductions. Invalid or empty entries remain saved for correction in Setup Costs.
+The document-cost breakdown sits below the reward pages and Previous/Next controls,
+leaving the area above the rewards for inventory and setup.
 A verified plan document breakdown requires valid costs for every unclaimed reward
 in Everything, or every
 outstanding goal and suggested prerequisite in Goals. The advisory reports how
@@ -98,10 +105,10 @@ The compact header holds the title, Use classified, Consume Docs from Inventory,
 and an adjoining, profile-colored PVP/PVE/seasonal button group, wrapping when
 needed. The profile buttons match the 32px height of the other header controls.
 The square arrow beside the title persists expanded/collapsed state in the shared
-`documentInventoryExpanded` preference, defaulting to expanded. Collapsing replaces
-the editor with small document images, colored type markers and owned counts;
-names, inputs, shortfalls and collection controls are hidden. The header controls
-remain available. Classified icons omit the redundant corner star.
+`documentInventoryExpanded` preference, defaulting to expanded. Collapsing hides
+the document content completely, leaving the header controls available without
+extra spacing below the row. The former
+compact icon/count summary is commented out pending a visual redesign. Classified icons omit the redundant corner star.
 The selected profile uses high-contrast foreground text with its profile
 color retained in the border and fill. Classified markers, controls and costs use
 the dedicated purple theme color, distinct from ordinary document colors.

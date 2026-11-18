@@ -85,7 +85,7 @@ test("configuration requires positive integer quantities, distinct known types a
 	for (const tile of data.tiles) assert.equal(rewardCostStatus(tile, entries(tile), data.documentKeys).valid, true);
 });
 
-test("only duplicate types and exceeding the total produce card errors", () => {
+test("partial entries stay quiet while duplicate types and exceeding the total produce errors", () => {
 	assert.deepEqual(rewardCostStatus(first, undefined, data.documentKeys).errors, []);
 	assert.deepEqual(rewardCostStatus(first, [{ key: "financial", quantity: "" }], data.documentKeys).errors, []);
 	assert.deepEqual(rewardCostStatus(first, [{ key: "financial", quantity: "2" }], data.documentKeys).errors, [
@@ -254,4 +254,25 @@ test("confirmation detection includes partial costs and custom counts, but exclu
 	assert.equal(hasCustomConfiguration({ [first.id]: entries(first) }, data.tiles), true);
 	assert.equal(hasCustomConfiguration({ [first.id]: [{ key: "medical", quantity: "" }] }, data.tiles), true);
 	assert.equal(hasCustomConfiguration({ [first.id]: resizeRewardCost(undefined, 5) }, data.tiles), true);
+});
+
+test("too few documents appears only when every required slot has a type and number", () => {
+	const tile = data.pages.at(-1)!.cells[0];
+	const cost = [{ key: "financial", quantity: "1" }];
+	assert.deepEqual(rewardCostStatus(tile, cost, data.documentKeys).errors, ["Too few documents"]);
+	assert.deepEqual(rewardCostStatus(tile, [{ ...cost[0], quantity: "0" }], data.documentKeys).errors, [
+		"Too few documents",
+	]);
+	for (const partial of [undefined, [], [{ key: "", quantity: "1" }], [{ key: "financial", quantity: "" }]]) {
+		assert.deepEqual(rewardCostStatus(tile, partial, data.documentKeys).errors, []);
+	}
+	const configured = resizeRewardCost(cost, 2);
+	assert.deepEqual(rewardCostStatus(tile, configured, data.documentKeys).errors, []);
+	const filled = { entries: [...cost, { key: "medical", quantity: "1" }], typeCount: 2 };
+	assert.deepEqual(rewardCostStatus(tile, filled, data.documentKeys).errors, ["Too few documents"]);
+	const exact = { ...filled, entries: [...cost, { key: "medical", quantity: String(tile.totalDocumentCost - 1) }] };
+	assert.deepEqual(rewardCostStatus(tile, exact, data.documentKeys).errors, []);
+	// Advisory errors remain savable, without altering their input quantities.
+	const saved = parseConfiguration(mergeConfiguration(null, {}, { [tile.id]: filled }));
+	assert.deepEqual(saved[tile.id], filled);
 });

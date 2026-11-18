@@ -1,4 +1,4 @@
-import { Flag, Check, CircleAlert, Settings } from "lucide-react";
+import { Flag, Check, TriangleAlert, Settings } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { type Tile } from "../lib/battle-pass-model";
 import { Artwork } from "./ui/Artwork";
@@ -22,6 +22,7 @@ export function RewardCard({
 	editor,
 	editing = false,
 	costErrors = [],
+	costWarning = false,
 	costsIncomplete = false,
 	requiredTypes,
 	onTypeCountChange,
@@ -38,6 +39,7 @@ export function RewardCard({
 	editor?: ReactNode;
 	editing?: boolean;
 	costErrors?: string[];
+	costWarning?: boolean;
 	costsIncomplete?: boolean;
 	requiredTypes: number;
 	onTypeCountChange?: (count: number) => void;
@@ -66,7 +68,28 @@ export function RewardCard({
 					/>
 				</div>
 				<div className="contents">
-					{filler && !done && !goal && (
+					{editing && !done && costWarning && (
+						<div
+							role="status"
+							title={costErrors.length ? costErrors.join(" · ") : "Document costs not fully set"}
+							className="absolute left-2 top-2 z-10 flex max-w-[calc(100%-6rem)] items-start gap-1 rounded bg-card/90 px-2 py-1 text-[10px] text-foreground"
+						>
+							{costErrors.length ? (
+								<>
+									<span className="text-xs font-bold leading-none text-danger" aria-hidden>
+										!
+									</span>
+									<span>{costErrors.join(" · ")}</span>
+								</>
+							) : (
+								<>
+									<TriangleAlert size={14} className="shrink-0 text-warning" aria-hidden />
+									<span className="sr-only">Document costs not fully set</span>
+								</>
+							)}
+						</div>
+					)}
+					{filler && !editing && !done && !goal && (
 						<span className="absolute left-2 top-2 rounded bg-info-surface px-2 py-1 text-[10px] font-medium text-info">
 							Suggested
 						</span>
@@ -117,24 +140,13 @@ export function RewardCard({
 									<Settings size={13} aria-hidden />
 								</button>
 							)}
-							{editing && costErrors.length ? (
-								<span
-									role="alert"
-									title={costErrors.join(" · ")}
-									className="flex max-w-[60%] items-start gap-1 text-[10px] text-foreground"
-								>
-									<CircleAlert size={12} className="mt-0.5 shrink-0 text-danger" aria-hidden />
-									{costErrors.join(" · ")}
-								</span>
-							) : (
-								<span
-									title="Total documents"
-									className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-subtle-foreground"
-								>
-									<DocumentIcon className="size-3" />
-									{tile.totalDocumentCost} docs
-								</span>
-							)}
+							<span
+								title="Total documents"
+								className="flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-subtle-foreground"
+							>
+								<DocumentIcon className="size-3" />
+								{tile.totalDocumentCost} docs
+							</span>
 						</div>
 					</div>
 					{adjustingTypes && onTypeCountChange ? (

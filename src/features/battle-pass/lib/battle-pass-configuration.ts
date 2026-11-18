@@ -71,9 +71,12 @@ export function rewardCostStatus(tile: Tile, cost: RewardCost | undefined, docum
 		(sum, entry) => sum + (/^\d+$/.test(entry.quantity) ? Number(entry.quantity) : 0),
 		0,
 	);
+	const allSlotsFilled =
+		slots.length === requiredTypes && slots.every(({ key, quantity }) => key !== "" && /^\d+$/.test(quantity));
 	const errors = [
 		...(duplicateTypes ? ["Duplicate document types"] : []),
 		...(enteredTotal > tile.totalDocumentCost ? ["Too many documents"] : []),
+		...(allSlotsFilled && enteredTotal < tile.totalDocumentCost ? ["Too few documents"] : []),
 	];
 	const valid =
 		slots.length === requiredTypes &&
