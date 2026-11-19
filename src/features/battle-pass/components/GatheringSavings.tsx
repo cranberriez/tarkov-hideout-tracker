@@ -1,18 +1,12 @@
 import { Files } from "lucide-react";
 import { useFundingSettings } from "../useFundingSettings";
 import { CurrencyComparison } from "./CurrencyComparison";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useBattlePassData } from "../BattlePassSeason";
-import {
-	gatheringScenario,
-	type GatheringFilters,
-	type GatheringBreakpoint,
-	type SavingsRoute,
-} from "../lib/gathering-savings-model";
+import { type GatheringFilters, type GatheringBreakpoint, type SavingsRoute } from "../lib/gathering-savings-model";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
 import { Disclosure, SubDisclosure } from "./ui/Disclosure";
-import { Toggle } from "./ui/Toggle";
 import { StepPlan } from "./StepPlan";
 import { syncValue } from "./ui/field";
 import { cn } from "@/lib/utils";
@@ -23,16 +17,7 @@ const periods = (count: number) => `${count} acquisition ${count === 1 ? "period
 
 export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins: number; allowSpecial: boolean }) {
 	const { documents } = useBattlePassData();
-	const { gatheringFilters: filters, setGatheringChoice } = useFundingSettings();
-	const options = useMemo(() => {
-		const groups = new Map<string, { label: string; keys: string[] }>();
-		for (const row of gatheringScenario(props.route, Infinity).quantities) {
-			const group = groups.get(row.profileKey) ?? { label: row.profileLabel, keys: [] };
-			group.keys.push(row.documentKey);
-			groups.set(row.profileKey, group);
-		}
-		return [...groups];
-	}, [props.route]);
+	const { gatheringFilters: filters } = useFundingSettings();
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
 	const quantities = (point: GatheringBreakpoint) => (
 		<ul className="space-y-1 text-xs">
@@ -119,42 +104,10 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 					)
 				)}
 				<div className="flex flex-col gap-3">
-					<SubDisclosure title="Modes and documents to gather">
-						<p className="mb-3 text-xs text-muted-foreground">
-							Daily caps: PVP {GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal{" "}
-							{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel. Saved on this device.
-						</p>
-						<div className="space-y-3">
-							{options.map(([key, group]) => {
-								const filter = filters[key] ?? {};
-								return (
-									<fieldset key={key} className="flex flex-wrap items-center gap-2">
-										<legend className="sr-only">{group.label}</legend>
-										<Toggle
-											indicator
-											className="font-semibold"
-											checked={!filter.disabled}
-											onChange={(value) => setGatheringChoice(key, value)}
-										>
-											{group.label}
-										</Toggle>
-										<span aria-hidden className="mx-1 h-4 w-px bg-border" />
-										{group.keys.map((doc) => (
-											<Toggle
-												key={doc}
-												indicator
-												disabled={filter.disabled}
-												checked={!filter.disabled && !filter.excluded?.includes(doc)}
-												onChange={(value) => setGatheringChoice(key, value, doc)}
-											>
-												{name(doc)}
-											</Toggle>
-										))}
-									</fieldset>
-								);
-							})}
-						</div>
-					</SubDisclosure>
+					<p className="text-xs text-muted-foreground">
+						Choose modes and document types under Route configuration → Advanced. Daily caps: PVP{" "}
+						{GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
+					</p>
 					{shown?.breakpoints && shown.breakpoints.length > 0 && (
 						<SubDisclosure title="All gathering options">
 							<ol className="max-h-96 space-y-3 overflow-auto text-xs">

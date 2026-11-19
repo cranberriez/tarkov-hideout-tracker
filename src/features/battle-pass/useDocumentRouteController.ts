@@ -7,6 +7,8 @@ import type { useDocumentInventory } from "./useDocumentInventory";
 import { useDocumentRoute } from "./useDocumentRoute";
 import { buildDocumentRouteModel, interpretDocumentRoute, type RouteColumns } from "./lib/document-route-model";
 import { useRouteOptions } from "./useRouteOptions";
+import { useFundingSettings } from "./useFundingSettings";
+import { preferOwners } from "./lib/owner-preference-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
 
 /** One active route supplies the breakdown, funding calculator and reward recommendations. */
@@ -87,10 +89,13 @@ export function useDocumentRouteController(
 	// An adopted alternative lasts until any route input changes or the page reloads.
 	const [adopted, setAdopted] = useState<{ request: typeof request; columns: RouteColumns } | null>(null);
 	const adoptedColumns = base && adopted?.request === request ? adopted.columns : null;
-	const result = useMemo(
-		() => (adoptedColumns ? interpretDocumentRoute(request, adoptedColumns) : baseResult),
-		[adoptedColumns, request, baseResult],
-	);
+	const { preferredMode, gatheringFilters } = useFundingSettings();
+	// Preferred mode first, skipped (gathering turned off) modes last.
+	const result = useMemo(() => {
+		const route = adoptedColumns ? interpretDocumentRoute(request, adoptedColumns) : baseResult;
+		if (typeof route === "string") return route;
+		return preferOwners(request, route, (key) => (key === preferredMode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1));
+	}, [adoptedColumns, request, baseResult, preferredMode, gatheringFilters]);
 	const lastRelevantPage =
 		selectedGoal === "finish" || selectedGoal === "owned"
 			? pages.length - 1

@@ -12,6 +12,7 @@ import { RouteSummary } from "./RouteSummary";
 import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
 import { RouteOptions } from "./RouteOptions";
+import { ModePreference } from "./ModePreference";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
@@ -148,6 +149,10 @@ export function DocumentRoutePanel({
 							</div>
 							<FundingInputs />
 						</div>
+						<ModePreference
+							profiles={allProfiles ? inventory.availableProfiles : [inventory.selectedProfile]}
+							route={shownRoute}
+						/>
 						{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
 							<div className="space-y-1 text-xs">
 								{selectedGoal === "finish" && !buyAll && (

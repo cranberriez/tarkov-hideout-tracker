@@ -151,7 +151,6 @@ export type DocumentRouteRequest = ReturnType<typeof buildDocumentRouteModel>;
 
 export function interpretDocumentRoute(request: DocumentRouteRequest, columns: RouteColumns) {
 	const value = (key: string) => Math.max(0, Math.round(columns[key]?.Primal ?? 0));
-	const stock: Costs = {};
 	const claims = request.rewards.flatMap(({ tile, page }, i) => {
 		if (!value(`s_${i}`)) return [];
 		const owner = request.input.profiles.find((_, p) => value(`x_${i}_${p}`));
@@ -197,6 +196,29 @@ export function interpretDocumentRoute(request: DocumentRouteRequest, columns: R
 			coins.get(b.rewardId)! - coins.get(a.rewardId)! ||
 			a.rewardId.localeCompare(b.rewardId),
 	);
+	return replayClaims(request, claims);
+}
+
+/** Replays claims in the given order and with the given owners: ordinary
+ * documents first, then the shared classified balance, then purchases. */
+export function replayClaims(
+	request: DocumentRouteRequest,
+	ordered: {
+		rewardId: string;
+		profileKey: string;
+		profileLabel: string;
+		page: number;
+		cost: Costs;
+	}[],
+) {
+	const stock: Costs = {};
+	const claims = ordered.map((claim) => ({
+		...claim,
+		ordinaryUsed: {} as Costs,
+		classifiedUsed: 0,
+		additionalClassified: 0,
+		possibleNow: false,
+	}));
 	const inventory = new Map(
 		request.input.profiles.map((profile) => [
 			profile.key,
@@ -220,8 +242,7 @@ export function interpretDocumentRoute(request: DocumentRouteRequest, columns: R
 		classified -= claim.classifiedUsed;
 		claim.additionalClassified = shortfall - claim.classifiedUsed;
 	}
-	completed.clear();
-	for (const id of request.input.completedIds) completed.add(id);
+	const completed = new Set(request.input.completedIds);
 	let accessiblePrefix = true;
 	for (const claim of claims) {
 		const pageIndex = request.input.pages.findIndex((page) => page.num === claim.page);
