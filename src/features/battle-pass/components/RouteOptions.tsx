@@ -43,7 +43,7 @@ function marginalValue(option: RouteOption, previous: RouteOption | undefined) {
 /** Viable claim routes and TarCoin purchases that trade checkout against TarCoins left after the pass. */
 export function RouteOptions() {
 	const plan = useBattlePassPlanContext();
-	const { alternatives: ready, adoptedIndex, adoptRoute, expandedRoutes: expanded } = plan;
+	const { alternatives: ready, adoptedIndex, adoptRoute, expandedRoutes: expanded, cheapest, routePicked } = plan;
 	const toggle = plan.setRouteExpanded;
 	// Routes with their details open; collapsed by default, reset when routes re-solve.
 	const [open, setOpen] = useState<{ ready: typeof ready; routes: number[] }>({ ready: null, routes: [] });
@@ -72,9 +72,12 @@ export function RouteOptions() {
 			}
 		>
 			<p className="text-xs text-muted-foreground">
-				Each route lists TarCoin purchases worth considering, up to {usd(ROUTE_OPTION_CASH_WINDOW_CENTS)} above its
-				minimum. Show more options adds the nearest single larger pack. Differences compare with the cheapest checkout
-				for the optimizer&apos;s route. Routes and purchases that cost more and leave fewer TarCoins are hidden.
+				The active route is the cheapest checkout when every route gathers the same amount
+				{cheapest ? ` (${cheapest.gathering} documents)` : ""}; ties gather less, then leave more TarCoins. Each route
+				lists TarCoin purchases worth considering, up to {usd(ROUTE_OPTION_CASH_WINDOW_CENTS)} above its minimum,
+				without gathering. Show more options adds the nearest single larger pack. Differences compare with the cheapest
+				checkout for the fewest-documents route. Routes and purchases that cost more and leave fewer TarCoins are
+				hidden.
 			</p>
 			{ready && (
 				<ol className={cn("space-y-3", syncValue)}>
@@ -88,7 +91,15 @@ export function RouteOptions() {
 							>
 								<div className="flex flex-wrap items-start justify-between gap-2">
 									<div className="min-w-0 space-y-1">
-										<p className="font-semibold">{routeIndex === 0 ? "Optimizer route" : "Alternative route"}</p>
+										<p className="flex flex-wrap items-center gap-2 font-semibold">
+											{routeIndex === 0 ? "Fewest documents" : "Alternative route"}
+											{cheapest?.index === routeIndex && (
+												<span className="rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+													Lowest checkout
+													{cheapest.savingsCents > 0 && ` · saves ${usd(cheapest.savingsCents)}`}
+												</span>
+											)}
+										</p>
 										{swaps.map((swap) => (
 											<p key={swap.page} className="text-xs">
 												Page {swap.page}: claim {names(swap.claim)}
@@ -229,9 +240,18 @@ export function RouteOptions() {
 					})}
 				</ol>
 			)}
-			{ready && activeIndex > 0 && (
-				<p className="text-xs text-muted-foreground">
-					Claim markers and funding follow the chosen route until a route setting changes or the page reloads.
+			{ready && routePicked && (
+				<p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+					Claim markers and funding follow the route you picked until a route setting changes or the page reloads.
+					{cheapest && cheapest.index !== activeIndex && (
+						<button
+							type="button"
+							onClick={plan.pickCheapestRoute}
+							className="cursor-pointer text-brand underline-offset-2 hover:underline"
+						>
+							Use the cheapest route
+						</button>
+					)}
 				</p>
 			)}
 		</Disclosure>
