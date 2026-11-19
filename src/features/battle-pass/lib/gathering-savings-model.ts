@@ -35,8 +35,11 @@ export function gatheringScenario(
 	let classified = route.claims.reduce((sum, claim) => sum + claim.classifiedUsed, 0);
 	const quantities: GatheringQuantity[] = [];
 	const coins = new Map(route.selected.map((tile) => [tile.id, rewardTarCoins(tile)]));
+	const gatheredByClaim: GatheringQuantity[][] = [];
 	const claims = route.claims.map((claim) => {
 		let shortfall = 0;
+		const gatheredHere: GatheringQuantity[] = [];
+		gatheredByClaim.push(gatheredHere);
 		for (const [documentKey, cost] of Object.entries(claim.cost)) {
 			const missing = Math.max(0, cost - (claim.ordinaryUsed[documentKey] ?? 0));
 			const filter = filters[claim.profileKey];
@@ -48,6 +51,7 @@ export function gatheringScenario(
 			remaining -= quantity;
 			shortfall += missing - quantity;
 			if (quantity) {
+				gatheredHere.push({ profileKey: claim.profileKey, profileLabel: claim.profileLabel, documentKey, quantity });
 				const existing = quantities.find(
 					(row) => row.profileKey === claim.profileKey && row.documentKey === documentKey,
 				);
@@ -64,7 +68,7 @@ export function gatheringScenario(
 			tarCoins: coins.get(claim.rewardId) ?? 0,
 		};
 	});
-	return { claims, quantities };
+	return { claims, quantities, gatheredByClaim };
 }
 
 /** Matching the earliest eligible shortages first minimizes every prefix deficit

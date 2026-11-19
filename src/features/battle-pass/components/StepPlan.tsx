@@ -39,13 +39,13 @@ export function StepPlan({
 	const gathered = point?.gathered ?? 0;
 	const flow = useMemo(() => {
 		try {
-			const { claims } = gatheringScenario(route, gathered, filters);
+			const { claims, gatheredByClaim } = gatheringScenario(route, gathered, filters);
 			const plan = optimizeRouteFunding(claims, startingTarCoins, allowSpecial);
-			return purchaseFlow(plan, point?.quantities ?? []);
+			return purchaseFlow(plan, claims, startingTarCoins, gatheredByClaim);
 		} catch {
 			return null;
 		}
-	}, [route, gathered, filters, startingTarCoins, allowSpecial, point]);
+	}, [route, gathered, filters, startingTarCoins, allowSpecial]);
 	const rewardName = (claim: number) => {
 		const id = route.claims[claim - 1]?.rewardId;
 		return route.selected.find((tile) => tile.id === id)?.displayName ?? "";
@@ -120,10 +120,11 @@ function StepBody({
 		case "tarcoins":
 			return (
 				<>
-					<p className="text-sm font-semibold">Buy TarCoins</p>
+					<p className="text-sm font-semibold">{step.carryover ? "Buy TarCoins to keep" : "Buy TarCoins"}</p>
+					{step.carryover && <p className="text-muted-foreground">Part of the purchase, left after the pass.</p>}
 					<ul className="text-muted-foreground">
-						{step.receipt.map((pack) => (
-							<li key={pack.tarCoins} className="flex items-center">
+						{step.packs.map((pack) => (
+							<li key={`${pack.tarCoins}:${pack.special}`} className="flex items-center">
 								{pack.count} × {pack.tarCoins.toLocaleString()}
 								<TarCoin />
 								{pack.special && "(one-time)"}
