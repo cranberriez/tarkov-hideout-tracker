@@ -3,7 +3,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { rewardCostStatus, type RewardConfiguration } from "./lib/battle-pass-configuration";
-import { buildDocumentRouteModel, type RouteColumns } from "./lib/document-route-model";
+import { buildDocumentRouteModel, replayClaims, type RouteColumns } from "./lib/document-route-model";
 import { compareCurrencyBundles, optimizeRouteFunding } from "./lib/funding-model";
 import { DAILY_HEADROOM } from "./lib/gathering-caps";
 import {
@@ -21,6 +21,15 @@ import type { useDocumentInventory } from "./useDocumentInventory";
 import { CALCULATING_ROUTE, useDocumentRoute } from "./useDocumentRoute";
 import { useFundingSettings } from "./useFundingSettings";
 import { useRouteOptions } from "./useRouteOptions";
+import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
+import {
+	destinationInput,
+	lockedRouteStatus,
+	parseSavedRoute,
+	savedRouteKey,
+	updateSavedRoute,
+	type RouteSettings,
+} from "./lib/saved-route-model";
 
 type Route = SavingsRoute;
 type CashFreePlan = ReturnType<typeof cashFreeGatheringPlan>;
@@ -76,10 +85,19 @@ export function useBattlePassPlan(
 	const settings = useFundingSettings();
 	const { startingTarCoins, allowSpecial, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget } = settings;
 
-	// Route settings (session only).
-	const [destination, setDestination] = useState("finish");
-	const [buyAll, setBuyAll] = useState(false);
-	const [allProfiles, setAllProfiles] = useState(true);
+	// Route settings and the saved plan, per season and shared by every profile.
+	const [savedRaw, writeSaved] = useStoredProfitValue(savedRouteKey(seasonId));
+	const saved = useMemo(() => parseSavedRoute(savedRaw), [savedRaw]);
+	// Reconfiguring shows the editable configuration; the saved plan stays until replaced or discarded.
+	const [reconfiguring, setReconfiguring] = useState(false);
+	const locked = reconfiguring ? null : saved.locked;
+	const { destination, buyAll, allProfiles } = locked ?? saved.settings;
+	const setSetting = (change: Partial<RouteSettings>) =>
+		writeSaved((current) =>
+			updateSavedRoute(current, { settings: { ...parseSavedRoute(current).settings, ...change } }),
+		);
+	const useClassified = locked ? locked.useClassified : inventory.preferences.useClassified;
+	const replaying = !!locked;
 	const destinationIds = [...new Set([...stored.goals, ...(pages.at(-1)?.cells.map((tile) => tile.id) ?? [])])];
 	const selectedGoal =
 		destination === "owned"
@@ -105,21 +123,16 @@ export function useBattlePassPlan(
 		}));
 		return {
 			pages: configuredPages,
-			profiles: allProfiles
-				? inventory.profiles.filter((profile) => profile.key !== seasonId || seasonalAvailable)
-				: [inventory.selectedProfile],
+			// A saved plan names its own owners, so switching the selected profile cannot break it.
+			profiles:
+				allProfiles || replaying
+					? inventory.profiles.filter((profile) => profile.key !== seasonId || seasonalAvailable)
+					: [inventory.selectedProfile],
 			completedIds: stored.completed,
-			goalIds:
-				selectedGoal === "finish" || selectedGoal === "owned"
-					? []
-					: selectedGoal === "goals"
-						? stored.goals
-						: [selectedGoal],
-			finishSeason: selectedGoal === "finish",
-			buyAll: selectedGoal === "owned" ? false : buyAll,
-			mostRewardsNow: selectedGoal === "owned",
+			// A saved plan replays against every page, whatever its destination.
+			...destinationInput(replaying ? "finish" : selectedGoal, buyAll, stored.goals),
 			classified: stored.classified,
-			useClassified: inventory.preferences.useClassified,
+			useClassified,
 			invalidRewardIds,
 		};
 	}, [
@@ -132,7 +145,8 @@ export function useBattlePassPlan(
 		stored.completed,
 		selectedGoal,
 		buyAll,
-		inventory.preferences.useClassified,
+		useClassified,
+		replaying,
 		stored.classified,
 		stored.goals,
 		seasonId,
@@ -155,7 +169,42 @@ export function useBattlePassPlan(
 	// Route request → solved route → alternative routes (HiGHS workers). Owner
 	// preference and pricing never re-solve.
 	const request = useMemo(() => buildDocumentRouteModel(input), [input]);
-	const solving = enabled && (allProfiles || inventory.available);
+	// A saved plan replays its own claims, owners and order against current
+	// progress and inventory; it never runs the solver.
+	const lockedStatus = useMemo(
+		() =>
+			locked
+				? lockedRouteStatus(
+						locked,
+						pages,
+						input.profiles.map((profile) => profile.key),
+						stored.completed,
+					)
+				: null,
+		[locked, pages, input.profiles, stored.completed],
+	);
+	const lockedRoute = useMemo(() => {
+		if (lockedStatus?.kind !== "ok") return null;
+		try {
+			return replayClaims(
+				request,
+				lockedStatus.remaining.map((claim) => {
+					const reward = request.rewards.find((entry) => entry.tile.id === claim.rewardId)!;
+					const profile = input.profiles.find((entry) => entry.key === claim.profileKey)!;
+					return {
+						rewardId: claim.rewardId,
+						profileKey: profile.key,
+						profileLabel: profile.label,
+						page: reward.page,
+						cost: reward.tile.cost,
+					};
+				}),
+			);
+		} catch {
+			return null;
+		}
+	}, [lockedStatus, request, input.profiles]);
+	const solving = enabled && !locked && (allProfiles || inventory.available);
 	const solved = useDocumentRoute(request, solving);
 	const base = typeof solved === "string" ? null : solved;
 	const candidates = useRouteOptions(request, base, solving && !input.mostRewardsNow);
@@ -185,8 +234,15 @@ export function useBattlePassPlan(
 			? alternatives.findIndex((alternative) => alternative.columns === adopted.columns)
 			: -1;
 	/** The active route, or a message while it cannot be shown. */
-	const result: Route | string =
-		typeof solved === "string" ? solved : adoptedIndex >= 0 ? alternatives![adoptedIndex].route : preferredBase!;
+	const result: Route | string = locked
+		? lockedStatus?.kind === "broken"
+			? lockedStatus.reason
+			: (lockedRoute ?? "Could not replay the saved plan. Re-optimize to plan again.")
+		: typeof solved === "string"
+			? solved
+			: adoptedIndex >= 0
+				? alternatives![adoptedIndex].route
+				: preferredBase!;
 	const ready = typeof result !== "string";
 	const calculating = result === CALCULATING_ROUTE;
 	// Keep the last route on screen during recalculation so the page does not collapse and jump.
@@ -238,9 +294,15 @@ export function useBattlePassPlan(
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
 	const recommended = breakpoints.find((point) => point.savingsCents >= 499) ?? breakpoints.at(-1);
+	// A saved plan gathers what is left of its target: documents acquired since
+	// saving count toward it, and the largest breakpoint within the remainder
+	// prices the same as gathering exactly that many.
+	const lockedGathering =
+		locked && lockedRoute ? Math.max(0, locked.gathering - (locked.shortfall - lockedRoute.additionalClassified)) : 0;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
-	const selected =
-		gatheringTarget === 0
+	const selected = locked
+		? breakpoints.findLast((point) => point.gathered <= lockedGathering)
+		: gatheringTarget === 0
 			? undefined
 			: (breakpoints.find((point) => point.gathered === gatheringTarget) ?? recommended);
 	const first = breakpoints[0];
@@ -277,6 +339,24 @@ export function useBattlePassPlan(
 	/** The route the step plan describes (the worker's route while it recalculates). */
 	const flowRoute = selected && shownInput ? shownInput.route : route;
 
+	const canSave = !locked && ready && !syncing && !!shown && current;
+	const savePlan = () => {
+		if (!canSave || typeof result === "string") return;
+		const plan = {
+			destination: selectedGoal,
+			buyAll,
+			allProfiles,
+			useClassified,
+			savedAt: new Date().toISOString(),
+			claims: result.claims.map((claim) => ({ rewardId: claim.rewardId, profileKey: claim.profileKey })),
+			gathering: selected?.gathered ?? 0,
+			shortfall: result.additionalClassified,
+			completedAtSave: stored.completed,
+		};
+		writeSaved((raw) => updateSavedRoute(raw, { locked: plan }));
+		setReconfiguring(false);
+	};
+
 	return {
 		settings,
 		// Route settings
@@ -284,9 +364,37 @@ export function useBattlePassPlan(
 		destinationIds,
 		buyAll,
 		allProfiles,
-		setDestination,
-		setBuyAll,
-		setAllProfiles,
+		setDestination: (value: string) => setSetting({ destination: value }),
+		setBuyAll: (value: boolean) => setSetting({ buyAll: value }),
+		setAllProfiles: (value: boolean) => setSetting({ allProfiles: value }),
+		// Saved plan
+		/** The saved plan being followed, or null while configuring. */
+		locked,
+		/** A saved plan exists, even while reconfiguring it. */
+		hasSavedPlan: !!saved.locked,
+		reconfiguring,
+		lockedStatus,
+		/** Documents still to gather under the saved plan. */
+		lockedGathering,
+		canSave,
+		savePlan,
+		/** Edit the configuration, starting from the saved plan's settings. */
+		reconfigure: () => {
+			if (saved.locked) {
+				const { destination, buyAll, allProfiles } = saved.locked;
+				setSetting({ destination, buyAll, allProfiles });
+				inventory.setPreference("useClassified", saved.locked.useClassified);
+				settings.setGatheringTarget(saved.locked.gathering);
+			}
+			setReconfiguring(true);
+		},
+		/** Return to the saved plan without changes. */
+		cancelReconfigure: () => setReconfiguring(false),
+		/** Forget the saved plan and keep configuring. */
+		discardPlan: () => {
+			writeSaved((raw) => updateSavedRoute(raw, { locked: null }));
+			setReconfiguring(false);
+		},
 		incompleteCount,
 		/** Profiles the route may claim with. */
 		profiles: allProfiles ? inventory.availableProfiles : [inventory.selectedProfile],
@@ -297,7 +405,7 @@ export function useBattlePassPlan(
 		calculating,
 		// Route options
 		/** "off" when alternatives are not compared (no route model or most rewards now). */
-		optionsStatus: candidates === null ? "off" : Array.isArray(candidates) ? "ready" : "calculating",
+		optionsStatus: locked || candidates === null ? "off" : Array.isArray(candidates) ? "ready" : "calculating",
 		alternatives,
 		adoptedIndex,
 		adoptRoute: (columns: RouteColumns | null) => setAdopted(columns ? { request, columns } : null),

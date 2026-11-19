@@ -14,6 +14,13 @@ import { flatField } from "./ui/field";
 type Tab = "presets" | "goals";
 const PRESETS = ["finish", "owned", "goals"] as const;
 
+/** Labels and icons for the preset destinations, shared with the saved-plan summary. */
+export const DESTINATION_PRESETS = {
+	finish: { label: "Finish the season", Icon: Flag },
+	owned: { label: "Most rewards with owned documents", Icon: PackageCheck },
+	goals: { label: "All saved goals", Icon: Star },
+} as const;
+
 /** Destination selector: a trigger plus a popover with preset and goal tabs. */
 export function DestinationPicker() {
 	const { pages, tiles } = useBattlePassData();
@@ -58,19 +65,19 @@ export function DestinationPicker() {
 	}[] = [
 		{
 			value: "finish",
-			label: "Finish the season",
+			label: DESTINATION_PRESETS.finish.label,
 			description: "Claim every reward on the final page, plus the pages needed to unlock it.",
 			icon: <Flag className="size-4" aria-hidden />,
 		},
 		{
 			value: "owned",
-			label: "Most rewards with owned documents",
+			label: DESTINATION_PRESETS.owned.label,
 			description: "Claim as many rewards as the documents you already have allow.",
 			icon: <PackageCheck className="size-4" aria-hidden />,
 		},
 		{
 			value: "goals",
-			label: "All saved goals",
+			label: DESTINATION_PRESETS.goals.label,
 			description: goalCount
 				? `Reach all ${goalCount} ${goalCount === 1 ? "reward" : "rewards"} marked as goals.`
 				: "Mark rewards as goals on the pass to use this.",

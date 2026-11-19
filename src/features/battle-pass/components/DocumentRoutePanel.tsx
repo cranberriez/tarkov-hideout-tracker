@@ -17,6 +17,7 @@ import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
 import { DestinationPicker } from "./DestinationPicker";
+import { SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
@@ -46,15 +47,21 @@ export function DocumentRoutePanel({
 		setBuyAll,
 		setAllProfiles,
 		incompleteCount,
+		locked,
+		lockedStatus,
 	} = useBattlePassPlanContext();
 	const ready = typeof result !== "string";
-	const state = ready
-		? incompleteCount > 0
-			? { tone: "warning", label: "Partial", Icon: CircleAlert }
-			: { tone: "success", label: "Ready", Icon: CircleCheck }
-		: calculating
-			? { tone: "muted", label: "Calculating", Icon: LoaderCircle }
-			: { tone: "warning", label: "Needs setup", Icon: CircleAlert };
+	const state = locked
+		? lockedStatus?.kind === "broken" || !ready
+			? { tone: "warning", label: "Needs re-optimizing", Icon: CircleAlert }
+			: { tone: "success", label: "Saved", Icon: CircleCheck }
+		: ready
+			? incompleteCount > 0
+				? { tone: "warning", label: "Partial", Icon: CircleAlert }
+				: { tone: "success", label: "Ready", Icon: CircleCheck }
+			: calculating
+				? { tone: "muted", label: "Calculating", Icon: LoaderCircle }
+				: { tone: "warning", label: "Needs setup", Icon: CircleAlert };
 	return (
 		<section aria-labelledby="docs-breakdown-heading" className="space-y-4 rounded-lg bg-card p-3 sm:p-5">
 			<div className="flex flex-wrap items-center justify-between gap-3">
@@ -77,7 +84,7 @@ export function DocumentRoutePanel({
 					>
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<h3 id="route-config-heading" className="text-base font-semibold">
-								Route configuration
+								{locked ? "Saved plan" : "Route configuration"}
 							</h3>
 							<span
 								role="status"
@@ -92,56 +99,63 @@ export function DocumentRoutePanel({
 								{state.label}
 							</span>
 						</div>
-						<div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-							<div className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
-								<span>Destination</span>
-								<DestinationPicker />
-								{selectedGoal === "finish" && !buyAll && (
-									<span className="font-normal">Includes the final page and its prerequisites.</span>
+						{locked ? (
+							<SavedPlanSummary />
+						) : (
+							<>
+								<div className="flex flex-wrap items-start gap-x-6 gap-y-5">
+									<div className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
+										<span>Destination</span>
+										<DestinationPicker />
+										{selectedGoal === "finish" && !buyAll && (
+											<span className="font-normal">Includes the final page and its prerequisites.</span>
+										)}
+									</div>
+									{selectedGoal !== "owned" && (
+										<div className={fieldLabel}>
+											<span>Rewards</span>
+											<Segmented
+												label="Rewards"
+												value={buyAll ? "all" : "required"}
+												onChange={(value) => setBuyAll(value === "all")}
+												options={[
+													{ value: "required", label: "Required" },
+													{ value: "all", label: "All through destination" },
+												]}
+											/>
+										</div>
+									)}
+									<div className={fieldLabel}>
+										<span>Inventory</span>
+										<div className="flex flex-wrap gap-2">
+											<Toggle indicator className="h-9 text-sm" checked={allProfiles} onChange={setAllProfiles}>
+												All profiles
+											</Toggle>
+											<Toggle
+												indicator
+												className="h-9 text-sm"
+												checked={inventory.preferences.useClassified}
+												onChange={(value) => inventory.setPreference("useClassified", value)}
+											>
+												Use classified
+											</Toggle>
+										</div>
+									</div>
+									<FundingInputs />
+								</div>
+								<ModePreference />
+								<GatheringTargetPicker />
+								{incompleteCount > 0 && (
+									<p className="text-xs text-warning">
+										{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
+										{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards
+										are included.
+									</p>
 								)}
-							</div>
-							{selectedGoal !== "owned" && (
-								<div className={fieldLabel}>
-									<span>Rewards</span>
-									<Segmented
-										label="Rewards"
-										value={buyAll ? "all" : "required"}
-										onChange={(value) => setBuyAll(value === "all")}
-										options={[
-											{ value: "required", label: "Required" },
-											{ value: "all", label: "All through destination" },
-										]}
-									/>
-								</div>
-							)}
-							<div className={fieldLabel}>
-								<span>Inventory</span>
-								<div className="flex flex-wrap gap-2">
-									<Toggle indicator className="h-9 text-sm" checked={allProfiles} onChange={setAllProfiles}>
-										All profiles
-									</Toggle>
-									<Toggle
-										indicator
-										className="h-9 text-sm"
-										checked={inventory.preferences.useClassified}
-										onChange={(value) => inventory.setPreference("useClassified", value)}
-									>
-										Use classified
-									</Toggle>
-								</div>
-							</div>
-							<FundingInputs />
-						</div>
-						<ModePreference />
-						<GatheringTargetPicker />
-						{incompleteCount > 0 && (
-							<p className="text-xs text-warning">
-								{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
-								{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards are
-								included.
-							</p>
+								<GatheringAdvanced />
+								<SavePlanBar />
+							</>
 						)}
-						<GatheringAdvanced />
 					</section>
 					{shownRoute ? (
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
