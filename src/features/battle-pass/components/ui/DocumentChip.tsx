@@ -57,6 +57,9 @@ export function DocumentChip({
 	const displayName = documentDisplayName(doc.name);
 	const maps = mapNames[doc.key] ?? [];
 	const changedFrom = original ? `Changed from ${documentDisplayName(original)}` : undefined;
+	// Reward costs: a fixed square with the amount and type mark on the artwork.
+	const compact = amount !== undefined && !large;
+	const artSize = large ? "h-14 w-14" : compact ? "h-[50px] w-[50px]" : "h-11 w-11";
 	return (
 		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
@@ -76,6 +79,7 @@ export function DocumentChip({
 									placement.end && styles.end,
 									amount === undefined && styles.documentOnly,
 									large && styles.large,
+									compact && styles.compact,
 								)
 					}
 				>
@@ -96,22 +100,40 @@ export function DocumentChip({
 					) : (
 						<span className={styles.chipInner}>
 							<span className={cn(styles.face, "items-center")}>
-								<span className={cn("relative shrink-0", large ? "h-14 w-14" : "h-11 w-11")}>
+								<span className={cn("relative shrink-0", artSize)}>
 									{doc.img ? (
-										<Artwork src={doc.img} className={cn("!object-cover", large ? "h-14 w-14" : "h-11 w-11")} />
+										<Artwork
+											src={doc.img}
+											className={cn(
+												artSize,
+												// Classified artwork is a tall icon; tilt and offset it so it fills the square like a document photo.
+												doc.key === "classified"
+													? "!object-contain -translate-x-[16%] rotate-12 scale-[1.35]"
+													: "!object-cover",
+											)}
+										/>
 									) : (
-										<span
-											className={cn("grid place-items-center", large ? "h-14 w-14" : "h-11 w-11")}
-											style={{ color: mark?.color }}
-										>
+										<span className={cn("grid place-items-center", artSize)} style={{ color: mark?.color }}>
 											<FileText className={large ? "h-10 w-10" : "h-8 w-8"} />
 										</span>
 									)}
-									{mark && doc.key !== "classified" && (
-										<span aria-hidden className={styles.mark} data-shape={mark.shape} />
+									{compact ? (
+										<span
+											aria-hidden
+											className={cn(
+												styles.amountBadge,
+												doc.key === "classified" ? "text-classified" : fulfilled ? "text-success" : "text-foreground",
+											)}
+										>
+											{mark && doc.key !== "classified" && <span className={styles.mark} data-shape={mark.shape} />}
+											{amount}
+										</span>
+									) : (
+										mark &&
+										doc.key !== "classified" && <span aria-hidden className={styles.mark} data-shape={mark.shape} />
 									)}
 								</span>
-								{amount !== undefined && (
+								{amount !== undefined && !compact && (
 									<span
 										className={cn(
 											"inline-flex items-center gap-0.5 px-1.5 font-semibold tabular-nums",

@@ -355,7 +355,8 @@
 }
 
 .costGrid {
-	display: grid;
+	display: flex;
+	flex-wrap: wrap;
 	gap: 4px;
 }
 .costGrid .chip {
@@ -368,6 +369,32 @@
 	gap: 2px;
 	padding-right: 0;
 	background: color-mix(in srgb, var(--background) 75%, var(--card));
+}
+/* Reward costs: equal squares, the amount and type mark together on the artwork. */
+.costGrid .compact,
+.compact {
+	width: 50px;
+	height: 50px;
+}
+.amountBadge {
+	position: absolute;
+	right: 5px;
+	bottom: 2px;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	/* Shadows the number and the clipped mark together, without a backing box. */
+	filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.95));
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 18px;
+	font-variant-numeric: tabular-nums;
+}
+.amountBadge .mark {
+	position: static;
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
 }
 @media (min-width: 1100px) and (max-height: 1199px) {
 	.rewardGrid {
@@ -386,16 +413,25 @@
 	}
 	/* Three cumulative-cost rows must still clear the full-size action buttons. */
 	.card .costGrid .chip {
-		height: 30px;
+		height: 44px;
 	}
 	.card .costGrid .face > span:first-child,
 	.card .costGrid .face > span:first-child > img,
 	.card .costGrid .face > span:first-child > svg,
-	.card .costGrid .face > span:first-child > span:not(.mark) {
-		width: 30px;
-		height: 30px;
+	.card .costGrid .face > span:first-child > span:not(.mark, .amountBadge) {
+		width: 44px;
+		height: 44px;
 	}
-	.card .costGrid .face > span:first-child > span:not(.mark) > svg {
+	.card .costGrid .compact {
+		width: 44px;
+	}
+	.card .costGrid .amountBadge {
+		right: 3px;
+		bottom: 1px;
+		font-size: 14px;
+		line-height: 16px;
+	}
+	.card .costGrid .face > span:first-child > span:not(.mark, .amountBadge) > svg {
 		max-width: 100%;
 		max-height: 100%;
 	}

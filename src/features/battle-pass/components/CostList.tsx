@@ -11,7 +11,6 @@ export function CostList({
 	costs,
 	classified = 0,
 	inventory,
-	wide = false,
 	previewEnabled = false,
 	tileId,
 	onSwap,
@@ -21,7 +20,6 @@ export function CostList({
 	/** Classified documents spent alongside `costs` (planned costs). */
 	classified?: number;
 	inventory: Costs;
-	wide?: boolean;
 	previewEnabled?: boolean;
 	/** Set when `costs` is this reward's own cost, so swapped lines can be marked. */
 	tileId?: string;
@@ -42,13 +40,7 @@ export function CostList({
 			: [],
 	);
 	return (
-		<div
-			className={cn(
-				styles.costGrid,
-				"content-start",
-				wide ? "grid-cols-6" : shown.length > 4 ? "grid-cols-3" : "grid-cols-4",
-			)}
-		>
+		<div className={cn(styles.costGrid, "content-start")}>
 			{shown.map((doc, i) => {
 				const baseline = baselineOf.get(doc.key) ?? doc.key;
 				return (

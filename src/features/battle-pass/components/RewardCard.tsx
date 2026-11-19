@@ -210,7 +210,7 @@ export function RewardCard({
 						editor
 					)}
 					{configuredCosts && !editing && (
-						<CostList costs={configuredCosts} classified={classifiedCost} inventory={{}} wide={span === "wide"} />
+						<CostList costs={configuredCosts} classified={classifiedCost} inventory={{}} />
 					)}
 					{costsIncomplete && !editing && (
 						<p
