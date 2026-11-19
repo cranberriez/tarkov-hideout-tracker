@@ -70,9 +70,23 @@ The owner keeps the active projection synchronized, preserves other profiles and
 does not create missing seasonal characters. Classified balance and collection
 choices still live in the shared pass save. UI edits merge changed fields into the
 latest save, retaining unknown fields and legacy ordinary balances.
-Individual and bulk claims only record completed reward IDs; they never change
-profile item counts or the classified balance. The retired `consumeDocs` UI
-preference stays in saved preferences but no longer has any effect.
+Without a saved plan, individual and bulk claims only record completed reward
+IDs; they never change profile item counts or the classified balance. While a
+saved plan replays with the optimizer on, claiming opens a confirmation with the
+documents each claim should consume
+([claim-deduction-model](../src/features/battle-pass/lib/claim-deduction-model.ts)).
+Following the game, owned documents of a cost line are consumed and classified
+documents fill only what is missing, so entering fewer than the cost sets that
+document to zero on the claiming profile. Confirming sets the profile item counts,
+then saves the claims, the reduced classified balance and a `claimDeductions`
+record per reward (`{ profileKey, documents, classified }`, what was removed) in
+one pass-save write. Each write is checked; if any fails, item counts and the pass
+save are restored to their prior values and the player is told whether the undo
+succeeded. Unchecking a reward with a record adds its documents and classified
+documents back the same way and deletes the record; a reward without one is only
+unchecked. Claims recorded without deducting drop any older record for that reward.
+Records are not exported. The retired `consumeDocs` UI preference stays in saved
+preferences but no longer has any effect.
 Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
 Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
 plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups

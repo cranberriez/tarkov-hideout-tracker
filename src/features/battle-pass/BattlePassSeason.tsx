@@ -7,7 +7,12 @@ import { getBattlePassData, type BattlePassData } from "@/lib/battle-pass-season
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { parseProgress, type Progress } from "./lib/battle-pass-model";
 const BattlePassSeasonContext = createContext<BattlePassData | null>(null);
-type BattlePassSave = { stored: Progress; write: ReturnType<typeof useStoredProfitValue>[1] };
+type BattlePassSave = {
+	stored: Progress;
+	/** The unparsed save, for fields `Progress` does not carry. */
+	raw: string | null;
+	write: ReturnType<typeof useStoredProfitValue>[1];
+};
 const BattlePassSaveContext = createContext<BattlePassSave | null>(null);
 export function useBattlePassData() {
 	return useContext(BattlePassSeasonContext) ?? getBattlePassData("season-1");
@@ -23,7 +28,7 @@ function useSeasonSave(seasonId: SeasonId) {
 	const base = getBattlePassData(seasonId);
 	const [raw, write] = useStoredProfitValue(base.storageKey);
 	const stored = useMemo(() => parseProgress(raw), [raw]);
-	const save = useMemo(() => ({ stored, write }), [stored, write]);
+	const save = useMemo(() => ({ stored, raw, write }), [stored, raw, write]);
 	return { data: base, save };
 }
 export function BattlePassSeason({

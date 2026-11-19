@@ -21,6 +21,8 @@ import {
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
 import { preferOwners } from "./lib/owner-preference-model";
+import { applyClaims, type ClaimRow } from "./lib/claim-deduction-model";
+import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
 import { buildRouteOptions, fundingClaims } from "./lib/route-options-model";
@@ -40,6 +42,15 @@ import {
 } from "./lib/saved-route-model";
 
 type Route = SavingsRoute;
+/** How entered claim amounts change the saved plan compared with claiming its planned rewards as planned. */
+export interface ClaimPreview {
+	/** Documents the rest of the plan must additionally gather or buy (negative: fewer). */
+	extraDocuments: number;
+	/** Change in the plan's checkout. */
+	cashDeltaCents: number;
+	/** Claims outside the saved plan. */
+	offPlan: number;
+}
 type CashFreePlan = ReturnType<typeof cashFreeGatheringPlan>;
 interface GatheringInput {
 	route: Route;
@@ -453,6 +464,128 @@ export function useBattlePassPlan(
 		}
 	}, [locked, route, selected, shownInput]);
 
+	// Claiming under a saved plan: what each claim should cost and how entered amounts change the plan.
+	const claimPlanning = useMemo(() => {
+		if (!locked || !lockedRoute || lockedStatus?.kind !== "ok") return null;
+		const scenario =
+			selected && shownInput?.route === lockedRoute
+				? gatheringScenario(lockedRoute, selected.gathered, shownInput.filters)
+				: null;
+		const inventories = Object.fromEntries(input.profiles.map((profile) => [profile.key, profile.inventory]));
+		const tileOf = new Map(request.rewards.map((reward) => [reward.tile.id, reward]));
+		const invalid = new Set(input.invalidRewardIds);
+		const pageOrder = pages.flatMap((page) => page.cells.map((tile) => tile.id));
+
+		const draft = (ids: string[]): ClaimRow[] => {
+			const wanted = new Set(ids);
+			const planned: ClaimRow[] = lockedRoute.claims.flatMap((claim, index) => {
+				if (!wanted.has(claim.rewardId)) return [];
+				const gathered = scenario?.gatheredByClaim[index] ?? [];
+				const expected: Costs = {};
+				for (const [key, amount] of Object.entries(claim.cost)) {
+					const gather = gathered.find((row) => row.documentKey === key)?.quantity ?? 0;
+					expected[key] = Math.min(amount, (claim.ordinaryUsed[key] ?? 0) + gather);
+				}
+				const plannedAt = locked.claims.findIndex((entry) => entry.rewardId === claim.rewardId);
+				return [
+					{
+						rewardId: claim.rewardId,
+						profileKey: claim.profileKey,
+						profileLabel: claim.profileLabel,
+						cost: claim.cost,
+						expected,
+						planIndex: plannedAt + 1,
+					},
+				];
+			});
+			const plannedIds = new Set(planned.map((row) => row.rewardId));
+			// Rewards outside the plan claim with the selected inventory profile and what it owns now.
+			const profile = inventory.selectedProfile;
+			const stock: Costs = { ...(inventories[profile.key] ?? profile.inventory) };
+			const offPlan: ClaimRow[] = pageOrder
+				.filter((id) => wanted.has(id) && !plannedIds.has(id))
+				.map((id) => {
+					const reward = tileOf.get(id);
+					const cost = reward && !invalid.has(id) ? reward.tile.cost : null;
+					const expected: Costs = {};
+					for (const [key, amount] of Object.entries(cost ?? {})) {
+						expected[key] = Math.min(amount, stock[key] ?? 0);
+						stock[key] = (stock[key] ?? 0) - expected[key];
+					}
+					return { rewardId: id, profileKey: profile.key, profileLabel: profile.label, cost, expected, planIndex: null };
+				});
+			return [...planned, ...offPlan];
+		};
+
+		/** Remaining saved-plan shortfall and checkout after these claims. */
+		const after = (rows: (ClaimRow & { have: Costs })[]) => {
+			const outcome = applyClaims(rows, inventories, stored.classified);
+			const ids = new Set(rows.map((row) => row.rewardId));
+			const replayInput = {
+				...request.input,
+				profiles: request.input.profiles.map((profile) => ({
+					...profile,
+					inventory: { ...profile.inventory, ...outcome.inventories[profile.key] },
+				})),
+				classified: outcome.classified,
+				completedIds: [...request.input.completedIds, ...ids],
+			};
+			const replayed = replayClaims(
+				{ ...request, input: replayInput },
+				lockedStatus.remaining
+					.filter((claim) => !ids.has(claim.rewardId))
+					.map((claim) => {
+						const reward = tileOf.get(claim.rewardId)!;
+						const profile = input.profiles.find((entry) => entry.key === claim.profileKey)!;
+						return {
+							rewardId: claim.rewardId,
+							profileKey: profile.key,
+							profileLabel: profile.label,
+							page: reward.page,
+							cost: reward.tile.cost,
+						};
+					}),
+			);
+			const gather = Math.max(0, locked.gathering - (locked.shortfall - replayed.additionalClassified));
+			const priced = gatheringScenario(replayed, gather, filters);
+			return {
+				shortfall: replayed.additionalClassified,
+				cashCents: optimizeRouteFunding(priced.claims, startingTarCoins, allowSpecial).cashCents,
+			};
+		};
+
+		const preview = (rows: (ClaimRow & { have: Costs })[]): ClaimPreview | null => {
+			try {
+				const planned = rows.filter((row) => row.planIndex !== null).map((row) => ({ ...row, have: row.expected }));
+				const base = after(planned);
+				const next = after(rows);
+				return {
+					extraDocuments: next.shortfall - base.shortfall,
+					cashDeltaCents: next.cashCents - base.cashCents,
+					offPlan: rows.length - planned.length,
+				};
+			} catch {
+				return null;
+			}
+		};
+		return { draft, preview };
+	}, [
+		locked,
+		lockedRoute,
+		lockedStatus,
+		selected,
+		shownInput,
+		input.profiles,
+		input.invalidRewardIds,
+		request,
+		pages,
+		inventory.selectedProfile,
+		stored.classified,
+		filters,
+		startingTarCoins,
+		allowSpecial,
+	]);
+
 	const canSave = !locked && ready && !syncing && !!shown && current;
 	const savePlan = () => {
 		if (!canSave || typeof result === "string") return;
@@ -491,6 +624,8 @@ export function useBattlePassPlan(
 		lockedStatus,
 		/** Documents still to gather under the saved plan. */
 		lockedGathering,
+		/** Claim drafting and effect preview while a saved plan replays, else null. */
+		claimPlanning,
 		/** The saved plan's document needs, or null without a replayable saved plan. */
 		documentNeeds,
 		canSave,

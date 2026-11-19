@@ -24,6 +24,11 @@ import { Segmented } from "./components/ui/Segmented";
 import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
 import { BattlePassTransfer } from "./components/BattlePassTransfer";
+import { ClaimDialog } from "./components/ClaimDialog";
+import type { ClaimRow } from "./lib/claim-deduction-model";
+import type { ClaimWriteResult } from "./useDocumentInventory";
+
+const noPreview = () => null;
 
 /** Reward-card badge for claims paid only with classified documents. */
 const ANY_PROFILE_BADGE = { label: ANY_PROFILE, color: "var(--muted-foreground)" };
@@ -70,6 +75,16 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				)
 			: [],
 	);
+	// While a saved plan replays, claiming confirms the documents it consumes.
+	const claimPlanning = optimizerEnabled && !costSetup.editing ? routePlan.claimPlanning : null;
+	const [claiming, setClaiming] = useState<ClaimRow[] | null>(null);
+	const [claimError, setClaimError] = useState<string | null>(null);
+	const reportClaim = (result: ClaimWriteResult) =>
+		setClaimError(
+			result.ok
+				? null
+				: `${result.message} ${result.undone ? "Nothing was changed." : "Some changes could not be undone. Check your document inventory and claimed rewards."}`,
+		);
 	const scope = progress.goals.length ? requestedScope : "all";
 	const updateIds = (field: "completed" | "goals", transform: (ids: string[]) => string[]) =>
 		write((raw) => {
@@ -298,12 +313,35 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						costSetup={costSetup}
 						recommendedProfiles={recommendedProfiles}
 						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}
-						toggleTile={(id) => documentInventory.claim([id], true)}
-						completeTiles={(added) => documentInventory.claim(added)}
+						toggleTile={(id) =>
+							complete.has(id) || !claimPlanning
+								? reportClaim(documentInventory.claim([id], true))
+								: setClaiming(claimPlanning.draft([id]))
+						}
+						completeTiles={(ids) => {
+							const added = ids.filter((id) => !complete.has(id));
+							if (claimPlanning && added.length) setClaiming(claimPlanning.draft(added));
+							else documentInventory.claim(added);
+						}}
 					/>
 				))}
 			</div>
 
+			{claimError && (
+				<p role="alert" className="flex items-start gap-2 rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger">
+					<CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden />
+					{claimError}
+				</p>
+			)}
+			<ClaimDialog
+				rows={claiming}
+				onClose={() => setClaiming(null)}
+				preview={claimPlanning?.preview ?? noPreview}
+				confirm={documentInventory.claimWithDocuments}
+				classifiedBalance={progress.classified}
+				setClassified={documentInventory.setClassified}
+				inventories={Object.fromEntries(documentInventory.profiles.map((profile) => [profile.key, profile.inventory]))}
+			/>
 			{!listMode && (
 				<div className="flex justify-center">
 					<PageNavigation {...{ first, lastStart, go }} />
