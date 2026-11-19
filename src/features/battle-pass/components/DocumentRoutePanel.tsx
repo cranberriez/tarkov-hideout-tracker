@@ -12,6 +12,7 @@ import { RouteSummary } from "./RouteSummary";
 import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
 import { RouteOptions } from "./RouteOptions";
+import { GatherDocuments } from "./GatherDocuments";
 import { ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
 import { useGatheringTarget } from "../useGatheringTarget";
@@ -176,6 +177,11 @@ export function DocumentRoutePanel({
 					{shownRoute ? (
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
 							<RouteSummary route={shownRoute} />
+							<GatherDocuments
+								profiles={allProfiles ? inventory.availableProfiles : [inventory.selectedProfile]}
+								route={shownRoute}
+								gathering={gathering}
+							/>
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
 							<RouteOptions route={route} />
 							<RouteFundingPanel route={shownRoute} gathering={gathering} />

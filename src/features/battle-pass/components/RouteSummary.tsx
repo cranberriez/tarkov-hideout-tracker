@@ -11,8 +11,6 @@ import { cn } from "@/lib/utils";
 import { syncValue } from "./ui/field";
 
 export function RouteSummary({ route }: { route: SavingsRoute }) {
-	const panelId = useId();
-	const [showDocuments, setShowDocuments] = useState(false);
 	const typesId = useId();
 	const [showTypes, setShowTypes] = useState(false);
 	const { startingTarCoins, gatheringFilters, dailyHeadroom } = useFundingSettings();
@@ -106,68 +104,20 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 					<dt className="text-xs text-muted-foreground">Fastest cash-free finish</dt>
 					<dd className={cn("mt-auto flex flex-wrap items-end justify-between gap-2", syncValue)}>
 						{plan && plan.days > 0 ? (
-							<>
-								<span className="flex flex-wrap items-baseline gap-x-3">
-									<strong className="text-lg leading-none">
-										{plan.days} gathering {plan.days === 1 ? "day" : "days"}
-									</strong>
-									<span className="text-sm text-muted-foreground">
-										{plan.total} {plan.total === 1 ? "document" : "documents"}
-									</span>
+							<span className="flex flex-wrap items-baseline gap-x-3">
+								<strong className="text-lg leading-none">
+									{plan.days} gathering {plan.days === 1 ? "day" : "days"}
+								</strong>
+								<span className="text-sm text-muted-foreground">
+									{plan.total} {plan.total === 1 ? "document" : "documents"}
 								</span>
-								<Button
-									size="xs"
-									variant="ghost"
-									tone="brand"
-									className="-mr-2 -mb-1"
-									aria-expanded={showDocuments}
-									aria-controls={panelId}
-									onClick={() => setShowDocuments((open) => !open)}
-								>
-									{showDocuments ? "Hide documents" : "Show documents"}
-									<ChevronDown
-										className={cn("size-3.5 transition-transform", showDocuments && "rotate-180")}
-										aria-hidden
-									/>
-								</Button>
-							</>
+							</span>
 						) : (
 							<strong>{plan ? "No gathering needed" : "Unavailable with selected filters"}</strong>
 						)}
 					</dd>
 				</div>
 			</dl>
-			{plan && plan.days > 0 && (
-				<section
-					id={panelId}
-					hidden={!showDocuments}
-					aria-label="Cash-free gathering plan"
-					className="rounded-lg bg-surface-raised/30 p-4"
-				>
-					<h3 className="mb-1 text-sm font-semibold">Documents to gather</h3>
-					<p className="mb-3 text-xs text-muted-foreground">
-						Gather these totals across the listed days. Modes run in parallel at their full daily caps.
-					</p>
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{[...plan.modes].map(([key, mode]) => (
-							<section key={key}>
-								<h4 className="mb-1 text-sm font-semibold">{mode.label}</h4>
-								<ul className="space-y-1 text-xs">
-									{mode.documents.map((row) => (
-										<li key={row.documentKey} className="flex items-center gap-1.5">
-											<DocumentIcon documentKey={row.documentKey} className="size-5 shrink-0" />
-											<strong className="tabular-nums">{row.quantity}</strong>
-											{documentDisplayName(
-												documents.find((doc) => doc.key === row.documentKey)?.name ?? row.documentKey,
-											)}
-										</li>
-									))}
-								</ul>
-							</section>
-						))}
-					</div>
-				</section>
-			)}
 		</div>
 	);
 }
