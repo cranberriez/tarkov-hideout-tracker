@@ -81,7 +81,15 @@ export function DocumentChip({
 				>
 					{inventory ? (
 						doc.img ? (
-							<Artwork src={doc.img} sizes="160px" className="h-full w-full !object-cover" />
+							<Artwork
+								src={doc.img}
+								sizes="160px"
+								// Classified artwork is a tall icon padded to 258x512; fit it and scale past the padding.
+								className={cn(
+									"h-full w-full",
+									doc.key === "classified" ? "scale-150 !object-contain" : "!object-cover",
+								)}
+							/>
 						) : (
 							<FileText className="h-full w-full" style={{ color: mark?.color }} aria-hidden />
 						)

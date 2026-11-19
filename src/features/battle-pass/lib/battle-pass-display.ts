@@ -24,6 +24,13 @@ export const mapOrder = [
 	"Icebreaker",
 ];
 
+/** Classified documents are not a provider document type, so their artwork is fixed here. */
+export const CLASSIFIED_DOCUMENT = {
+	key: "classified",
+	name: "Classified Docs",
+	img: "https://assets.tarkov.dev/6a3183258f113efdb7093622-512.webp",
+};
+
 export const documentMarks: Record<string, { color: string; shape: string }> = {
 	financial: { color: "#2dd4bf", shape: "circle" },
 	personnel: { color: "#a3e635", shape: "triangle" },

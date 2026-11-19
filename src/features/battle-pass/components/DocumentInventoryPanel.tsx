@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useBattlePassData } from "../BattlePassSeason";
 import type { useDocumentInventory } from "../useDocumentInventory";
 import { coverCosts, type Costs } from "../lib/battle-pass-model";
-import { documentDisplayName } from "../lib/battle-pass-display";
+import { CLASSIFIED_DOCUMENT, documentDisplayName } from "../lib/battle-pass-display";
 import { DocumentChip } from "./ui/DocumentChip";
 import { Toggle } from "./ui/Toggle";
 import { cn } from "@/lib/utils";
@@ -245,8 +245,8 @@ export function DocumentInventoryPanel({
 					})}
 					<div className="flex min-w-0 flex-col gap-2 rounded-md bg-classified/10 p-3">
 						<DocumentName documentKey="classified" name="Classified Docs" />
-						<div className="mx-auto flex aspect-square w-[88%] items-center justify-center">
-							<DocumentChip doc={{ key: "classified", name: "Classified Docs" }} />
+						<div className="mx-auto w-[88%]">
+							<DocumentChip doc={CLASSIFIED_DOCUMENT} inventory />
 						</div>
 						<label className="flex flex-col gap-1.5 text-xs text-muted-foreground">
 							Owned
