@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
-import { mapExcludedTypes, type GatheringPreview } from "../lib/map-filter-model";
+import {
+	mapExcludedTypes,
+	type FewestTypesInput,
+	type FewestTypesResult,
+	type GatheringPreview,
+} from "../lib/map-filter-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { Artwork } from "./ui/Artwork";
 import { DocumentIcon } from "./ui/DocumentIcon";
@@ -24,10 +29,29 @@ const sameMaps = (a: readonly string[] | null, b: readonly string[] | null) =>
 
 type PresetResult = { result: { maps: string[]; preview: GatheringPreview } } | { error: string };
 
+/** Fewest document types at the same cost, searched in a worker whenever its input changes. */
+function useFewestTypes(input: FewestTypesInput | null) {
+	const [found, setFound] = useState<{ input: FewestTypesInput; result: FewestTypesResult } | null>(null);
+	useEffect(() => {
+		if (!input) return;
+		const worker = new Worker(new URL("../lib/map-preset.worker.ts", import.meta.url), { type: "module" });
+		worker.onmessage = (event: MessageEvent<{ result: FewestTypesResult } | { error: string }>) => {
+			if ("result" in event.data) setFound({ input, result: event.data.result });
+			worker.terminate();
+		};
+		worker.onerror = () => worker.terminate();
+		worker.postMessage({ kind: "types", input });
+		return () => worker.terminate();
+	}, [input]);
+	return found && found.input === input ? found.result : null;
+}
+
 /** Choose the maps to farm; document types no chosen map spawns are bought as classified. */
 export function GatheringMapsPicker() {
 	const { documents, mapNames, mapOrder, mapThumbnails } = useBattlePassData();
-	const { settings, mapTarget, previewMaps, fewestMapsInput, gathering, route } = useBattlePassPlanContext();
+	const { settings, mapTarget, previewMaps, fewestMapsInput, fewestTypesInput, gathering, route } =
+		useBattlePassPlanContext();
+	const simplest = useFewestTypes(fewestTypesInput);
 	// Documents of each type the route still misses after owned inventory.
 	const needed = useMemo(() => {
 		const totals: Record<string, number> = {};
@@ -81,7 +105,7 @@ export function GatheringMapsPicker() {
 		};
 		setSearching(true);
 		setSearchError(null);
-		next.postMessage(fewestMapsInput);
+		next.postMessage({ kind: "maps", input: fewestMapsInput });
 	};
 
 	const comparing = dirty && mapTarget > 0 && chosen.length > 0;
@@ -175,6 +199,21 @@ export function GatheringMapsPicker() {
 					{searching && <LoaderCircle className="size-3.5 animate-spin" aria-hidden />}
 					{searching ? "Searching…" : "Fewest maps, same cost"}
 				</Button>
+				{simplest && fewestTypesInput && simplest.types.length < simplest.gatheredTypes.length && (
+					<Button
+						size="xs"
+						variant="ghost"
+						title={`Gather only ${simplest.types.map(name).join(", ")}. Turns off ${simplest.excluded.map(name).join(", ")} in every mode.`}
+						onClick={() => settings.excludeGatheringTypes(fewestTypesInput.profileKeys, simplest.excluded)}
+					>
+						Simplest: {simplest.types.length} document {simplest.types.length === 1 ? "type" : "types"}, same cost
+						<span className="flex items-center">
+							{simplest.types.map((key) => (
+								<DocumentIcon key={key} documentKey={key} className="size-4" />
+							))}
+						</span>
+					</Button>
+				)}
 				{searchError ? (
 					<span className="text-xs text-warning">{searchError}</span>
 				) : empty ? (

@@ -104,6 +104,19 @@ export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, fi
 	return low;
 }
 
+/** Parallel days the slowest mode needs for `quantities` at its daily cap. */
+export function parallelDays(quantities: GatheringQuantity[], reserve = 0) {
+	const byMode = new Map<string, number>();
+	for (const row of quantities) byMode.set(row.profileKey, (byMode.get(row.profileKey) ?? 0) + row.quantity);
+	return Math.max(0, ...[...byMode].map(([key, quantity]) => Math.ceil(quantity / gatheringDailyCap(key, reserve))));
+}
+
+/** Whole 24-hour gathering windows left before `endsAt`; Infinity without an end or before hydration. */
+export function seasonDaysLeft(endsAt: number | null, now: number | null) {
+	if (endsAt === null || now === null) return Infinity;
+	return Math.max(0, Math.floor((endsAt - now) / 86_400_000));
+}
+
 export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filters: GatheringFilters, reserve = 0) {
 	const days = minimumFreeGatheringDays(route, wallet, filters, reserve);
 	if (days === null) return null;
@@ -128,13 +141,16 @@ export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filte
 }
 
 /** Binary-search each next cash drop on the monotone gathering path. Avoids one
- * funding solve per document, and runs only on demand in a dedicated worker. */
+ * funding solve per document, and runs only on demand in a dedicated worker.
+ * `days` caps each mode at that many daily allowances (the days left in the
+ * season); documents beyond it are bought, so every breakpoint fits. */
 export function buildGatheringSavings(
 	route: SavingsRoute,
 	startingTarCoins: number,
 	allowSpecial: boolean,
 	filters: GatheringFilters = {},
 	reserve = 0,
+	days = Infinity,
 ): GatheringBreakpoint[] {
 	const maximum = route.additionalClassified - 1;
 	if (maximum < 1) return [];
@@ -142,7 +158,7 @@ export function buildGatheringSavings(
 	const solve = (count: number) => {
 		if (!cache.has(count)) {
 			const plan = optimizeRouteFunding(
-				gatheringScenario(route, count, filters).claims,
+				gatheringScenario(route, count, filters, days, reserve).claims,
 				startingTarCoins,
 				allowSpecial,
 			);
@@ -166,7 +182,7 @@ export function buildGatheringSavings(
 		}
 		count = low;
 		previous = cash(count);
-		const { claims, quantities } = gatheringScenario(route, count, filters);
+		const { claims, quantities } = gatheringScenario(route, count, filters, days, reserve);
 		const windows: GatheringBreakpoint["windows"] = [];
 		for (const row of quantities) {
 			let profile = windows.find((item) => item.profileKey === row.profileKey);

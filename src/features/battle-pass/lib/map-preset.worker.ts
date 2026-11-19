@@ -1,11 +1,16 @@
-import { fewestMaps, type FewestMapsInput } from "./map-filter-model";
+import { fewestMaps, fewestTypes, type FewestMapsInput, type FewestTypesInput } from "./map-filter-model";
 
-/** The "fewest maps" search prices up to one gathering scenario per distinct
- * document coverage, so it runs off the page thread. */
-self.onmessage = (event: MessageEvent<FewestMapsInput>) => {
+/** The "fewest maps" and "fewest document types" searches price up to one
+ * gathering scenario per distinct document coverage, so they run off the page thread. */
+self.onmessage = (
+	event: MessageEvent<{ kind: "maps"; input: FewestMapsInput } | { kind: "types"; input: FewestTypesInput }>,
+) => {
+	const { data } = event;
 	try {
-		self.postMessage({ result: fewestMaps(event.data) });
+		self.postMessage({ result: data.kind === "maps" ? fewestMaps(data.input) : fewestTypes(data.input) });
 	} catch {
-		self.postMessage({ error: "Could not search map sets. Try again." });
+		self.postMessage({
+			error: data.kind === "maps" ? "Could not search map sets. Try again." : "Could not search document types.",
+		});
 	}
 };

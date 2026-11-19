@@ -107,8 +107,17 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
 
 /** Footer of the route configuration: save the route as a plan, or leave reconfiguring. */
 export function SavePlanBar() {
-	const { canSave, savePlan, hasSavedPlan, reconfiguring, cancelReconfigure, discardPlan, result, calculating } =
-		useBattlePassPlanContext();
+	const {
+		canSave,
+		unchanged,
+		savePlan,
+		hasSavedPlan,
+		reconfiguring,
+		cancelReconfigure,
+		discardPlan,
+		result,
+		calculating,
+	} = useBattlePassPlanContext();
 	const [confirming, setConfirming] = useState(false);
 	const replacing = reconfiguring && hasSavedPlan;
 	const blocked = canSave
@@ -118,18 +127,28 @@ export function SavePlanBar() {
 			: "Wait for the route to finish calculating";
 	return (
 		<div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-highlight/[0.05] pt-4">
-			<span title={blocked} className="inline-flex">
-				<Button tone="brand" variant="solid" size="md" disabled={!canSave} onClick={savePlan}>
-					{replacing ? "Replace saved plan" : "Save plan"}
+			{replacing && unchanged ? (
+				<Button tone="brand" variant="solid" size="md" onClick={cancelReconfigure}>
+					No changes, close
 				</Button>
-			</span>
-			{replacing && (
-				<Button size="md" onClick={cancelReconfigure}>
-					Cancel
-				</Button>
+			) : (
+				<>
+					<span title={blocked} className="inline-flex">
+						<Button tone="brand" variant="solid" size="md" disabled={!canSave} onClick={savePlan}>
+							{replacing ? "Replace saved plan" : "Save plan"}
+						</Button>
+					</span>
+					{replacing && (
+						<Button size="md" onClick={cancelReconfigure}>
+							Cancel
+						</Button>
+					)}
+				</>
 			)}
 			<p className="min-w-0 flex-1 basis-56 text-xs text-muted-foreground">
-				Saving locks this route in. It follows your progress without re-optimizing.
+				{replacing && unchanged
+					? "This matches your saved plan."
+					: "Saving locks this route in. It follows your progress without re-optimizing."}
 			</p>
 			{replacing && (
 				<span className="flex items-center gap-1">

@@ -4,15 +4,62 @@ import { useBattlePassData } from "../BattlePassSeason";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleAlert } from "lucide-react";
+import { BALANCED_MODE } from "../lib/owner-preference-model";
 import { cn } from "@/lib/utils";
 import { syncValue } from "./ui/field";
 import { TarCoin } from "./ui/TarCoin";
 
+const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
+
+/** Warns when the gathering target or the cash-free finish needs more days than the season has left. */
+function DeadlineWarning() {
+	const { gathering, deadline, settings, modePreviews, modeCashFree } = useBattlePassPlanContext();
+	const { pastSeason } = gathering;
+	const { cashFreeDays, daysLeft } = deadline;
+	if (!pastSeason && cashFreeDays === null) return null;
+	// Suggest Balanced when it gathers faster or pays less than the current choice.
+	const index = modePreviews?.modes.findIndex((mode) => mode.profileKey === BALANCED_MODE) ?? -1;
+	const balanced = index >= 0 ? modePreviews!.modes[index] : undefined;
+	const balancedCashFree = index >= 0 ? modeCashFree?.[index + 1] : undefined;
+	const currentCashFree = modeCashFree?.[0];
+	const helps =
+		!!balanced &&
+		!!modePreviews &&
+		(balanced.preview.cashCents < modePreviews.current.cashCents ||
+			balanced.preview.days < modePreviews.current.days ||
+			(balancedCashFree != null && currentCashFree != null && balancedCashFree < currentCashFree));
+	return (
+		<div role="alert" className="flex items-start gap-2 rounded-lg bg-warning/[0.07] px-3 py-2.5 text-xs">
+			<CircleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
+			<div className="min-w-0 space-y-1">
+				<p className="font-medium text-warning">
+					{daysLeft === 0 ? "The season ends today." : `${days(daysLeft)} left in the season.`}
+				</p>
+				{pastSeason && (
+					<p>
+						Gathering {pastSeason.gathered} needs {days(pastSeason.days)}. The plan gathers{" "}
+						{gathering.selected?.gathered ?? 0} in time and buys the rest.
+					</p>
+				)}
+				{cashFreeDays !== null && <p>A cash-free finish needs {days(cashFreeDays)}.</p>}
+				{helps && settings.preferredMode !== BALANCED_MODE && (
+					<p className="flex flex-wrap items-center gap-x-2">
+						Balanced spreads gathering so the modes finish together.
+						<Button size="xs" variant="ghost" tone="brand" onClick={() => settings.setPreferredMode(BALANCED_MODE)}>
+							Use Balanced
+						</Button>
+					</p>
+				)}
+			</div>
+		</div>
+	);
+}
+
 export function RouteSummary() {
 	const typesId = useId();
 	const [showTypes, setShowTypes] = useState(false);
-	const { route: shownRoute, gathering, leftover } = useBattlePassPlanContext();
+	const { route: shownRoute, gathering, leftover, deadline } = useBattlePassPlanContext();
 	const route = shownRoute!;
 	const plan = gathering.cashFree;
 	const { documents } = useBattlePassData();
@@ -27,6 +74,7 @@ export function RouteSummary() {
 	const ordinaryClaims = firstShortfall < 0 ? route.claims.length : firstShortfall;
 	return (
 		<div className="space-y-2">
+			<DeadlineWarning />
 			<dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
 				<div className="col-span-2 flex flex-col gap-4 rounded-lg bg-brand/[0.07] p-4 lg:row-span-2">
 					<div className="flex items-start justify-between gap-2">
@@ -128,6 +176,7 @@ export function RouteSummary() {
 								<span className="text-sm text-muted-foreground">
 									{plan.total} {plan.total === 1 ? "document" : "documents"}
 								</span>
+								{deadline.cashFreeDays !== null && <span className="text-sm text-warning">Past season end</span>}
 							</span>
 						) : (
 							<strong>{plan ? "No gathering needed" : "Unavailable with selected filters"}</strong>

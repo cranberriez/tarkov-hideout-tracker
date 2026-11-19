@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { getSeason } from "@/lib/cfg/seasons";
 import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { rewardCostStatus, type RewardConfiguration } from "./lib/battle-pass-configuration";
 import { buildDocumentRouteModel, replayClaims, type RouteColumns } from "./lib/document-route-model";
@@ -11,16 +12,19 @@ import {
 	mapExcludedTypes,
 	previewGathering,
 	type FewestMapsInput,
+	type FewestTypesInput,
 	type GatheringPreview,
 } from "./lib/map-filter-model";
 import {
 	gatheringScenario,
+	parallelDays,
+	seasonDaysLeft,
 	type cashFreeGatheringPlan,
 	type GatheringBreakpoint,
 	type GatheringFilters,
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
-import { preferOwners } from "./lib/owner-preference-model";
+import { BALANCED_MODE, balanceOwners, preferOwners } from "./lib/owner-preference-model";
 import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-model";
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
@@ -58,6 +62,8 @@ interface GatheringInput {
 	allowSpecial: boolean;
 	filters: GatheringFilters;
 	reserve: number;
+	/** Days left in the season: no mode gathers beyond it. */
+	days: number;
 }
 interface GatheringResult {
 	input: GatheringInput;
@@ -73,6 +79,19 @@ const NONE: number[] = [];
 const recommendedBreakpoint = (breakpoints: GatheringBreakpoint[]) =>
 	breakpoints.find((point) => point.savingsCents >= 499) ?? breakpoints.at(-1);
 const FUNDING_ERROR = "Could not calculate a purchase schedule. Change the balance or offer setting to try again.";
+
+const subscribeToMinutes = (onChange: () => void) => {
+	const timer = setInterval(onChange, 60_000);
+	return () => clearInterval(timer);
+};
+/** Whole days left in the season, rechecked each minute; Infinity without an end date and before hydration. */
+function useSeasonDaysLeft(endsAt: number | null) {
+	return useSyncExternalStore(
+		subscribeToMinutes,
+		() => seasonDaysLeft(endsAt, Date.now()),
+		() => Infinity,
+	);
+}
 
 /** Breakpoints and the cash-free plan for `input`, solved once per input in a worker. */
 function useGatheringWorker(input: GatheringInput | null) {
@@ -136,6 +155,7 @@ export function useBattlePassPlan(
 	const { stored } = useBattlePassSave();
 	const settings = useFundingSettings();
 	const { startingTarCoins, allowSpecial, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget } = settings;
+	const daysLeft = useSeasonDaysLeft(getSeason(seasonId).endsAt);
 
 	// Route settings and the saved plan, per season and shared by every profile.
 	const [savedRaw, writeSaved] = useStoredProfitValue(savedRouteKey(seasonId));
@@ -261,24 +281,6 @@ export function useBattlePassPlan(
 	const base = typeof solved === "string" ? null : solved;
 	const candidates = useRouteOptions(request, base, solving && !input.mostRewardsNow);
 
-	// Preferred mode first, skipped (gathering turned off) modes last. The same
-	// preference applies to every route before it is priced.
-	const rank = useCallback(
-		(key: string) => (key === preferredMode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1),
-		[preferredMode, gatheringFilters],
-	);
-	const preferredBase = useMemo(() => base && preferOwners(request, base, rank), [request, base, rank]);
-	const alternatives = useMemo(
-		() =>
-			Array.isArray(candidates)
-				? candidates.map((candidate) => ({
-						columns: candidate.columns,
-						route: preferOwners(request, candidate.route, rank),
-					}))
-				: null,
-		[candidates, request, rank],
-	);
-
 	const reserve = dailyHeadroom ? DAILY_HEADROOM : 0;
 	// Applied maps narrow the document types every mode may gather.
 	const profileKeys = useMemo(() => input.profiles.map((profile) => profile.key), [input.profiles]);
@@ -287,6 +289,30 @@ export function useBattlePassPlan(
 		[gatheringFilters, profileKeys, mapNames],
 	);
 	const filters = useMemo(() => mapFiltersFor(settings.gatheringMaps), [mapFiltersFor, settings.gatheringMaps]);
+
+	// Preferred mode first, skipped (gathering turned off) modes last. Balanced
+	// instead spreads the saved gathering target (everything gatherable without
+	// one) across modes. The same preference applies to every route before it is priced.
+	const neutral = useCallback((key: string) => (gatheringFilters[key]?.disabled ? 2 : 1), [gatheringFilters]);
+	const balanceTarget = gatheringTarget ?? Infinity;
+	const arrangeFor = useCallback(
+		(mode: string | null, candidate: Route) =>
+			mode === BALANCED_MODE
+				? balanceOwners(request, preferOwners(request, candidate, neutral), balanceTarget, filters, reserve)
+				: preferOwners(request, candidate, (key) => (key === mode ? 0 : neutral(key))),
+		[request, neutral, balanceTarget, filters, reserve],
+	);
+	const preferredBase = useMemo(() => base && arrangeFor(preferredMode, base), [base, arrangeFor, preferredMode]);
+	const alternatives = useMemo(
+		() =>
+			Array.isArray(candidates)
+				? candidates.map((candidate) => ({
+						columns: candidate.columns,
+						route: arrangeFor(preferredMode, candidate.route),
+					}))
+				: null,
+		[candidates, arrangeFor, preferredMode],
+	);
 
 	// The default route is the cheapest checkout among the fewest-documents route
 	// and its alternatives, each gathering the same amount: the gathering target as
@@ -308,7 +334,7 @@ export function useBattlePassPlan(
 		const priced = [preferredBase, ...alternatives.map((alternative) => alternative.route)].flatMap(
 			(candidate, index) => {
 				try {
-					const scenario = gatheringScenario(candidate, comparedGathering, filters);
+					const scenario = gatheringScenario(candidate, comparedGathering, filters, daysLeft, reserve);
 					const plan = optimizeRouteFunding(scenario.claims, startingTarCoins, allowSpecial);
 					const gathered = scenario.quantities.reduce((sum, row) => sum + row.quantity, 0);
 					return [{ index, cashCents: plan.cashCents, gathered, left: plan.balanceTarCoins }];
@@ -323,7 +349,7 @@ export function useBattlePassPlan(
 		return priced[0] && fewest
 			? { index: priced[0].index, gathering: comparedGathering, savingsCents: fewest.cashCents - priced[0].cashCents }
 			: null;
-	}, [preferredBase, alternatives, comparedGathering, filters, startingTarCoins, allowSpecial]);
+	}, [preferredBase, alternatives, comparedGathering, filters, startingTarCoins, allowSpecial, daysLeft, reserve]);
 
 	// A route the player picks lasts until any route input changes or the page reloads.
 	const [adopted, setAdopted] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
@@ -390,8 +416,8 @@ export function useBattlePassPlan(
 	// Gathering breakpoints and cash-free plan (worker). The previous answer
 	// stays on screen while the worker recalculates.
 	const gatheringInput = useMemo(
-		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve } : null),
-		[route, startingTarCoins, allowSpecial, filters, reserve],
+		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve, days: daysLeft } : null),
+		[route, startingTarCoins, allowSpecial, filters, reserve, daysLeft],
 	);
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
@@ -410,12 +436,26 @@ export function useBattlePassPlan(
 	// prices the same as gathering exactly that many.
 	const lockedGathering =
 		locked && lockedRoute ? Math.max(0, locked.gathering - (locked.shortfall - lockedRoute.additionalClassified)) : 0;
+	// Breakpoints only gather what fits before the season ends. A target that
+	// needs more days is kept as saved and gathers the most that fits (the last
+	// breakpoint); the rest is bought.
+	const shownInput = shown?.input;
+	const wanted = locked ? lockedGathering : (gatheringTarget ?? 0);
+	const wantedPoint = breakpoints.find((point) => point.gathered === wanted);
+	const wantedDays = useMemo(
+		() =>
+			shownInput && wanted > 0
+				? parallelDays(gatheringScenario(shownInput.route, wanted, shownInput.filters).quantities, shownInput.reserve)
+				: 0,
+		[shownInput, wanted],
+	);
+	const pastSeason = wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
 	const selected = locked
 		? breakpoints.findLast((point) => point.gathered <= lockedGathering)
 		: gatheringTarget === 0
 			? undefined
-			: (breakpoints.find((point) => point.gathered === gatheringTarget) ?? recommended);
+			: (wantedPoint ?? (pastSeason ? breakpoints.at(-1) : recommended));
 	const first = breakpoints[0];
 	const gathering = {
 		calculating: !shown,
@@ -430,6 +470,15 @@ export function useBattlePassPlan(
 		/** Fastest cash-free finish: undefined while calculating, null when none exists. */
 		cashFree: shown ? (shown.cashFree ?? null) : undefined,
 		select: settings.setGatheringTarget,
+		/** The saved target when it needs more days than the season has left, else null. */
+		pastSeason: pastSeason ? { gathered: wanted, days: wantedDays } : null,
+	};
+	/** Season-end limits on gathering. */
+	const deadline = {
+		/** Whole days left in the season; Infinity without an end date. */
+		daysLeft,
+		/** The fastest cash-free finish's days when it ends after the season, else null. */
+		cashFreeDays: gathering.cashFree && gathering.cashFree.days > daysLeft ? gathering.cashFree.days : null,
 	};
 
 	// Step-by-step flow for the gathering target. A breakpoint carries its own
@@ -445,13 +494,12 @@ export function useBattlePassPlan(
 		const owners = new Map(route.claims.map((claim) => [claim.rewardId, claim.profileKey]));
 		try {
 			const price = (candidate: Route) =>
-				previewGathering(candidate, gathered, filters, startingTarCoins, allowSpecial, reserve);
-			const modes = input.profiles.map((profile) => {
-				const preferred = preferOwners(request, raw, (key) =>
-					key === profile.key ? 0 : gatheringFilters[key]?.disabled ? 2 : 1,
-				);
+				previewGathering(candidate, gathered, filters, startingTarCoins, allowSpecial, reserve, daysLeft);
+			const modes = [...input.profiles.map((profile) => profile.key), BALANCED_MODE].map((mode) => {
+				const preferred = arrangeFor(mode, raw);
 				return {
-					profileKey: profile.key,
+					/** A profile key, or BALANCED_MODE. */
+					profileKey: mode,
 					route: preferred,
 					preview: price(preferred),
 					/** Claims that would change claiming profile. */
@@ -474,17 +522,22 @@ export function useBattlePassPlan(
 		startingTarCoins,
 		allowSpecial,
 		reserve,
-		request,
-		gatheringFilters,
+		daysLeft,
+		arrangeFor,
 	]);
 	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
 
-	const shownInput = shown?.input;
 	const flow = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
 		try {
 			if (selected && shownInput) {
-				const scenario = gatheringScenario(shownInput.route, selected.gathered, shownInput.filters);
+				const scenario = gatheringScenario(
+					shownInput.route,
+					selected.gathered,
+					shownInput.filters,
+					shownInput.days,
+					shownInput.reserve,
+				);
 				return purchaseFlow(selected.plan, scenario.claims, shownInput.startingTarCoins, scenario.gatheredByClaim);
 			}
 			return purchaseFlow(funding.plan, funding.claims, startingTarCoins);
@@ -497,7 +550,15 @@ export function useBattlePassPlan(
 		if (!route || typeof funding !== "object" || !funding) return null;
 		try {
 			const scenario =
-				selected && shownInput ? gatheringScenario(shownInput.route, selected.gathered, shownInput.filters) : null;
+				selected && shownInput
+					? gatheringScenario(
+							shownInput.route,
+							selected.gathered,
+							shownInput.filters,
+							shownInput.days,
+							shownInput.reserve,
+						)
+					: null;
 			const plan = selected && scenario ? selected.plan : funding.plan;
 			const usedOwned = scenario
 				? scenario.claims.reduce((sum, claim) => sum + claim.classifiedUsed, 0)
@@ -531,7 +592,13 @@ export function useBattlePassPlan(
 		if (!route) return new Set<string>();
 		const gathering = new Set<string>();
 		if (selected && shownInput) {
-			const { gatheredByClaim } = gatheringScenario(shownInput.route, selected.gathered, shownInput.filters);
+			const { gatheredByClaim } = gatheringScenario(
+				shownInput.route,
+				selected.gathered,
+				shownInput.filters,
+				shownInput.days,
+				shownInput.reserve,
+			);
 			shownInput.route.claims.forEach((claim, index) => {
 				if (gatheredByClaim[index]?.length) gathering.add(claim.rewardId);
 			});
@@ -550,7 +617,13 @@ export function useBattlePassPlan(
 		try {
 			if (selected && shownInput)
 				return tarCoinFarmingSavings(
-					gatheringScenario(shownInput.route, selected.gathered, shownInput.filters).claims,
+					gatheringScenario(
+						shownInput.route,
+						selected.gathered,
+						shownInput.filters,
+						shownInput.days,
+						shownInput.reserve,
+					).claims,
 					shownInput.startingTarCoins,
 					shownInput.allowSpecial,
 				);
@@ -575,6 +648,7 @@ export function useBattlePassPlan(
 					shownInput.startingTarCoins,
 					shownInput.allowSpecial,
 					shownInput.reserve,
+					shownInput.days,
 				);
 			} catch {
 				return null;
@@ -595,9 +669,26 @@ export function useBattlePassPlan(
 						startingTarCoins: shownInput.startingTarCoins,
 						allowSpecial: shownInput.allowSpecial,
 						reserve: shownInput.reserve,
+						days: shownInput.days,
 					}
 				: null,
 		[shownInput, mapTarget, gatheringFilters, profileKeys, mapOrder, mapNames],
+	);
+	const fewestTypesInput = useMemo<FewestTypesInput | null>(
+		() =>
+			shownInput && mapTarget > 0
+				? {
+						route: shownInput.route,
+						target: mapTarget,
+						filters: shownInput.filters,
+						profileKeys,
+						startingTarCoins: shownInput.startingTarCoins,
+						allowSpecial: shownInput.allowSpecial,
+						reserve: shownInput.reserve,
+						days: shownInput.days,
+					}
+				: null,
+		[shownInput, mapTarget, profileKeys],
 	);
 	const mapExcluded = useMemo(
 		() => mapExcludedTypes(settings.gatheringMaps, mapNames),
@@ -615,7 +706,16 @@ export function useBattlePassPlan(
 		if (!locked || !route) return null;
 		try {
 			return selected && shownInput
-				? planNeeds(shownInput.route, gatheringScenario(shownInput.route, selected.gathered, shownInput.filters))
+				? planNeeds(
+						shownInput.route,
+						gatheringScenario(
+							shownInput.route,
+							selected.gathered,
+							shownInput.filters,
+							shownInput.days,
+							shownInput.reserve,
+						),
+					)
 				: planNeeds(route, null);
 		} catch {
 			return null;
@@ -627,7 +727,7 @@ export function useBattlePassPlan(
 		if (!locked || !lockedRoute || lockedStatus?.kind !== "ok") return null;
 		const scenario =
 			selected && shownInput?.route === lockedRoute
-				? gatheringScenario(lockedRoute, selected.gathered, shownInput.filters)
+				? gatheringScenario(lockedRoute, selected.gathered, shownInput.filters, shownInput.days, shownInput.reserve)
 				: null;
 		const inventories = Object.fromEntries(input.profiles.map((profile) => [profile.key, profile.inventory]));
 		const tileOf = new Map(request.rewards.map((reward) => [reward.tile.id, reward]));
@@ -707,7 +807,7 @@ export function useBattlePassPlan(
 					}),
 			);
 			const gather = Math.max(0, locked.gathering - (locked.shortfall - replayed.additionalClassified));
-			const priced = gatheringScenario(replayed, gather, filters);
+			const priced = gatheringScenario(replayed, gather, filters, daysLeft, reserve);
 			return {
 				shortfall: replayed.additionalClassified,
 				cashCents: optimizeRouteFunding(priced.claims, startingTarCoins, allowSpecial).cashCents,
@@ -744,6 +844,8 @@ export function useBattlePassPlan(
 		filters,
 		startingTarCoins,
 		allowSpecial,
+		daysLeft,
+		reserve,
 	]);
 
 	/** What each claim of the active route spends, including its gathering target. */
@@ -752,7 +854,7 @@ export function useBattlePassPlan(
 		try {
 			const scenario =
 				selected && shownInput?.route === route
-					? gatheringScenario(route, selected.gathered, shownInput.filters)
+					? gatheringScenario(route, selected.gathered, shownInput.filters, shownInput.days, shownInput.reserve)
 					: null;
 			return plannedSpend(route.claims, scenario?.gatheredByClaim ?? null);
 		} catch {
@@ -761,6 +863,25 @@ export function useBattlePassPlan(
 	}, [route, selected, shownInput]);
 
 	const canSave = !locked && ready && !syncing && !!shown && current;
+	// Reconfiguring that ends on the saved plan's settings and route has nothing to replace.
+	const unchanged = (() => {
+		const plan = saved.locked;
+		if (!reconfiguring || !plan || !canSave || typeof result === "string") return false;
+		const done = new Set(stored.completed);
+		const remaining = plan.claims.filter((claim) => !done.has(claim.rewardId));
+		return (
+			selectedGoal === plan.destination &&
+			buyAll === plan.buyAll &&
+			allProfiles === plan.allProfiles &&
+			useClassified === plan.useClassified &&
+			(selected?.gathered ?? 0) === plan.gathering &&
+			remaining.length === result.claims.length &&
+			remaining.every(
+				(claim, index) =>
+					claim.rewardId === result.claims[index].rewardId && claim.profileKey === result.claims[index].profileKey,
+			)
+		);
+	})();
 	const savePlan = () => {
 		if (!canSave || typeof result === "string") return;
 		const plan = {
@@ -805,6 +926,8 @@ export function useBattlePassPlan(
 		/** The saved plan's document needs, or null without a replayable saved plan. */
 		documentNeeds,
 		canSave,
+		/** Reconfiguring ended on exactly the saved plan: closing writes nothing. */
+		unchanged,
 		savePlan,
 		/** Edit the configuration, starting from the saved plan's settings. */
 		reconfigure: () => {
@@ -854,6 +977,7 @@ export function useBattlePassPlan(
 		// Funding, gathering and the step plan
 		funding,
 		gathering,
+		deadline,
 		flow,
 		flowRoute,
 		leftover,
@@ -872,6 +996,8 @@ export function useBattlePassPlan(
 		previewMaps,
 		/** Input for the "fewest maps" search, or null until gathering is solved. */
 		fewestMapsInput,
+		/** Input for the "fewest document types" search, or null without a gathering target. */
+		fewestTypesInput,
 		/** Extra TarCoins that would lower the cash paid, smallest first (at most two). */
 		farming,
 	};

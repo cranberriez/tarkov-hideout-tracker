@@ -5,6 +5,7 @@ import {
 	buildGatheringSavings,
 	gatheringScenario,
 	minimumFreeGatheringDays,
+	seasonDaysLeft,
 	type SavingsRoute,
 } from "./gathering-savings-model";
 import { optimizeRouteFunding } from "./funding-model";
@@ -189,4 +190,32 @@ test("fastest plan lists only the documents needed after free funding, by allowe
 	);
 	assert.equal(cashFreeGatheringPlan(input, 500, { PVE: { excluded: ["technical"] } }), null);
 	assert.equal(cashFreeGatheringPlan(input, 2000, {})?.total, 0);
+});
+
+test("a season deadline caps each mode's gathering, moving the rest to modes with time left", () => {
+	const input = route([
+		{ profile: "PVE", cost: 100 },
+		{ profile: "PVP", cost: 100 },
+	]);
+	// Two days: PVE gathers at most 30, PVP 50.
+	const capped = gatheringScenario(input, 60, {}, 2);
+	assert.deepEqual(
+		capped.quantities.map((row) => [row.profileKey, row.quantity]),
+		[
+			["PVE", 30],
+			["PVP", 30],
+		],
+	);
+	const breakpoints = buildGatheringSavings(input, 0, false, {}, 0, 2);
+	assert.ok(breakpoints.length > 0);
+	for (const point of breakpoints) {
+		assert.ok(point.parallelWindows <= 2, `${point.gathered} needs ${point.parallelWindows} days`);
+		assert.equal(
+			point.quantities.reduce((sum, row) => sum + row.quantity, 0),
+			point.gathered,
+		);
+	}
+	assert.ok(breakpoints.at(-1)!.gathered > 30 && breakpoints.at(-1)!.gathered <= 80);
+	assert.equal(seasonDaysLeft(Date.UTC(2026, 0, 3, 12), Date.UTC(2026, 0, 1)), 2);
+	assert.equal(seasonDaysLeft(null, Date.UTC(2026, 0, 1)), Infinity);
 });

@@ -45,6 +45,18 @@ export function updateGatheringChoice(raw: string | null, profile: string, enabl
 	});
 }
 
+/** Turn `documents` off in every mode of `profiles`, keeping each mode's other choices. */
+export function excludeGatheringTypes(raw: string | null, profiles: readonly string[], documents: readonly string[]) {
+	const current = readSettings(raw);
+	const filters = record(current.gatheringFilters);
+	const next = { ...filters };
+	for (const profile of profiles) {
+		const filter = record(filters[profile]);
+		next[profile] = { ...filter, excluded: [...new Set([...excludedKeys(filter.excluded), ...documents])] };
+	}
+	return JSON.stringify({ version: 1, ...current, gatheringFilters: next });
+}
+
 /** Normalized funding and gathering settings; reads never rewrite a malformed save. */
 export function parseFundingSettings(raw: string | null) {
 	const value = readSettings(raw);

@@ -15,9 +15,9 @@ const MAX_REVEALED_INLINE = 2;
 
 /** Choose how much to gather: no gathering or one of the cash breakpoints. */
 export function GatheringTargetPicker() {
-	const target = useBattlePassPlanContext().gathering;
+	const { gathering: target, deadline } = useBattlePassPlanContext();
 	const [more, setMore] = useState(false);
-	const { breakpoints, recommended, selected, baselineCents } = target;
+	const { breakpoints, recommended, selected, baselineCents, pastSeason } = target;
 	if (baselineCents === null || !breakpoints.length) return null;
 	const pinned = new Set([...breakpoints.slice(0, VISIBLE), recommended, selected].filter(Boolean));
 	// Hiding only one or two options is not worth a button.
@@ -25,7 +25,8 @@ export function GatheringTargetPicker() {
 	const rest = hidden.length > MAX_REVEALED_INLINE ? hidden : [];
 	const shown = more || !rest.length ? breakpoints : breakpoints.filter((point) => pinned.has(point));
 	const option = (point: GatheringBreakpoint | undefined) => {
-		const active = point === selected;
+		// A saved target past the season end stays the choice; the plan gathers what fits.
+		const active = point === selected && !pastSeason;
 		const Check = active ? CircleCheck : Circle;
 		return (
 			<button
@@ -77,6 +78,8 @@ export function GatheringTargetPicker() {
 				<h4 className="text-sm font-semibold">Gathering target</h4>
 				<p className="text-xs leading-relaxed text-muted-foreground">
 					Each option is the next drop in what you pay. The step plan follows your choice.
+					{Number.isFinite(deadline.daysLeft) &&
+						` Options gather only what fits in the ${days(deadline.daysLeft)} left.`}
 				</p>
 			</div>
 			<div
@@ -86,6 +89,28 @@ export function GatheringTargetPicker() {
 			>
 				{option(undefined)}
 				{shown.map(option)}
+				{pastSeason && (
+					<div
+						role="radio"
+						aria-checked
+						aria-disabled
+						className="flex w-full items-start gap-2 rounded-lg bg-warning/[0.07] p-3 text-left text-xs"
+					>
+						<CircleCheck className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+						<span className="min-w-0 space-y-1">
+							<span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+								Gather {pastSeason.gathered}
+								<span className="rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+									Past season end
+								</span>
+							</span>
+							<span className="block text-muted-foreground">
+								Needs {days(pastSeason.days)}, {days(deadline.daysLeft)} left. Gathers {selected?.gathered ?? 0} in
+								time; the rest is bought.
+							</span>
+						</span>
+					</div>
+				)}
 				{rest.length > 0 && (
 					<button
 						type="button"

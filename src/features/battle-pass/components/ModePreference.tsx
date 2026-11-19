@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { DAILY_HEADROOM, gatheringDailyCap } from "../lib/gathering-caps";
+import { BALANCED_MODE } from "../lib/owner-preference-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { SubDisclosure } from "./ui/Disclosure";
 import { GatheringMapsPicker } from "./GatheringMapsPicker";
@@ -15,13 +16,36 @@ const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 /** Mode colour mixed into the raised surface, so a selected card stays opaque and lifted. */
 const tint = (color: string, percent: number) => `color-mix(in srgb, ${color} ${percent}%, var(--surface-raised))`;
 
+/** Marks a day count past the season end. */
+function Late({ count, limit }: { count: number; limit: number }) {
+	return count > limit ? <span className="text-warning"> · late</span> : null;
+}
+
 /** A before → after value, coloured by whether the change helps (lower is better). */
-function Change({ from, to, format }: { from: number; to: number; format: (value: number) => string }) {
-	if (from === to) return <span className="text-subtle-foreground">No change</span>;
+function Change({
+	from,
+	to,
+	format,
+	limit = Infinity,
+}: {
+	from: number;
+	to: number;
+	format: (value: number) => string;
+	/** Values above it are marked late (days past the season end). */
+	limit?: number;
+}) {
+	if (from === to)
+		return (
+			<span className="text-subtle-foreground">
+				No change
+				<Late count={to} limit={limit} />
+			</span>
+		);
 	return (
 		<span className="tabular-nums">
 			<span className="text-muted-foreground">{format(from)} → </span>
 			<span className={to < from ? "text-success" : "text-warning"}>{format(to)}</span>
+			<Late count={to} limit={limit} />
 		</span>
 	);
 }
@@ -29,9 +53,11 @@ function Change({ from, to, format }: { from: number; to: number; format: (value
 /** Preferred gathering mode: claims that need gathering go to this profile
  * whenever that costs nothing. Each card shows what switching to it changes. */
 export function ModePreference() {
-	const { profiles, gathering, settings, modePreviews, modeCashFree } = useBattlePassPlanContext();
+	const { profiles, gathering, settings, modePreviews, modeCashFree, deadline } = useBattlePassPlanContext();
 	const { preferredMode, gatheringFilters, dailyHeadroom } = settings;
 	if (profiles.length <= 1) return null;
+	const { daysLeft } = deadline;
+	const cards = [...profiles, { key: BALANCED_MODE, label: "Balanced", color: "var(--brand)", note: "Spread out" }];
 	const current = modePreviews?.current;
 	const currentCashFree = modeCashFree?.[0];
 	return (
@@ -39,16 +65,17 @@ export function ModePreference() {
 			<div className="space-y-1">
 				<h4 className="text-sm font-semibold">Preferred gathering mode</h4>
 				<p className="text-xs leading-relaxed text-muted-foreground">
-					Pick one. Claims that need gathering go there when it costs nothing extra. Each card shows what changes if you
-					switch{modePreviews ? `, gathering ${modePreviews.gathered} documents` : ""}.
+					Pick one. Claims that need gathering go there when it costs nothing extra; Balanced spreads them so the modes
+					finish together. Each card shows what changes if you switch
+					{modePreviews ? `, gathering ${modePreviews.gathered} documents` : ""}.
 				</p>
 			</div>
 			<div
-				className={cn("grid gap-2 sm:grid-cols-3", syncValue)}
+				className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-4", syncValue)}
 				role="radiogroup"
 				aria-label="Preferred gathering mode"
 			>
-				{profiles.map((profile) => {
+				{cards.map((profile) => {
 					const selected = preferredMode === profile.key;
 					const off = !!gatheringFilters[profile.key]?.disabled;
 					const modeIndex = modePreviews?.modes.findIndex((entry) => entry.profileKey === profile.key) ?? -1;
@@ -64,7 +91,7 @@ export function ModePreference() {
 							onClick={() => settings.setPreferredMode(selected ? null : profile.key)}
 							style={selected ? { backgroundColor: tint(profile.color, 14) } : undefined}
 							className={cn(
-								"group space-y-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
+								"group flex flex-col justify-start space-y-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
 								liftedControl,
 								off && !selected && "opacity-60",
 							)}
@@ -82,7 +109,7 @@ export function ModePreference() {
 									{profile.label}
 								</span>
 								<span className="ml-auto text-[11px] text-muted-foreground">
-									{selected ? "Current" : off ? "Gathering off" : null}
+									{selected ? "Current" : off ? "Gathering off" : "note" in profile ? profile.note : null}
 								</span>
 							</span>
 							{!mode || !current ? (
@@ -93,7 +120,16 @@ export function ModePreference() {
 									<span className="text-right tabular-nums">{days(current.days)}</span>
 									<span className="text-muted-foreground">Cash-free finish</span>
 									<span className="text-right tabular-nums">
-										{currentCashFree === undefined ? "…" : currentCashFree === null ? "—" : days(currentCashFree)}
+										{currentCashFree === undefined ? (
+											"…"
+										) : currentCashFree === null ? (
+											"—"
+										) : (
+											<>
+												{days(currentCashFree)}
+												<Late count={currentCashFree} limit={daysLeft} />
+											</>
+										)}
 									</span>
 								</span>
 							) : (
@@ -109,7 +145,7 @@ export function ModePreference() {
 										) : cashFree === null || currentCashFree === null ? (
 											<span className="text-subtle-foreground">—</span>
 										) : (
-											<Change from={currentCashFree} to={cashFree} format={days} />
+											<Change from={currentCashFree} to={cashFree} format={days} limit={daysLeft} />
 										)}
 									</span>
 									<span className="text-muted-foreground">Claims</span>
