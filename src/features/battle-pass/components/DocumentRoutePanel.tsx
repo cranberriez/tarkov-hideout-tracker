@@ -1,6 +1,6 @@
 "use client";
 
-import { useBattlePassData, useBattlePassSave } from "../BattlePassSeason";
+import { useBattlePassData } from "../BattlePassSeason";
 import type { useDocumentInventory } from "../useDocumentInventory";
 import { CALCULATING_ROUTE } from "../useDocumentRoute";
 import { Toggle } from "./ui/Toggle";
@@ -16,10 +16,11 @@ import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
+import { DestinationPicker } from "./DestinationPicker";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
-import { fieldLabel, flatField, syncValue } from "./ui/field";
+import { fieldLabel, syncValue } from "./ui/field";
 
 type Route = PlannedRoute;
 
@@ -32,8 +33,7 @@ export function DocumentRoutePanel({
 	enabled: boolean;
 	onEnabledChange: (enabled: boolean) => void;
 }) {
-	const { pages, tiles, documents } = useBattlePassData();
-	const { stored } = useBattlePassSave();
+	const { documents } = useBattlePassData();
 	const {
 		result,
 		route: shownRoute,
@@ -41,10 +41,8 @@ export function DocumentRoutePanel({
 		calculating,
 		funding,
 		selectedGoal,
-		destinationIds,
 		buyAll,
 		allProfiles,
-		setDestination,
 		setBuyAll,
 		setAllProfiles,
 		incompleteCount,
@@ -95,30 +93,13 @@ export function DocumentRoutePanel({
 							</span>
 						</div>
 						<div className="flex flex-wrap items-start gap-x-6 gap-y-5">
-							<label className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
-								Destination
-								<select
-									value={selectedGoal}
-									onChange={(event) => setDestination(event.target.value)}
-									className={cn(flatField, "w-full min-w-0 sm:max-w-sm")}
-								>
-									<option value="finish">Finish the season</option>
-									<option value="owned">Most rewards with owned documents</option>
-									{stored.goals.length > 0 && <option value="goals">All saved goals</option>}
-									{destinationIds.map((id) => {
-										const tile = tiles.find((reward) => reward.id === id);
-										const page = pages.find((page) => page.cells.some((reward) => reward.id === id));
-										return (
-											<option key={id} value={id}>
-												{tile ? `${tile.displayName} (Page ${page?.num})` : `Unavailable goal (${id})`}
-											</option>
-										);
-									})}
-								</select>
+							<div className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
+								<span>Destination</span>
+								<DestinationPicker />
 								{selectedGoal === "finish" && !buyAll && (
 									<span className="font-normal">Includes the final page and its prerequisites.</span>
 								)}
-							</label>
+							</div>
 							{selectedGoal !== "owned" && (
 								<div className={fieldLabel}>
 									<span>Rewards</span>
