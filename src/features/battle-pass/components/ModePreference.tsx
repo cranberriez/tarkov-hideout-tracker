@@ -155,7 +155,7 @@ export function GatheringAdvanced() {
 			</div>
 			<div className="mt-3 space-y-1 border-t border-border/50 pt-3">
 				<h5 className="text-xs font-semibold">Daily headroom</h5>
-				<Toggle indicator checked={dailyHeadroom} onChange={settings.setDailyHeadroom}>
+				<Toggle indicator className="w-fit" checked={dailyHeadroom} onChange={settings.setDailyHeadroom}>
 					Leave {DAILY_HEADROOM} unplanned per day
 				</Toggle>
 				<p className="text-xs text-muted-foreground">
