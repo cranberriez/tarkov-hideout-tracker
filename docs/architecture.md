@@ -205,7 +205,7 @@ wells with those roles rather than assuming a dark canvas. The theme list lives 
 applies later changes. Nested theme previews must reset through
 `data-theme="default"` and use base roles, because derived roles resolve at `<html>`.
 
-`npm run test:theme` checks application source for palette drift. New color roles
+`pnpm run test:theme` checks application source for palette drift. New color roles
 belong in globals with a purpose before use in a component.
 
 ## Dependency direction

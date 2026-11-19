@@ -217,7 +217,7 @@ export async function getMarketWorkerDashboard(mode: TarkovDataMode): Promise<Ma
 				refresh,
 				analytics: {
 					available: false,
-					reason: `Analytics schema is behind (${code === "42P01" ? "tables" : "columns"} missing). Run npm run db:migrate.`,
+					reason: `Analytics schema is behind (${code === "42P01" ? "tables" : "columns"} missing). Run pnpm run db:migrate.`,
 				},
 			};
 		throw error;

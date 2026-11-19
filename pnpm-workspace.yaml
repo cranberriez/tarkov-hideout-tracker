@@ -1,0 +1,7 @@
+# Keep the package store links inside node_modules; Turbopack cannot resolve
+# packages linked from a global virtual store outside the project root.
+enableGlobalVirtualStore: false
+
+allowBuilds:
+  tesseract.js: false
+  unrs-resolver: true

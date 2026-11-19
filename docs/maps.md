@@ -46,7 +46,7 @@ mode in the game-data scope.
 
 Loose loot spawns get handbook categories (two levels, posters split out) from the
 committed [loot category table](../src/lib/data/map-loot-categories.json), refreshed with
-`npm run pull-map-loot-categories`; items missing from it stay uncategorised. Item names
+`pnpm run pull-map-loot-categories`; items missing from it stay uncategorised. Item names
 come from the search manifest. Prices load only while valuable-loot icons are on, as
 one shared price request for that map's loose loot items.
 

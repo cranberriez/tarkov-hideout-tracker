@@ -74,7 +74,7 @@ preserves the source flag. Item IDs intentionally have no item-table FK because
 synthetic, quest and unresolved references must survive ingestion.
 The migration backfills existing JSON arrays. The catalog writer validates inputs,
 upserts both representations and prunes stale input positions in the same transaction.
-Apply `npm run db:migrate` before deploying the updated catalog writer.
+Apply `pnpm run db:migrate` before deploying the updated catalog writer.
 Full recipe and station-graph readers reconstruct input arrays from the normalized
 rows. Item usage reads select only recipes producing the requested item or using
 it through the reverse indexes, including tools and quest inputs. They hydrate

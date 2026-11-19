@@ -31,7 +31,7 @@ async function readLocalDiscovery(source) {
 async function main() {
 	const [source, destination, ...extra] = process.argv.slice(2);
 	if (!source || !destination || extra.length || (source.startsWith("--") && source !== "--turso"))
-		throw new Error("Usage: npm run db:discovery:export -- <source.db|--turso> <discovery.json>");
+		throw new Error("Usage: pnpm run db:discovery:export <source.db|--turso> <discovery.json>");
 	let document;
 	if (source === "--turso") {
 		await loadLocalEnv(fileURLToPath(new URL("../", import.meta.url)));

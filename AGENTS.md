@@ -49,8 +49,8 @@ utilities and store actions. Keep local state local unless it needs a shared own
 
 Choose validation for the affected behavior: focused adjacent tests for logic,
 architecture/contract checks for boundary changes, and lint/build when relevant.
-For UI changes, use `npm run dev` to verify affected interactions and relevant
-loading/error states and mode switches. Docs-only changes need `npm run docs:check`.
+For UI changes, use `pnpm run dev` to verify affected interactions and relevant
+loading/error states and mode switches. Docs-only changes need `pnpm run docs:check`.
 [package.json](package.json) and [operations](docs/operations.md) list available
 checks; they are not a requirement to run every suite for every edit. Report
 failures without resetting data or changing unrelated code to hide them.

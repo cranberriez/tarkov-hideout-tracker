@@ -4,7 +4,7 @@ import { loadLocalEnv } from "./lib/config.mjs";
 
 await loadLocalEnv(fileURLToPath(new URL("../", import.meta.url)));
 if (process.argv.slice(2).some((arg) => arg !== "--storage"))
-	throw new Error("Usage: npm run db:status -- [--storage]");
+	throw new Error("Usage: pnpm run db:status [--storage]");
 const jiti = createJiti(import.meta.url);
 const { getPostgresPool, closePostgresPool } = await jiti.import("../src/server/postgres/connection.ts");
 try {
