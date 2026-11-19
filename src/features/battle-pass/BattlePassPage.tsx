@@ -19,10 +19,13 @@ import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuratio
 import { DocumentRoutePanel } from "./components/DocumentRoutePanel";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
-import { BattlePassPlanContext, useBattlePassPlan } from "./useBattlePassPlan";
+import { ANY_PROFILE, BattlePassPlanContext, useBattlePassPlan } from "./useBattlePassPlan";
 import { Segmented } from "./components/ui/Segmented";
 import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
+
+/** Reward-card badge for claims paid only with classified documents. */
+const ANY_PROFILE_BADGE = { label: ANY_PROFILE, color: "var(--muted-foreground)" };
 
 function useSpread() {
 	const [spread, setSpread] = useState(2);
@@ -57,7 +60,12 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 		showProfileRecommendations
 			? routeClaims.map(
 					(claim) =>
-						[claim.rewardId, documentInventory.profiles.find((profile) => profile.key === claim.profileKey)] as const,
+						[
+							claim.rewardId,
+							routePlan.anyProfileIds.has(claim.rewardId)
+								? ANY_PROFILE_BADGE
+								: documentInventory.profiles.find((profile) => profile.key === claim.profileKey),
+						] as const,
 				)
 			: [],
 	);

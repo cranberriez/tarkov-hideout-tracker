@@ -192,6 +192,7 @@ function RouteResult({
 	documents: ReturnType<typeof useBattlePassData>["documents"];
 	mostRewardsNow: boolean;
 }) {
+	const { claimProfileLabel } = useBattlePassPlanContext();
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
 	return (
 		<Disclosure
@@ -241,7 +242,7 @@ function RouteResult({
 											</span>
 										</span>
 									</td>
-									<td className="px-3 py-2.5 align-top font-medium">{claim.profileLabel}</td>
+									<td className="px-3 py-2.5 align-top font-medium">{claimProfileLabel(claim)}</td>
 									<td className="px-3 py-2.5 align-top">
 										<ul className="flex flex-wrap gap-x-4 gap-y-2">
 											{Object.entries(claim.cost).map(([key, amount]) => (

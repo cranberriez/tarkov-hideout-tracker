@@ -47,6 +47,8 @@ interface GatheringResult {
 	error?: string;
 }
 
+/** Shown instead of a profile for claims paid only with classified documents. */
+export const ANY_PROFILE = "Any";
 const NONE: number[] = [];
 const FUNDING_ERROR = "Could not calculate a purchase schedule. Change the balance or offer setting to try again.";
 
@@ -339,6 +341,32 @@ export function useBattlePassPlan(
 	/** The route the step plan describes (the worker's route while it recalculates). */
 	const flowRoute = selected && shownInput ? shownInput.route : route;
 
+	// Claims paid only with classified documents (no owned or gathered ordinary
+	// documents) can be claimed on any profile.
+	const anyProfileIds = useMemo(() => {
+		if (!route) return new Set<string>();
+		const gathering = new Set<string>();
+		if (selected && shownInput) {
+			const { gatheredByClaim } = gatheringScenario(shownInput.route, selected.gathered, shownInput.filters);
+			shownInput.route.claims.forEach((claim, index) => {
+				if (gatheredByClaim[index]?.length) gathering.add(claim.rewardId);
+			});
+		}
+		return new Set(
+			route.claims
+				.filter(
+					(claim) => !gathering.has(claim.rewardId) && Object.values(claim.ordinaryUsed).every((count) => count === 0),
+				)
+				.map((claim) => claim.rewardId),
+		);
+	}, [route, selected, shownInput]);
+	/** The profile to show for a claim: "Any" when it uses only classified documents. */
+	const claimProfileLabel = useCallback(
+		(claim: { rewardId: string; profileLabel: string }) =>
+			anyProfileIds.has(claim.rewardId) ? ANY_PROFILE : claim.profileLabel,
+		[anyProfileIds],
+	);
+
 	const canSave = !locked && ready && !syncing && !!shown && current;
 	const savePlan = () => {
 		if (!canSave || typeof result === "string") return;
@@ -421,6 +449,9 @@ export function useBattlePassPlan(
 		gathering,
 		flow,
 		flowRoute,
+		/** Reward IDs whose claim uses only classified documents. */
+		anyProfileIds,
+		claimProfileLabel,
 	};
 }
 

@@ -46,7 +46,7 @@ export function FundingInputs() {
 }
 
 export function RouteFundingPanel() {
-	const { route, funding: state } = useBattlePassPlanContext();
+	const { route, funding: state, claimProfileLabel } = useBattlePassPlanContext();
 	if (!route || !state) return null;
 	const result = typeof state === "string" ? state : state.plan;
 	const funding = typeof state === "string" ? null : state.comparison;
@@ -82,7 +82,10 @@ export function RouteFundingPanel() {
 										<p className="font-medium">
 											{index + 1}. {route.selected.find((tile) => tile.id === step.rewardId)?.displayName}{" "}
 											<span className="ml-2 font-normal text-muted-foreground">
-												{route.claims.find((claim) => claim.rewardId === step.rewardId)?.profileLabel}
+												{(() => {
+													const claim = route.claims.find((entry) => entry.rewardId === step.rewardId);
+													return claim && claimProfileLabel(claim);
+												})()}
 											</span>
 										</p>
 										{step.documentPacks.map((pack, i) => (
