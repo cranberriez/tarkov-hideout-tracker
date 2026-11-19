@@ -23,6 +23,7 @@ import { ANY_PROFILE, BattlePassPlanContext, useBattlePassPlan } from "./useBatt
 import { Segmented } from "./components/ui/Segmented";
 import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
+import { BattlePassTransfer } from "./components/BattlePassTransfer";
 
 /** Reward-card badge for claims paid only with classified documents. */
 const ANY_PROFILE_BADGE = { label: ANY_PROFILE, color: "var(--muted-foreground)" };
@@ -316,6 +317,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 					/>
 				</BattlePassPlanContext>
 			)}
+			<BattlePassTransfer inventory={documentInventory} />
 			{!listMode && (
 				<PageMinimap
 					{...{ first, spread, complete, goals, openPages, go }}

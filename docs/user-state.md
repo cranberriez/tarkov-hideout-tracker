@@ -99,6 +99,21 @@ cross-tab storage subscription and is outside progression backups and Settings
 resets. Validity is derived at read time; only complete, valid scope costs produce
 a plan document breakdown. See [Battle Pass document configuration](battle-pass-configuration.md).
 
+### Battle pass export and import
+
+The battle-pass page's utility row exports one season to JSON with
+[battle-pass-transfer-model](../src/features/battle-pass/lib/battle-pass-transfer-model.ts):
+ordinary document counts for each available profile, completed rewards, goals,
+classified balance, avoided documents, cost configuration, route settings and saved plan,
+the shared funding settings and the planning toggles (`requestedScope`, `useClassified`,
+`optimizerEnabled`, `showProfileRecommendations`). View-only preferences, legacy balances
+and document swaps are not exported. Import rejects other kinds, newer versions and other
+seasons; it skips unknown rewards and profiles that are not available here (seasonal
+characters are never created) and reports them as warnings. Only checked rows are written,
+each merged into the latest save with unknown fields kept; rewards this build does not know
+stay in completed rewards and custom costs. Document counts use `setOwnedFor`. This is
+separate from progression backups and Settings resets.
+
 ### Companion sync
 
 [CompanionSyncController](../src/features/sync/CompanionSyncController.tsx) polls the paired Mappinator app (see [sync-model](../src/features/sync/sync-model.ts) and [actions](../src/features/sync/companion-actions.ts)) and writes quest completion only through `applyQuestCompletionChange` on the **active** profile; polling never calls `setGameMode`/`selectSeason` and never touches the user store keys. The one exception is the corner notice for a live raid starting (`loading`): its **Go to map** button, on press only, switches to the raid's profile via `switchToProfile` (never for a KORD season that is not activated) and opens that map unless it is already showing; nothing switches profile or map automatically. The `/sync` connection card shows the same action as a banner while a raid is in progress ([useRaidMapAction](../src/features/sync/useRaidMapAction.ts)). A poll that throws is shown on that card (`syncError`) and retried, never ending polling. The session-only store also keeps a short position trail (newest 20, reset when a raid starts loading) that the Maps explorer draws, plus the latest group member positions (`group`, never persisted). Live completed/failed events whose mode maps (exactly, no PVP fallback) to the active profile apply immediately with an undo record; events for another profile wait in `pending` and apply when that profile becomes active. Events recovered from history go to `review` for explicit Apply/Dismiss on `/sync`. Every quest and raid event becomes one deduped feed entry (accepted and raid events are `info`, never applied); applied entries of one change share a batch, and Undo flips the whole batch. Handled event IDs (newest 2000 per profile) make replays idempotent, and the cursor advances only after the batch is stored. Disconnect clears the connection, cursor and queues but keeps handled IDs, the feed and batches (waiting/review entries become dismissed). Undo restores the exact prior completed/failed booleans and is available only while that profile is active.
