@@ -67,6 +67,10 @@ export function useFundingSettings() {
 					? Math.max(0, Math.floor(value.gatheringTarget))
 					: null,
 			gatheringFilters: readGatheringFilters(value.gatheringFilters),
+			/** Maps the player farms; null for every map. */
+			gatheringMaps: Array.isArray(value.gatheringMaps)
+				? value.gatheringMaps.filter((name): name is string => typeof name === "string")
+				: null,
 		};
 	}, [raw]);
 	return {
@@ -92,6 +96,9 @@ export function useFundingSettings() {
 		/** Plan each mode below its daily cap, leaving the scarce last documents. */
 		setDailyHeadroom: (value: boolean) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), dailyHeadroom: value })),
+		/** Maps to gather on, or null for every map. */
+		setGatheringMaps: (value: string[] | null) =>
+			write((current) => JSON.stringify({ version: 1, ...readSettings(current), gatheringMaps: value })),
 		setAllowSpecial: (value: boolean) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), allowSpecial: value })),
 	};

@@ -16,6 +16,7 @@ import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
+import { GatheringMapsPicker } from "./GatheringMapsPicker";
 import { DestinationPicker } from "./DestinationPicker";
 import { SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
 import { Disclosure } from "./ui/Disclosure";
@@ -144,6 +145,7 @@ export function DocumentRoutePanel({
 									<FundingInputs />
 								</div>
 								<ModePreference />
+								<GatheringMapsPicker />
 								<GatheringTargetPicker />
 								{incompleteCount > 0 && (
 									<p className="text-xs text-warning">

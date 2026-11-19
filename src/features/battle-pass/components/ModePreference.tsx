@@ -103,7 +103,7 @@ export function ModePreference() {
 
 /** Advanced gathering settings: which modes and documents to gather, and daily headroom. */
 export function GatheringAdvanced() {
-	const { profiles, settings } = useBattlePassPlanContext();
+	const { profiles, settings, mapExcluded } = useBattlePassPlanContext();
 	const { gatheringFilters, dailyHeadroom } = settings;
 	const { documents } = useBattlePassData();
 	return (
@@ -128,14 +128,15 @@ export function GatheringAdvanced() {
 								<span style={{ color: profile.color }}>{profile.label}</span>
 							</Toggle>
 							{documents.map((doc) => {
-								const on = !filter.disabled && !filter.excluded?.includes(doc.key);
+								const offMap = mapExcluded.includes(doc.key);
+								const on = !filter.disabled && !offMap && !filter.excluded?.includes(doc.key);
 								return (
 									<button
 										key={doc.key}
 										type="button"
 										aria-pressed={on}
-										disabled={filter.disabled}
-										title={documentDisplayName(doc.name)}
+										disabled={filter.disabled || offMap}
+										title={offMap ? "Not on your chosen maps" : documentDisplayName(doc.name)}
 										onClick={() => settings.setGatheringChoice(profile.key, !on, doc.key)}
 										className={cn(
 											"inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed",

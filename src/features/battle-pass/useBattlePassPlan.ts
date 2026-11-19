@@ -7,6 +7,13 @@ import { buildDocumentRouteModel, replayClaims, type RouteColumns } from "./lib/
 import { compareCurrencyBundles, optimizeRouteFunding, tarCoinFarmingSavings } from "./lib/funding-model";
 import { DAILY_HEADROOM } from "./lib/gathering-caps";
 import {
+	applyMapFilter,
+	mapExcludedTypes,
+	previewGathering,
+	type FewestMapsInput,
+	type GatheringPreview,
+} from "./lib/map-filter-model";
+import {
 	gatheringScenario,
 	type cashFreeGatheringPlan,
 	type GatheringBreakpoint,
@@ -81,7 +88,7 @@ export function useBattlePassPlan(
 	configuration: RewardConfiguration,
 	enabled = true,
 ) {
-	const { pages, documentKeys, seasonId } = useBattlePassData();
+	const { pages, documentKeys, seasonId, mapNames, mapOrder } = useBattlePassData();
 	const seasonalAvailable = useUserStore((state) => !!state.seasonalProfiles[seasonId]);
 	const { stored } = useBattlePassSave();
 	const settings = useFundingSettings();
@@ -289,9 +296,16 @@ export function useBattlePassPlan(
 	// Gathering breakpoints and cash-free plan (worker). The previous answer
 	// stays on screen while the worker recalculates.
 	const reserve = dailyHeadroom ? DAILY_HEADROOM : 0;
+	// Applied maps narrow the document types every mode may gather.
+	const profileKeys = useMemo(() => input.profiles.map((profile) => profile.key), [input.profiles]);
+	const mapFiltersFor = useCallback(
+		(maps: string[] | null) => applyMapFilter(gatheringFilters, profileKeys, mapExcludedTypes(maps, mapNames)),
+		[gatheringFilters, profileKeys, mapNames],
+	);
+	const filters = useMemo(() => mapFiltersFor(settings.gatheringMaps), [mapFiltersFor, settings.gatheringMaps]);
 	const gatheringInput = useMemo(
-		() => (route ? { route, startingTarCoins, allowSpecial, filters: gatheringFilters, reserve } : null),
-		[route, startingTarCoins, allowSpecial, gatheringFilters, reserve],
+		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve } : null),
+		[route, startingTarCoins, allowSpecial, filters, reserve],
 	);
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
@@ -377,6 +391,48 @@ export function useBattlePassPlan(
 		}
 		return [];
 	}, [selected, shownInput, funding, startingTarCoins, allowSpecial]);
+	// Map choice: price the current gathering amount with other maps, on the
+	// route the breakpoints were solved for.
+	const mapTarget = selected?.gathered ?? 0;
+	const previewMaps = useCallback(
+		(maps: string[] | null): GatheringPreview | null => {
+			if (!shownInput) return null;
+			try {
+				return previewGathering(
+					shownInput.route,
+					mapTarget,
+					mapFiltersFor(maps),
+					shownInput.startingTarCoins,
+					shownInput.allowSpecial,
+					shownInput.reserve,
+				);
+			} catch {
+				return null;
+			}
+		},
+		[shownInput, mapTarget, mapFiltersFor],
+	);
+	const fewestMapsInput = useMemo<FewestMapsInput | null>(
+		() =>
+			shownInput
+				? {
+						route: shownInput.route,
+						target: mapTarget,
+						filters: gatheringFilters,
+						profileKeys,
+						maps: mapOrder,
+						mapNames,
+						startingTarCoins: shownInput.startingTarCoins,
+						allowSpecial: shownInput.allowSpecial,
+						reserve: shownInput.reserve,
+					}
+				: null,
+		[shownInput, mapTarget, gatheringFilters, profileKeys, mapOrder, mapNames],
+	);
+	const mapExcluded = useMemo(
+		() => mapExcludedTypes(settings.gatheringMaps, mapNames),
+		[settings.gatheringMaps, mapNames],
+	);
 	/** The profile to show for a claim: "Any" when it uses only classified documents. */
 	const claimProfileLabel = useCallback(
 		(claim: { rewardId: string; profileLabel: string }) =>
@@ -469,6 +525,14 @@ export function useBattlePassPlan(
 		/** Reward IDs whose claim uses only classified documents. */
 		anyProfileIds,
 		claimProfileLabel,
+		// Maps to gather on
+		/** Document types no applied map spawns. */
+		mapExcluded,
+		/** Documents the map preview prices: the chosen gathering amount. */
+		mapTarget,
+		previewMaps,
+		/** Input for the "fewest maps" search, or null until gathering is solved. */
+		fewestMapsInput,
 		/** Extra TarCoins that would lower the cash paid, smallest first (at most two). */
 		farming,
 	};
