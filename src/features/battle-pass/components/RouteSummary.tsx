@@ -7,11 +7,12 @@ import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { syncValue } from "./ui/field";
+import { TarCoin } from "./ui/TarCoin";
 
 export function RouteSummary() {
 	const typesId = useId();
 	const [showTypes, setShowTypes] = useState(false);
-	const { route: shownRoute, gathering } = useBattlePassPlanContext();
+	const { route: shownRoute, gathering, leftover } = useBattlePassPlanContext();
 	const route = shownRoute!;
 	const plan = gathering.cashFree;
 	const { documents } = useBattlePassData();
@@ -69,6 +70,11 @@ export function RouteSummary() {
 									<span className="text-muted-foreground">
 										({ordinary} ordinary, {route.classifiedUsed} classified)
 									</span>
+									{leftover && leftover.gathered > 0 && (
+										<span className="block text-muted-foreground">
+											{leftover.gathered.toLocaleString()} more gathered at your target
+										</span>
+									)}
 								</span>
 								<strong>{percent}%</strong>
 							</div>
@@ -78,10 +84,20 @@ export function RouteSummary() {
 						</div>
 					</dd>
 				</div>
-				<div className="flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
-					<dt className="text-xs text-muted-foreground">Additional classified needed</dt>
-					<dd className={cn("mt-auto text-2xl font-semibold leading-none tabular-nums text-classified", syncValue)}>
-						{route.additionalClassified}
+				<div
+					data-syncing={gathering.stale || undefined}
+					className="group/sync flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3"
+				>
+					<dt className="text-xs text-muted-foreground">Classified to buy</dt>
+					<dd className={cn("mt-auto", syncValue)}>
+						<span className="block text-2xl font-semibold leading-none tabular-nums text-classified">
+							{leftover?.classifiedToBuy ?? route.additionalClassified}
+						</span>
+						{leftover && leftover.gathered > 0 && (
+							<span className="mt-1 block text-xs text-muted-foreground">
+								{route.additionalClassified} before gathering {leftover.gathered}
+							</span>
+						)}
 					</dd>
 				</div>
 				<div className="flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
@@ -119,6 +135,37 @@ export function RouteSummary() {
 					</dd>
 				</div>
 			</dl>
+			{leftover && (
+				<dl
+					aria-label="Left over after the route"
+					data-syncing={gathering.stale || undefined}
+					className="group/sync grid grid-cols-2 gap-2"
+				>
+					<div className="flex flex-col gap-3 rounded-lg bg-classified/[0.07] p-3">
+						<dt className="text-xs text-muted-foreground">Classified documents left over</dt>
+						<dd className={cn("mt-auto", syncValue)}>
+							<span className="block text-2xl font-semibold leading-none tabular-nums text-classified">
+								{leftover.classified.toLocaleString()}
+							</span>
+							<span className="mt-1 block text-xs text-muted-foreground">
+								{leftover.ownedClassified} owned unused · {leftover.spareClassified} spare from packs
+							</span>
+						</dd>
+					</div>
+					<div className="flex flex-col gap-3 rounded-lg bg-amber-400/[0.06] p-3">
+						<dt className="text-xs text-muted-foreground">TarCoins left over</dt>
+						<dd className={cn("mt-auto", syncValue)}>
+							<span className="flex items-center text-2xl font-semibold leading-none tabular-nums">
+								{leftover.tarCoins.toLocaleString()}
+								<TarCoin />
+							</span>
+							<span className="mt-1 block text-xs text-muted-foreground">
+								After paying ${(leftover.cashCents / 100).toFixed(2)}, gathering {gathering.selected?.gathered ?? 0}
+							</span>
+						</dd>
+					</div>
+				</dl>
+			)}
 		</div>
 	);
 }

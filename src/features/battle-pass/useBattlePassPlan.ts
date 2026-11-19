@@ -419,6 +419,36 @@ export function useBattlePassPlan(
 			return null;
 		}
 	}, [route, funding, selected, shownInput, startingTarCoins]);
+	/** What is left after the whole route at the gathering target, with the recommended purchase. */
+	const leftover = useMemo(() => {
+		if (!route || typeof funding !== "object" || !funding) return null;
+		try {
+			const scenario =
+				selected && shownInput ? gatheringScenario(shownInput.route, selected.gathered, shownInput.filters) : null;
+			const plan = selected && scenario ? selected.plan : funding.plan;
+			const usedOwned = scenario
+				? scenario.claims.reduce((sum, claim) => sum + claim.classifiedUsed, 0)
+				: route.classifiedUsed;
+			const ownedLeft = Math.max(0, stored.classified - usedOwned);
+			return {
+				/** Owned classified documents the route does not use. */
+				ownedClassified: ownedLeft,
+				/** Classified documents bought in packs beyond what the claims need. */
+				spareClassified: plan.balanceDocuments,
+				classified: ownedLeft + plan.balanceDocuments,
+				/** Classified documents still to buy after owned classified and gathering. */
+				classifiedToBuy: scenario
+					? scenario.claims.reduce((sum, claim) => sum + claim.additionalClassified, 0)
+					: route.additionalClassified,
+				/** Documents gathered for the target. */
+				gathered: scenario ? scenario.quantities.reduce((sum, row) => sum + row.quantity, 0) : 0,
+				tarCoins: plan.balanceTarCoins,
+				cashCents: plan.cashCents,
+			};
+		} catch {
+			return null;
+		}
+	}, [route, funding, selected, shownInput, stored.classified]);
 	/** The route the step plan describes (the worker's route while it recalculates). */
 	const flowRoute = selected && shownInput ? shownInput.route : route;
 
@@ -753,6 +783,7 @@ export function useBattlePassPlan(
 		gathering,
 		flow,
 		flowRoute,
+		leftover,
 		/** Reward IDs whose claim uses only classified documents. */
 		anyProfileIds,
 		claimProfileLabel,
