@@ -3,11 +3,13 @@ import { useBattlePassData } from "../BattlePassSeason";
 import { Check } from "lucide-react";
 import { swappedKey, type Costs } from "../lib/battle-pass-model";
 import { DocumentChip } from "./ui/DocumentChip";
+import { CLASSIFIED_DOCUMENT } from "../lib/battle-pass-display";
 import { cn } from "@/lib/utils";
 import styles from "../battle-pass.module.css";
 
 export function CostList({
 	costs,
+	classified = 0,
 	inventory,
 	wide = false,
 	previewEnabled = false,
@@ -16,6 +18,8 @@ export function CostList({
 	swapLocked = false,
 }: {
 	costs: Costs;
+	/** Classified documents spent alongside `costs` (planned costs). */
+	classified?: number;
 	inventory: Costs;
 	wide?: boolean;
 	previewEnabled?: boolean;
@@ -62,7 +66,8 @@ export function CostList({
 					/>
 				);
 			})}
-			{shown.length === 0 && (
+			{classified > 0 && <DocumentChip doc={CLASSIFIED_DOCUMENT} amount={classified} end />}
+			{shown.length === 0 && classified === 0 && (
 				<span className="flex items-center gap-1 text-xs text-success">
 					<Check size={15} />
 					Complete

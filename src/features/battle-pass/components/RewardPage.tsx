@@ -14,6 +14,7 @@ import {
 	type RewardConfiguration,
 	type CostEntry,
 } from "../lib/battle-pass-configuration";
+import type { PlannedSpend } from "../lib/claim-deduction-model";
 import styles from "../battle-pass.module.css";
 
 export function RewardPage({
@@ -27,6 +28,7 @@ export function RewardPage({
 	toggleTile,
 	costSetup,
 	recommendedProfiles,
+	plannedSpend,
 }: {
 	page: PassPage;
 	complete: Set<string>;
@@ -38,6 +40,8 @@ export function RewardPage({
 	completeTiles: (ids: string[]) => void;
 	toggleTile: (id: string) => void;
 	recommendedProfiles: Map<string, { label: string; color: string } | undefined>;
+	/** When set, unclaimed planned rewards show what the route spends instead of their configured cost. */
+	plannedSpend?: Map<string, PlannedSpend> | null;
 	costSetup: {
 		editing: boolean;
 		configuration: RewardConfiguration;
@@ -100,6 +104,7 @@ export function RewardPage({
 				<div className={styles.rewardGrid}>
 					{page.cells.map((tile) => {
 						const status = rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys);
+						const planned = complete.has(tile.id) ? undefined : plannedSpend?.get(tile.id);
 						return (
 							<RewardCard
 								key={`${tile.id}:${costSetup.editing}`}
@@ -130,7 +135,14 @@ export function RewardPage({
 										/>
 									) : undefined
 								}
-								configuredCosts={Object.keys(status.displayCosts).length ? status.displayCosts : null}
+								configuredCosts={
+									planned
+										? Object.fromEntries(Object.entries(planned.documents).filter(([, amount]) => amount > 0))
+										: Object.keys(status.displayCosts).length
+											? status.displayCosts
+											: null
+								}
+								classifiedCost={planned?.classified}
 								toggleGoal={() => toggleGoal(tile.id)}
 								toggleDone={() => toggleTile(tile.id)}
 							/>

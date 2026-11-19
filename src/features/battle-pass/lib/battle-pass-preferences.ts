@@ -15,6 +15,8 @@ export interface BattlePassPreferences {
 	optimizerEnabled: boolean;
 	/** Document inventory needs follow the saved plan while one exists. */
 	planNeeds: boolean;
+	/** Reward cards show what the active route spends on each claim instead of the configured cost. */
+	plannedCosts: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -30,6 +32,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	showProfileRecommendations: true,
 	optimizerEnabled: false,
 	planNeeds: true,
+	plannedCosts: false,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

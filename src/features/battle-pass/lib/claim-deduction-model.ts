@@ -105,3 +105,29 @@ export function rowClassified(row: ClaimRow, have: Costs) {
 		0,
 	);
 }
+
+/** What a claim spends: ordinary documents per cost line, the rest in classified documents. */
+export interface PlannedSpend {
+	documents: Costs;
+	classified: number;
+}
+
+/** Each route claim's spend: owned documents it uses plus what it gathers, classified for the rest. */
+export function plannedSpend(
+	claims: { rewardId: string; cost: Costs; ordinaryUsed: Costs }[],
+	gatheredByClaim: { documentKey: string; quantity: number }[][] | null,
+) {
+	return new Map(
+		claims.map((claim, index): [string, PlannedSpend] => {
+			const gathered = gatheredByClaim?.[index] ?? [];
+			const documents: Costs = {};
+			let classified = 0;
+			for (const [key, amount] of Object.entries(claim.cost)) {
+				const gather = gathered.find((row) => row.documentKey === key)?.quantity ?? 0;
+				documents[key] = Math.min(amount, (claim.ordinaryUsed[key] ?? 0) + gather);
+				classified += amount - documents[key];
+			}
+			return [claim.rewardId, { documents, classified }];
+		}),
+	);
+}

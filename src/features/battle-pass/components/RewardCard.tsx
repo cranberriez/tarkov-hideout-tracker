@@ -27,6 +27,7 @@ export function RewardCard({
 	requiredTypes,
 	onTypeCountChange,
 	recommendedProfile,
+	classifiedCost = 0,
 }: {
 	tile: Tile;
 	span?: "wide" | "tall";
@@ -45,6 +46,8 @@ export function RewardCard({
 	requiredTypes: number;
 	onTypeCountChange?: (count: number) => void;
 	recommendedProfile?: { label: string; color: string };
+	/** Classified documents the claim spends (planned costs only). */
+	classifiedCost?: number;
 }) {
 	const [adjustingTypes, setAdjustingTypes] = useState(false);
 	const [typeCount, setTypeCount] = useState("");
@@ -206,7 +209,9 @@ export function RewardCard({
 					) : (
 						editor
 					)}
-					{configuredCosts && !editing && <CostList costs={configuredCosts} inventory={{}} wide={span === "wide"} />}
+					{configuredCosts && !editing && (
+						<CostList costs={configuredCosts} classified={classifiedCost} inventory={{}} wide={span === "wide"} />
+					)}
 					{costsIncomplete && !editing && (
 						<p
 							className="text-[11px] text-warning"

@@ -71,7 +71,10 @@ function ClaimForm({
 		Object.fromEntries(rows.map((row) => [row.rewardId, { ...row.expected }])),
 	);
 	const [failure, setFailure] = useState<Extract<ClaimWriteResult, { ok: false }> | null>(null);
-	const entered = useMemo(() => rows.map((row) => ({ ...row, have: haves[row.rewardId] ?? row.expected })), [rows, haves]);
+	const entered = useMemo(
+		() => rows.map((row) => ({ ...row, have: haves[row.rewardId] ?? row.expected })),
+		[rows, haves],
+	);
 	const changed = entered.some((row) =>
 		Object.keys(row.cost ?? {}).some((key) => (row.have[key] ?? 0) !== (row.expected[key] ?? 0)),
 	);
@@ -140,9 +143,7 @@ function ClaimForm({
 										{classified > 0 && <ClassifiedTile count={classified} />}
 									</ul>
 								) : (
-									<p className="text-sm text-warning">
-										No configured cost. It is recorded without removing documents.
-									</p>
+									<p className="text-sm text-warning">No configured cost. It is recorded without removing documents.</p>
 								)}
 							</section>
 						);
@@ -192,8 +193,8 @@ function ClaimForm({
 								)}
 								{outcome.classifiedShort > plannedShort && (
 									<p className="text-xs text-warning">
-										{outcome.classifiedShort - plannedShort} more because you have fewer documents than planned.
-										Gather the rest first, or buy more classified.
+										{outcome.classifiedShort - plannedShort} more because you have fewer documents than planned. Gather
+										the rest first, or buy more classified.
 									</p>
 								)}
 							</>

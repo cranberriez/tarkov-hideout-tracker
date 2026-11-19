@@ -21,7 +21,7 @@ import {
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
 import { preferOwners } from "./lib/owner-preference-model";
-import { applyClaims, type ClaimRow } from "./lib/claim-deduction-model";
+import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-model";
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
@@ -478,14 +478,9 @@ export function useBattlePassPlan(
 
 		const draft = (ids: string[]): ClaimRow[] => {
 			const wanted = new Set(ids);
-			const planned: ClaimRow[] = lockedRoute.claims.flatMap((claim, index) => {
+			const spend = plannedSpend(lockedRoute.claims, scenario?.gatheredByClaim ?? null);
+			const planned: ClaimRow[] = lockedRoute.claims.flatMap((claim) => {
 				if (!wanted.has(claim.rewardId)) return [];
-				const gathered = scenario?.gatheredByClaim[index] ?? [];
-				const expected: Costs = {};
-				for (const [key, amount] of Object.entries(claim.cost)) {
-					const gather = gathered.find((row) => row.documentKey === key)?.quantity ?? 0;
-					expected[key] = Math.min(amount, (claim.ordinaryUsed[key] ?? 0) + gather);
-				}
 				const plannedAt = locked.claims.findIndex((entry) => entry.rewardId === claim.rewardId);
 				return [
 					{
@@ -493,7 +488,7 @@ export function useBattlePassPlan(
 						profileKey: claim.profileKey,
 						profileLabel: claim.profileLabel,
 						cost: claim.cost,
-						expected,
+						expected: spend.get(claim.rewardId)!.documents,
 						planIndex: plannedAt + 1,
 					},
 				];
@@ -512,7 +507,14 @@ export function useBattlePassPlan(
 						expected[key] = Math.min(amount, stock[key] ?? 0);
 						stock[key] = (stock[key] ?? 0) - expected[key];
 					}
-					return { rewardId: id, profileKey: profile.key, profileLabel: profile.label, cost, expected, planIndex: null };
+					return {
+						rewardId: id,
+						profileKey: profile.key,
+						profileLabel: profile.label,
+						cost,
+						expected,
+						planIndex: null,
+					};
 				});
 			return [...planned, ...offPlan];
 		};
@@ -586,6 +588,20 @@ export function useBattlePassPlan(
 		allowSpecial,
 	]);
 
+	/** What each claim of the active route spends, including its gathering target. */
+	const routeSpend = useMemo(() => {
+		if (!route) return null;
+		try {
+			const scenario =
+				selected && shownInput?.route === route
+					? gatheringScenario(route, selected.gathered, shownInput.filters)
+					: null;
+			return plannedSpend(route.claims, scenario?.gatheredByClaim ?? null);
+		} catch {
+			return null;
+		}
+	}, [route, selected, shownInput]);
+
 	const canSave = !locked && ready && !syncing && !!shown && current;
 	const savePlan = () => {
 		if (!canSave || typeof result === "string") return;
@@ -624,6 +640,8 @@ export function useBattlePassPlan(
 		lockedStatus,
 		/** Documents still to gather under the saved plan. */
 		lockedGathering,
+		/** Per-reward spend on the active route (ordinary documents and classified), or null without a route. */
+		routeSpend,
 		/** Claim drafting and effect preview while a saved plan replays, else null. */
 		claimPlanning,
 		/** The saved plan's document needs, or null without a replayable saved plan. */

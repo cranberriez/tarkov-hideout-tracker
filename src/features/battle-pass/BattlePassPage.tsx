@@ -50,7 +50,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const costSetup = useBattlePassConfiguration(seasonId, tiles);
 	const documentInventory = useDocumentInventory();
 	const { stored: progress, write } = useBattlePassSave();
-	const [{ listMode, requestedScope, showProfileRecommendations, optimizerEnabled }, setPreference] =
+	const [{ listMode, requestedScope, showProfileRecommendations, optimizerEnabled, plannedCosts }, setPreference] =
 		useBattlePassPreferences();
 	const routePlan = useBattlePassPlan(
 		documentInventory,
@@ -85,6 +85,9 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				? null
 				: `${result.message} ${result.undone ? "Nothing was changed." : "Some changes could not be undone. Check your document inventory and claimed rewards."}`,
 		);
+	// Planned costs follow the active route, so they need the optimizer and a solved route.
+	const routeSpend = optimizerEnabled && !costSetup.editing ? routePlan.routeSpend : null;
+	const plannedSpend = plannedCosts ? routeSpend : null;
 	const scope = progress.goals.length ? requestedScope : "all";
 	const updateIds = (field: "completed" | "goals", transform: (ids: string[]) => string[]) =>
 		write((raw) => {
@@ -286,6 +289,22 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 							variant="soft"
 							size="sm"
 							className="border-transparent hover:border-transparent"
+							aria-pressed={!!plannedSpend}
+							disabled={!routeSpend}
+							title={
+								routeSpend
+									? "Show what your route spends on each reward, including classified documents"
+									: "Enable the docs optimizer to see planned costs"
+							}
+							onClick={() => setPreference("plannedCosts", !plannedCosts)}
+						>
+							{plannedSpend && <Check size={14} aria-hidden />}
+							Use Planned Costs
+						</Button>
+						<Button
+							variant="soft"
+							size="sm"
+							className="border-transparent hover:border-transparent"
 							aria-pressed={costSetup.usingDefaults}
 							onClick={costSetup.toggleDefaults}
 						>
@@ -312,6 +331,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						{...{ page, complete, goals, suggestedOrder, openPages }}
 						costSetup={costSetup}
 						recommendedProfiles={recommendedProfiles}
+						plannedSpend={plannedSpend}
 						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}
 						toggleTile={(id) =>
 							complete.has(id) || !claimPlanning
