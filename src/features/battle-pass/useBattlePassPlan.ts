@@ -4,7 +4,12 @@ import { createContext, use, useCallback, useEffect, useMemo, useState, useSyncE
 import { getSeason } from "@/lib/cfg/seasons";
 import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { rewardCostStatus, type RewardConfiguration } from "./lib/battle-pass-configuration";
-import { buildDocumentRouteModel, replayClaims, type RouteColumns } from "./lib/document-route-model";
+import {
+	buildDocumentRouteModel,
+	replayClaims,
+	type DocumentRouteRequest,
+	type RouteColumns,
+} from "./lib/document-route-model";
 import { compareCurrencyBundles, optimizeRouteFunding, tarCoinFarmingSavings } from "./lib/funding-model";
 import { DAILY_HEADROOM } from "./lib/gathering-caps";
 import {
@@ -24,7 +29,7 @@ import {
 	type GatheringFilters,
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
-import { BALANCED_MODE, balanceOwners, preferOwners } from "./lib/owner-preference-model";
+import { BALANCED_MODE, preferOwners } from "./lib/owner-preference-model";
 import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-model";
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
@@ -111,6 +116,38 @@ function useGatheringWorker(input: GatheringInput | null) {
 		return () => worker.terminate();
 	}, [input]);
 	return { result, current: !!input && result?.input === input };
+}
+
+/** Balanced owners for `routes` (see `balanceOwners`), solved in a worker:
+ * undefined while solving; the routes unchanged if the worker fails. */
+function useBalancedRoutes(
+	request: DocumentRouteRequest,
+	routes: Route[] | null,
+	target: number,
+	filters: GatheringFilters,
+	reserve: number,
+) {
+	const input = useMemo(
+		() => (routes ? { request, routes, target, filters, reserve } : null),
+		[request, routes, target, filters, reserve],
+	);
+	const [result, setResult] = useState<{ input: typeof input; routes: Route[] } | null>(null);
+	useEffect(() => {
+		if (!input) return;
+		const worker = new Worker(new URL("./lib/owner-balance.worker.ts", import.meta.url), { type: "module" });
+		worker.onmessage = (event: MessageEvent<Route[] | null>) => {
+			setResult({ input, routes: event.data ?? input.routes });
+			worker.terminate();
+		};
+		worker.onerror = () => {
+			setResult({ input, routes: input.routes });
+			worker.terminate();
+		};
+		// The solver model is not needed to replay claims.
+		worker.postMessage({ ...input, request: { ...input.request, model: null } });
+		return () => worker.terminate();
+	}, [input]);
+	return input && result?.input === input ? result.routes : undefined;
 }
 
 /** Fastest cash-free days for the active route and each preferred-mode route, solved in a worker. */
@@ -292,27 +329,37 @@ export function useBattlePassPlan(
 
 	// Preferred mode first, skipped (gathering turned off) modes last. Balanced
 	// instead spreads the saved gathering target (everything gatherable without
-	// one) across modes. The same preference applies to every route before it is priced.
-	const neutral = useCallback((key: string) => (gatheringFilters[key]?.disabled ? 2 : 1), [gatheringFilters]);
-	const balanceTarget = gatheringTarget ?? Infinity;
-	const arrangeFor = useCallback(
+	// one) across modes, in a worker; it runs whenever several profiles plan, so
+	// the Balanced card can preview it. The same preference applies to every
+	// route before it is priced.
+	const balanced = preferredMode === BALANCED_MODE;
+	const preferFor = useCallback(
 		(mode: string | null, candidate: Route) =>
-			mode === BALANCED_MODE
-				? balanceOwners(request, preferOwners(request, candidate, neutral), balanceTarget, filters, reserve)
-				: preferOwners(request, candidate, (key) => (key === mode ? 0 : neutral(key))),
-		[request, neutral, balanceTarget, filters, reserve],
+			preferOwners(request, candidate, (key) => (key === mode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1)),
+		[request, gatheringFilters],
 	);
-	const preferredBase = useMemo(() => base && arrangeFor(preferredMode, base), [base, arrangeFor, preferredMode]);
-	const alternatives = useMemo(
-		() =>
-			Array.isArray(candidates)
-				? candidates.map((candidate) => ({
-						columns: candidate.columns,
-						route: arrangeFor(preferredMode, candidate.route),
-					}))
-				: null,
-		[candidates, arrangeFor, preferredMode],
+	const balancing = !locked && input.profiles.length > 1;
+	const baseRoutes = useMemo(() => (balancing && base ? [base] : null), [balancing, base]);
+	const candidateRoutes = useMemo(
+		() => (balancing && Array.isArray(candidates) ? candidates.map((candidate) => candidate.route) : null),
+		[balancing, candidates],
 	);
+	const balanceTarget = gatheringTarget ?? Infinity;
+	const balancedBase = useBalancedRoutes(request, baseRoutes, balanceTarget, filters, reserve)?.[0];
+	const balancedCandidates = useBalancedRoutes(request, candidateRoutes, balanceTarget, filters, reserve);
+	/** The fewest-documents route with preferred owners; null while Balanced is solving. */
+	const preferredBase = useMemo(
+		() => (!base ? null : balanced ? (balancedBase ?? null) : preferFor(preferredMode, base)),
+		[base, balanced, balancedBase, preferFor, preferredMode],
+	);
+	const alternatives = useMemo(() => {
+		if (!Array.isArray(candidates)) return null;
+		if (balanced && !balancedCandidates) return null;
+		return candidates.map((candidate, index) => ({
+			columns: candidate.columns,
+			route: balanced ? balancedCandidates![index] : preferFor(preferredMode, candidate.route),
+		}));
+	}, [candidates, balanced, balancedCandidates, preferFor, preferredMode]);
 
 	// The default route is the cheapest checkout among the fewest-documents route
 	// and its alternatives, each gathering the same amount: the gathering target as
@@ -371,7 +418,7 @@ export function useBattlePassPlan(
 			? solved
 			: adoptedIndex >= 0
 				? alternatives![adoptedIndex].route
-				: preferredBase!;
+				: (preferredBase ?? CALCULATING_ROUTE);
 	const ready = typeof result !== "string";
 	const calculating = result === CALCULATING_ROUTE;
 	// Keep the last route on screen during recalculation so the page does not collapse and jump.
@@ -495,8 +542,13 @@ export function useBattlePassPlan(
 		try {
 			const price = (candidate: Route) =>
 				previewGathering(candidate, gathered, filters, startingTarCoins, allowSpecial, reserve, daysLeft);
-			const modes = [...input.profiles.map((profile) => profile.key), BALANCED_MODE].map((mode) => {
-				const preferred = arrangeFor(mode, raw);
+			// Balanced comes from the worker; its card waits while it solves.
+			const balancedRaw = activeCandidate > 0 ? balancedCandidates?.[activeCandidate - 1] : balancedBase;
+			const arranged = [
+				...input.profiles.map((profile) => ({ mode: profile.key, route: preferFor(profile.key, raw) })),
+				...(balancedRaw ? [{ mode: BALANCED_MODE, route: balancedRaw }] : []),
+			];
+			const modes = arranged.map(({ mode, route: preferred }) => {
 				return {
 					/** A profile key, or BALANCED_MODE. */
 					profileKey: mode,
@@ -523,7 +575,9 @@ export function useBattlePassPlan(
 		allowSpecial,
 		reserve,
 		daysLeft,
-		arrangeFor,
+		preferFor,
+		balancedBase,
+		balancedCandidates,
 	]);
 	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
 
