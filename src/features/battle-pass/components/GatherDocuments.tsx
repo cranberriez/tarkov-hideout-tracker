@@ -136,9 +136,12 @@ export function GatherDocuments() {
 													<Link
 														href={mapExplorerHref(profileMode(mode.key), explorer.key, "documents")}
 														prefetch={false}
+														target="_blank"
+														rel="noopener"
 														className="group/map -mx-1.5 flex items-center gap-2.5 rounded-md px-1.5 py-1 transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-brand"
 													>
 														{body}
+														<span className="sr-only"> (opens in a new tab)</span>
 													</Link>
 												) : (
 													<div className="flex items-center gap-2.5 py-1">{body}</div>

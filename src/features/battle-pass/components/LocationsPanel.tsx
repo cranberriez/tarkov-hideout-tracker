@@ -69,7 +69,9 @@ function MapTile({ map, selected }: { map: string; selected: ReadonlySet<string>
 					<Link
 						href={mapExplorerHref(mode, explorerMap.key, "documents")}
 						prefetch={false}
-						aria-label={`${map} document map`}
+						target="_blank"
+						rel="noopener"
+						aria-label={`${map} document map (opens in a new tab)`}
 						className="group/map inline-flex items-center gap-1 transition-colors hover:text-brand hover:underline focus-visible:text-brand"
 					>
 						{map}
@@ -193,9 +195,12 @@ export function LocationsPanel() {
 					<Link
 						href={documentMapsHref(mode)}
 						prefetch={false}
+						target="_blank"
+						rel="noopener"
 						className="mr-2 inline-flex items-center gap-1 text-xs text-brand underline underline-offset-2"
 					>
 						<MapIcon className="size-3.5" aria-hidden /> Document map
+						<span className="sr-only"> (opens in a new tab)</span>
 					</Link>
 					<Button
 						hidden={!expanded}
