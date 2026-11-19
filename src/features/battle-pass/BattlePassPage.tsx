@@ -20,17 +20,9 @@ import { DocumentRoutePanel } from "./components/DocumentRoutePanel";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
 import { BattlePassPlanContext, useBattlePassPlan } from "./useBattlePassPlan";
+import { Segmented } from "./components/ui/Segmented";
 import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
-
-function headerControlClass(selected: boolean) {
-	return cn(
-		"h-10 rounded-md border-transparent px-4 text-sm font-medium hover:border-transparent",
-		selected
-			? "bg-brand/15 text-brand hover:bg-brand/20"
-			: "bg-surface-raised/50 text-muted-foreground hover:bg-surface-raised hover:text-foreground",
-	);
-}
 
 function useSpread() {
 	const [spread, setSpread] = useState(2);
@@ -163,42 +155,28 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 						{completedCount} / {tiles.length} rewards claimed
 					</p>
 					<div className="flex flex-wrap items-center gap-2">
-						<div role="group" aria-label="Plan scope" className="flex flex-wrap items-center gap-2">
-							<span className="text-sm text-muted-foreground">Plan</span>
-							<Button
-								size="md"
-								variant="soft"
-								className={headerControlClass(scope === "all")}
-								selected={scope === "all"}
-								aria-pressed={scope === "all"}
-								onClick={() => setPreference("requestedScope", "all")}
-							>
-								Everything
-							</Button>
-							<Button
-								size="md"
-								variant="soft"
-								className={headerControlClass(scope === "goals")}
-								disabled={!progress.goals.length}
-								selected={scope === "goals"}
-								aria-pressed={scope === "goals"}
-								onClick={() => setPreference("requestedScope", "goals")}
-							>
-								Goals
-							</Button>
-						</div>
+						<span className="text-sm text-muted-foreground">Plan</span>
+						<Segmented
+							label="Plan scope"
+							value={scope}
+							onChange={(value) => setPreference("requestedScope", value)}
+							options={[
+								{ value: "all", label: "Everything" },
+								{ value: "goals", label: "Goals", disabled: !progress.goals.length },
+							]}
+						/>
 						<span aria-hidden className="mx-1 h-5 w-px bg-border" />
-						<Button
-							size="md"
-							variant="soft"
-							className={headerControlClass(listMode)}
-							selected={listMode}
-							aria-pressed={listMode}
-							onClick={() => setPreference("listMode", !listMode)}
+						<Toggle
+							indicator
+							className="h-9 text-sm"
+							checked={listMode}
+							onChange={(value) => setPreference("listMode", value)}
 						>
 							List view
-						</Button>
+						</Toggle>
 						<Toggle
+							indicator
+							className="h-9 text-sm"
 							disabled={!optimizerEnabled}
 							title={optimizerEnabled ? undefined : "Enable the docs optimizer to see recommendations"}
 							checked={optimizerEnabled && showProfileRecommendations}

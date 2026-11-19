@@ -10,7 +10,7 @@ export function Segmented<T extends string>({
 }: {
 	label: string;
 	value: T;
-	options: { value: T; label: string }[];
+	options: { value: T; label: string; disabled?: boolean }[];
 	onChange: (value: T) => void;
 }) {
 	return (
@@ -22,9 +22,10 @@ export function Segmented<T extends string>({
 						key={option.value}
 						type="button"
 						aria-pressed={selected}
+						disabled={option.disabled}
 						onClick={() => onChange(option.value)}
 						className={cn(
-							"rounded-[5px] px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-brand",
+							"rounded-[5px] px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-40",
 							selected
 								? cn(liftedControl, liftedSelected)
 								: "border border-transparent text-foreground/70 transition-colors hover:text-foreground",
