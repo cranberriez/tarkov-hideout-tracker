@@ -56,13 +56,15 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 		costSetup.configuration,
 		optimizerEnabled && !costSetup.editing,
 	);
+	const routeClaims =
+		optimizerEnabled && !costSetup.editing && route.result && typeof route.result !== "string"
+			? route.result.claims
+			: [];
+	// Suggestions come only from the optimizer's claim order; with it off, nothing is suggested.
+	const suggestedOrder = new Map(routeClaims.map((claim, index) => [claim.rewardId, index + 1] as const));
 	const recommendedProfiles = new Map(
-		optimizerEnabled &&
-			showProfileRecommendations &&
-			!costSetup.editing &&
-			typeof route.result !== "string" &&
-			route.result
-			? route.result.claims.map(
+		showProfileRecommendations
+			? routeClaims.map(
 					(claim) =>
 						[claim.rewardId, documentInventory.profiles.find((profile) => profile.key === claim.profileKey)] as const,
 				)
@@ -135,7 +137,6 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	);
 	const complete = new Set(progress.completed);
 	const goals = new Set(progress.goals);
-	const filler = new Set(scope === "goals" ? plan.fillerIds : []);
 	const openPages = unlockedPages(progress.completed, pages);
 	const completedCount = tiles.filter((tile) => complete.has(tile.id)).length;
 	const remainingTotal = tiles
@@ -306,7 +307,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				{visible.map((page) => (
 					<RewardPage
 						key={page.num}
-						{...{ page, complete, goals, filler, openPages }}
+						{...{ page, complete, goals, suggestedOrder, openPages }}
 						costSetup={costSetup}
 						recommendedProfiles={recommendedProfiles}
 						toggleGoal={(id) => updateIds("goals", (ids) => toggleId(ids, id))}

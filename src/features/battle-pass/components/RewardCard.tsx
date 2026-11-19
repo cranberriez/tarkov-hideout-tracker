@@ -15,7 +15,7 @@ export function RewardCard({
 	pageNumber,
 	done,
 	goal,
-	filler,
+	suggestedOrder,
 	toggleGoal,
 	toggleDone,
 	configuredCosts,
@@ -33,7 +33,7 @@ export function RewardCard({
 	pageNumber: number;
 	done: boolean;
 	goal: boolean;
-	filler: boolean;
+	suggestedOrder?: number;
 	toggleGoal: () => void;
 	toggleDone: () => void;
 	configuredCosts: Record<string, number> | null;
@@ -91,11 +91,6 @@ export function RewardCard({
 							)}
 						</div>
 					)}
-					{filler && !editing && !done && !goal && (
-						<span className="absolute left-2 top-2 rounded bg-info-surface px-2 py-1 text-[10px] font-medium text-info">
-							Suggested
-						</span>
-					)}
 					<div className="absolute right-2 top-2 z-10 flex gap-1">
 						<ActionChip
 							disabled={editing}
@@ -116,17 +111,29 @@ export function RewardCard({
 							icon={<Check size={19} strokeWidth={done ? 3 : 1.8} />}
 						/>
 					</div>
-					{!done && !editing && recommendedProfile && (
-						<span
-							className="absolute right-2 top-12 z-10 rounded px-2 py-1 text-[10px] font-semibold"
-							style={{
-								color: recommendedProfile.color,
-								backgroundColor: `color-mix(in srgb, ${recommendedProfile.color} 18%, var(--card))`,
-							}}
-							title={`Recommended claiming profile: ${recommendedProfile.label}`}
-						>
-							{recommendedProfile.label}
-						</span>
+					{!done && !editing && (suggestedOrder !== undefined || recommendedProfile) && (
+						<div className="absolute left-2 top-2 z-10 flex items-center gap-1 text-[10px] font-semibold">
+							{recommendedProfile && (
+								<span
+									className="rounded px-2 py-1"
+									style={{
+										color: recommendedProfile.color,
+										backgroundColor: `color-mix(in srgb, ${recommendedProfile.color} 18%, var(--card))`,
+									}}
+									title={`Recommended claiming profile: ${recommendedProfile.label}`}
+								>
+									{recommendedProfile.label}
+								</span>
+							)}
+							{suggestedOrder !== undefined && (
+								<span
+									className="rounded bg-card/85 px-2 py-1 text-muted-foreground"
+									title={`Optimizer claim order: ${suggestedOrder}`}
+								>
+									Claim <span className="text-foreground tabular-nums">#{suggestedOrder}</span>
+								</span>
+							)}
+						</div>
 					)}
 				</div>
 				<div

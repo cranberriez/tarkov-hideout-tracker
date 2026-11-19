@@ -98,7 +98,7 @@ The banner compares both totals and their classified-only 1:1 alternatives, hidi
 Goals when none are selected, and displays the configured season deadline in Pacific time.
 Setup Costs edits per-season reward document costs in a draft. The viewer shows a
 verified document breakdown only when every outstanding reward in the chosen scope
-is configured, including suggested goal prerequisites. See
+is configured, including the cheapest goal prerequisites. See
 [Battle Pass document configuration](battle-pass-configuration.md) for the setup flow.
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)

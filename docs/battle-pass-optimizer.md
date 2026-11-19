@@ -2,7 +2,7 @@
 
 ## Document route
 
-In **Battle Pass → Docs Breakdown**, turn on **Optimizer** (off by default) to calculate routes and show claiming-profile recommendations on reward cards. Then select a final-page reward, a saved goal, all saved goals, or **Finish the season**. In the required-rewards scope, finishing means claiming the final page and enough prerequisites to reach it. Select **All rewards through destination** with **Finish the season** to buy every outstanding reward. The controls recalculate the preview as inventory, costs, and selections change.
+In **Battle Pass → Docs Breakdown**, turn on **Optimizer** (off by default) to calculate routes and show claiming-profile recommendations on reward cards. Reward cards in the route show **Claim #N**, their position in the claim order, and **Claim suggested** claims those rewards on a page. With the optimizer off, no rewards are suggested. Then select a final-page reward, a saved goal, all saved goals, or **Finish the season**. In the required-rewards scope, finishing means claiming the final page and enough prerequisites to reach it. Select **All rewards through destination** with **Finish the season** to buy every outstanding reward. The controls recalculate the preview as inventory, costs, and selections change.
 
 To see how far current inventory can take you, choose **Most rewards with owned documents**. Each new page requires all but one reward on the preceding page. Already claimed rewards count toward the gate across all profiles.
 

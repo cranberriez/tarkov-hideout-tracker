@@ -94,7 +94,7 @@ The **Docs Breakdown** section shows its current scope below the heading and sit
 leaving the area above the rewards for inventory and setup.
 A verified plan document breakdown requires valid costs for every unclaimed reward
 in Everything, or every
-outstanding goal and suggested prerequisite in Goals. The advisory reports how
+outstanding goal and cheapest prerequisite in Goals. The advisory reports how
 many required rewards still need costs; unresolved saved goals also block a
 verified goal breakdown. Total-only planning remains available during partial setup.
 The Document inventory row above Document locations edits ordinary documents for

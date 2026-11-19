@@ -20,7 +20,7 @@ export function RewardPage({
 	page,
 	complete,
 	goals,
-	filler,
+	suggestedOrder,
 	openPages,
 	toggleGoal,
 	completeTiles,
@@ -31,7 +31,8 @@ export function RewardPage({
 	page: PassPage;
 	complete: Set<string>;
 	goals: Set<string>;
-	filler: Set<string>;
+	/** Optimizer claim order (1-based) for rewards it suggests claiming. */
+	suggestedOrder: Map<string, number>;
 	openPages: boolean[];
 	toggleGoal: (id: string) => void;
 	completeTiles: (ids: string[]) => void;
@@ -48,7 +49,7 @@ export function RewardPage({
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 	const suggestedIds = page.cells
-		.filter((tile) => filler.has(tile.id) && !complete.has(tile.id))
+		.filter((tile) => suggestedOrder.has(tile.id) && !complete.has(tile.id))
 		.map((tile) => tile.id);
 	const previousDone = index > 0 ? pages[index - 1].cells.filter((tile) => complete.has(tile.id)).length : 0;
 	return (
@@ -79,19 +80,19 @@ export function RewardPage({
 								size="xs"
 								variant="ghost"
 								disabled={costSetup.editing || suggestedIds.length === 0}
-								aria-label={`Complete suggested: Page ${page.num}`}
+								aria-label={`Claim suggested: Page ${page.num}`}
 								onClick={() => completeTiles(suggestedIds)}
 							>
-								Complete suggested
+								Claim suggested
 							</Button>
 							<Button
 								size="xs"
 								variant="ghost"
 								disabled={costSetup.editing || doneCount === page.cells.length}
-								aria-label={`Complete all: Page ${page.num}`}
+								aria-label={`Claim all: Page ${page.num}`}
 								onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
 							>
-								Complete all
+								Claim all
 							</Button>
 						</div>
 					}
@@ -107,7 +108,7 @@ export function RewardPage({
 								pageNumber={page.num}
 								done={complete.has(tile.id)}
 								goal={goals.has(tile.id)}
-								filler={filler.has(tile.id)}
+								suggestedOrder={suggestedOrder.get(tile.id)}
 								recommendedProfile={recommendedProfiles.get(tile.id)}
 								editing={costSetup.editing}
 								costErrors={status.errors}
