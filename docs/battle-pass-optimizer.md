@@ -14,6 +14,8 @@ In **Route configuration**, enter the current global TarCoin balance and enable 
 
 **Save cash by gathering** shows how additional ordinary documents would change that receipt. Each alternative starts from current inventory and keeps the same rewards, claiming profiles, and order. The highlighted recommendation lists quantities by mode. Under **Modes and documents to gather**, turn off a mode or individual document types to recalculate gathering. Choices are saved on this device per profile, including each seasonal character. Turning a mode back on restores its document selections. Owned stock and reward claims still count in every mode. Gather the cumulative quantities in a single row to reach its cash total. The list ends before gathering would fully cover the route. A row can still cost $0 when an existing TarCoin balance or reward income covers the remaining documents.
 
+**Step-by-step plan**, below the gathering savings, lays the active route out left to right: gather ordinary documents per mode, buy TarCoins, then alternate classified purchases with the runs of claims between them, including reward TarCoins earned. Choose **No gathering** or any gathering option; the recommended one is selected by default. Each choice reprices the same claim order. Model: [purchase-flow-model.ts](../src/features/battle-pass/lib/purchase-flow-model.ts).
+
 Each profile has a separate acquisition limit across all document types in a 24-hour period. PVP can collect 25, PVE can collect 15, and a seasonal character can collect 40. The estimate assumes the full allowance is available on each listed profile and counts periods in parallel. Edit these values in [gathering-caps.ts](../src/features/battle-pass/lib/gathering-caps.ts).
 
 | Classified documents | TarCoins |
@@ -33,3 +35,15 @@ Each profile has a separate acquisition limit across all document types in a 24-
 | 12,500 | 99.99 |
 | 20,250 | 149.99 |
 | 2,000 (once) | 9.99 |
+
+## Route options
+
+**Route options** compares viable claim routes and TarCoin purchases. The route planner minimizes documents first, so a route with one more document can still be better when it earns reward TarCoins. For example, on page 08 TarCoin ×50 costs one more document than White accent walls. Depending on the wallet and inventory, that swap can avoid a larger pack, leave more TarCoins for the same checkout or cost more.
+
+After the active route is calculated, a background worker solves the same route model again for each higher total of reward TarCoins. It keeps the fewest-document route at each level, buys at most 20 more classified documents than the active route and prefers the active route's rewards when choices tie. A route with more documents and no more reward TarCoins never costs less, so these levels cover every route worth comparing. Wallet and offer changes only reprice the routes; they do not re-solve.
+
+Each route lists TarCoin purchases up to $10 above its minimum that leave more TarCoins after the pass. **Show more options** under a route adds one purchase: the cheapest single regular pack (with the one-time offer when it is enabled) that funds the route and costs more than the listed purchases. **Show fewer** hides it again, and it resets when the routes are recalculated. Purchases within 10¢ of each other form a price tier, which keeps the one leaving the most TarCoins; the cheapest tier also keeps the exact minimum. An option is hidden when another option costs no more, buys no more classified documents and leaves at least as many TarCoins. The section shows one card per route: the optimizer route first, then each alternative with its reward swaps and classified documents to buy. Each card lists its purchases with the pack receipt, the cash paid now and the TarCoins left. Each purchase states the difference from the cheapest checkout of the optimizer's route, such as “Spend $0.01 more and keep 100 more TC”. The active route's recommended purchase is marked as the one shown in Route funding.
+
+Each route card first shows its **Classified documents**: the document packs each listed purchase leads to, the total TarCoins they cost, spare documents and when to buy each pack in the claim order. It compares them with the cheapest packs if every TarCoin were available up front; a difference means the purchase must wait for TarCoins earned along the claim order. Purchases that share the same packs and timing share one entry. The TarCoin purchases follow. The section sits above Route funding because the claim order does not depend on how TarCoins are bought.
+
+**Use this route** makes claim markers, claim order and funding follow that route. The choice is not saved: it ends when any route setting changes or the page reloads. Model: [route-options-model.ts](../src/features/battle-pass/lib/route-options-model.ts).

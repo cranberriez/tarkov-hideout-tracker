@@ -5,6 +5,8 @@ import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { rewardCostStatus, type RewardConfiguration } from "./lib/battle-pass-configuration";
 import type { useDocumentInventory } from "./useDocumentInventory";
 import { useDocumentRoute } from "./useDocumentRoute";
+import { buildDocumentRouteModel, interpretDocumentRoute, type RouteColumns } from "./lib/document-route-model";
+import { useRouteOptions } from "./useRouteOptions";
 import { useUserStore } from "@/lib/stores/useUserStore";
 
 /** One active route supplies the breakdown, funding calculator and reward recommendations. */
@@ -77,7 +79,18 @@ export function useDocumentRouteController(
 		seasonId,
 		seasonalAvailable,
 	]);
-	const result = useDocumentRoute(input, enabled && (allProfiles || inventory.available));
+	const request = useMemo(() => buildDocumentRouteModel(input), [input]);
+	const solving = enabled && (allProfiles || inventory.available);
+	const baseResult = useDocumentRoute(request, solving);
+	const base = typeof baseResult === "string" ? null : baseResult;
+	const options = useRouteOptions(request, base, solving && !input.mostRewardsNow);
+	// An adopted alternative lasts until any route input changes or the page reloads.
+	const [adopted, setAdopted] = useState<{ request: typeof request; columns: RouteColumns } | null>(null);
+	const adoptedColumns = base && adopted?.request === request ? adopted.columns : null;
+	const result = useMemo(
+		() => (adoptedColumns ? interpretDocumentRoute(request, adoptedColumns) : baseResult),
+		[adoptedColumns, request, baseResult],
+	);
 	const lastRelevantPage =
 		selectedGoal === "finish" || selectedGoal === "owned"
 			? pages.length - 1
@@ -93,6 +106,10 @@ export function useDocumentRouteController(
 		);
 	return {
 		result,
+		baseRoute: base,
+		options,
+		adoptedColumns,
+		adoptRoute: (columns: RouteColumns | null) => setAdopted(columns ? { request, columns } : null),
 		selectedGoal,
 		destinationIds,
 		buyAll,

@@ -1,15 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-	buildDocumentRouteModel,
-	interpretDocumentRoute,
-	type DocumentRouteInput,
-	type RouteColumns,
-} from "./lib/document-route-model";
+import { interpretDocumentRoute, type DocumentRouteRequest, type RouteColumns } from "./lib/document-route-model";
 
 export const CALCULATING_ROUTE = "Calculating document route…";
 
-export function useDocumentRoute(input: DocumentRouteInput, enabled = true) {
-	const request = useMemo(() => buildDocumentRouteModel(input), [input]);
+export function useDocumentRoute(request: DocumentRouteRequest, enabled = true) {
 	const [result, setResult] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
 	useEffect(() => {
 		if (!enabled || !request.model || request.unresolvedIds.length) return;

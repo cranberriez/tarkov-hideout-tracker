@@ -11,6 +11,7 @@ import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lu
 import { RouteSummary } from "./RouteSummary";
 import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
+import { RouteOptions } from "./RouteOptions";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
@@ -166,6 +167,7 @@ export function DocumentRoutePanel({
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
 							<RouteSummary route={shownRoute} />
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
+							<RouteOptions route={route} />
 							<RouteFundingPanel route={shownRoute} />
 						</div>
 					) : (

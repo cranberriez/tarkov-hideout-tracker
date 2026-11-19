@@ -33,9 +33,38 @@ export function rewardTarCoins(tile: Tile) {
 		0,
 	);
 }
+/** Fewest TarCoins buying at least `demand` classified documents when the
+ * whole wallet is available up front. Reference only: real purchases must wait
+ * for TarCoins earned along the claim order. */
+export function cheapestDocumentPacks(demand: number) {
+	const need = Math.max(0, Math.floor(demand));
+	const cap = need + Math.max(...DOCUMENT_PACKS.map((p) => p.documents)) - 1;
+	const cost = new Float64Array(cap + 1).fill(Infinity);
+	const choice = new Int32Array(cap + 1).fill(-1);
+	cost[0] = 0;
+	for (let d = 0; d <= cap; d++)
+		if (Number.isFinite(cost[d]))
+			DOCUMENT_PACKS.forEach((pack, k) => {
+				const next = d + pack.documents;
+				if (next <= cap && cost[d] + pack.tarCoins < cost[next]) {
+					cost[next] = cost[d] + pack.tarCoins;
+					choice[next] = k;
+				}
+			});
+	let best = need;
+	for (let d = need; d <= cap; d++) if (cost[d] < cost[best]) best = d;
+	const counts = DOCUMENT_PACKS.map(() => 0);
+	for (let d = best; d > 0; d -= DOCUMENT_PACKS[choice[d]].documents) counts[choice[d]]++;
+	return {
+		packs: DOCUMENT_PACKS.flatMap((pack, k) => (counts[k] ? [{ ...pack, count: counts[k] }] : [])),
+		documents: best,
+		tarCoins: cost[best],
+	};
+}
+
 /** Dominance DP: for each purchased document count retain the least spent TC.
  * Less spent TC dominates every future wallet constraint. */
-export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: number, allowSpecial: boolean) {
+function solveFunding(claims: FundingClaim[], startingTarCoins: number, allowSpecial: boolean) {
 	const starting = Number.isFinite(startingTarCoins) ? Math.max(0, Math.floor(startingTarCoins)) : 0;
 	const demand = claims.reduce((s, c) => s + c.additionalClassified, 0);
 	const maxDocumentPack = Math.max(...DOCUMENT_PACKS.map((p) => p.documents));
@@ -115,13 +144,18 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 		return option.total > best.total || (option.total === best.total && option.cents < best.cents) ? option : best;
 	}, minimum);
 
-	function purchasePlan(choice: typeof minimum) {
+	/** `packIndex` buys exactly that one regular pack instead of the cheapest combination. */
+	function purchasePlan(choice: typeof minimum, packIndex?: number) {
 		const { total: bestTC, special } = choice;
 		let bestRegular = choice.regularUnits;
 		const documentCounts = claims.map(() => DOCUMENT_PACKS.map(() => 0));
 		const currencyCounts = TARCOIN_PACKS.map(() => 0);
 		const solved = schedule(bestTC * unit, true);
 		for (let path = solved.path; path; path = path.previous) documentCounts[path.index][path.pack]++;
+		if (packIndex !== undefined) {
+			currencyCounts[packIndex]++;
+			bestRegular = 0;
+		}
 		while (bestRegular > 0) {
 			const k = previous[bestRegular];
 			if (k < 0) throw new Error("Missing currency pack choice");
@@ -178,6 +212,34 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 			balanceDocuments,
 		};
 	}
+	return { candidates, minimum, recommended, purchasePlan, target, unit, offerPack };
+}
+
+/** The cheapest single regular TarCoin pack, with the one-time offer when it is
+ * allowed, that funds the claims and costs more than `aboveCents`. */
+export function singlePackOption(
+	claims: FundingClaim[],
+	startingTarCoins: number,
+	allowSpecial: boolean,
+	aboveCents: number,
+) {
+	const { purchasePlan, target, unit, offerPack } = solveFunding(claims, startingTarCoins, allowSpecial);
+	const extra = allowSpecial ? offerPack : null;
+	const pack = TARCOIN_PACKS.filter((p) => !p.special)
+		.sort((a, b) => a.cents - b.cents)
+		.find((p) => (p.tarCoins + (extra?.tarCoins ?? 0)) / unit >= target && p.cents + (extra?.cents ?? 0) > aboveCents);
+	if (!pack) return null;
+	const choice = {
+		total: (pack.tarCoins + (extra?.tarCoins ?? 0)) / unit,
+		regularUnits: pack.tarCoins / unit,
+		special: !!extra,
+		cents: pack.cents + (extra?.cents ?? 0),
+	};
+	return { ...purchasePlan(choice, TARCOIN_PACKS.indexOf(pack)), recommended: false };
+}
+
+export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: number, allowSpecial: boolean) {
+	const { minimum, recommended, purchasePlan } = solveFunding(claims, startingTarCoins, allowSpecial);
 	const plan = purchasePlan(recommended);
 	const cheapest = recommended.cents === minimum.cents ? null : purchasePlan(minimum);
 	return {
@@ -191,6 +253,36 @@ export function optimizeRouteFunding(claims: FundingClaim[], startingTarCoins: n
 		},
 	};
 }
+/** Every TarCoin purchase within `windowCents` of the minimum where paying more
+ * leaves more TarCoins after the pass, cheapest first. Each option is replayed
+ * against the claim order, because a larger wallet can afford larger, cheaper
+ * classified packs earlier. */
+export function fundingOptions(
+	claims: FundingClaim[],
+	startingTarCoins: number,
+	allowSpecial: boolean,
+	windowCents: number,
+) {
+	const { candidates, minimum, recommended, purchasePlan } = solveFunding(claims, startingTarCoins, allowSpecial);
+	const cheapestFirst = candidates
+		.filter((option) => option.cents <= minimum.cents + windowCents)
+		.sort((a, b) => a.cents - b.cents || b.total - a.total);
+	const options: (ReturnType<typeof purchasePlan> & { recommended: boolean })[] = [];
+	let seenCents = -1;
+	for (const option of cheapestFirst) {
+		if (option.cents === seenCents) continue;
+		seenCents = option.cents;
+		const plan = purchasePlan(option);
+		if (options.length && plan.balanceTarCoins <= options.at(-1)!.balanceTarCoins) continue;
+		options.push({
+			...plan,
+			recommended: option.cents === recommended.cents && option.total === recommended.total,
+		});
+	}
+	return options;
+}
+export type FundingOption = ReturnType<typeof fundingOptions>[number];
+
 /** Compare single bundles using the same classified-pack purchases and claims. */
 export function compareCurrencyBundles(plan: FundingPlan, allowSpecial: boolean) {
 	const { cashCents, totalTarCoins, balanceTarCoins, cashReceipt } = plan;

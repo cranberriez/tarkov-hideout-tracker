@@ -4,13 +4,8 @@ import { useId, useMemo, useState } from "react";
 import type { useDocumentRoute } from "../useDocumentRoute";
 import { useFundingSettings } from "../useFundingSettings";
 import { useRouteFunding } from "../useRouteFunding";
-import {
-	CASH_TOLERANCE_CENTS,
-	DOCUMENT_PACKS,
-	TARCOIN_PACKS,
-	compareCurrencyBundles,
-	rewardTarCoins,
-} from "../lib/funding-model";
+import { CASH_TOLERANCE_CENTS, DOCUMENT_PACKS, TARCOIN_PACKS, compareCurrencyBundles } from "../lib/funding-model";
+import { fundingClaims } from "../lib/route-options-model";
 import { TarCoin } from "./ui/TarCoin";
 import { Toggle } from "./ui/Toggle";
 import { GatheringSavings } from "./GatheringSavings";
@@ -56,16 +51,7 @@ export function FundingInputs() {
 
 export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof useDocumentRoute>, string | null> }) {
 	const settings = useFundingSettings();
-	const claims = useMemo(
-		() =>
-			route.claims.map((claim) => ({
-				rewardId: claim.rewardId,
-				page: claim.page,
-				additionalClassified: claim.additionalClassified,
-				tarCoins: rewardTarCoins(route.selected.find((tile) => tile.id === claim.rewardId)!),
-			})),
-		[route],
-	);
+	const claims = useMemo(() => fundingClaims(route), [route]);
 	const result = useRouteFunding(claims, settings.startingTarCoins, settings.allowSpecial);
 	const funding = typeof result === "string" ? null : compareCurrencyBundles(result, settings.allowSpecial);
 	return (

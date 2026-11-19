@@ -13,6 +13,7 @@ import { documentDisplayName } from "../lib/battle-pass-display";
 import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
 import { Disclosure, SubDisclosure } from "./ui/Disclosure";
 import { Toggle } from "./ui/Toggle";
+import { StepPlan } from "./StepPlan";
 import { syncValue } from "./ui/field";
 import { cn } from "@/lib/utils";
 
@@ -77,108 +78,121 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 	const shown = current ?? result;
 	const highlight = shown?.breakpoints?.find((point) => point.savingsCents >= 499) ?? shown?.breakpoints?.at(-1);
 	return (
-		<Disclosure
-			syncing={!!result && !current}
-			title="Save cash by gathering"
-			icon={<Files className="size-4 text-brand" aria-hidden />}
-			meta={
-				highlight ? (
-					<span className={cn("text-sm font-semibold text-success", syncValue)}>
-						Save {usd(highlight.savingsCents)}
-					</span>
-				) : !shown ? (
-					"Calculating…"
-				) : null
-			}
-		>
-			{!shown ? (
-				<p role="status" className="text-xs">
-					Calculating gathering savings…
-				</p>
-			) : shown.error ? (
-				<p role="status" className="text-xs">
-					{shown.error}
-				</p>
-			) : !shown.breakpoints?.length ? (
-				<p className="text-xs text-muted-foreground">No partial gathering option reduces cash with these choices.</p>
-			) : (
-				highlight && (
-					<div className={cn("space-y-2 rounded-md bg-success/[0.07] p-3 text-sm", syncValue)} aria-live="polite">
-						<p>
-							<strong>
-								Gather {highlight.gathered} more documents to save {usd(highlight.savingsCents)}.
-							</strong>{" "}
-							<span className="text-muted-foreground">
-								Cash drops to {usd(highlight.cashCents)} over {periods(highlight.parallelWindows)} of 24 hours.
-							</span>
-						</p>
-						{quantities(highlight)}
-					</div>
-				)
-			)}
-			<div className="flex flex-col gap-3">
-				<SubDisclosure title="Modes and documents to gather">
-					<p className="mb-3 text-xs text-muted-foreground">
-						Daily caps: PVP {GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal{" "}
-						{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel. Saved on this device.
+		<>
+			<Disclosure
+				syncing={!!result && !current}
+				title="Save cash by gathering"
+				icon={<Files className="size-4 text-brand" aria-hidden />}
+				meta={
+					highlight ? (
+						<span className={cn("text-sm font-semibold text-success", syncValue)}>
+							Save {usd(highlight.savingsCents)}
+						</span>
+					) : !shown ? (
+						"Calculating…"
+					) : null
+				}
+			>
+				{!shown ? (
+					<p role="status" className="text-xs">
+						Calculating gathering savings…
 					</p>
-					<div className="space-y-3">
-						{options.map(([key, group]) => {
-							const filter = filters[key] ?? {};
-							return (
-								<fieldset key={key} className="flex flex-wrap items-center gap-2">
-									<legend className="sr-only">{group.label}</legend>
-									<Toggle
-										indicator
-										className="font-semibold"
-										checked={!filter.disabled}
-										onChange={(value) => setGatheringChoice(key, value)}
-									>
-										{group.label}
-									</Toggle>
-									<span aria-hidden className="mx-1 h-4 w-px bg-border" />
-									{group.keys.map((doc) => (
-										<Toggle
-											key={doc}
-											indicator
-											disabled={filter.disabled}
-											checked={!filter.disabled && !filter.excluded?.includes(doc)}
-											onChange={(value) => setGatheringChoice(key, value, doc)}
-										>
-											{name(doc)}
-										</Toggle>
-									))}
-								</fieldset>
-							);
-						})}
-					</div>
-				</SubDisclosure>
-				{shown?.breakpoints && shown.breakpoints.length > 0 && (
-					<SubDisclosure title="All gathering options">
-						<ol className="max-h-96 space-y-3 overflow-auto text-xs">
-							{shown.breakpoints.map((point) => (
-								<li key={point.gathered} className="space-y-1 rounded-md bg-surface-raised/30 p-3">
-									<p className="font-medium">
-										Gather {point.gathered} total: {usd(point.cashCents)} cash, save {usd(point.savingsCents)}
-									</p>
-									{quantities(point)}
-									<CurrencyComparison funding={point.funding} />
-									<p className="text-muted-foreground">
-										{periods(point.parallelWindows)} in parallel.{" "}
-										{point.windows
-											.map(
-												(row) =>
-													`${row.profileLabel}: ${periods(row.windows)} (${row.quantity} documents, cap ${row.cap})`,
-											)
-											.join("; ")}
-									</p>
-									<p className="text-muted-foreground">{point.remainingClassified} classified needed from packs.</p>
-								</li>
-							))}
-						</ol>
-					</SubDisclosure>
+				) : shown.error ? (
+					<p role="status" className="text-xs">
+						{shown.error}
+					</p>
+				) : !shown.breakpoints?.length ? (
+					<p className="text-xs text-muted-foreground">No partial gathering option reduces cash with these choices.</p>
+				) : (
+					highlight && (
+						<div className={cn("space-y-2 rounded-md bg-success/[0.07] p-3 text-sm", syncValue)} aria-live="polite">
+							<p>
+								<strong>
+									Gather {highlight.gathered} more documents to save {usd(highlight.savingsCents)}.
+								</strong>{" "}
+								<span className="text-muted-foreground">
+									Cash drops to {usd(highlight.cashCents)} over {periods(highlight.parallelWindows)} of 24 hours.
+								</span>
+							</p>
+							{quantities(highlight)}
+						</div>
+					)
 				)}
-			</div>
-		</Disclosure>
+				<div className="flex flex-col gap-3">
+					<SubDisclosure title="Modes and documents to gather">
+						<p className="mb-3 text-xs text-muted-foreground">
+							Daily caps: PVP {GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal{" "}
+							{GATHERING_DAILY_CAPS.seasonal}. Modes gather in parallel. Saved on this device.
+						</p>
+						<div className="space-y-3">
+							{options.map(([key, group]) => {
+								const filter = filters[key] ?? {};
+								return (
+									<fieldset key={key} className="flex flex-wrap items-center gap-2">
+										<legend className="sr-only">{group.label}</legend>
+										<Toggle
+											indicator
+											className="font-semibold"
+											checked={!filter.disabled}
+											onChange={(value) => setGatheringChoice(key, value)}
+										>
+											{group.label}
+										</Toggle>
+										<span aria-hidden className="mx-1 h-4 w-px bg-border" />
+										{group.keys.map((doc) => (
+											<Toggle
+												key={doc}
+												indicator
+												disabled={filter.disabled}
+												checked={!filter.disabled && !filter.excluded?.includes(doc)}
+												onChange={(value) => setGatheringChoice(key, value, doc)}
+											>
+												{name(doc)}
+											</Toggle>
+										))}
+									</fieldset>
+								);
+							})}
+						</div>
+					</SubDisclosure>
+					{shown?.breakpoints && shown.breakpoints.length > 0 && (
+						<SubDisclosure title="All gathering options">
+							<ol className="max-h-96 space-y-3 overflow-auto text-xs">
+								{shown.breakpoints.map((point) => (
+									<li key={point.gathered} className="space-y-1 rounded-md bg-surface-raised/30 p-3">
+										<p className="font-medium">
+											Gather {point.gathered} total: {usd(point.cashCents)} cash, save {usd(point.savingsCents)}
+										</p>
+										{quantities(point)}
+										<CurrencyComparison funding={point.funding} />
+										<p className="text-muted-foreground">
+											{periods(point.parallelWindows)} in parallel.{" "}
+											{point.windows
+												.map(
+													(row) =>
+														`${row.profileLabel}: ${periods(row.windows)} (${row.quantity} documents, cap ${row.cap})`,
+												)
+												.join("; ")}
+										</p>
+										<p className="text-muted-foreground">{point.remainingClassified} classified needed from packs.</p>
+									</li>
+								))}
+							</ol>
+						</SubDisclosure>
+					)}
+				</div>
+			</Disclosure>
+			{shown?.breakpoints && (
+				<StepPlan
+					route={route}
+					breakpoints={shown.breakpoints}
+					recommended={highlight}
+					startingTarCoins={startingTarCoins}
+					allowSpecial={allowSpecial}
+					filters={filters}
+					documentName={name}
+				/>
+			)}
+		</>
 	);
 }
