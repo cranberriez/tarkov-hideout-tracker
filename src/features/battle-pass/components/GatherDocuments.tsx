@@ -30,7 +30,8 @@ export function GatherDocuments() {
 		const docs = rows.filter((row) => row.profileKey === profile.key).sort((a, b) => b.quantity - a.quantity);
 		const total = docs.reduce((sum, row) => sum + row.quantity, 0);
 		// Maps where this mode's documents spawn, most needed documents first.
-		const maps = mapOrder
+		// Only the maps chosen under Maps to farm, when any are chosen.
+		const maps = (settings.gatheringMaps ?? mapOrder)
 			.map((map) => ({ map, docs: docs.filter((row) => mapNames[row.documentKey]?.includes(map)) }))
 			.filter((entry) => entry.docs.length)
 			.map((entry) => ({ ...entry, quantity: entry.docs.reduce((sum, row) => sum + row.quantity, 0) }))

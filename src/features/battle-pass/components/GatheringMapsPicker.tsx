@@ -27,7 +27,15 @@ type PresetResult = { result: { maps: string[]; preview: GatheringPreview } } | 
 /** Choose the maps to farm; document types no chosen map spawns are bought as classified. */
 export function GatheringMapsPicker() {
 	const { documents, mapNames, mapOrder, mapThumbnails } = useBattlePassData();
-	const { settings, mapExcluded, mapTarget, previewMaps, fewestMapsInput, gathering } = useBattlePassPlanContext();
+	const { settings, mapTarget, previewMaps, fewestMapsInput, gathering, route } = useBattlePassPlanContext();
+	// Documents of each type the route still misses after owned inventory.
+	const needed = useMemo(() => {
+		const totals: Record<string, number> = {};
+		for (const claim of route?.claims ?? [])
+			for (const [key, cost] of Object.entries(claim.cost))
+				totals[key] = (totals[key] ?? 0) + Math.max(0, cost - (claim.ordinaryUsed[key] ?? 0));
+		return totals;
+	}, [route]);
 	const applied = settings.gatheringMaps;
 
 	// Draft follows the applied value until the player edits it.
@@ -76,19 +84,14 @@ export function GatheringMapsPicker() {
 		next.postMessage(fewestMapsInput);
 	};
 
-	const appliedPreview = useMemo(
-		() => (dirty && mapTarget > 0 ? previewMaps(applied) : null),
-		[dirty, mapTarget, previewMaps, applied],
-	);
-	const draftPreview = useMemo(
-		() => (dirty && mapTarget > 0 ? previewMaps(draft) : null),
-		[dirty, mapTarget, previewMaps, draft],
-	);
+	const comparing = dirty && mapTarget > 0 && chosen.length > 0;
+	const appliedPreview = useMemo(() => (comparing ? previewMaps(applied) : null), [comparing, previewMaps, applied]);
+	const draftPreview = useMemo(() => (comparing ? previewMaps(draft) : null), [comparing, previewMaps, draft]);
 
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
-	// While editing, show what the draft would exclude; otherwise what the applied maps exclude.
-	const excluded = dirty ? mapExcludedTypes(draft, mapNames) : mapExcluded;
-	const restricted = dirty ? draft !== null : applied !== null;
+	const empty = chosen.length === 0;
+	// Types the draft leaves out, for the comparison's tooltip.
+	const excluded = dirty && !empty ? mapExcludedTypes(draft, mapNames).map(name) : [];
 
 	return (
 		<section
@@ -101,21 +104,24 @@ export function GatheringMapsPicker() {
 					Pick the maps you want to farm. Document types that spawn on none of them are bought as classified instead.
 				</p>
 			</div>
-			<div className="flex flex-wrap gap-2" role="group" aria-label="Maps to farm">
+			<div
+				className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
+				role="group"
+				aria-label="Maps to farm"
+			>
 				{mapOrder.map((map) => {
 					const on = chosen.includes(map);
-					const last = on && chosen.length === 1;
 					const spawns = documents.filter((doc) => mapNames[doc.key]?.includes(map));
+					// A type spawning on several maps counts on each of them.
+					const need = spawns.reduce((sum, doc) => sum + (needed[doc.key] ?? 0), 0);
 					return (
 						<button
 							key={map}
 							type="button"
 							aria-pressed={on}
-							disabled={last}
-							title={last ? "Keep at least one map" : undefined}
 							onClick={() => toggle(map)}
 							className={cn(
-								"inline-flex h-9 max-w-full items-center gap-1.5 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed",
+								"flex min-w-0 items-center gap-2.5 rounded-lg p-2 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-brand",
 								on
 									? cn(liftedControl, "text-foreground")
 									: "border border-transparent bg-transparent text-muted-foreground opacity-60 hover:opacity-90",
@@ -123,57 +129,80 @@ export function GatheringMapsPicker() {
 						>
 							<Artwork
 								src={mapThumbnails[map.toLowerCase().replaceAll(" ", "-")] ?? ""}
-								className={cn("size-6 shrink-0 rounded object-cover", !on && "grayscale")}
+								className={cn("size-9 shrink-0 rounded-md object-cover sm:size-11", !on && "grayscale")}
 							/>
-							<span className="truncate font-medium">{map}</span>
-							{spawns.length > 0 && (
-								<span className="flex shrink-0 items-center" aria-hidden>
-									{spawns.map((doc) => (
-										<DocumentIcon key={doc.key} documentKey={doc.key} className={cn("size-4", !on && "grayscale")} />
-									))}
+							<span className="min-w-0 space-y-1">
+								<span className="line-clamp-2 block text-sm leading-tight font-medium" title={map}>
+									{map}
 								</span>
-							)}
+								{spawns.length > 0 && (
+									<span className="flex items-center gap-0.5">
+										{spawns.map((doc) => (
+											<DocumentIcon key={doc.key} documentKey={doc.key} className={cn("size-6", !on && "grayscale")} />
+										))}
+										{route && (
+											<span
+												className={cn(
+													"ml-1 text-sm font-semibold tabular-nums",
+													need ? "text-foreground" : "text-muted-foreground",
+												)}
+												title={`${need} documents still needed from the types on ${map}`}
+											>
+												{need}
+											</span>
+										)}
+									</span>
+								)}
+							</span>
 						</button>
 					);
 				})}
 			</div>
-			<div className="flex flex-wrap items-center gap-1">
+			<div className="flex flex-wrap items-center gap-x-2 gap-y-2">
 				<Button size="xs" variant="ghost" disabled={draft === null} onClick={() => setDraft(null)}>
 					All maps
+				</Button>
+				<Button size="xs" variant="ghost" disabled={empty} onClick={() => setDraft([])}>
+					Clear
 				</Button>
 				<Button
 					size="xs"
 					variant="ghost"
 					disabled={!fewestMapsInput || mapTarget === 0 || searching}
+					title={mapTarget === 0 ? "Pick a gathering target first" : undefined}
 					onClick={findFewest}
 				>
 					{searching && <LoaderCircle className="size-3.5 animate-spin" aria-hidden />}
 					{searching ? "Searching…" : "Fewest maps, same cost"}
 				</Button>
-				{searchError && <span className="text-xs text-warning">{searchError}</span>}
-			</div>
-			{restricted && excluded.length > 0 && (
-				<p className="text-xs text-muted-foreground">
-					Not on {dirty ? "these" : "your"} maps, bought as classified:{" "}
-					<span className="text-foreground/80">{excluded.map(name).join(", ")}</span>
-				</p>
-			)}
-			{dirty &&
-				(mapTarget === 0 ? (
-					<p className="text-xs text-muted-foreground">Pick a gathering target to see how maps change the cost.</p>
+				{searchError ? (
+					<span className="text-xs text-warning">{searchError}</span>
+				) : empty ? (
+					<span role="status" className="text-xs text-warning">
+						Pick at least one map.
+					</span>
 				) : (
-					<Comparison before={appliedPreview} after={draftPreview} target={mapTarget} />
-				))}
-			{dirty && (
-				<div className="flex flex-wrap items-center gap-2">
-					<Button tone="brand" variant="solid" size="sm" onClick={() => settings.setGatheringMaps(draft)}>
-						Apply maps
-					</Button>
-					<Button size="sm" onClick={() => setDraft(applied)}>
-						Reset
-					</Button>
-				</div>
-			)}
+					comparing && (
+						<Comparison before={appliedPreview} after={draftPreview} target={mapTarget} excluded={excluded} />
+					)
+				)}
+				{dirty && (
+					<span className="ml-auto flex items-center gap-2">
+						<Button size="sm" onClick={() => setDraft(applied)}>
+							Reset
+						</Button>
+						<Button
+							tone="brand"
+							variant="solid"
+							size="sm"
+							disabled={empty}
+							onClick={() => settings.setGatheringMaps(draft)}
+						>
+							Apply maps
+						</Button>
+					</span>
+				)}
+			</div>
 		</section>
 	);
 }
@@ -183,10 +212,12 @@ function Comparison({
 	before,
 	after,
 	target,
+	excluded,
 }: {
 	before: GatheringPreview | null;
 	after: GatheringPreview | null;
 	target: number;
+	excluded: string[];
 }) {
 	if (!before || !after) return null;
 	const delta = after.cashCents - before.cashCents;
@@ -200,13 +231,14 @@ function Comparison({
 	return (
 		<p
 			role="status"
+			title={excluded.length ? `Bought as classified: ${excluded.join(", ")}` : undefined}
 			className={cn(
-				"w-fit rounded-md px-2.5 py-1.5 text-xs tabular-nums",
+				"rounded-md px-2 py-1 text-xs tabular-nums",
 				syncValue,
 				worse ? "bg-warning/[0.07] text-warning" : "bg-success/[0.07] text-success",
 			)}
 		>
-			<span className="font-semibold">{cost}</span> · gathers {after.gathered} of {target} · {days(after.days)}
+			<span className="font-semibold">{cost}</span> · {after.gathered}/{target} docs · {days(after.days)}
 			{after.days !== before.days && <> (was {before.days})</>}
 		</p>
 	);
