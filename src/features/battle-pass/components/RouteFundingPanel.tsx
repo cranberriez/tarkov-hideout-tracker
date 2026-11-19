@@ -46,13 +46,18 @@ export function FundingInputs() {
 }
 
 export function RouteFundingPanel() {
-	const { route, funding: state, claimProfileLabel } = useBattlePassPlanContext();
-	if (!route || !state) return null;
-	const result = typeof state === "string" ? state : state.plan;
-	const funding = typeof state === "string" ? null : state.comparison;
+	const { route: baseRoute, flowRoute, funding: state, gathering, claimProfileLabel } = useBattlePassPlanContext();
+	if (!baseRoute || !state) return null;
+	// The chosen gathering target carries its own purchase schedule, priced on
+	// the route the gathering worker solved; without one, buy every missing document.
+	const point = gathering.selected;
+	const route = point && flowRoute ? flowRoute : baseRoute;
+	const result = point ? point.plan : typeof state === "string" ? state : state.plan;
+	const funding = point ? point.funding : typeof state === "string" ? null : state.comparison;
 	return (
 		<Disclosure
 			title="Route funding"
+			syncing={gathering.stale}
 			icon={<Wallet className="size-4 text-brand" aria-hidden />}
 			meta={
 				funding ? (
@@ -71,6 +76,18 @@ export function RouteFundingPanel() {
 			) : (
 				<>
 					<div aria-live="polite" className={cn("space-y-2", syncValue)}>
+						<p className="text-xs text-muted-foreground">
+							{point ? (
+								<>
+									With your gathering target: gather{" "}
+									<strong className="text-foreground">{point.gathered.toLocaleString()} documents</strong>, then buy the
+									rest. Saves <strong className="text-success">{usd(point.savingsCents)}</strong> against buying
+									everything ({usd(point.cashCents + point.savingsCents)}).
+								</>
+							) : (
+								"No gathering: every missing document is bought as classified."
+							)}
+						</p>
 						<CurrencyComparison funding={funding!} />
 						<p className="text-xs text-muted-foreground">{result.balanceDocuments} classified documents left</p>
 					</div>
