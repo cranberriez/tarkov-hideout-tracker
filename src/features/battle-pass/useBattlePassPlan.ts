@@ -94,6 +94,34 @@ function useGatheringWorker(input: GatheringInput | null) {
 	return { result, current: !!input && result?.input === input };
 }
 
+/** Fastest cash-free days for the active route and each preferred-mode route, solved in a worker. */
+function useModeCashFree(
+	previews: { modes: { route: Route }[] } | null,
+	route: Route | null,
+	startingTarCoins: number,
+	filters: GatheringFilters,
+	reserve: number,
+) {
+	const [result, setResult] = useState<{ previews: typeof previews; days: (number | null)[] } | null>(null);
+	useEffect(() => {
+		if (!previews || !route) return;
+		const worker = new Worker(new URL("./lib/mode-preview.worker.ts", import.meta.url), { type: "module" });
+		worker.onmessage = (event: MessageEvent<(number | null)[]>) => {
+			setResult({ previews, days: event.data });
+			worker.terminate();
+		};
+		worker.onerror = () => worker.terminate();
+		worker.postMessage({
+			routes: [route, ...previews.modes.map((mode) => mode.route)],
+			startingTarCoins,
+			filters,
+			reserve,
+		});
+		return () => worker.terminate();
+	}, [previews, route, startingTarCoins, filters, reserve]);
+	return result?.previews === previews ? result.days : undefined;
+}
+
 /** The single owner of the Docs breakdown planning pipeline:
  * route settings → solved route → preferred-owner route → alternatives and
  * route options → funding → gathering breakpoints and target → cash-free plan
@@ -406,6 +434,51 @@ export function useBattlePassPlan(
 
 	// Step-by-step flow for the gathering target. A breakpoint carries its own
 	// purchase schedule, priced on the route the worker solved.
+	// Preferred-mode cards: the active route re-ranked for each mode, priced at the
+	// same gathering amount, so each card shows what switching would change.
+	const modePreviews = useMemo(() => {
+		if (locked || !route || !base || input.profiles.length < 2) return null;
+		// The active route before owner preference: the solved route or the chosen alternative.
+		const raw = activeCandidate > 0 && Array.isArray(candidates) ? candidates[activeCandidate - 1]?.route : base;
+		if (!raw) return null;
+		const gathered = selected?.gathered ?? 0;
+		const owners = new Map(route.claims.map((claim) => [claim.rewardId, claim.profileKey]));
+		try {
+			const price = (candidate: Route) =>
+				previewGathering(candidate, gathered, filters, startingTarCoins, allowSpecial, reserve);
+			const modes = input.profiles.map((profile) => {
+				const preferred = preferOwners(request, raw, (key) =>
+					key === profile.key ? 0 : gatheringFilters[key]?.disabled ? 2 : 1,
+				);
+				return {
+					profileKey: profile.key,
+					route: preferred,
+					preview: price(preferred),
+					/** Claims that would change claiming profile. */
+					moved: preferred.claims.filter((claim) => owners.get(claim.rewardId) !== claim.profileKey).length,
+				};
+			});
+			return { gathered, current: price(route), modes };
+		} catch {
+			return null;
+		}
+	}, [
+		locked,
+		route,
+		base,
+		input.profiles,
+		activeCandidate,
+		candidates,
+		selected,
+		filters,
+		startingTarCoins,
+		allowSpecial,
+		reserve,
+		request,
+		gatheringFilters,
+	]);
+	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
+
 	const shownInput = shown?.input;
 	const flow = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
@@ -784,6 +857,10 @@ export function useBattlePassPlan(
 		flow,
 		flowRoute,
 		leftover,
+		/** What switching the preferred gathering mode would change, or null when it cannot. */
+		modePreviews,
+		/** Fastest cash-free days: the active route first, then each mode's route; undefined while solving. */
+		modeCashFree,
 		/** Reward IDs whose claim uses only classified documents. */
 		anyProfileIds,
 		claimProfileLabel,

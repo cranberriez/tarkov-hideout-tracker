@@ -20,7 +20,7 @@ const profileMode = (key: string): GameMode => (key === "PVP" || key === "PVE" ?
 /** Documents to gather per mode for the gathering target, one column per mode. */
 export function GatherDocuments() {
 	const { documents, mapNames, mapOrder, mapThumbnails } = useBattlePassData();
-	const { profiles, gathering, settings } = useBattlePassPlanContext();
+	const { profiles, gathering, settings, route } = useBattlePassPlanContext();
 	const reserve = settings.dailyHeadroom ? DAILY_HEADROOM : 0;
 	// Without cash breakpoints there is no target to pick, so show the cash-free plan.
 	const fallback = gathering.breakpoints.length ? null : gathering.cashFree;
@@ -36,7 +36,18 @@ export function GatherDocuments() {
 			.filter((entry) => entry.docs.length)
 			.map((entry) => ({ ...entry, quantity: entry.docs.reduce((sum, row) => sum + row.quantity, 0) }))
 			.sort((a, b) => b.quantity - a.quantity);
-		return { ...profile, docs, maps, total, days: Math.ceil(total / gatheringDailyCap(profile.key, reserve)) };
+		const cap = gatheringDailyCap(profile.key, reserve);
+		return {
+			...profile,
+			docs,
+			maps,
+			total,
+			cap,
+			days: Math.ceil(total / cap),
+			owned: Object.values(profile.inventory).reduce((sum, count) => sum + count, 0),
+			claims: route?.claims.filter((claim) => claim.profileKey === profile.key).length ?? 0,
+			off: !!settings.gatheringFilters[profile.key]?.disabled,
+		};
 	});
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
 	return (
@@ -67,6 +78,16 @@ export function GatherDocuments() {
 								{mode.total > 0 && <> · {days(mode.days)}</>}
 							</span>
 						</header>
+						<p className="-mt-2 text-xs text-muted-foreground">
+							{mode.off ? (
+								"Gathering off"
+							) : (
+								<>
+									{mode.cap} {settings.dailyHeadroom ? "planned" : "max"} per day
+								</>
+							)}{" "}
+							· {mode.owned} owned · {mode.claims} {mode.claims === 1 ? "claim" : "claims"}
+						</p>
 						{mode.docs.length ? (
 							<ul className="space-y-2">
 								{mode.docs.map((row) => (
