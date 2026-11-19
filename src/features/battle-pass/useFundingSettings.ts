@@ -61,6 +61,11 @@ export function useFundingSettings() {
 					: 0,
 			allowSpecial: value.allowSpecial === true,
 			preferredMode: typeof value.preferredMode === "string" ? value.preferredMode : null,
+			dailyHeadroom: value.dailyHeadroom === true,
+			gatheringTarget:
+				typeof value.gatheringTarget === "number" && Number.isFinite(value.gatheringTarget)
+					? Math.max(0, Math.floor(value.gatheringTarget))
+					: null,
 			gatheringFilters: readGatheringFilters(value.gatheringFilters),
 		};
 	}, [raw]);
@@ -81,6 +86,12 @@ export function useFundingSettings() {
 		/** Profile key whose mode receives claims that need gathering, or null for no preference. */
 		setPreferredMode: (value: string | null) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), preferredMode: value })),
+		/** Documents to gather (a breakpoint's total), 0 for none. */
+		setGatheringTarget: (value: number) =>
+			write((current) => JSON.stringify({ version: 1, ...readSettings(current), gatheringTarget: value })),
+		/** Plan each mode below its daily cap, leaving the scarce last documents. */
+		setDailyHeadroom: (value: boolean) =>
+			write((current) => JSON.stringify({ version: 1, ...readSettings(current), dailyHeadroom: value })),
 		setAllowSpecial: (value: boolean) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), allowSpecial: value })),
 	};

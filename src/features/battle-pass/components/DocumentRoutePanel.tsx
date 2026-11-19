@@ -13,6 +13,8 @@ import type { useDocumentRouteController } from "../useDocumentRouteController";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
 import { RouteOptions } from "./RouteOptions";
 import { ModePreference } from "./ModePreference";
+import { GatheringTargetPicker } from "./GatheringTargetPicker";
+import { useGatheringTarget } from "../useGatheringTarget";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
@@ -51,6 +53,7 @@ export function DocumentRoutePanel({
 	if (ready && result !== lastRoute) setLastRoute(result);
 	const shownRoute = ready ? result : calculating ? lastRoute : null;
 	const syncing = !ready && !!shownRoute;
+	const gathering = useGatheringTarget(shownRoute);
 	const state = ready
 		? incompleteCount > 0
 			? { tone: "warning", label: "Partial", Icon: CircleAlert }
@@ -152,7 +155,9 @@ export function DocumentRoutePanel({
 						<ModePreference
 							profiles={allProfiles ? inventory.availableProfiles : [inventory.selectedProfile]}
 							route={shownRoute}
+							gathering={gathering}
 						/>
+						<GatheringTargetPicker target={gathering} />
 						{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
 							<div className="space-y-1 text-xs">
 								{selectedGoal === "finish" && !buyAll && (
@@ -173,7 +178,7 @@ export function DocumentRoutePanel({
 							<RouteSummary route={shownRoute} />
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
 							<RouteOptions route={route} />
-							<RouteFundingPanel route={shownRoute} />
+							<RouteFundingPanel route={shownRoute} gathering={gathering} />
 						</div>
 					) : (
 						<RouteSkeleton

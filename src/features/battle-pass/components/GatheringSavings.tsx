@@ -1,9 +1,9 @@
 import { Files } from "lucide-react";
 import { useFundingSettings } from "../useFundingSettings";
 import { CurrencyComparison } from "./CurrencyComparison";
-import { useEffect, useState } from "react";
 import { useBattlePassData } from "../BattlePassSeason";
-import { type GatheringFilters, type GatheringBreakpoint, type SavingsRoute } from "../lib/gathering-savings-model";
+import { type GatheringBreakpoint, type SavingsRoute } from "../lib/gathering-savings-model";
+import type { GatheringTarget } from "../useGatheringTarget";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
 import { Disclosure, SubDisclosure } from "./ui/Disclosure";
@@ -15,7 +15,12 @@ const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 const periods = (count: number) => `${count} acquisition ${count === 1 ? "period" : "periods"}`;
 
-export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins: number; allowSpecial: boolean }) {
+export function GatheringSavings(props: {
+	route: SavingsRoute;
+	startingTarCoins: number;
+	allowSpecial: boolean;
+	gathering: GatheringTarget;
+}) {
 	const { documents } = useBattlePassData();
 	const { gatheringFilters: filters } = useFundingSettings();
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
@@ -32,40 +37,14 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 			))}
 		</ul>
 	);
-	const [result, setResult] = useState<{
-		input: typeof props & { filters: GatheringFilters };
-		breakpoints?: GatheringBreakpoint[];
-		error?: string;
-	} | null>(null);
-	const { route, startingTarCoins, allowSpecial } = props;
-	useEffect(() => {
-		const input = { route, startingTarCoins, allowSpecial, filters };
-		const worker = new Worker(new URL("../lib/gathering-savings.worker.ts", import.meta.url), { type: "module" });
-		worker.onmessage = (event: MessageEvent<{ breakpoints?: GatheringBreakpoint[]; error?: string }>) => {
-			setResult({ input, ...event.data });
-			worker.terminate();
-		};
-		worker.onerror = () => {
-			setResult({ input, error: "Could not calculate gathering savings. Try again." });
-			worker.terminate();
-		};
-		worker.postMessage(input);
-		return () => worker.terminate();
-	}, [route, startingTarCoins, allowSpecial, filters]);
-	const current =
-		result?.input.route === route &&
-		result.input.startingTarCoins === startingTarCoins &&
-		result.input.allowSpecial === allowSpecial &&
-		result.input.filters === filters
-			? result
-			: null;
-	// Keep the previous answer on screen while the worker recalculates, so the section keeps its height.
-	const shown = current ?? result;
-	const highlight = shown?.breakpoints?.find((point) => point.savingsCents >= 499) ?? shown?.breakpoints?.at(-1);
+	const { route, startingTarCoins, allowSpecial, gathering } = props;
+	const breakpoints = gathering.breakpoints;
+	const highlight = gathering.selected;
+	const shown = gathering.calculating ? null : gathering;
 	return (
 		<>
 			<Disclosure
-				syncing={!!result && !current}
+				syncing={gathering.stale}
 				title="Save cash by gathering"
 				icon={<Files className="size-4 text-brand" aria-hidden />}
 				meta={
@@ -75,6 +54,8 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 						</span>
 					) : !shown ? (
 						"Calculating…"
+					) : breakpoints.length ? (
+						"No gathering"
 					) : null
 				}
 			>
@@ -86,14 +67,15 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 					<p role="status" className="text-xs">
 						{shown.error}
 					</p>
-				) : !shown.breakpoints?.length ? (
+				) : !breakpoints.length ? (
 					<p className="text-xs text-muted-foreground">No partial gathering option reduces cash with these choices.</p>
 				) : (
 					highlight && (
 						<div className={cn("space-y-2 rounded-md bg-success/[0.07] p-3 text-sm", syncValue)} aria-live="polite">
 							<p>
 								<strong>
-									Gather {highlight.gathered} more documents to save {usd(highlight.savingsCents)}.
+									{highlight === gathering.recommended ? "Recommended: g" : "Your target: g"}ather {highlight.gathered}{" "}
+									more documents to save {usd(highlight.savingsCents)}.
 								</strong>{" "}
 								<span className="text-muted-foreground">
 									Cash drops to {usd(highlight.cashCents)} over {periods(highlight.parallelWindows)} of 24 hours.
@@ -105,13 +87,13 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 				)}
 				<div className="flex flex-col gap-3">
 					<p className="text-xs text-muted-foreground">
-						Choose modes and document types under Route configuration → Advanced. Daily caps: PVP{" "}
+						Choose modes, document types and daily headroom under Route configuration → Advanced. Daily caps: PVP{" "}
 						{GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
 					</p>
-					{shown?.breakpoints && shown.breakpoints.length > 0 && (
+					{breakpoints.length > 0 && (
 						<SubDisclosure title="All gathering options">
 							<ol className="max-h-96 space-y-3 overflow-auto text-xs">
-								{shown.breakpoints.map((point) => (
+								{breakpoints.map((point) => (
 									<li key={point.gathered} className="space-y-1 rounded-md bg-surface-raised/30 p-3">
 										<p className="font-medium">
 											Gather {point.gathered} total: {usd(point.cashCents)} cash, save {usd(point.savingsCents)}
@@ -135,11 +117,10 @@ export function GatheringSavings(props: { route: SavingsRoute; startingTarCoins:
 					)}
 				</div>
 			</Disclosure>
-			{shown?.breakpoints && (
+			{shown && (
 				<StepPlan
 					route={route}
-					breakpoints={shown.breakpoints}
-					recommended={highlight}
+					point={highlight}
 					startingTarCoins={startingTarCoins}
 					allowSpecial={allowSpecial}
 					filters={filters}

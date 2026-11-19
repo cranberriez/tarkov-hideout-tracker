@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { optimizeRouteFunding } from "../lib/funding-model";
-import { gatheringDailyCap } from "../lib/gathering-caps";
+import { DAILY_HEADROOM, gatheringDailyCap } from "../lib/gathering-caps";
 import { cashFreeGatheringPlan, type SavingsRoute } from "../lib/gathering-savings-model";
 import { fundingClaims } from "../lib/route-options-model";
 import { useFundingSettings } from "../useFundingSettings";
+import type { GatheringTarget } from "../useGatheringTarget";
 import { SubDisclosure } from "./ui/Disclosure";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { Toggle } from "./ui/Toggle";
@@ -22,13 +23,22 @@ type Profile = { key: string; label: string; color: string; inventory: Record<st
 
 /** Preferred gathering mode: claims that need gathering go to this profile
  * whenever that costs nothing. Advanced settings choose where and what to gather. */
-export function ModePreference({ profiles, route }: { profiles: Profile[]; route: SavingsRoute | null }) {
+export function ModePreference({
+	profiles,
+	route,
+	gathering,
+}: {
+	profiles: Profile[];
+	route: SavingsRoute | null;
+	gathering: GatheringTarget;
+}) {
 	const settings = useFundingSettings();
-	const { preferredMode, gatheringFilters, startingTarCoins, allowSpecial } = settings;
+	const { preferredMode, gatheringFilters, startingTarCoins, allowSpecial, dailyHeadroom } = settings;
+	const reserve = dailyHeadroom ? DAILY_HEADROOM : 0;
 	const { documents } = useBattlePassData();
 	const plan = useMemo(
-		() => (route ? cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters) : null),
-		[route, startingTarCoins, gatheringFilters],
+		() => (route ? cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters, reserve) : null),
+		[route, startingTarCoins, gatheringFilters, reserve],
 	);
 	const cash = useMemo(() => {
 		if (!route) return null;
@@ -57,13 +67,18 @@ export function ModePreference({ profiles, route }: { profiles: Profile[]; route
 						{profiles.map((profile) => {
 							const selected = preferredMode === profile.key;
 							const off = !!gatheringFilters[profile.key]?.disabled;
-							const cap = gatheringDailyCap(profile.key);
+							const cap = gatheringDailyCap(profile.key, reserve);
 							const claims = route?.claims.filter((claim) => claim.profileKey === profile.key).length ?? 0;
 							const owned = Object.values(profile.inventory).reduce((sum, count) => sum + count, 0);
 							// No cash-free plan exists with these settings: nothing meaningful to gather.
-							const gather = plan
-								? (plan.modes.get(profile.key)?.documents.reduce((sum, row) => sum + row.quantity, 0) ?? 0)
-								: null;
+							// The gathering target decides how much each mode gathers; without
+							// breakpoints (nothing to buy), fall back to the cash-free plan.
+							const modeWindow = gathering.selected?.windows.find((row) => row.profileKey === profile.key);
+							const gather = gathering.breakpoints.length
+								? (modeWindow?.quantity ?? 0)
+								: plan
+									? (plan.modes.get(profile.key)?.documents.reduce((sum, row) => sum + row.quantity, 0) ?? 0)
+									: null;
 							const Check = selected ? CircleCheck : Circle;
 							return (
 								<button
@@ -96,7 +111,7 @@ export function ModePreference({ profiles, route }: { profiles: Profile[]; route
 										</span>
 									</span>
 									<span className="grid grid-cols-2 gap-x-3 gap-y-1">
-										<span className="text-muted-foreground">Daily cap</span>
+										<span className="text-muted-foreground">{dailyHeadroom ? "Planned per day" : "Daily cap"}</span>
 										<span className="text-right tabular-nums">{cap}</span>
 										<span className="text-muted-foreground">Owned</span>
 										<span className="text-right tabular-nums">{owned}</span>
@@ -118,15 +133,20 @@ export function ModePreference({ profiles, route }: { profiles: Profile[]; route
 						) : (
 							<>
 								<strong>
+									{gathering.selected
+										? `Target: gather ${gathering.selected.gathered} documents over ${days(gathering.selected.parallelWindows)}, then pay ${usd(gathering.selected.cashCents)}`
+										: cash !== null && cash > 0
+											? `No gathering: pay ${usd(cash)}`
+											: "No purchase needed"}
+								</strong>
+								<span className="text-muted-foreground">
+									{" · "}
 									{plan
 										? plan.days === 0
-											? "No gathering needed for a cash-free finish"
-											: `Cash-free finish in ${days(plan.days)}, gathering ${plan.total} documents`
-										: "No cash-free finish with these modes and documents"}
-								</strong>
-								{cash !== null && cash > 0 && (
-									<span className="text-muted-foreground"> · or pay {usd(cash)} without gathering</span>
-								)}
+											? "no gathering needed for a cash-free finish"
+											: `cash-free finish in ${days(plan.days)}, gathering ${plan.total}`
+										: "no cash-free finish with these modes and documents"}
+								</span>
 							</>
 						)}
 					</p>
@@ -134,6 +154,7 @@ export function ModePreference({ profiles, route }: { profiles: Profile[]; route
 			)}
 			<section className="rounded-lg border border-border/60 p-3">
 				<SubDisclosure title="Advanced: modes and documents to gather">
+					<h5 className="mb-1 text-xs font-semibold">Modes and documents</h5>
 					<p className="mb-3 text-xs text-muted-foreground">
 						Turn off modes or document types you will not gather. Owned documents still count, and claims move to other
 						modes when that costs nothing. Saved on this device.
@@ -177,6 +198,18 @@ export function ModePreference({ profiles, route }: { profiles: Profile[]; route
 								</fieldset>
 							);
 						})}
+					</div>
+					<div className="mt-3 space-y-1 border-t border-border/50 pt-3">
+						<h5 className="text-xs font-semibold">Daily headroom</h5>
+						<Toggle indicator checked={dailyHeadroom} onChange={settings.setDailyHeadroom}>
+							Leave {DAILY_HEADROOM} unplanned per day
+						</Toggle>
+						<p className="text-xs text-muted-foreground">
+							Near the daily limit, raids spawn far fewer documents, so the last few are slow to find. This plans each
+							mode {DAILY_HEADROOM} below its cap (PVP {gatheringDailyCap("PVP", DAILY_HEADROOM)}, PVE{" "}
+							{gatheringDailyCap("PVE", DAILY_HEADROOM)}, seasonal {gatheringDailyCap("seasonal", DAILY_HEADROOM)}).
+							Only the days change, not the cost.
+						</p>
 					</div>
 				</SubDisclosure>
 			</section>

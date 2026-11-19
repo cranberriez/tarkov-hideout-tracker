@@ -9,6 +9,7 @@ import { fundingClaims } from "../lib/route-options-model";
 import { TarCoin } from "./ui/TarCoin";
 import { Toggle } from "./ui/Toggle";
 import { GatheringSavings } from "./GatheringSavings";
+import type { GatheringTarget } from "../useGatheringTarget";
 import { Disclosure, SubDisclosure } from "./ui/Disclosure";
 import { fieldLabel, flatField, syncValue } from "./ui/field";
 import { cn } from "@/lib/utils";
@@ -49,7 +50,13 @@ export function FundingInputs() {
 	);
 }
 
-export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof useDocumentRoute>, string | null> }) {
+export function RouteFundingPanel({
+	route,
+	gathering,
+}: {
+	route: Exclude<ReturnType<typeof useDocumentRoute>, string | null>;
+	gathering: GatheringTarget;
+}) {
 	const settings = useFundingSettings();
 	const claims = useMemo(() => fundingClaims(route), [route]);
 	const result = useRouteFunding(claims, settings.startingTarCoins, settings.allowSpecial);
@@ -149,6 +156,7 @@ export function RouteFundingPanel({ route }: { route: Exclude<ReturnType<typeof 
 					route={route}
 					startingTarCoins={settings.startingTarCoins}
 					allowSpecial={settings.allowSpecial}
+					gathering={gathering}
 				/>
 			)}
 		</>

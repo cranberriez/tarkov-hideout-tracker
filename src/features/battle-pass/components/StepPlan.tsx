@@ -1,5 +1,5 @@
 import { ChevronRight, Route as RouteIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { optimizeRouteFunding } from "../lib/funding-model";
 import {
@@ -10,7 +10,7 @@ import {
 } from "../lib/gathering-savings-model";
 import { purchaseFlow, type FlowStep } from "../lib/purchase-flow-model";
 import { Disclosure } from "./ui/Disclosure";
-import { fieldLabel, flatField, syncValue } from "./ui/field";
+import { syncValue } from "./ui/field";
 import { TarCoin } from "./ui/TarCoin";
 
 const usd = (cents: number) =>
@@ -19,23 +19,20 @@ const usd = (cents: number) =>
 /** A left-to-right plan: gather, buy TarCoins, then alternate classified purchases and claims. */
 export function StepPlan({
 	route,
-	breakpoints,
-	recommended,
+	point,
 	startingTarCoins,
 	allowSpecial,
 	filters,
 	documentName,
 }: {
 	route: SavingsRoute;
-	breakpoints: GatheringBreakpoint[];
-	recommended: GatheringBreakpoint | undefined;
+	/** The gathering target, or undefined for no gathering. */
+	point: GatheringBreakpoint | undefined;
 	startingTarCoins: number;
 	allowSpecial: boolean;
 	filters: GatheringFilters;
 	documentName: (key: string) => string;
 }) {
-	const [picked, setPicked] = useState<number | null>(null);
-	const point = picked === 0 ? undefined : (breakpoints.find((option) => option.gathered === picked) ?? recommended);
 	const gathered = point?.gathered ?? 0;
 	const flow = useMemo(() => {
 		try {
@@ -52,22 +49,12 @@ export function StepPlan({
 	};
 	return (
 		<Disclosure title="Step-by-step plan" icon={<RouteIcon className="size-4 text-brand" aria-hidden />}>
-			<label className={cn(fieldLabel, "max-w-md")}>
-				Gathering
-				<select
-					value={point?.gathered ?? 0}
-					onChange={(event) => setPicked(Number(event.target.value))}
-					className={flatField}
-				>
-					<option value={0}>No gathering</option>
-					{breakpoints.map((option) => (
-						<option key={option.gathered} value={option.gathered}>
-							Gather {option.gathered}, pay {usd(option.cashCents)} (save {usd(option.savingsCents)})
-							{option === recommended ? " — recommended" : ""}
-						</option>
-					))}
-				</select>
-			</label>
+			<p className="text-xs text-muted-foreground">
+				{point
+					? `Gather ${point.gathered} documents, then pay ${usd(point.cashCents)}.`
+					: "No gathering: buy every missing document."}{" "}
+				Change this with the gathering target in Route configuration.
+			</p>
 			{flow ? (
 				<ol className={cn("flex items-stretch gap-1 overflow-x-auto pb-2", syncValue)}>
 					{flow.map((step, index) => (

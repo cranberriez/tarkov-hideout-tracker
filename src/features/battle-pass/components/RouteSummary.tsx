@@ -5,6 +5,7 @@ import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { useFundingSettings } from "../useFundingSettings";
 import { cashFreeGatheringPlan, type SavingsRoute } from "../lib/gathering-savings-model";
+import { DAILY_HEADROOM } from "../lib/gathering-caps";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { syncValue } from "./ui/field";
@@ -14,10 +15,10 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 	const [showDocuments, setShowDocuments] = useState(false);
 	const typesId = useId();
 	const [showTypes, setShowTypes] = useState(false);
-	const { startingTarCoins, gatheringFilters } = useFundingSettings();
+	const { startingTarCoins, gatheringFilters, dailyHeadroom } = useFundingSettings();
 	const plan = useMemo(
-		() => cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters),
-		[route, startingTarCoins, gatheringFilters],
+		() => cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters, dailyHeadroom ? DAILY_HEADROOM : 0),
+		[route, startingTarCoins, gatheringFilters, dailyHeadroom],
 	);
 	const { documents } = useBattlePassData();
 	const byType = new Map<string, number>();

@@ -29,6 +29,7 @@ export function gatheringScenario(
 	gathered: number,
 	filters: GatheringFilters = {},
 	days = Infinity,
+	reserve = 0,
 ) {
 	const gatheredByProfile = new Map<string, number>();
 	let remaining = gathered;
@@ -44,7 +45,7 @@ export function gatheringScenario(
 			const missing = Math.max(0, cost - (claim.ordinaryUsed[documentKey] ?? 0));
 			const filter = filters[claim.profileKey];
 			const collected = gatheredByProfile.get(claim.profileKey) ?? 0;
-			const capacity = days * gatheringDailyCap(claim.profileKey) - collected;
+			const capacity = days * gatheringDailyCap(claim.profileKey, reserve) - collected;
 			const quantity =
 				filter?.disabled || filter?.excluded?.includes(documentKey) ? 0 : Math.min(remaining, missing, capacity);
 			gatheredByProfile.set(claim.profileKey, collected + quantity);
@@ -73,9 +74,9 @@ export function gatheringScenario(
 
 /** Matching the earliest eligible shortages first minimizes every prefix deficit
  * for a given number of days on this route. Reward coins arrive after each claim. */
-export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, filters: GatheringFilters) {
+export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, filters: GatheringFilters, reserve = 0) {
 	const free = (days: number) => {
-		const { claims } = gatheringScenario(route, Infinity, filters, days);
+		const { claims } = gatheringScenario(route, Infinity, filters, days, reserve);
 		return optimizeRouteFunding(claims, wallet, false).cashCents === 0;
 	};
 	if (!route.additionalClassified || free(0)) return 0;
@@ -84,7 +85,7 @@ export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, fi
 		totals.set(row.profileKey, (totals.get(row.profileKey) ?? 0) + row.quantity);
 	let low = 1,
 		high = 0;
-	for (const [key, quantity] of totals) high = Math.max(high, Math.ceil(quantity / gatheringDailyCap(key)));
+	for (const [key, quantity] of totals) high = Math.max(high, Math.ceil(quantity / gatheringDailyCap(key, reserve)));
 	if (!high || !free(high)) return null;
 	while (low < high) {
 		const mid = Math.floor((low + high) / 2);
@@ -94,8 +95,8 @@ export function minimumFreeGatheringDays(route: SavingsRoute, wallet: number, fi
 	return low;
 }
 
-export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filters: GatheringFilters) {
-	const days = minimumFreeGatheringDays(route, wallet, filters);
+export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filters: GatheringFilters, reserve = 0) {
+	const days = minimumFreeGatheringDays(route, wallet, filters, reserve);
 	if (days === null) return null;
 	let low = 0,
 		high = days ? route.additionalClassified : 0;
@@ -103,11 +104,11 @@ export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filte
 	// cover the remaining claims. Later eligible documents are unnecessary.
 	while (low < high) {
 		const count = Math.floor((low + high) / 2);
-		const { claims } = gatheringScenario(route, count, filters, days);
+		const { claims } = gatheringScenario(route, count, filters, days, reserve);
 		if (optimizeRouteFunding(claims, wallet, false).cashCents === 0) high = count;
 		else low = count + 1;
 	}
-	const { quantities } = gatheringScenario(route, low, filters, days);
+	const { quantities } = gatheringScenario(route, low, filters, days, reserve);
 	const modes = new Map<string, { label: string; documents: GatheringQuantity[] }>();
 	for (const row of quantities) {
 		const mode = modes.get(row.profileKey) ?? { label: row.profileLabel, documents: [] };
@@ -124,6 +125,7 @@ export function buildGatheringSavings(
 	startingTarCoins: number,
 	allowSpecial: boolean,
 	filters: GatheringFilters = {},
+	reserve = 0,
 ): GatheringBreakpoint[] {
 	const maximum = route.additionalClassified - 1;
 	if (maximum < 1) return [];
@@ -164,7 +166,7 @@ export function buildGatheringSavings(
 					profileKey: row.profileKey,
 					profileLabel: row.profileLabel,
 					quantity: 0,
-					cap: gatheringDailyCap(row.profileKey),
+					cap: gatheringDailyCap(row.profileKey, reserve),
 					windows: 0,
 				};
 				windows.push(profile);

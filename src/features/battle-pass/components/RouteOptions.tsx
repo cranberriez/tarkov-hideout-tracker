@@ -1,4 +1,4 @@
-import { Scale } from "lucide-react";
+import { ChevronDown, Scale } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,11 @@ export function RouteOptions({ route }: { route: Controller }) {
 			ready,
 			expanded: show ? [...expanded, routeIndex] : expanded.filter((index) => index !== routeIndex),
 		});
+	// Routes with their details open; collapsed by default, reset when routes re-solve.
+	const [open, setOpen] = useState<{ ready: typeof ready; routes: number[] }>({ ready: null, routes: [] });
+	const details = open.ready === ready ? open.routes : [];
+	const showDetails = (routeIndex: number, show: boolean) =>
+		setOpen({ ready, routes: show ? [...details, routeIndex] : details.filter((index) => index !== routeIndex) });
 	const { options, singlePacks } = useMemo(
 		() =>
 			ready && baseRoute
@@ -123,77 +128,109 @@ export function RouteOptions({ route }: { route: Controller }) {
 										</Button>
 									)}
 								</div>
-								<RouteDocumentPlans purchases={purchases} />
-								<h4 className="text-xs font-semibold">TarCoin purchases</h4>
-								<ul className="space-y-2">
-									{purchases.map((option, index) => {
-										const receipt = option.purchase.cashReceipt;
-										return (
-											<li
-												key={index}
-												className="grid gap-x-4 gap-y-1 rounded-md bg-card/60 px-3 py-2 text-xs sm:grid-cols-[1fr_auto]"
-											>
-												<div className="min-w-0 space-y-0.5">
-													<p className="text-sm font-medium">{headline(option)}</p>
-													<p className="text-muted-foreground">
-														{receipt.length
-															? receipt
-																	.map(
-																		(pack) =>
-																			`${pack.count} × ${pack.tarCoins.toLocaleString()}${pack.special ? " (one-time offer)" : ""}`,
-																	)
-																	.join(" + ")
-															: "No TarCoin purchase"}
-														{receipt.length > 0 && <TarCoin />}
-														{option.singlePack && <span className="ml-1">· nearest single larger pack</span>}
-														{active && option.purchase.recommended && (
-															<span className="ml-1 text-brand">· shown in Route funding</span>
-														)}
-													</p>
-												</div>
-												<div className="flex flex-col gap-y-1 sm:items-end">
-													<dl className="flex items-start gap-x-4">
-														<div className="flex items-start gap-1">
-															<dt className="text-muted-foreground">Pay</dt>
-															<dd className="font-semibold tabular-nums">{usd(option.purchase.cashCents)}</dd>
-														</div>
-														<div className="flex items-start gap-1">
-															<dt className="text-muted-foreground">Left</dt>
-															<dd className="flex items-center font-semibold tabular-nums">
-																{option.purchase.balanceTarCoins.toLocaleString()}
-																<TarCoin />
-															</dd>
-														</div>
-													</dl>
-													{option.purchase.cashCents > 0 && (
-														<dl className="flex items-start gap-1" title="TarCoins bought for each dollar spent">
-															<dt className="text-muted-foreground">Value</dt>
-															<dd className="flex items-center tabular-nums">
-																{Math.round(
-																	option.purchase.totalTarCoins / (option.purchase.cashCents / 100),
-																).toLocaleString()}
-																<TarCoin />
-																per $1
-															</dd>
-														</dl>
-													)}
-												</div>
-											</li>
-										);
-									})}
-								</ul>
-								{singlePacks[routeIndex] && (
-									<div className="flex justify-center">
-										{expanded.includes(routeIndex) ? (
-											<Button size="xs" variant="ghost" onClick={() => toggle(routeIndex, false)}>
-												Show fewer
-											</Button>
-										) : (
-											<Button size="xs" variant="ghost" tone="brand" onClick={() => toggle(routeIndex, true)}>
-												Show more options
-											</Button>
+								<div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-card/60 px-3 py-2 text-xs">
+									<span className="flex flex-wrap items-center gap-x-1">
+										<span className="text-muted-foreground">Cheapest</span>
+										<strong className="tabular-nums">{usd(purchases[0].purchase.cashCents)}</strong>
+										<span className="text-muted-foreground">· leaves</span>
+										<strong className="tabular-nums">{purchases[0].purchase.balanceTarCoins.toLocaleString()}</strong>
+										<TarCoin />
+										{purchases.length > 1 && (
+											<span className="text-muted-foreground">
+												· up to {purchases.at(-1)!.purchase.balanceTarCoins.toLocaleString()} TC for{" "}
+												{usd(purchases.at(-1)!.purchase.cashCents)}
+											</span>
 										)}
-									</div>
+									</span>
+									<Button
+										size="xs"
+										variant="ghost"
+										tone="brand"
+										aria-expanded={details.includes(routeIndex)}
+										onClick={() => showDetails(routeIndex, !details.includes(routeIndex))}
+									>
+										{details.includes(routeIndex) ? "Hide details" : "Details"}
+										<ChevronDown
+											className={cn("size-3.5 transition-transform", details.includes(routeIndex) && "rotate-180")}
+											aria-hidden
+										/>
+									</Button>
+								</div>
+								{details.includes(routeIndex) && (
+									<>
+										<RouteDocumentPlans purchases={purchases} />
+										<h4 className="text-xs font-semibold">TarCoin purchases</h4>
+										<ul className="space-y-2">
+											{purchases.map((option, index) => {
+												const receipt = option.purchase.cashReceipt;
+												return (
+													<li
+														key={index}
+														className="grid gap-x-4 gap-y-1 rounded-md bg-card/60 px-3 py-2 text-xs sm:grid-cols-[1fr_auto]"
+													>
+														<div className="min-w-0 space-y-0.5">
+															<p className="text-sm font-medium">{headline(option)}</p>
+															<p className="text-muted-foreground">
+																{receipt.length
+																	? receipt
+																			.map(
+																				(pack) =>
+																					`${pack.count} × ${pack.tarCoins.toLocaleString()}${pack.special ? " (one-time offer)" : ""}`,
+																			)
+																			.join(" + ")
+																	: "No TarCoin purchase"}
+																{receipt.length > 0 && <TarCoin />}
+																{option.singlePack && <span className="ml-1">· nearest single larger pack</span>}
+																{active && option.purchase.recommended && (
+																	<span className="ml-1 text-brand">· shown in Route funding</span>
+																)}
+															</p>
+														</div>
+														<div className="flex flex-col gap-y-1 sm:items-end">
+															<dl className="flex items-start gap-x-4">
+																<div className="flex items-start gap-1">
+																	<dt className="text-muted-foreground">Pay</dt>
+																	<dd className="font-semibold tabular-nums">{usd(option.purchase.cashCents)}</dd>
+																</div>
+																<div className="flex items-start gap-1">
+																	<dt className="text-muted-foreground">Left</dt>
+																	<dd className="flex items-center font-semibold tabular-nums">
+																		{option.purchase.balanceTarCoins.toLocaleString()}
+																		<TarCoin />
+																	</dd>
+																</div>
+															</dl>
+															{option.purchase.cashCents > 0 && (
+																<dl className="flex items-start gap-1" title="TarCoins bought for each dollar spent">
+																	<dt className="text-muted-foreground">Value</dt>
+																	<dd className="flex items-center tabular-nums">
+																		{Math.round(
+																			option.purchase.totalTarCoins / (option.purchase.cashCents / 100),
+																		).toLocaleString()}
+																		<TarCoin />
+																		per $1
+																	</dd>
+																</dl>
+															)}
+														</div>
+													</li>
+												);
+											})}
+										</ul>
+										{singlePacks[routeIndex] && (
+											<div className="flex justify-center">
+												{expanded.includes(routeIndex) ? (
+													<Button size="xs" variant="ghost" onClick={() => toggle(routeIndex, false)}>
+														Show fewer
+													</Button>
+												) : (
+													<Button size="xs" variant="ghost" tone="brand" onClick={() => toggle(routeIndex, true)}>
+														Show more options
+													</Button>
+												)}
+											</div>
+										)}
+									</>
 								)}
 							</li>
 						);
