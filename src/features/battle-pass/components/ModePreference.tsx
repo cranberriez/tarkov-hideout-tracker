@@ -160,8 +160,8 @@ export function GatheringAdvanced() {
 				</Toggle>
 				<p className="text-xs text-muted-foreground">
 					Near the daily limit, raids spawn far fewer documents, so the last few are slow to find. This plans each mode{" "}
-					{DAILY_HEADROOM} below its cap (PVP {gatheringDailyCap("PVP", DAILY_HEADROOM)}, PVE{" "}
-					{gatheringDailyCap("PVE", DAILY_HEADROOM)}, seasonal {gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Only
+					{DAILY_HEADROOM} below its cap (PVE {gatheringDailyCap("PVE", DAILY_HEADROOM)}, PVP{" "}
+					{gatheringDailyCap("PVP", DAILY_HEADROOM)}, seasonal {gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Only
 					the days change, not the cost.
 				</p>
 			</div>

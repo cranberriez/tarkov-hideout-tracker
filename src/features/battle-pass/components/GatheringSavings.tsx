@@ -78,8 +78,8 @@ export function GatheringSavings() {
 			)}
 			<div className="flex flex-col gap-3">
 				<p className="text-xs text-muted-foreground">
-					Choose modes, document types and daily headroom under Route configuration → Advanced. Daily caps: PVP{" "}
-					{GATHERING_DAILY_CAPS.PVP}, PVE {GATHERING_DAILY_CAPS.PVE}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
+					Choose modes, document types and daily headroom under Route configuration → Advanced. Daily caps: PVE{" "}
+					{GATHERING_DAILY_CAPS.PVE}, PVP {GATHERING_DAILY_CAPS.PVP}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
 				</p>
 				{breakpoints.length > 0 && (
 					<SubDisclosure title="All gathering options">
