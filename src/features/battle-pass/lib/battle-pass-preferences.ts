@@ -13,6 +13,8 @@ export interface BattlePassPreferences {
 	showProfileRecommendations: boolean;
 	/** Runs the docs-breakdown route optimizer and its reward-card profile recommendations. */
 	optimizerEnabled: boolean;
+	/** Document inventory needs follow the saved plan while one exists. */
+	planNeeds: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -27,6 +29,7 @@ export const defaultPreferences: BattlePassPreferences = {
 	allProfiles: false,
 	showProfileRecommendations: true,
 	optimizerEnabled: false,
+	planNeeds: true,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

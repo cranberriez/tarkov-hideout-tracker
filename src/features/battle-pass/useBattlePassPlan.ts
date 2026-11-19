@@ -21,6 +21,7 @@ import {
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
 import { preferOwners } from "./lib/owner-preference-model";
+import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
 import { buildRouteOptions, fundingClaims } from "./lib/route-options-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -440,6 +441,18 @@ export function useBattlePassPlan(
 		[anyProfileIds],
 	);
 
+	// Saved-plan needs for the document inventory, including the gathering it plans.
+	const documentNeeds = useMemo(() => {
+		if (!locked || !route) return null;
+		try {
+			return selected && shownInput
+				? planNeeds(shownInput.route, gatheringScenario(shownInput.route, selected.gathered, shownInput.filters))
+				: planNeeds(route, null);
+		} catch {
+			return null;
+		}
+	}, [locked, route, selected, shownInput]);
+
 	const canSave = !locked && ready && !syncing && !!shown && current;
 	const savePlan = () => {
 		if (!canSave || typeof result === "string") return;
@@ -455,6 +468,7 @@ export function useBattlePassPlan(
 			completedAtSave: stored.completed,
 		};
 		writeSaved((raw) => updateSavedRoute(raw, { locked: plan }));
+		inventory.setPreference("planNeeds", true);
 		setReconfiguring(false);
 	};
 
@@ -477,6 +491,8 @@ export function useBattlePassPlan(
 		lockedStatus,
 		/** Documents still to gather under the saved plan. */
 		lockedGathering,
+		/** The saved plan's document needs, or null without a replayable saved plan. */
+		documentNeeds,
 		canSave,
 		savePlan,
 		/** Edit the configuration, starting from the saved plan's settings. */

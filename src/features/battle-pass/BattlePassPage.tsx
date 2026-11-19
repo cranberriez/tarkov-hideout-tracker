@@ -207,6 +207,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 			<DocumentInventoryPanel
 				inventory={documentInventory}
 				costs={costSetup.editing ? null : configurationStatus.costs}
+				planNeeds={costSetup.editing ? null : routePlan.documentNeeds}
 			/>
 			<LocationsPanel />
 			<div

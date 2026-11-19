@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useBattlePassData } from "../BattlePassSeason";
 import type { useDocumentInventory } from "../useDocumentInventory";
 import { coverCosts, type Costs } from "../lib/battle-pass-model";
+import { combinedNeeds, planTotals, type PlanNeeds, type PlannedDocument } from "../lib/plan-needs-model";
 import { CLASSIFIED_DOCUMENT, documentDisplayName } from "../lib/battle-pass-display";
 import { DocumentChip } from "./ui/DocumentChip";
 import { Toggle } from "./ui/Toggle";
@@ -37,9 +38,12 @@ function DocumentName({ documentKey, name }: { documentKey: string; name: string
 export function DocumentInventoryPanel({
 	inventory,
 	costs,
+	planNeeds,
 }: {
 	inventory: ReturnType<typeof useDocumentInventory>;
 	costs: Costs | null;
+	/** The saved plan's needs; null without a saved plan. */
+	planNeeds: PlanNeeds | null;
 }) {
 	const { documents, documentKeys } = useBattlePassData();
 	const { profiles, selectedProfile, selectProfile, available, progress, preferences, setPreference } = inventory;
@@ -56,8 +60,21 @@ export function DocumentInventoryPanel({
 				documentKeys,
 			)
 		: null;
-	const needed = coverage?.rows.reduce((n, row) => n + row.required, 0) ?? 0;
-	const covered = coverage ? coverage.ownedUsed + coverage.classifiedUsed : 0;
+	const planning = planNeeds && preferences.planNeeds ? planNeeds : null;
+	const viewKeys = viewAll ? availableProfiles.map((profile) => profile.key) : [selectedProfile.key];
+	const planned = planning ? combinedNeeds(planning, viewKeys) : null;
+	// With plan needs on, the totals describe the saved plan's claims on the profiles in view.
+	const totals = planning
+		? planTotals(planning, viewKeys)
+		: coverage
+			? {
+					needed: coverage.rows.reduce((n, row) => n + row.required, 0),
+					covered: coverage.ownedUsed + coverage.classifiedUsed,
+					missing: coverage.missing,
+				}
+			: null;
+	const needed = totals?.needed ?? 0;
+	const covered = totals?.covered ?? 0;
 	const percent = needed ? Math.round((100 * covered) / needed) : 0;
 	return (
 		<section aria-label="Document inventory" className={cn("rounded-lg bg-card p-3 sm:p-4", expanded && "space-y-4")}>
@@ -78,20 +95,30 @@ export function DocumentInventoryPanel({
 						)}
 					</Button>
 					<h2 className="text-sm font-semibold">Document inventory</h2>
-					{coverage && needed > 0 && (
+					{totals && needed > 0 && (
 						<p
 							className="text-sm"
-							aria-label={`${covered} of ${needed} documents covered, ${coverage.missing} missing`}
+							aria-label={`${covered} of ${needed} ${planning ? "planned " : ""}documents covered, ${totals.missing} missing`}
 						>
 							<strong className="tabular-nums">{covered.toLocaleString()}</strong>
 							<span className="text-muted-foreground"> / {needed.toLocaleString()} covered</span>
-							{coverage.missing > 0 && (
-								<strong className="ml-3 text-warning tabular-nums">{coverage.missing} missing</strong>
+							{totals.missing > 0 && (
+								<strong className="ml-3 text-warning tabular-nums">{totals.missing} missing</strong>
 							)}
 						</p>
 					)}
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
+					{planNeeds && (
+						<Toggle
+							indicator
+							checked={preferences.planNeeds}
+							onChange={(value) => setPreference("planNeeds", value)}
+							title="Show what your saved plan needs instead of the plan scope."
+						>
+							Plan
+						</Toggle>
+					)}
 					<Toggle
 						className={preferences.useClassified ? "bg-classified/15 text-classified" : undefined}
 						checked={preferences.useClassified}
@@ -125,7 +152,7 @@ export function DocumentInventoryPanel({
 					</div>
 				</div>
 			</div>
-			{coverage && needed > 0 && (
+			{totals && needed > 0 && (
 				<div aria-hidden className={cn("h-1.5 overflow-hidden rounded-full bg-highlight/10", !expanded && "mt-3")}>
 					<div className="h-full rounded-full bg-brand" style={{ width: `${percent}%` }} />
 				</div>
@@ -221,8 +248,14 @@ export function DocumentInventoryPanel({
 										/>
 									</label>
 								)}
-								{row && row.required > 0 && (
-									<NeedMeter label={label} owned={row.used} required={row.required} missing={row.missing} />
+								{planned ? (
+									(planned[doc.key]?.need ?? 0) > 0 ? (
+										<PlanMeter label={label} row={planned[doc.key]} />
+									) : (
+										<p className="text-xs text-muted-foreground">Not planned</p>
+									)
+								) : (
+									row && row.required > 0 && <NeedMeter label={label} owned={row.used} required={row.required} />
 								)}
 								<Button
 									size="xs"
@@ -262,14 +295,34 @@ export function DocumentInventoryPanel({
 								className="h-9 w-full rounded border border-border bg-surface-raised text-center text-sm text-foreground tabular-nums outline-brand"
 							/>
 						</label>
-						{coverage && coverage.classifiedUsed + coverage.classifiedMissing > 0 && (
-							<NeedMeter
-								classified
-								label="Classified Docs"
-								owned={coverage.classifiedUsed}
-								required={coverage.classifiedUsed + coverage.classifiedMissing}
-								missing={coverage.classifiedMissing}
-							/>
+						{planning ? (
+							planning.classified.use + planning.classified.buy > 0 ? (
+								<dl
+									className="grid grid-cols-[auto_1fr] gap-x-2 text-xs"
+									aria-label="Classified Docs in your saved plan"
+								>
+									<dt className="text-muted-foreground">Use</dt>
+									<dd className="text-right font-semibold tabular-nums">{planning.classified.use}</dd>
+									<dt className="text-muted-foreground">Buy</dt>
+									<dd className="text-right font-semibold tabular-nums">{planning.classified.buy}</dd>
+									<dt className="text-muted-foreground">Left</dt>
+									<dd className="text-right font-semibold tabular-nums">
+										{Math.max(0, progress.classified - planning.classified.use)}
+									</dd>
+								</dl>
+							) : (
+								<p className="text-xs text-muted-foreground">Not planned</p>
+							)
+						) : (
+							coverage &&
+							coverage.classifiedUsed + coverage.classifiedMissing > 0 && (
+								<NeedMeter
+									classified
+									label="Classified Docs"
+									owned={coverage.classifiedUsed}
+									required={coverage.classifiedUsed + coverage.classifiedMissing}
+								/>
+							)
 						)}
 					</div>
 				</div>
@@ -278,18 +331,49 @@ export function DocumentInventoryPanel({
 	);
 }
 
-/** Need against the plan scope: requirement, shortfall, and a thin coverage bar. */
+/** What the saved plan does with one document type: how many to gather, with the full split on hover. */
+function PlanMeter({ label, row }: { label: string; row: PlannedDocument }) {
+	const covered = row.used >= row.need;
+	const detail = [
+		`Need ${row.need}`,
+		row.used > 0 && `${row.used} owned`,
+		row.gather > 0 && `${row.gather} gathered`,
+		row.classified > 0 && `${row.classified} classified`,
+		row.buy > 0 && `${row.buy} bought`,
+	]
+		.filter(Boolean)
+		.join(" · ");
+	const width = (count: number) => `${Math.min(100, (100 * count) / row.need)}%`;
+	return (
+		<div className="space-y-1 text-xs" title={detail} aria-label={`${label}: gather ${row.gather}. ${detail}`}>
+			<p className="flex items-baseline justify-between gap-2">
+				<span className="text-muted-foreground">
+					Gather{" "}
+					<strong className={cn("tabular-nums", row.gather ? "text-foreground" : "text-muted-foreground")}>
+						{row.gather}
+					</strong>
+				</span>
+				{covered && <strong className="text-success">Covered</strong>}
+			</p>
+			<div aria-hidden className="flex h-1 overflow-hidden rounded-full bg-highlight/10">
+				<div className="h-full bg-brand" style={{ width: width(row.used) }} />
+				<div className="h-full bg-brand/40" style={{ width: width(row.gather) }} />
+				<div className="h-full bg-classified/60" style={{ width: width(row.classified) }} />
+			</div>
+		</div>
+	);
+}
+
+/** Need against the plan scope: requirement and a thin coverage bar. */
 function NeedMeter({
 	label,
 	owned,
 	required,
-	missing,
 	classified = false,
 }: {
 	label: string;
 	owned: number;
 	required: number;
-	missing: number;
 	classified?: boolean;
 }) {
 	return (
@@ -298,11 +382,7 @@ function NeedMeter({
 				<span className="text-muted-foreground">
 					Need <strong className="text-foreground tabular-nums">{required}</strong>
 				</span>
-				{missing > 0 ? (
-					<strong className="text-warning tabular-nums">−{missing}</strong>
-				) : (
-					<strong className="text-success">Covered</strong>
-				)}
+				{owned >= required && <strong className="text-success">Covered</strong>}
 			</p>
 			<div aria-hidden className="h-1 overflow-hidden rounded-full bg-highlight/10">
 				<div

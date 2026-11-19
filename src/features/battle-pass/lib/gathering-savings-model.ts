@@ -74,6 +74,7 @@ export function gatheringScenario(
 			rewardId: claim.rewardId,
 			page: claim.page,
 			additionalClassified: shortfall - used,
+			classifiedUsed: used,
 			tarCoins: coins.get(claim.rewardId) ?? 0,
 		};
 	});
