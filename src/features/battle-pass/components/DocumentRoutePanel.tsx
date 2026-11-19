@@ -14,7 +14,7 @@ import { GatheringSavings } from "./GatheringSavings";
 import { StepPlan } from "./StepPlan";
 import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
-import { ModePreference } from "./ModePreference";
+import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
@@ -73,7 +73,7 @@ export function DocumentRoutePanel({
 					<section
 						aria-labelledby="route-config-heading"
 						className={cn(
-							"space-y-4 rounded-lg p-4",
+							"space-y-6 rounded-lg p-4",
 							ready && incompleteCount === 0 ? "bg-surface-raised/40" : "bg-brand/[0.07]",
 						)}
 					>
@@ -94,7 +94,7 @@ export function DocumentRoutePanel({
 								{state.label}
 							</span>
 						</div>
-						<div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+						<div className="flex flex-wrap items-start gap-x-6 gap-y-5">
 							<label className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
 								Destination
 								<select
@@ -115,6 +115,9 @@ export function DocumentRoutePanel({
 										);
 									})}
 								</select>
+								{selectedGoal === "finish" && !buyAll && (
+									<span className="font-normal">Includes the final page and its prerequisites.</span>
+								)}
 							</label>
 							{selectedGoal !== "owned" && (
 								<div className={fieldLabel}>
@@ -150,20 +153,14 @@ export function DocumentRoutePanel({
 						</div>
 						<ModePreference />
 						<GatheringTargetPicker />
-						{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
-							<div className="space-y-1 text-xs">
-								{selectedGoal === "finish" && !buyAll && (
-									<p className="text-muted-foreground">Includes the final page and its prerequisites.</p>
-								)}
-								{incompleteCount > 0 && (
-									<p className="text-warning">
-										{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
-										{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards
-										are included.
-									</p>
-								)}
-							</div>
-						) : null}
+						{incompleteCount > 0 && (
+							<p className="text-xs text-warning">
+								{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
+								{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards are
+								included.
+							</p>
+						)}
+						<GatheringAdvanced />
 					</section>
 					{shownRoute ? (
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">

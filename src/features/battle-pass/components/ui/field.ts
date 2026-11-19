@@ -1,6 +1,13 @@
-/** Flat, borderless form field and its stacked label. */
-export const flatField =
-	"h-9 rounded-md bg-surface-raised/60 px-3 text-sm text-foreground outline-none transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-brand";
+/**
+ * Lifted control surface: an opaque raised fill, a 1px top light and a near-invisible
+ * full ring, so controls read as pressable without leaving the flat style.
+ */
+export const liftedControl =
+	"border border-highlight/[0.025] bg-surface-raised shadow-[inset_0_1px_0_rgb(255_255_255/0.07)] transition-colors hover:border-highlight/[0.06] hover:bg-[color-mix(in_oklab,var(--surface-raised)_92%,var(--highlight))]";
+/** Selected state layered on `liftedControl`. */
+export const liftedSelected = "text-brand";
+/** Lifted form field and its stacked label. */
+export const flatField = `h-9 rounded-md px-3 text-sm text-foreground outline-none focus-visible:outline-2 focus-visible:outline-brand ${liftedControl}`;
 export const fieldLabel = "grid gap-1.5 text-xs font-medium text-muted-foreground";
 /** Pulses a displayed value while an enclosing `group/sync` element has `data-syncing="true"`. */
 export const syncValue =

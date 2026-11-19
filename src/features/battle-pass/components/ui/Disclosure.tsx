@@ -44,10 +44,24 @@ export function Disclosure({
 }
 
 /** Smaller nested expansion for secondary detail inside a section. */
-export function SubDisclosure({ title, children }: { title: ReactNode; children: ReactNode }) {
+export function SubDisclosure({
+	title,
+	className,
+	children,
+}: {
+	title: ReactNode;
+	/** Extra classes for the summary, e.g. a larger label where the expansion is a main entry point. */
+	className?: string;
+	children: ReactNode;
+}) {
 	return (
 		<details className="group/sub">
-			<summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+			<summary
+				className={cn(
+					"inline-flex cursor-pointer list-none items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden",
+					className,
+				)}
+			>
 				<ChevronRight className="size-3.5 transition-transform group-open/sub:rotate-90" aria-hidden />
 				{title}
 			</summary>

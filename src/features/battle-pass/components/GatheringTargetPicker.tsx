@@ -1,10 +1,9 @@
 import { Circle, CircleCheck } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GatheringBreakpoint } from "../lib/gathering-savings-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
-import { syncValue } from "./ui/field";
+import { liftedControl, syncValue } from "./ui/field";
 
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -36,8 +35,10 @@ export function GatheringTargetPicker() {
 				aria-checked={active}
 				onClick={() => target.select(point?.gathered ?? 0)}
 				className={cn(
-					"group flex w-full items-start gap-2 rounded-lg p-3 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-brand",
-					active ? "bg-brand/15" : "bg-surface-raised/40 hover:bg-surface-raised/80",
+					"group flex w-full items-start gap-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
+					liftedControl,
+					active &&
+						"bg-[color-mix(in_oklab,var(--brand)_4%,var(--surface-raised))] hover:bg-[color-mix(in_oklab,var(--brand)_7%,var(--surface-raised))]",
 				)}
 			>
 				<Check
@@ -47,7 +48,7 @@ export function GatheringTargetPicker() {
 					)}
 					aria-hidden
 				/>
-				<span className="min-w-0 space-y-0.5">
+				<span className="min-w-0 space-y-1">
 					<span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
 						{point ? `Gather ${point.gathered}` : "No gathering"}
 						{point && point === recommended && (
@@ -71,13 +72,10 @@ export function GatheringTargetPicker() {
 		);
 	};
 	return (
-		<section
-			data-syncing={target.stale || undefined}
-			className="group/sync w-full space-y-3 rounded-lg border border-border/60 p-3"
-		>
-			<div className="flex flex-wrap items-baseline justify-between gap-2">
-				<h4 className="text-sm font-medium">Gathering target</h4>
-				<p className="text-xs text-muted-foreground">
+		<section data-syncing={target.stale || undefined} className="group/sync w-full space-y-3">
+			<div className="space-y-1">
+				<h4 className="text-sm font-semibold">Gathering target</h4>
+				<p className="text-xs leading-relaxed text-muted-foreground">
 					Each option is the next drop in what you pay. The step plan follows your choice.
 				</p>
 			</div>
@@ -89,15 +87,17 @@ export function GatheringTargetPicker() {
 				{option(undefined)}
 				{shown.map(option)}
 				{rest.length > 0 && (
-					<Button
-						size="sm"
-						variant="ghost"
-						tone="brand"
-						className="self-end justify-self-start"
+					<button
+						type="button"
+						aria-expanded={more}
 						onClick={() => setMore(!more)}
+						className={cn(
+							"h-8 self-center justify-self-start rounded-md px-3 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand",
+							liftedControl,
+						)}
 					>
-						{more ? "Less" : `More (${rest.length})`}
-					</Button>
+						{more ? "Show fewer" : `${rest.length} more options`}
+					</button>
 				)}
 			</div>
 		</section>

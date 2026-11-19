@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { liftedControl, liftedSelected } from "./field";
 
 export function Toggle({
 	checked,
@@ -26,12 +27,13 @@ export function Toggle({
 		<label
 			title={title}
 			className={cn(
-				"flex h-8 cursor-pointer items-center gap-2 rounded-md px-2.5 text-xs transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-brand",
+				"flex h-8 cursor-pointer items-center gap-2 rounded-md px-2.5 text-xs focus-within:outline focus-within:outline-2 focus-within:outline-brand",
+				liftedControl,
 				checked
-					? "bg-brand/15 text-brand"
+					? liftedSelected
 					: indicator
-						? "bg-surface-raised/60 text-foreground/75 hover:text-foreground"
-						: "bg-surface-raised/50 text-muted-foreground hover:text-foreground",
+						? "text-foreground/75 hover:text-foreground"
+						: "text-muted-foreground hover:text-foreground",
 				disabled && "pointer-events-none opacity-40",
 				className,
 			)}

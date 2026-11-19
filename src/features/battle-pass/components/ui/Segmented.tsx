@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { liftedControl, liftedSelected } from "./field";
 
-/** Flat single-choice control. Unselected options keep readable foreground text. */
+/** Single-choice control: a recessed track with the selected option lifted out of it. */
 export function Segmented<T extends string>({
 	label,
 	value,
@@ -13,7 +14,7 @@ export function Segmented<T extends string>({
 	onChange: (value: T) => void;
 }) {
 	return (
-		<div role="group" aria-label={label} className="inline-flex h-9 rounded-md bg-surface-raised/60 p-0.5">
+		<div role="group" aria-label={label} className="inline-flex h-9 gap-0.5 rounded-md bg-background p-0.5">
 			{options.map((option) => {
 				const selected = option.value === value;
 				return (
@@ -23,8 +24,10 @@ export function Segmented<T extends string>({
 						aria-pressed={selected}
 						onClick={() => onChange(option.value)}
 						className={cn(
-							"rounded-[5px] px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand",
-							selected ? "bg-brand/20 text-brand" : "text-foreground/70 hover:text-foreground",
+							"rounded-[5px] px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-brand",
+							selected
+								? cn(liftedControl, liftedSelected)
+								: "border border-transparent text-foreground/70 transition-colors hover:text-foreground",
 						)}
 					>
 						{option.label}
