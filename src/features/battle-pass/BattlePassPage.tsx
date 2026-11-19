@@ -19,7 +19,7 @@ import { configuredPlan, rewardCostStatus } from "./lib/battle-pass-configuratio
 import { DocumentRoutePanel } from "./components/DocumentRoutePanel";
 import { LocationsPanel } from "./components/LocationsPanel";
 import { DocumentInventoryPanel } from "./components/DocumentInventoryPanel";
-import { useDocumentRouteController } from "./useDocumentRouteController";
+import { BattlePassPlanContext, useBattlePassPlan } from "./useBattlePassPlan";
 import { Toggle } from "./components/ui/Toggle";
 import { useDocumentInventory } from "./useDocumentInventory";
 
@@ -51,15 +51,14 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 	const { stored: progress, write } = useBattlePassSave();
 	const [{ listMode, requestedScope, showProfileRecommendations, optimizerEnabled }, setPreference] =
 		useBattlePassPreferences();
-	const route = useDocumentRouteController(
+	const routePlan = useBattlePassPlan(
 		documentInventory,
 		costSetup.configuration,
 		optimizerEnabled && !costSetup.editing,
 	);
+	// Claim markers follow the same active route as every Docs breakdown panel.
 	const routeClaims =
-		optimizerEnabled && !costSetup.editing && route.result && typeof route.result !== "string"
-			? route.result.claims
-			: [];
+		optimizerEnabled && !costSetup.editing && typeof routePlan.result !== "string" ? routePlan.result.claims : [];
 	// Suggestions come only from the optimizer's claim order; with it off, nothing is suggested.
 	const suggestedOrder = new Map(routeClaims.map((claim, index) => [claim.rewardId, index + 1] as const));
 	const recommendedProfiles = new Map(
@@ -323,12 +322,13 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				</div>
 			)}
 			{!costSetup.editing && (
-				<DocumentRoutePanel
-					inventory={documentInventory}
-					route={route}
-					enabled={optimizerEnabled}
-					onEnabledChange={(value) => setPreference("optimizerEnabled", value)}
-				/>
+				<BattlePassPlanContext value={routePlan}>
+					<DocumentRoutePanel
+						inventory={documentInventory}
+						enabled={optimizerEnabled}
+						onEnabledChange={(value) => setPreference("optimizerEnabled", value)}
+					/>
+				</BattlePassPlanContext>
 			)}
 			{!listMode && (
 				<PageMinimap

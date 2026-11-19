@@ -1,38 +1,23 @@
 import { FileSearch } from "lucide-react";
-import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { DAILY_HEADROOM, gatheringDailyCap } from "../lib/gathering-caps";
-import { cashFreeGatheringPlan, type GatheringQuantity, type SavingsRoute } from "../lib/gathering-savings-model";
-import { useFundingSettings } from "../useFundingSettings";
-import type { GatheringTarget } from "../useGatheringTarget";
+import type { GatheringQuantity } from "../lib/gathering-savings-model";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { Disclosure } from "./ui/Disclosure";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { syncValue } from "./ui/field";
 
-type Profile = { key: string; label: string; color: string };
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 
 /** Documents to gather per mode for the gathering target, one column per mode. */
-export function GatherDocuments({
-	profiles,
-	route,
-	gathering,
-}: {
-	profiles: Profile[];
-	route: SavingsRoute;
-	gathering: GatheringTarget;
-}) {
+export function GatherDocuments() {
 	const { documents } = useBattlePassData();
-	const { startingTarCoins, gatheringFilters, dailyHeadroom } = useFundingSettings();
-	const reserve = dailyHeadroom ? DAILY_HEADROOM : 0;
+	const { profiles, gathering, settings } = useBattlePassPlanContext();
+	const reserve = settings.dailyHeadroom ? DAILY_HEADROOM : 0;
 	// Without cash breakpoints there is no target to pick, so show the cash-free plan.
-	const fallback = useMemo(
-		() =>
-			gathering.breakpoints.length ? null : cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters, reserve),
-		[gathering.breakpoints.length, route, startingTarCoins, gatheringFilters, reserve],
-	);
+	const fallback = gathering.breakpoints.length ? null : gathering.cashFree;
 	const rows: GatheringQuantity[] =
 		gathering.selected?.quantities ?? [...(fallback?.modes.values() ?? [])].flatMap((mode) => mode.documents);
 	const modes = profiles.map((profile) => {
@@ -45,7 +30,7 @@ export function GatherDocuments({
 		<Disclosure
 			title="Documents to gather"
 			icon={<FileSearch className="size-4 text-brand" aria-hidden />}
-			syncing={gathering.stale}
+			syncing={gathering.stale || gathering.calculating}
 			meta={
 				<span className="flex flex-wrap justify-end gap-x-3">
 					{modes.map((mode) => (

@@ -1,14 +1,9 @@
 import { ChevronRight, Route as RouteIcon } from "lucide-react";
-import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { optimizeRouteFunding } from "../lib/funding-model";
-import {
-	gatheringScenario,
-	type GatheringBreakpoint,
-	type GatheringFilters,
-	type SavingsRoute,
-} from "../lib/gathering-savings-model";
-import { purchaseFlow, type FlowStep } from "../lib/purchase-flow-model";
+import { useBattlePassData } from "../BattlePassSeason";
+import { documentDisplayName } from "../lib/battle-pass-display";
+import type { FlowStep } from "../lib/purchase-flow-model";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { Disclosure } from "./ui/Disclosure";
 import { syncValue } from "./ui/field";
 import { TarCoin } from "./ui/TarCoin";
@@ -17,45 +12,35 @@ const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
 /** A left-to-right plan: gather, buy TarCoins, then alternate classified purchases and claims. */
-export function StepPlan({
-	route,
-	point,
-	startingTarCoins,
-	allowSpecial,
-	filters,
-	documentName,
-}: {
-	route: SavingsRoute;
-	/** The gathering target, or undefined for no gathering. */
-	point: GatheringBreakpoint | undefined;
-	startingTarCoins: number;
-	allowSpecial: boolean;
-	filters: GatheringFilters;
-	documentName: (key: string) => string;
-}) {
-	const gathered = point?.gathered ?? 0;
-	const flow = useMemo(() => {
-		try {
-			const { claims, gatheredByClaim } = gatheringScenario(route, gathered, filters);
-			const plan = optimizeRouteFunding(claims, startingTarCoins, allowSpecial);
-			return purchaseFlow(plan, claims, startingTarCoins, gatheredByClaim);
-		} catch {
-			return null;
-		}
-	}, [route, gathered, filters, startingTarCoins, allowSpecial]);
+export function StepPlan() {
+	const { documents } = useBattlePassData();
+	const { flow, flowRoute: route, gathering, funding } = useBattlePassPlanContext();
+	if (!route || !funding) return null;
+	const point = gathering.selected;
+	const cashCents = typeof funding === "string" ? null : funding.plan.cashCents;
+	const documentName = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
 	const rewardName = (claim: number) => {
 		const id = route.claims[claim - 1]?.rewardId;
 		return route.selected.find((tile) => tile.id === id)?.displayName ?? "";
 	};
 	return (
-		<Disclosure title="Step-by-step plan" icon={<RouteIcon className="size-4 text-brand" aria-hidden />}>
+		<Disclosure
+			title="Step-by-step plan"
+			icon={<RouteIcon className="size-4 text-brand" aria-hidden />}
+			syncing={gathering.stale}
+			meta={point ? `Gather ${point.gathered}, pay ${usd(point.cashCents)}` : cashCents ? usd(cashCents) : null}
+		>
 			<p className="text-xs text-muted-foreground">
 				{point
 					? `Gather ${point.gathered} documents, then pay ${usd(point.cashCents)}.`
-					: "No gathering: buy every missing document."}{" "}
-				Change this with the gathering target in Route configuration.
+					: cashCents
+						? "No gathering: buy every missing document."
+						: "No purchase needed."}
+				{gathering.breakpoints.length > 0 && " Change this with the gathering target in Route configuration."}
 			</p>
-			{flow ? (
+			{flow && flow.length === 0 ? (
+				<p className="text-xs text-muted-foreground">Nothing left to claim.</p>
+			) : flow ? (
 				<ol className={cn("flex items-stretch gap-1 overflow-x-auto pb-2", syncValue)}>
 					{flow.map((step, index) => (
 						<li key={index} className="flex shrink-0 items-stretch gap-1">

@@ -1,14 +1,9 @@
 import { Circle, CircleCheck } from "lucide-react";
-import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
-import { optimizeRouteFunding } from "../lib/funding-model";
 import { DAILY_HEADROOM, gatheringDailyCap } from "../lib/gathering-caps";
-import { cashFreeGatheringPlan, type SavingsRoute } from "../lib/gathering-savings-model";
-import { fundingClaims } from "../lib/route-options-model";
-import { useFundingSettings } from "../useFundingSettings";
-import type { GatheringTarget } from "../useGatheringTarget";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { SubDisclosure } from "./ui/Disclosure";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { Toggle } from "./ui/Toggle";
@@ -19,40 +14,23 @@ const usd = (cents: number) =>
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 const tint = (color: string, percent: number) => `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
-type Profile = { key: string; label: string; color: string; inventory: Record<string, number> };
-
 /** Preferred gathering mode: claims that need gathering go to this profile
  * whenever that costs nothing. Advanced settings choose where and what to gather. */
-export function ModePreference({
-	profiles,
-	route,
-	gathering,
-}: {
-	profiles: Profile[];
-	route: SavingsRoute | null;
-	gathering: GatheringTarget;
-}) {
-	const settings = useFundingSettings();
-	const { preferredMode, gatheringFilters, startingTarCoins, allowSpecial, dailyHeadroom } = settings;
+export function ModePreference() {
+	const { profiles, route, gathering, funding, settings } = useBattlePassPlanContext();
+	const { preferredMode, gatheringFilters, dailyHeadroom } = settings;
 	const reserve = dailyHeadroom ? DAILY_HEADROOM : 0;
 	const { documents } = useBattlePassData();
-	const plan = useMemo(
-		() => (route ? cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters, reserve) : null),
-		[route, startingTarCoins, gatheringFilters, reserve],
-	);
-	const cash = useMemo(() => {
-		if (!route) return null;
-		try {
-			return optimizeRouteFunding(fundingClaims(route), startingTarCoins, allowSpecial).cashCents;
-		} catch {
-			return null;
-		}
-	}, [route, startingTarCoins, allowSpecial]);
+	const plan = gathering.cashFree;
+	const cash = typeof funding === "object" && funding ? funding.plan.cashCents : null;
 	const choose = profiles.length > 1;
 	return (
 		<div className="w-full space-y-3">
 			{choose && (
-				<section className="space-y-3 rounded-lg border border-border/60 p-3">
+				<section
+					data-syncing={gathering.stale || undefined}
+					className="group/sync space-y-3 rounded-lg border border-border/60 p-3"
+				>
 					<div className="flex flex-wrap items-baseline justify-between gap-2">
 						<h4 className="text-sm font-medium">Preferred gathering mode</h4>
 						<p className="text-xs text-muted-foreground">
@@ -141,11 +119,13 @@ export function ModePreference({
 								</strong>
 								<span className="text-muted-foreground">
 									{" · "}
-									{plan
-										? plan.days === 0
-											? "no gathering needed for a cash-free finish"
-											: `cash-free finish in ${days(plan.days)}, gathering ${plan.total}`
-										: "no cash-free finish with these modes and documents"}
+									{plan === undefined
+										? "calculating the cash-free finish…"
+										: plan
+											? plan.days === 0
+												? "no gathering needed for a cash-free finish"
+												: `cash-free finish in ${days(plan.days)}, gathering ${plan.total}`
+											: "no cash-free finish with these modes and documents"}
 								</span>
 							</>
 						)}

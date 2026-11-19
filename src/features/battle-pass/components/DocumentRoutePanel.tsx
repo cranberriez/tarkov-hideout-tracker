@@ -2,35 +2,33 @@
 
 import { useBattlePassData, useBattlePassSave } from "../BattlePassSeason";
 import type { useDocumentInventory } from "../useDocumentInventory";
-import { CALCULATING_ROUTE, useDocumentRoute } from "../useDocumentRoute";
-import { useState } from "react";
+import { CALCULATING_ROUTE } from "../useDocumentRoute";
 import { Toggle } from "./ui/Toggle";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
 import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lucide-react";
 import { RouteSummary } from "./RouteSummary";
-import type { useDocumentRouteController } from "../useDocumentRouteController";
+import { useBattlePassPlanContext, type PlannedRoute } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
+import { GatheringSavings } from "./GatheringSavings";
+import { StepPlan } from "./StepPlan";
 import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
 import { ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
-import { useGatheringTarget } from "../useGatheringTarget";
 import { Disclosure } from "./ui/Disclosure";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
 import { fieldLabel, flatField, syncValue } from "./ui/field";
 
-type Route = Exclude<ReturnType<typeof useDocumentRoute>, string | null>;
+type Route = PlannedRoute;
 
 export function DocumentRoutePanel({
 	inventory,
-	route,
 	enabled,
 	onEnabledChange,
 }: {
 	inventory: ReturnType<typeof useDocumentInventory>;
-	route: ReturnType<typeof useDocumentRouteController>;
 	enabled: boolean;
 	onEnabledChange: (enabled: boolean) => void;
 }) {
@@ -38,6 +36,10 @@ export function DocumentRoutePanel({
 	const { stored } = useBattlePassSave();
 	const {
 		result,
+		route: shownRoute,
+		syncing,
+		calculating,
+		funding,
 		selectedGoal,
 		destinationIds,
 		buyAll,
@@ -46,15 +48,8 @@ export function DocumentRoutePanel({
 		setBuyAll,
 		setAllProfiles,
 		incompleteCount,
-	} = route;
-	const ready = !!result && typeof result !== "string";
-	const calculating = !result || result === CALCULATING_ROUTE;
-	// Keep the last route on screen during recalculation so the page does not collapse and jump.
-	const [lastRoute, setLastRoute] = useState<Route | null>(null);
-	if (ready && result !== lastRoute) setLastRoute(result);
-	const shownRoute = ready ? result : calculating ? lastRoute : null;
-	const syncing = !ready && !!shownRoute;
-	const gathering = useGatheringTarget(shownRoute);
+	} = useBattlePassPlanContext();
+	const ready = typeof result !== "string";
 	const state = ready
 		? incompleteCount > 0
 			? { tone: "warning", label: "Partial", Icon: CircleAlert }
@@ -153,12 +148,8 @@ export function DocumentRoutePanel({
 							</div>
 							<FundingInputs />
 						</div>
-						<ModePreference
-							profiles={allProfiles ? inventory.availableProfiles : [inventory.selectedProfile]}
-							route={shownRoute}
-							gathering={gathering}
-						/>
-						<GatheringTargetPicker target={gathering} />
+						<ModePreference />
+						<GatheringTargetPicker />
 						{(selectedGoal === "finish" && !buyAll) || incompleteCount > 0 ? (
 							<div className="space-y-1 text-xs">
 								{selectedGoal === "finish" && !buyAll && (
@@ -176,15 +167,13 @@ export function DocumentRoutePanel({
 					</section>
 					{shownRoute ? (
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
-							<RouteSummary route={shownRoute} />
-							<GatherDocuments
-								profiles={allProfiles ? inventory.availableProfiles : [inventory.selectedProfile]}
-								route={shownRoute}
-								gathering={gathering}
-							/>
+							<RouteSummary />
+							<GatherDocuments />
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
-							<RouteOptions route={route} />
-							<RouteFundingPanel route={shownRoute} gathering={gathering} />
+							<RouteOptions />
+							<RouteFundingPanel />
+							{typeof funding === "object" && funding?.plan.cashCents ? <GatheringSavings /> : null}
+							<StepPlan />
 						</div>
 					) : (
 						<RouteSkeleton

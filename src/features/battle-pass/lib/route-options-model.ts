@@ -112,13 +112,16 @@ export function purchaseTiers(options: FundingOption[]) {
 }
 
 /** Price each route's purchase options and keep those no other option beats on
- * checkout, classified documents to buy and TarCoins left after the pass.
- * Deltas compare against the cheapest purchase on the first (active) route. */
+ * checkout, classified documents to buy and TarCoins left after the pass. The
+ * active route always keeps its cheapest and recommended purchases, so its card
+ * matches Route funding. Deltas compare against the cheapest purchase on the
+ * first (optimizer) route. */
 export function buildRouteOptions(
 	routes: Route[],
 	startingTarCoins: number,
 	allowSpecial: boolean,
 	expanded: (routeIndex: number) => boolean = () => false,
+	activeIndex = 0,
 ): { options: RouteOption[]; singlePacks: (FundingOption | null)[] } {
 	if (!routes.length) return { options: [], singlePacks: [] };
 	// "Show more options" adds one purchase per route: the nearest single larger
@@ -133,11 +136,15 @@ export function buildRouteOptions(
 	});
 	type Row = ReturnType<typeof row>;
 	const tierRows: Row[] = [];
+	const pinned = new Set<Row>();
 	const singleRows: (Row | null)[] = [];
 	routes.forEach((route, routeIndex) => {
 		const claims = fundingClaims(route);
 		const tiers = purchaseTiers(fundingOptions(claims, startingTarCoins, allowSpecial, ROUTE_OPTION_CASH_WINDOW_CENTS));
-		tierRows.push(...tiers.map((purchase) => row(routeIndex, purchase, false)));
+		const rows = tiers.map((purchase) => row(routeIndex, purchase, false));
+		if (routeIndex === activeIndex)
+			for (const [index, option] of rows.entries()) if (index === 0 || option.purchase.recommended) pinned.add(option);
+		tierRows.push(...rows);
 		const single = singlePackOption(claims, startingTarCoins, allowSpecial, tiers.at(-1)!.cashCents);
 		singleRows.push(single && row(routeIndex, single, true));
 	});
@@ -159,7 +166,7 @@ export function buildRouteOptions(
 		...tierRows,
 		...available.filter((option): option is Row => option !== null && expanded(option.routeIndex)),
 	];
-	const kept = priced.filter((option) => !dominated(option, priced));
+	const kept = priced.filter((option) => pinned.has(option) || !dominated(option, priced));
 	const baseline = priced[0];
 	const options = kept
 		.sort(

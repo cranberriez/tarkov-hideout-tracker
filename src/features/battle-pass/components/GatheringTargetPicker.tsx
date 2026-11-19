@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { GatheringBreakpoint } from "../lib/gathering-savings-model";
-import type { GatheringTarget } from "../useGatheringTarget";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { syncValue } from "./ui/field";
 
 const usd = (cents: number) =>
@@ -15,7 +15,8 @@ const VISIBLE = 2;
 const MAX_REVEALED_INLINE = 2;
 
 /** Choose how much to gather: no gathering or one of the cash breakpoints. */
-export function GatheringTargetPicker({ target }: { target: GatheringTarget }) {
+export function GatheringTargetPicker() {
+	const target = useBattlePassPlanContext().gathering;
 	const [more, setMore] = useState(false);
 	const { breakpoints, recommended, selected, baselineCents } = target;
 	if (baselineCents === null || !breakpoints.length) return null;
@@ -70,7 +71,10 @@ export function GatheringTargetPicker({ target }: { target: GatheringTarget }) {
 		);
 	};
 	return (
-		<section className="w-full space-y-3 rounded-lg border border-border/60 p-3">
+		<section
+			data-syncing={target.stale || undefined}
+			className="group/sync w-full space-y-3 rounded-lg border border-border/60 p-3"
+		>
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<h4 className="text-sm font-medium">Gathering target</h4>
 				<p className="text-xs text-muted-foreground">

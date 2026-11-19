@@ -1,12 +1,11 @@
 import { ChevronDown, Scale } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Tile } from "../lib/battle-pass-model";
-import { rewardTarCoins } from "../lib/funding-model";
-import { ROUTE_OPTION_CASH_WINDOW_CENTS, buildRouteOptions, type RouteOption } from "../lib/route-options-model";
-import { useFundingSettings } from "../useFundingSettings";
-import type { useDocumentRouteController } from "../useDocumentRouteController";
+import { CASH_TOLERANCE_CENTS, rewardTarCoins } from "../lib/funding-model";
+import { ROUTE_OPTION_CASH_WINDOW_CENTS, type RouteOption } from "../lib/route-options-model";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { Disclosure } from "./ui/Disclosure";
 import { RouteDocumentPlans } from "./RouteDocumentPlans";
 import { syncValue } from "./ui/field";
@@ -32,37 +31,28 @@ function headline(option: RouteOption) {
 	);
 }
 
-type Controller = ReturnType<typeof useDocumentRouteController>;
+/** TarCoins left per extra dollar compared with the purchase above it on the
+ * same route. Purchases within one price tier (a few cents apart) get none. */
+function marginalValue(option: RouteOption, previous: RouteOption | undefined) {
+	if (!previous) return null;
+	const cents = option.purchase.cashCents - previous.purchase.cashCents;
+	const coins = option.purchase.balanceTarCoins - previous.purchase.balanceTarCoins;
+	return cents > CASH_TOLERANCE_CENTS ? Math.round(coins / (cents / 100)) : null;
+}
 
 /** Viable claim routes and TarCoin purchases that trade checkout against TarCoins left after the pass. */
-export function RouteOptions({ route }: { route: Controller }) {
-	const { startingTarCoins, allowSpecial } = useFundingSettings();
-	const { baseRoute, options: candidates, adoptedColumns, adoptRoute } = route;
-	const ready = baseRoute && Array.isArray(candidates) ? candidates : null;
-	// Routes showing their single larger pack; it resets whenever the routes are re-solved.
-	const [more, setMore] = useState<{ ready: typeof ready; expanded: number[] }>({ ready: null, expanded: [] });
-	const expanded = useMemo(() => (more.ready === ready ? more.expanded : []), [more, ready]);
-	const toggle = (routeIndex: number, show: boolean) =>
-		setMore({
-			ready,
-			expanded: show ? [...expanded, routeIndex] : expanded.filter((index) => index !== routeIndex),
-		});
+export function RouteOptions() {
+	const plan = useBattlePassPlanContext();
+	const { alternatives: ready, adoptedIndex, adoptRoute, expandedRoutes: expanded } = plan;
+	const toggle = plan.setRouteExpanded;
 	// Routes with their details open; collapsed by default, reset when routes re-solve.
 	const [open, setOpen] = useState<{ ready: typeof ready; routes: number[] }>({ ready: null, routes: [] });
 	const details = open.ready === ready ? open.routes : [];
 	const showDetails = (routeIndex: number, show: boolean) =>
 		setOpen({ ready, routes: show ? [...details, routeIndex] : details.filter((index) => index !== routeIndex) });
-	const { options, singlePacks } = useMemo(
-		() =>
-			ready && baseRoute
-				? buildRouteOptions([baseRoute, ...ready.map((c) => c.route)], startingTarCoins, allowSpecial, (index) =>
-						expanded.includes(index),
-					)
-				: { options: [], singlePacks: [] },
-		[baseRoute, ready, startingTarCoins, allowSpecial, expanded],
-	);
-	if (!baseRoute || candidates === null) return null;
-	const activeIndex = ready ? ready.findIndex((c) => c.columns === adoptedColumns) + 1 : 0;
+	const { options, singlePacks } = plan.routeOptions ?? { options: [], singlePacks: [] };
+	if (typeof plan.result === "string" || plan.optionsStatus === "off") return null;
+	const activeIndex = adoptedIndex + 1;
 	// One card per route; its purchases are the rows inside it.
 	const routes = [...new Set(options.map((option) => option.routeIndex))].map((routeIndex) => ({
 		routeIndex,
@@ -163,6 +153,7 @@ export function RouteOptions({ route }: { route: Controller }) {
 										<ul className="space-y-2">
 											{purchases.map((option, index) => {
 												const receipt = option.purchase.cashReceipt;
+												const perDollar = marginalValue(option, purchases[index - 1]);
 												return (
 													<li
 														key={index}
@@ -200,15 +191,16 @@ export function RouteOptions({ route }: { route: Controller }) {
 																	</dd>
 																</div>
 															</dl>
-															{option.purchase.cashCents > 0 && (
-																<dl className="flex items-start gap-1" title="TarCoins bought for each dollar spent">
-																	<dt className="text-muted-foreground">Value</dt>
+															{perDollar !== null && (
+																<dl
+																	className="flex items-start gap-1"
+																	title="TarCoins left after the pass for each extra dollar compared with the purchase above"
+																>
+																	<dt className="text-muted-foreground">Extra</dt>
 																	<dd className="flex items-center tabular-nums">
-																		{Math.round(
-																			option.purchase.totalTarCoins / (option.purchase.cashCents / 100),
-																		).toLocaleString()}
+																		{perDollar.toLocaleString()}
 																		<TarCoin />
-																		per $1
+																		per extra $1
 																	</dd>
 																</dl>
 															)}

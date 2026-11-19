@@ -1,23 +1,19 @@
 import { Button } from "@/components/ui/button";
-import { useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import { useBattlePassData } from "../BattlePassSeason";
 import { DocumentIcon } from "./ui/DocumentIcon";
 import { documentDisplayName } from "../lib/battle-pass-display";
-import { useFundingSettings } from "../useFundingSettings";
-import { cashFreeGatheringPlan, type SavingsRoute } from "../lib/gathering-savings-model";
-import { DAILY_HEADROOM } from "../lib/gathering-caps";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { syncValue } from "./ui/field";
 
-export function RouteSummary({ route }: { route: SavingsRoute }) {
+export function RouteSummary() {
 	const typesId = useId();
 	const [showTypes, setShowTypes] = useState(false);
-	const { startingTarCoins, gatheringFilters, dailyHeadroom } = useFundingSettings();
-	const plan = useMemo(
-		() => cashFreeGatheringPlan(route, startingTarCoins, gatheringFilters, dailyHeadroom ? DAILY_HEADROOM : 0),
-		[route, startingTarCoins, gatheringFilters, dailyHeadroom],
-	);
+	const { route: shownRoute, gathering } = useBattlePassPlanContext();
+	const route = shownRoute!;
+	const plan = gathering.cashFree;
 	const { documents } = useBattlePassData();
 	const byType = new Map<string, number>();
 	for (const claim of route.claims)
@@ -100,10 +96,15 @@ export function RouteSummary({ route }: { route: SavingsRoute }) {
 						)}
 					</dd>
 				</div>
-				<div className="col-span-2 flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3">
+				<div
+					data-syncing={gathering.stale || undefined}
+					className="group/sync col-span-2 flex flex-col gap-3 rounded-lg bg-surface-raised/40 p-3"
+				>
 					<dt className="text-xs text-muted-foreground">Fastest cash-free finish</dt>
 					<dd className={cn("mt-auto flex flex-wrap items-end justify-between gap-2", syncValue)}>
-						{plan && plan.days > 0 ? (
+						{plan === undefined ? (
+							<span className="text-sm text-muted-foreground">Calculating…</span>
+						) : plan && plan.days > 0 ? (
 							<span className="flex flex-wrap items-baseline gap-x-3">
 								<strong className="text-lg leading-none">
 									{plan.days} gathering {plan.days === 1 ? "day" : "days"}

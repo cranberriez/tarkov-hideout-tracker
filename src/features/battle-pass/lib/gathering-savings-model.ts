@@ -1,5 +1,11 @@
 import type { interpretDocumentRoute } from "./document-route-model";
-import { compareCurrencyBundles, type CurrencyComparison, optimizeRouteFunding, rewardTarCoins } from "./funding-model";
+import {
+	compareCurrencyBundles,
+	type CurrencyComparison,
+	type FundingPlan,
+	optimizeRouteFunding,
+	rewardTarCoins,
+} from "./funding-model";
 import { gatheringDailyCap } from "./gathering-caps";
 
 export type SavingsRoute = ReturnType<typeof interpretDocumentRoute>;
@@ -19,6 +25,8 @@ export interface GatheringBreakpoint {
 	savingsCents: number;
 	remainingClassified: number;
 	funding: CurrencyComparison;
+	/** The full purchase schedule behind `funding`, for the step-by-step plan. */
+	plan: FundingPlan;
 }
 
 /** Fixed selected rewards, owners and claim order. Gather matching shortages in
@@ -129,19 +137,19 @@ export function buildGatheringSavings(
 ): GatheringBreakpoint[] {
 	const maximum = route.additionalClassified - 1;
 	if (maximum < 1) return [];
-	const cache = new Map<number, CurrencyComparison>();
-	const funding = (count: number) => {
-		if (!cache.has(count))
-			cache.set(
-				count,
-				compareCurrencyBundles(
-					optimizeRouteFunding(gatheringScenario(route, count, filters).claims, startingTarCoins, allowSpecial),
-					allowSpecial,
-				),
+	const cache = new Map<number, { plan: FundingPlan; funding: CurrencyComparison }>();
+	const solve = (count: number) => {
+		if (!cache.has(count)) {
+			const plan = optimizeRouteFunding(
+				gatheringScenario(route, count, filters).claims,
+				startingTarCoins,
+				allowSpecial,
 			);
+			cache.set(count, { plan, funding: compareCurrencyBundles(plan, allowSpecial) });
+		}
 		return cache.get(count)!;
 	};
-	const cash = (count: number) => funding(count).cashCents;
+	const cash = (count: number) => solve(count).funding.cashCents;
 	const baseline = cash(0);
 	const minimum = cash(maximum);
 	const result: GatheringBreakpoint[] = [];
@@ -180,7 +188,7 @@ export function buildGatheringSavings(
 			windows,
 			parallelWindows: Math.max(...windows.map((row) => row.windows)),
 			cashCents: previous,
-			funding: funding(count),
+			...solve(count),
 			savingsCents: baseline - previous,
 			remainingClassified: claims.reduce((sum, claim) => sum + claim.additionalClassified, 0),
 		});

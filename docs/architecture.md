@@ -99,7 +99,9 @@ Goals when none are selected, and displays the configured season deadline in Pac
 Setup Costs edits per-season reward document costs in a draft. The viewer shows a
 verified document breakdown only when every outstanding reward in the chosen scope
 is configured, including the cheapest goal prerequisites. See
-[Battle Pass document configuration](battle-pass-configuration.md) for the setup flow.
+[Battle Pass document configuration](battle-pass-configuration.md) for the setup flow. The Docs breakdown's
+route, funding and gathering plan come from a single client-side owner; see the
+[planning pipeline](battle-pass-optimizer.md#planning-pipeline).
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
