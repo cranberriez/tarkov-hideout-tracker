@@ -1,4 +1,5 @@
-import { Files } from "lucide-react";
+import { Coins, Files } from "lucide-react";
+import { TarCoin } from "./ui/TarCoin";
 import { CurrencyComparison } from "./CurrencyComparison";
 import { useBattlePassData } from "../BattlePassSeason";
 import type { GatheringBreakpoint } from "../lib/gathering-savings-model";
@@ -15,7 +16,8 @@ const periods = (count: number) => `${count} acquisition ${count === 1 ? "period
 
 export function GatheringSavings() {
 	const { documents } = useBattlePassData();
-	const { gathering } = useBattlePassPlanContext();
+	const { gathering, farming } = useBattlePassPlanContext();
+	const farm = farming[0];
 	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
 	const quantities = (point: GatheringBreakpoint) => (
 		<ul className="space-y-1 text-xs">
@@ -39,15 +41,23 @@ export function GatheringSavings() {
 			title="Save cash by gathering"
 			icon={<Files className="size-4 text-brand" aria-hidden />}
 			meta={
-				highlight ? (
-					<span className={cn("text-sm font-semibold text-success", syncValue)}>
-						Save {usd(highlight.savingsCents)}
-					</span>
-				) : !shown ? (
+				!shown ? (
 					"Calculating…"
-				) : breakpoints.length ? (
-					"No gathering"
-				) : null
+				) : (
+					<span className={cn("flex flex-wrap items-center justify-end gap-x-3", syncValue)}>
+						{highlight ? (
+							<span className="text-sm font-semibold text-success">Save {usd(highlight.savingsCents)}</span>
+						) : (
+							breakpoints.length > 0 && "No gathering"
+						)}
+						{farm && (
+							<span className="inline-flex items-center gap-1 text-xs">
+								<Coins className="size-3.5 text-success" aria-hidden />+{farm.extraTarCoins.toLocaleString()}{" "}
+								<TarCoin /> saves {usd(farm.savingsCents)}
+							</span>
+						)}
+					</span>
+				)
 			}
 		>
 			{!shown ? (
@@ -75,6 +85,23 @@ export function GatheringSavings() {
 						{quantities(highlight)}
 					</div>
 				)
+			)}
+			{shown && farming.length > 0 && (
+				<ul className={cn("space-y-1 rounded-md bg-success/[0.07] p-3 text-sm", syncValue)} aria-live="polite">
+					{farming.map((option) => (
+						<li key={option.extraTarCoins} className="flex items-start gap-2">
+							<Coins className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
+							<span>
+								<strong>
+									Farm {option.extraTarCoins.toLocaleString()} <TarCoin /> more to save {usd(option.savingsCents)}.
+								</strong>{" "}
+								<span className="text-muted-foreground">
+									Earn them in PVP or the seasonal mode before buying; cash drops to {usd(option.cashCents)}.
+								</span>
+							</span>
+						</li>
+					))}
+				</ul>
 			)}
 			<div className="flex flex-col gap-3">
 				<p className="text-xs text-muted-foreground">

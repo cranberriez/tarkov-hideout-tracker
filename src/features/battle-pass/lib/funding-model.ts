@@ -307,3 +307,43 @@ export function compareCurrencyBundles(plan: FundingPlan, allowSpecial: boolean)
 }
 export type CurrencyComparison = ReturnType<typeof compareCurrencyBundles>;
 export type FundingPlan = ReturnType<typeof optimizeRouteFunding>;
+
+/** Largest extra TarCoin balance worth suggesting: farming is slow and unreliable. */
+export const TARCOIN_FARMING_CAP = 250;
+
+/** Smallest extra starting balances (up to `cap`) that lower the cash paid: the
+ * first drop, then the lowest cash within `cap` when that is cheaper still.
+ * Cash never rises with a larger balance, so each drop is found by bisection. */
+export function tarCoinFarmingSavings(
+	claims: FundingClaim[],
+	startingTarCoins: number,
+	allowSpecial: boolean,
+	cap = TARCOIN_FARMING_CAP,
+) {
+	const cache = new Map<number, number>();
+	const cash = (extra: number) => {
+		if (!cache.has(extra))
+			cache.set(extra, optimizeRouteFunding(claims, startingTarCoins + extra, allowSpecial).cashCents);
+		return cache.get(extra)!;
+	};
+	const baseline = cash(0);
+	const savings: { extraTarCoins: number; cashCents: number; savingsCents: number }[] = [];
+	const firstBelow = (target: number, from: number) => {
+		let low = from,
+			high = cap;
+		while (low < high) {
+			const middle = Math.floor((low + high) / 2);
+			if (cash(middle) < target) high = middle;
+			else low = middle + 1;
+		}
+		return low;
+	};
+	if (baseline - cash(cap) <= CASH_TOLERANCE_CENTS) return savings;
+	const first = firstBelow(baseline - CASH_TOLERANCE_CENTS, 1);
+	savings.push({ extraTarCoins: first, cashCents: cash(first), savingsCents: baseline - cash(first) });
+	if (cash(first) - cash(cap) > CASH_TOLERANCE_CENTS) {
+		const best = firstBelow(cash(cap) + CASH_TOLERANCE_CENTS + 1, first + 1);
+		savings.push({ extraTarCoins: best, cashCents: cash(best), savingsCents: baseline - cash(best) });
+	}
+	return savings;
+}

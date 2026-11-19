@@ -4,7 +4,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from "r
 import { useBattlePassData, useBattlePassSave } from "./BattlePassSeason";
 import { rewardCostStatus, type RewardConfiguration } from "./lib/battle-pass-configuration";
 import { buildDocumentRouteModel, replayClaims, type RouteColumns } from "./lib/document-route-model";
-import { compareCurrencyBundles, optimizeRouteFunding } from "./lib/funding-model";
+import { compareCurrencyBundles, optimizeRouteFunding, tarCoinFarmingSavings } from "./lib/funding-model";
 import { DAILY_HEADROOM } from "./lib/gathering-caps";
 import {
 	gatheringScenario,
@@ -360,6 +360,23 @@ export function useBattlePassPlan(
 				.map((claim) => claim.rewardId),
 		);
 	}, [route, selected, shownInput]);
+	// Small TarCoin top-ups (farmed in PVP or the seasonal mode) that lower the
+	// cash paid for the chosen gathering target.
+	const farming = useMemo(() => {
+		try {
+			if (selected && shownInput)
+				return tarCoinFarmingSavings(
+					gatheringScenario(shownInput.route, selected.gathered, shownInput.filters).claims,
+					shownInput.startingTarCoins,
+					shownInput.allowSpecial,
+				);
+			if (typeof funding === "object" && funding)
+				return tarCoinFarmingSavings(funding.claims, startingTarCoins, allowSpecial);
+		} catch {
+			// No hint without a purchase schedule.
+		}
+		return [];
+	}, [selected, shownInput, funding, startingTarCoins, allowSpecial]);
 	/** The profile to show for a claim: "Any" when it uses only classified documents. */
 	const claimProfileLabel = useCallback(
 		(claim: { rewardId: string; profileLabel: string }) =>
@@ -452,6 +469,8 @@ export function useBattlePassPlan(
 		/** Reward IDs whose claim uses only classified documents. */
 		anyProfileIds,
 		claimProfileLabel,
+		/** Extra TarCoins that would lower the cash paid, smallest first (at most two). */
+		farming,
 	};
 }
 

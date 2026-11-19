@@ -8,6 +8,7 @@ import {
 	buildCashReceipt,
 	compareCurrencyBundles,
 	optimizeRouteFunding,
+	tarCoinFarmingSavings,
 	type FundingClaim,
 } from "./funding-model";
 async function fund(claims: FundingClaim[], starting = 0, special = false) {
@@ -263,4 +264,12 @@ test("one-cent bundle upgrades show the ending wallet and respect offer availabi
 		const cheapest = compareCurrencyBundles(plan, offer).minimumPurchase!;
 		assert.deepEqual([cheapest.cashCents, cheapest.totalTarCoins, cheapest.balanceTarCoins], [998, 1000, 550]);
 	}
+});
+
+test("farming hints report the smallest extra balance that lowers cash, within the cap", () => {
+	const claims = [{ rewardId: "a", page: 1, additionalClassified: 20, tarCoins: 0 }];
+	assert.deepEqual(tarCoinFarmingSavings(claims, 300, false), [
+		{ extraTarCoins: 200, cashCents: 0, savingsCents: 499 },
+	]);
+	assert.deepEqual(tarCoinFarmingSavings(claims, 100, false), []);
 });
