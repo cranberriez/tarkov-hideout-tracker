@@ -73,8 +73,9 @@ selection only in the URL as a compact `?b=` code: a base64url bitmask over the 
 append-only `shareOrder` ([builder.ts](../src/features/seasons/modifiers/builder.ts); never reorder or
 remove entries, or old links change meaning), so the address bar is the share link. Legacy readable
 `?picks=<id>,<id>` links still load and are rewritten to `?b=`. A global per-season convenience copy in
-`localStorage` (see [user state](user-state.md)) restores the last build when the URL has neither; a
-shared link wins and is only saved once edited. Nothing is saved to player data. The screenshot
+`localStorage` (see [user state](user-state.md)) restores the last build when the URL has neither. A
+`?b=` link that differs from a non-empty saved build opens as a shared view: the build bar turns gray and
+swaps Reset/Share/Screenshot for "Back to mine" and "Save as mine", and edits stay in the URL without touching the saved copy until then. Nothing is saved to player data. The screenshot
 dialog renders a compact sheet of the build from the same selection.
 
 Build links show the build in link previews, while the pages stay prerendered and never read
