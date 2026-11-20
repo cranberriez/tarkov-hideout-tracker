@@ -11,7 +11,6 @@ import { RouteSummary } from "./RouteSummary";
 import { useBattlePassPlanContext, type PlannedRoute } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
 import { StepPlan } from "./StepPlan";
-import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
@@ -160,7 +159,6 @@ export function DocumentRoutePanel({
 							<RouteSummary />
 							<GatherDocuments />
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
-							<RouteOptions />
 							<RouteFundingPanel />
 							<StepPlan />
 						</div>
