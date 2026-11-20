@@ -11,9 +11,19 @@ import type { SeasonId } from "@/lib/cfg/seasons";
  *   link are rewritten (next.config `beforeFiles`) to `/og-share/<season>`, a tiny HTML page whose
  *   tags point at the build's canonical image URL.
  */
-export const PREVIEW_VERSION = "1";
+export const PREVIEW_VERSION = "2";
 export const GENERIC_PREVIEW_CODE = "_";
-export const PREVIEW_IMAGE_SIZE = { width: 1200, height: 630 } as const;
+/**
+ * `wide` is the 1.91:1 card X, Reddit and others crop to. `tall` (4:3) is served to Discord, which keeps
+ * an image's aspect ratio inside about 400×300, so a taller card displays about 40% larger there.
+ */
+export const PREVIEW_FORMATS = {
+	wide: { width: 1200, height: 630 },
+	tall: { width: 1200, height: 900 },
+} as const;
+export type PreviewFormat = keyof typeof PREVIEW_FORMATS;
+export const PREVIEW_IMAGE_SIZE = PREVIEW_FORMATS.wide;
+export const TALL_FORMAT_PARAM = "f";
 
 /** Key-art colors (hex copies of the `--kord*` / `--untar*` tokens; the image renderer can't read CSS). */
 export const PREVIEW_THEMES: Record<
@@ -27,8 +37,9 @@ export const PREVIEW_THEMES: Record<
 export const isPreviewSeason = (value: string): value is SeasonId => Object.hasOwn(PREVIEW_THEMES, value);
 
 /** Site-relative image path for a canonical build code ("" or the generic code → the generic card). */
-export function previewImagePath(seasonId: SeasonId, code: string): string {
-	return `/og/${seasonId}/${code || GENERIC_PREVIEW_CODE}?v=${PREVIEW_VERSION}`;
+export function previewImagePath(seasonId: SeasonId, code: string, format: PreviewFormat = "wide"): string {
+	const formatQuery = format === "wide" ? "" : `&${TALL_FORMAT_PARAM}=${format}`;
+	return `/og/${seasonId}/${code || GENERIC_PREVIEW_CODE}?v=${PREVIEW_VERSION}${formatQuery}`;
 }
 
 /** Static page metadata: the generic card, so the page itself stays prerendered. */

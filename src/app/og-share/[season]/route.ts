@@ -1,7 +1,13 @@
 import { SEASON_MODIFIERS } from "@/features/seasons/modifiers";
 import { BUILD_PARAM, builderTotals, canonicalBuild, decodeBuild } from "@/features/seasons/modifiers/builder";
 import { formatPoints } from "@/features/seasons/modifiers/types";
-import { PREVIEW_IMAGE_SIZE, PREVIEW_THEMES, isPreviewSeason, previewImagePath } from "@/features/seasons/share-preview";
+import {
+	PREVIEW_FORMATS,
+	PREVIEW_THEMES,
+	isPreviewSeason,
+	previewImagePath,
+	type PreviewFormat,
+} from "@/features/seasons/share-preview";
 import { getSeason } from "@/lib/cfg/seasons";
 
 /**
@@ -37,7 +43,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 				.map((modifier) => modifier.name)
 				.join(", ");
 		const net = totals.balance === 0 ? "0" : formatPoints(totals.balance);
-		title = `${seasonTitle} build · Granted +${totals.granted}, Spent −${totals.spent}, Net ${net}`;
+		title = `${seasonTitle} build · Net ${net}`;
 		description = [
 			names("positive") && `Positive: ${names("positive")}.`,
 			names("negative") && `Negative: ${names("negative")}.`,
@@ -46,7 +52,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 			.join(" ");
 		if (description.length > 300) description = `${description.slice(0, 297)}…`;
 	}
-	const image = `${url.origin}${previewImagePath(season, code)}`;
+	// Discord keeps the image's aspect ratio, so it gets the taller card; others crop to 1.91:1.
+	const format: PreviewFormat = request.headers.get("user-agent")?.includes("Discordbot") ? "tall" : "wide";
+	const size = PREVIEW_FORMATS[format];
+	const image = `${url.origin}${previewImagePath(season, code, format)}`;
 	const tags = [
 		["og:type", "website"],
 		["og:site_name", "Tarkov Hideout"],
@@ -54,8 +63,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 		["og:description", description],
 		["og:url", pageUrl],
 		["og:image", image],
-		["og:image:width", String(PREVIEW_IMAGE_SIZE.width)],
-		["og:image:height", String(PREVIEW_IMAGE_SIZE.height)],
+		["og:image:width", String(size.width)],
+		["og:image:height", String(size.height)],
 		["og:image:alt", title],
 	]
 		.map(([property, content]) => `<meta property="${property}" content="${escapeHtml(content)}">`)

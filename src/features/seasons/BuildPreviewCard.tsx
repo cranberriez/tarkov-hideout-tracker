@@ -1,221 +1,260 @@
 /**
- * Link-preview card (1200×630) for a season build, rendered by `next/og` (satori). Satori supports
- * only inline styles and flexbox, and every element with several children needs `display: flex`.
+ * Link-preview card for a season build, rendered by `next/og` (satori). Satori supports only inline
+ * styles and flexbox, and every element with several children needs `display: flex`.
+ *
+ * Platforms show the card at about a third of its size (Discord: ~400px wide), so everything is sized
+ * for that shrink: nothing under ~26px, one large Net figure, and an icon-first grid that grows to fill
+ * the canvas. Few picks get named tiles; many picks switch to icons only (names are in the embed text).
  * Only selected modifiers are shown; icons arrive as PNG data URIs (satori cannot decode WebP).
  */
 import type { SeasonId } from "@/lib/cfg/seasons";
 import type { BuilderTotals } from "./modifiers/builder";
 import { formatPoints } from "./modifiers/types";
-import { PREVIEW_IMAGE_SIZE, PREVIEW_THEMES } from "./share-preview";
+import { PREVIEW_FORMATS, PREVIEW_THEMES, type PreviewFormat } from "./share-preview";
 
-export type PreviewModifier = { id: string; name: string; points: number; icon?: string };
+export type PreviewModifier = { id: string; kind: "positive" | "negative"; name: string; points: number };
 
 const INK = "#e9e7e1";
-const MUTED = "rgba(233, 231, 225, 0.72)";
+const MUTED = "rgba(233, 231, 225, 0.7)";
 // Hex approximations of --success / --danger (oklch tokens).
 const TONES = {
-	positive: { chip: "#4ade80", tile: "rgba(74, 222, 128, 0.16)" },
-	negative: { chip: "#f87171", tile: "rgba(248, 113, 113, 0.16)" },
+	positive: { chip: "#4ade80", tile: "rgba(74, 222, 128, 0.14)" },
+	negative: { chip: "#f87171", tile: "rgba(248, 113, 113, 0.14)" },
 } as const;
 
-const PADDING = 44;
-const HEADER = 96;
-const SECTION_LABEL = 24;
-const SECTION_GAP = 14;
+const PADDING = 40;
+const HEADER = 116;
+const HEADER_GAP = 22;
+const MAX_TILE_WIDTH = 380;
+/** Below this, names would be unreadable after the platform's shrink, so tiles show icons only. */
+const NAMED_MIN = { width: 150, height: 150 };
 
-/** Densest-last tile layouts; the first whose rows fit the body is used. */
-const DENSITIES = [
-	{ columns: 3, row: 88, icon: 60, font: 28, chip: 26, gap: 10 },
-	{ columns: 3, row: 64, icon: 44, font: 23, chip: 22, gap: 8 },
-	{ columns: 4, row: 50, icon: 34, font: 18, chip: 18, gap: 6 },
-	{ columns: 5, row: 40, icon: 28, font: 15, chip: 15, gap: 5 },
-	{ columns: 6, row: 31, icon: 22, font: 12, chip: 12, gap: 4 },
-] as const;
-type Density = (typeof DENSITIES)[number];
+type Grid = { columns: number; width: number; height: number; gap: number; named: boolean };
 
-function pickDensity(sectionSizes: number[]): Density {
-	const body = PREVIEW_IMAGE_SIZE.height - PADDING * 2 - HEADER;
-	const sections = sectionSizes.filter((size) => size > 0);
-	for (const density of DENSITIES) {
-		const height = sections.reduce((total, size) => {
-			const rows = Math.ceil(size / density.columns);
-			return total + SECTION_LABEL + rows * density.row + (rows - 1) * density.gap;
-		}, SECTION_GAP * Math.max(0, sections.length - 1));
-		if (height <= body) return density;
+/** The column count that gives the largest tiles while every pick fits the body. */
+function fitGrid(count: number, bodyWidth: number, bodyHeight: number): Grid {
+	const gap = count > 20 ? 8 : 14;
+	let best: Grid & { score: number } = { columns: 1, width: 0, height: 0, gap, named: false, score: -1 };
+	for (let columns = 1; columns <= count; columns++) {
+		const rows = Math.ceil(count / columns);
+		const width = Math.min(MAX_TILE_WIDTH, Math.floor((bodyWidth - (columns - 1) * gap) / columns));
+		const available = Math.floor((bodyHeight - (rows - 1) * gap) / rows);
+		const height = Math.min(available, Math.round(width * 1.1));
+		const score = Math.min(width, available);
+		if (score > best.score) {
+			const named = width >= NAMED_MIN.width && height >= NAMED_MIN.height;
+			best = { columns, width, height, gap, named, score };
+		}
 	}
-	return DENSITIES[DENSITIES.length - 1];
+	return best;
 }
 
-function Frame({ seasonId, children, right }: { seasonId: SeasonId; children: React.ReactNode; right: React.ReactNode }) {
+/** Rough uppercase glyph width in em for the bundled font; only used to pick a font size. */
+const GLYPH_EM = 0.68;
+
+/** Lines a greedy word wrap needs for `text` at `font` px within `width`. */
+function wrappedLines(text: string, font: number, width: number): number {
+	const perLine = Math.max(1, Math.floor(width / (font * GLYPH_EM)));
+	let lines = 1;
+	let used = 0;
+	for (const word of text.split(" ")) {
+		if (word.length > perLine) return Infinity;
+		const next = used === 0 ? word.length : used + 1 + word.length;
+		if (next <= perLine) used = next;
+		else {
+			lines++;
+			used = word.length;
+		}
+	}
+	return lines;
+}
+
+/** The largest name size (26–40px, down to 20px for long names) that keeps every word whole in two lines. */
+function nameFont(name: string, width: number): number {
+	const preferred = Math.max(26, Math.min(40, Math.round(width * 0.14)));
+	for (let font = preferred; font > 20; font -= 2) {
+		if (wrappedLines(name.toUpperCase(), font, width) <= 2) return font;
+	}
+	return 20;
+}
+
+function Header({ seasonId, totals }: { seasonId: SeasonId; totals?: BuilderTotals }) {
 	const theme = PREVIEW_THEMES[seasonId];
 	return (
 		<div
 			style={{
 				display: "flex",
+				alignItems: "center",
+				justifyContent: "space-between",
+				height: HEADER,
+				paddingBottom: 16,
+				borderBottom: "2px solid rgba(233, 231, 225, 0.14)",
+			}}
+		>
+			<div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+				<div
+					style={{
+						display: "flex",
+						padding: "8px 14px",
+						borderRadius: 6,
+						background: theme.accent,
+						color: theme.surface,
+						fontSize: 28,
+						letterSpacing: 4,
+						textTransform: "uppercase",
+					}}
+				>
+					{theme.chipLabel}
+				</div>
+				<div style={{ display: "flex", gap: 18, fontSize: 70, lineHeight: 1 }}>
+					<span>{theme.first}</span>
+					<span style={{ color: theme.accent }}>{theme.second}</span>
+				</div>
+			</div>
+			{totals && (
+				<div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+					<div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+						<span style={{ fontSize: 30, letterSpacing: 3, color: MUTED }}>NET</span>
+						<span
+							style={{
+								fontSize: 72,
+								lineHeight: 1,
+								color: totals.valid ? TONES.positive.chip : TONES.negative.chip,
+							}}
+						>
+							{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
+						</span>
+					</div>
+					<span style={{ fontSize: 28, color: MUTED }}>
+						+{totals.granted} granted · −{totals.spent} spent
+					</span>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function Frame({ seasonId, format, children }: { seasonId: SeasonId; format: PreviewFormat; children: React.ReactNode }) {
+	const size = PREVIEW_FORMATS[format];
+	return (
+		<div
+			style={{
+				display: "flex",
 				flexDirection: "column",
-				width: "100%",
-				height: "100%",
+				width: size.width,
+				height: size.height,
 				padding: PADDING,
-				background: theme.surface,
+				background: PREVIEW_THEMES[seasonId].surface,
 				color: INK,
 			}}
 		>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "flex-end",
-					justifyContent: "space-between",
-					height: HEADER - 18,
-					paddingBottom: 14,
-					marginBottom: 18,
-					borderBottom: `2px solid rgba(233, 231, 225, 0.14)`,
-				}}
-			>
-				<div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-					<div
-						style={{
-							display: "flex",
-							padding: "6px 12px",
-							borderRadius: 4,
-							background: theme.accent,
-							color: theme.surface,
-							fontSize: 20,
-							letterSpacing: 4,
-							textTransform: "uppercase",
-						}}
-					>
-						{theme.chipLabel}
-					</div>
-					<div style={{ display: "flex", gap: 16, fontSize: 54, lineHeight: 1, letterSpacing: 1 }}>
-						<span>{theme.first}</span>
-						<span style={{ color: theme.accent }}>{theme.second}</span>
-					</div>
-				</div>
-				{right}
-			</div>
 			{children}
 		</div>
 	);
 }
 
-const siteLabel = (host: string, seasonId: SeasonId) => (
-	<span style={{ fontSize: 20, color: MUTED }}>
-		{host}/{seasonId}
-	</span>
-);
+function Tile({ modifier, icon, grid }: { modifier: PreviewModifier; icon?: string; grid: Grid }) {
+	const side = Math.min(grid.width, grid.height);
+	const font = nameFont(modifier.name, grid.width - 20);
+	const nameBlock = grid.named ? Math.round(font * 1.1 * 2) + 10 : 0;
+	const iconSize = Math.max(
+		24,
+		Math.round(grid.named ? Math.min(grid.width * 0.6, grid.height - nameBlock - 28) : side * 0.74),
+	);
+	const chipFont = Math.max(22, Math.min(36, Math.round(side * 0.16)));
+	return (
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				justifyContent: "center",
+				gap: 8,
+				position: "relative",
+				width: grid.width,
+				height: grid.height,
+				borderRadius: 10,
+				background: TONES[modifier.kind].tile,
+			}}
+		>
+			{icon ? (
+				// eslint-disable-next-line @next/next/no-img-element -- satori renders plain <img>
+				<img src={icon} width={iconSize} height={iconSize} alt="" />
+			) : (
+				<div style={{ display: "flex", width: iconSize, height: iconSize }} />
+			)}
+			{grid.named && (
+				<span
+					style={{
+						display: "block",
+						maxWidth: grid.width - 16,
+						fontSize: font,
+						lineHeight: 1.1,
+						textAlign: "center",
+						textTransform: "uppercase",
+						lineClamp: 2,
+						overflow: "hidden",
+					}}
+				>
+					{modifier.name}
+				</span>
+			)}
+			<span
+				style={{
+					position: "absolute",
+					top: 6,
+					right: 6,
+					padding: `0 ${Math.round(chipFont / 3)}px`,
+					borderRadius: 999,
+					fontSize: chipFont,
+					lineHeight: 1.25,
+					background: TONES[modifier.kind].chip,
+					color: "#000000",
+				}}
+			>
+				{formatPoints(modifier.points)}
+			</span>
+		</div>
+	);
+}
 
 export function BuildPreviewCard({
 	seasonId,
-	host,
-	positive,
-	negative,
+	format,
+	modifiers,
 	totals,
 	icons,
 }: {
 	seasonId: SeasonId;
-	host: string;
-	positive: PreviewModifier[];
-	negative: PreviewModifier[];
+	format: PreviewFormat;
+	/** Selected modifiers, positives first. */
+	modifiers: PreviewModifier[];
 	totals: BuilderTotals;
 	/** Modifier ID → PNG data URI. */
 	icons: Map<string, string>;
 }) {
-	const density = pickDensity([positive.length, negative.length]);
-	const sections = [
-		{ kind: "positive", label: "Positive", modifiers: positive },
-		{ kind: "negative", label: "Negative", modifiers: negative },
-	] as const;
-	const tileWidth = Math.floor((PREVIEW_IMAGE_SIZE.width - PADDING * 2 - (density.columns - 1) * density.gap) / density.columns);
+	const size = PREVIEW_FORMATS[format];
+	const bodyWidth = size.width - PADDING * 2;
+	const bodyHeight = size.height - PADDING * 2 - HEADER - HEADER_GAP;
+	const grid = fitGrid(modifiers.length, bodyWidth, bodyHeight);
 	return (
-		<Frame
-			seasonId={seasonId}
-			right={
-				<div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-					{siteLabel(host, seasonId)}
-					<div style={{ display: "flex", gap: 10, fontSize: 23, color: MUTED }}>
-						<span>Granted</span>
-						<span style={{ color: INK }}>+{totals.granted}</span>
-						<span>·</span>
-						<span>Spent</span>
-						<span style={{ color: INK }}>−{totals.spent}</span>
-						<span>·</span>
-						<span>Net</span>
-						<span style={{ color: totals.valid ? TONES.positive.chip : TONES.negative.chip }}>
-							{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
-						</span>
-					</div>
-				</div>
-			}
-		>
-			<div style={{ display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
-				{sections
-					.filter((section) => section.modifiers.length > 0)
-					.map((section) => (
-						<div key={section.kind} style={{ display: "flex", flexDirection: "column" }}>
-							<span
-								style={{
-									height: SECTION_LABEL,
-									fontSize: 16,
-									letterSpacing: 4,
-									textTransform: "uppercase",
-									color: MUTED,
-								}}
-							>
-								{section.label}
-							</span>
-							<div style={{ display: "flex", flexWrap: "wrap", gap: density.gap }}>
-								{section.modifiers.map((modifier) => {
-									const icon = icons.get(modifier.id);
-									return (
-										<div
-											key={modifier.id}
-											style={{
-												display: "flex",
-												alignItems: "center",
-												gap: Math.round(density.icon / 4),
-												width: tileWidth,
-												height: density.row,
-												padding: `0 ${Math.round(density.gap * 1.2)}px`,
-												borderRadius: 6,
-												background: TONES[section.kind].tile,
-											}}
-										>
-											{icon ? (
-												// eslint-disable-next-line @next/next/no-img-element -- satori renders plain <img>
-												<img src={icon} width={density.icon} height={density.icon} alt="" />
-											) : (
-												<div style={{ display: "flex", width: density.icon, height: density.icon }} />
-											)}
-											<span
-												style={{
-													display: "block",
-													flex: 1,
-													fontSize: density.font,
-													lineHeight: 1.1,
-													textTransform: "uppercase",
-													lineClamp: 2,
-													overflow: "hidden",
-												}}
-											>
-												{modifier.name}
-											</span>
-											<span
-												style={{
-													padding: `1px ${Math.round(density.chip / 2.5)}px`,
-													borderRadius: 999,
-													fontSize: density.chip,
-													background: TONES[section.kind].chip,
-													color: "#000000",
-												}}
-											>
-												{formatPoints(modifier.points)}
-											</span>
-										</div>
-									);
-								})}
-							</div>
-						</div>
+		<Frame seasonId={seasonId} format={format}>
+			<Header seasonId={seasonId} totals={totals} />
+			<div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: HEADER_GAP, height: bodyHeight }}>
+				{/* Exactly `columns` wide, so wrapping matches the fitted grid. */}
+				<div
+					style={{
+						display: "flex",
+						flexWrap: "wrap",
+						justifyContent: "center",
+						gap: grid.gap,
+						width: grid.columns * grid.width + (grid.columns - 1) * grid.gap,
+					}}
+				>
+					{modifiers.map((modifier) => (
+						<Tile key={modifier.id} modifier={modifier} icon={icons.get(modifier.id)} grid={grid} />
 					))}
+				</div>
 			</div>
 		</Frame>
 	);
@@ -224,21 +263,20 @@ export function BuildPreviewCard({
 /** The build-less card: season title and a pitch for the builder. */
 export function GenericPreviewCard({
 	seasonId,
-	host,
-	positiveCount,
-	negativeCount,
+	format,
+	modifierCount,
 }: {
 	seasonId: SeasonId;
-	host: string;
-	positiveCount: number;
-	negativeCount: number;
+	format: PreviewFormat;
+	modifierCount: number;
 }) {
 	return (
-		<Frame seasonId={seasonId} right={siteLabel(host, seasonId)}>
-			<div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flex: 1, gap: 22 }}>
-				<span style={{ fontSize: 56, lineHeight: 1.1 }}>Every modifier, plus a point-budget build planner</span>
-				<span style={{ fontSize: 30, color: MUTED }}>
-					{positiveCount} positive · {negativeCount} negative · share your build with one link
+		<Frame seasonId={seasonId} format={format}>
+			<Header seasonId={seasonId} />
+			<div style={{ display: "flex", flexDirection: "column", justifyContent: "center", flex: 1, gap: 28 }}>
+				<span style={{ fontSize: 84, lineHeight: 1.05 }}>Plan your build</span>
+				<span style={{ fontSize: 40, lineHeight: 1.2, color: MUTED }}>
+					All {modifierCount} modifiers · point budget · share it with one link
 				</span>
 			</div>
 		</Frame>

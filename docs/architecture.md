@@ -86,9 +86,12 @@ That route's tags carry the build title, totals and picks, plus the canonical im
 hit a function. That HTML is `private` because it sits behind a User-Agent rewrite of a public URL.
 The [image route](../src/app/og/[season]/[code]/route.tsx) `/og/<season>/<code>?v=<PREVIEW_VERSION>`
 runs `canonicalBuild` first. Non-canonical, oversized or malformed codes and stale versions 308 to
-the canonical or generic (`_`) URL without rendering. Each canonical image renders once
-([card](../src/features/seasons/BuildPreviewCard.tsx): only selected modifiers, bundled default font,
-icons converted from the traced WebP files to PNG with sharp, since satori can't decode WebP). It is
+the canonical or generic (`_`) URL without rendering. Each canonical image and format renders once
+([card](../src/features/seasons/BuildPreviewCard.tsx), sized for the roughly 3× shrink platforms
+apply: a large Net figure and an icon-first grid of only the selected modifiers that fills the canvas
+and drops names when picks are many. It uses the bundled default font, and icons are converted from
+the traced WebP files to PNG with sharp, since satori can't decode WebP). Discordbot gets the 4:3
+`&f=tall` card, because Discord keeps aspect ratio; others get 1.91:1. It is
 served with `immutable` `Cache-Control`, `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. Bump
 `PREVIEW_VERSION` when the card design changes.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
