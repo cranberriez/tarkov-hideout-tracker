@@ -380,96 +380,111 @@ export function ModifierBuilderBar() {
 		Object.fromEntries(modifiers.map((modifier) => [modifier.id, modifier.points])),
 	);
 	const conflictPairs = conflicts ? selectedConflictCount(selection.selected, conflicts.index) : 0;
+	const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
+	// One status chip with the most serious problem: danger (blocked or over budget), then warning, then valid.
+	const status =
+		conflictPairs > 0 && conflicts?.mode === "hard"
+			? { tone: "danger", icon: true, text: plural(conflictPairs, "incompatible pair") }
+			: !totals.valid
+				? { tone: "danger", icon: false, text: `Over budget by ${-totals.balance}` }
+				: conflictPairs > 0
+					? { tone: "warning", icon: true, text: plural(conflictPairs, "possible conflict") }
+					: { tone: "success", icon: false, text: "Valid" };
 	return (
 		<div
 			ref={bar}
 			role="status"
 			aria-live="polite"
 			className={cn(
-				"sticky top-0 z-20 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg px-4 py-2.5 text-sm shadow-lg backdrop-blur",
+				"sticky top-0 z-20 flex flex-col gap-2 rounded-lg px-4 py-2.5 text-sm shadow-lg backdrop-blur",
 				// A shared link swaps to the raised gray so it never reads as the viewer's own build.
 				shared ? "bg-surface-raised/95" : "bg-card/95",
 				// Pinned to the top edge: square top corners, thin border on the sides and bottom only.
 				stuck && "rounded-t-none border-x border-b border-border",
 			)}
 		>
-			<span className="font-semibold" title={shared ? "Edits here won't replace your saved build" : undefined}>
-				{shared ? "Shared build" : "Your build"}
-			</span>
-			<span className="text-foreground/85">
-				Granted <span className="font-semibold tabular-nums text-foreground">+{totals.granted}</span>
-			</span>
-			<span className="text-foreground/85">
-				Spent <span className="font-semibold tabular-nums text-foreground">−{totals.spent}</span>
-			</span>
-			<span className="text-foreground/85">
-				Balance{" "}
-				<span className={cn("font-semibold tabular-nums", totals.valid ? "text-success" : "text-danger")}>
-					{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
-				</span>
-			</span>
-			<span
-				className={cn(
-					"rounded-full px-2.5 py-0.5 text-xs font-semibold",
-					totals.valid ? "bg-success/18 text-foreground" : "bg-danger/18 text-foreground",
-				)}
-			>
-				{totals.valid ? "Valid" : `Over budget by ${-totals.balance}`}
-			</span>
-			{conflictPairs > 0 && (
-				<span
-					className={cn(
-						"inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-foreground",
-						conflicts?.mode === "hard" ? "bg-danger/18" : "bg-warning/18",
+			{/*
+			 * Below lg: fixed rows (title + status, totals + count, actions, options) so nothing wraps
+			 * unpredictably. From lg the row wrappers dissolve (`contents`) into one line, reordered.
+			 */}
+			<div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-x-5">
+				<div className="flex items-center justify-between gap-x-4 lg:contents">
+					<span
+						className="font-semibold lg:order-1"
+						title={shared ? "Edits here won't replace your saved build" : undefined}
+					>
+						{shared ? "Shared build" : "Your build"}
+					</span>
+					<span
+						className={cn(
+							"inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-foreground lg:order-3",
+							status.tone === "danger" ? "bg-danger/18" : status.tone === "warning" ? "bg-warning/18" : "bg-success/18",
+						)}
+					>
+						{status.icon && <TriangleAlert aria-hidden className="size-3.5" />}
+						{status.text}
+					</span>
+				</div>
+				<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 lg:contents">
+					<span className="flex items-center gap-x-3 whitespace-nowrap sm:gap-x-4 lg:order-2 lg:gap-x-5">
+						<span className="text-foreground/85">
+							Granted <span className="font-semibold tabular-nums text-foreground">+{totals.granted}</span>
+						</span>
+						<span className="text-foreground/85">
+							Spent <span className="font-semibold tabular-nums text-foreground">−{totals.spent}</span>
+						</span>
+						<span className="text-foreground/85">
+							Balance{" "}
+							<span className={cn("font-semibold tabular-nums", totals.valid ? "text-success" : "text-danger")}>
+								{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
+							</span>
+						</span>
+					</span>
+					<span className="whitespace-nowrap text-xs text-foreground/85 tabular-nums lg:order-4 lg:ml-auto">
+						{totals.count} selected
+					</span>
+				</div>
+				{/* Actions stay together as one group, spaced like the view options. */}
+				<div role="group" aria-label="Build actions" className="flex flex-wrap items-center gap-2 lg:order-5">
+					{shared ? (
+						<>
+							<button
+								type="button"
+								onClick={shared.backToMine}
+								className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-card/70"
+							>
+								<Undo2 aria-hidden className="size-3.5" />
+								Back to mine
+							</button>
+							<button
+								type="button"
+								onClick={shared.saveAsMine}
+								className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1 text-xs font-semibold text-background transition-colors hover:bg-foreground/85"
+							>
+								<Save aria-hidden className="size-3.5" />
+								Save as mine
+							</button>
+						</>
+					) : (
+						<>
+							<button
+								type="button"
+								onClick={selection.reset}
+								disabled={totals.count === 0}
+								className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70 disabled:opacity-50"
+							>
+								<RotateCcw aria-hidden className="size-3.5" />
+								Reset
+							</button>
+							<ShareButton />
+							<BuildScreenshotButton />
+						</>
 					)}
-				>
-					<TriangleAlert aria-hidden className="size-3.5" />
-					{conflicts?.mode === "hard"
-						? `${conflictPairs} incompatible ${conflictPairs === 1 ? "pair" : "pairs"}`
-						: `${conflictPairs} possible ${conflictPairs === 1 ? "conflict" : "conflicts"}`}
-				</span>
-			)}
-			<span className="ml-auto text-xs text-foreground/85 tabular-nums">{totals.count} selected</span>
-			{/* Actions stay together as one group, spaced like the view options. */}
-			<div role="group" aria-label="Build actions" className="flex flex-wrap items-center gap-2">
-				{shared ? (
-					<>
-						<button
-							type="button"
-							onClick={shared.backToMine}
-							className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-card/70"
-						>
-							<Undo2 aria-hidden className="size-3.5" />
-							Back to mine
-						</button>
-						<button
-							type="button"
-							onClick={shared.saveAsMine}
-							className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1 text-xs font-semibold text-background transition-colors hover:bg-foreground/85"
-						>
-							<Save aria-hidden className="size-3.5" />
-							Save as mine
-						</button>
-					</>
-				) : (
-					<>
-						<button
-							type="button"
-							onClick={selection.reset}
-							disabled={totals.count === 0}
-							className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70 disabled:opacity-50"
-						>
-							<RotateCcw aria-hidden className="size-3.5" />
-							Reset
-						</button>
-						<ShareButton />
-						<BuildScreenshotButton />
-					</>
-				)}
+				</div>
 			</div>
 			{/* View options live in the full banner only; hidden once the bar pins to the top. */}
 			{!stuck && (
-				<div className="basis-full pt-1">
+				<div className="pt-1">
 					<SeasonViewOptions />
 				</div>
 			)}
