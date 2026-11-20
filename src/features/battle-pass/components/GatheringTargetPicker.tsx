@@ -4,10 +4,11 @@ import { cn } from "@/lib/utils";
 import type { RouteEntry } from "../lib/alternate-entries-model";
 import type { Tile } from "../lib/battle-pass-model";
 import { rewardTarCoins } from "../lib/funding-model";
-import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
+import { DAILY_HEADROOM, GATHERING_DAILY_CAPS, gatheringDailyCap } from "../lib/gathering-caps";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { liftedControl, syncValue } from "./ui/field";
 import { TarCoin } from "./ui/TarCoin";
+import { Toggle } from "./ui/Toggle";
 
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -31,7 +32,7 @@ const MAX_REVEALED_INLINE = 2;
 
 /** Choose how much to gather and on which route: no gathering, or a fewest-documents or alternate-route entry. */
 export function GatheringTargetPicker() {
-	const { gathering: target, deadline } = useBattlePassPlanContext();
+	const { gathering: target, deadline, settings } = useBattlePassPlanContext();
 	const [more, setMore] = useState(false);
 	const { entries, activeEntry, suggested, baselineCents, pastSeason, selected } = target;
 	if (baselineCents === null || !entries?.length) {
@@ -101,7 +102,7 @@ export function GatheringTargetPicker() {
 				aria-checked={active}
 				onClick={() => (entry ? target.selectEntry(entry.routeIndex, entry.gathered) : target.selectEntry(0, 0))}
 				className={cn(
-					"group flex flex-wrap items-start gap-x-3 gap-y-1 rounded-lg px-3 py-2.5 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand sm:col-span-full sm:grid sm:items-center sm:[grid-template-columns:subgrid]",
+					"group animate-in fade-in duration-200 motion-reduce:animate-none flex flex-wrap items-start gap-x-3 gap-y-1 rounded-lg px-3 py-2.5 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand sm:col-span-full sm:grid sm:items-center sm:[grid-template-columns:subgrid]",
 					liftedControl,
 					active &&
 						"bg-[color-mix(in_oklab,var(--brand)_4%,var(--surface-raised))] hover:bg-[color-mix(in_oklab,var(--brand)_7%,var(--surface-raised))]",
@@ -204,6 +205,15 @@ export function GatheringTargetPicker() {
 					</button>
 				)}
 			</div>
+			<Toggle
+				indicator
+				className="w-fit"
+				checked={settings.dailyHeadroom}
+				onChange={settings.setDailyHeadroom}
+				title={`Near the daily limit raids spawn far fewer documents. Plans each mode ${DAILY_HEADROOM} below its cap (PVE ${gatheringDailyCap("PVE", DAILY_HEADROOM)}, PVP ${gatheringDailyCap("PVP", DAILY_HEADROOM)}, seasonal ${gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Changes days, not cost.`}
+			>
+				Leave {DAILY_HEADROOM} unplanned per day
+			</Toggle>
 		</section>
 	);
 }
