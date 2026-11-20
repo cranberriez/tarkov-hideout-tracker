@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ArrowUpRight, Users } from "lucide-react";
 import { SEASONS, type SeasonId } from "@/lib/cfg/seasons";
 import { cn } from "@/lib/utils";
+import { ModifierBuilderBar, ModifierBuilderProvider, SelectableCard } from "./ModifierBuilder";
 import { ChangeChip, ChangeRow } from "./SeasonChanges";
 import {
 	SEASON_MODIFIERS,
@@ -109,8 +110,8 @@ function HistoryChip({ seasonId, modifier }: { seasonId: SeasonId; modifier: Sea
 
 function ModifierCard({ seasonId, modifier }: { seasonId: SeasonId; modifier: SeasonModifier }) {
 	const tone = TONES[modifier.kind];
-	return (
-		<li className={cn("flex flex-col rounded-lg p-3", tone.card)}>
+	const content = (
+		<>
 			<div className="flex gap-3">
 				<ModifierIcon modifier={modifier} size={48} />
 				<div className="min-w-0 flex-1 space-y-1">
@@ -137,7 +138,13 @@ function ModifierCard({ seasonId, modifier }: { seasonId: SeasonId; modifier: Se
 			</div>
 			{/* Fixed-height footer for extra info, actions and icons; only rendered while it has content. */}
 			<HistoryChip seasonId={seasonId} modifier={modifier} />
-		</li>
+		</>
+	);
+	if (modifier.kind === "global") return <li className={cn("flex flex-col rounded-lg p-3", tone.card)}>{content}</li>;
+	return (
+		<SelectableCard id={modifier.id} name={modifier.name} kind={modifier.kind} className={tone.card}>
+			{content}
+		</SelectableCard>
 	);
 }
 
@@ -227,11 +234,17 @@ export function MostPicked({ seasonId, title }: { seasonId: SeasonId; title: str
 /** Static modifier list for one season. No data connections. */
 export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 	const set = SEASON_MODIFIERS[seasonId];
+	const points = Object.fromEntries(
+		set.modifiers.flatMap((modifier) => (modifier.points === undefined ? [] : [[modifier.id, modifier.points]])),
+	);
 	return (
 		<div className="space-y-8">
 			<ModifierSection seasonId={seasonId} kind="global" />
-			<ModifierSection seasonId={seasonId} kind="positive" />
-			<ModifierSection seasonId={seasonId} kind="negative" />
+			<ModifierBuilderProvider points={points}>
+				<ModifierBuilderBar />
+				<ModifierSection seasonId={seasonId} kind="positive" />
+				<ModifierSection seasonId={seasonId} kind="negative" />
+			</ModifierBuilderProvider>
 			<p className="rounded-lg bg-card px-4 py-3 text-sm text-muted-foreground">
 				{set.note} You start with 0 points: negatives grant points that positives spend. Source:{" "}
 				{set.source.url ? (
