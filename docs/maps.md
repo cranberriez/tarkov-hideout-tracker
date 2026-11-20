@@ -136,8 +136,8 @@ visited-objective undo, and narrow/wide layouts as relevant.
 
 [battle-pass-seasons.ts](../src/lib/battle-pass-seasons.ts) associates each season
 with its pass rewards, document IDs, location summaries, thumbnails and artwork.
-Test currently uses an independent clone of the Season 1 snapshot and is labeled
-as placeholder data. Replace Test's registry data when reviewed Season 2 data is
+Season 2 (UNTAR) currently uses an independent clone of the Season 1 snapshot and is labeled
+as placeholder data. Replace its registry data when reviewed Season 2 data is
 available; retain Season 1's snapshot and stable entity IDs. Map document
 locations in [documents.ts](../src/features/maps/tarkov-map/documents.ts) are
 season-specific and not yet keyed by season. Character inventory and

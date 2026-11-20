@@ -1,4 +1,5 @@
-import { Clock3 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Clock3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DocumentIcon } from "./ui/DocumentIcon";
 
@@ -16,8 +17,10 @@ export function BattlePassSummary({
 	endsAt,
 	goalTotal,
 	remainingTotal,
+	showSeasonTwoLink = false,
 }: {
 	endsAt: number | null;
+	showSeasonTwoLink?: boolean;
 	goalTotal: number | null;
 	remainingTotal: number;
 }) {
@@ -27,15 +30,27 @@ export function BattlePassSummary({
 	];
 	return (
 		<div className="grid gap-1.5">
-			<div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-surface-raised/40 px-4 py-2.5 text-xs text-muted-foreground">
-				<Clock3 size={14} aria-hidden />
-				<span>Season ends</span>
-				{endsAt === null ? (
-					<span className="ml-auto">To be announced</span>
-				) : (
-					<time dateTime={new Date(endsAt).toISOString()} className="ml-auto font-medium text-foreground">
-						{deadlineFormat.format(endsAt)}
-					</time>
+			<div className="flex gap-1.5">
+				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-surface-raised/40 px-4 py-2.5 text-xs text-muted-foreground">
+					<Clock3 size={14} aria-hidden />
+					<span>Season ends</span>
+					{endsAt === null ? (
+						<span className="ml-auto">To be announced</span>
+					) : (
+						<time dateTime={new Date(endsAt).toISOString()} className="ml-auto font-medium text-foreground">
+							{deadlineFormat.format(endsAt)}
+						</time>
+					)}
+				</div>
+				{showSeasonTwoLink && (
+					<Link
+						href="/season-2"
+						className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#2b78d9] px-3 text-xs font-semibold transition-colors hover:bg-[#3d8fe0]"
+					>
+						<span className="text-[#141c24]">S2</span>
+						<span className="uppercase tracking-wide text-white">Untar Control</span>
+						<ArrowRight size={14} aria-hidden className="text-white" />
+					</Link>
 				)}
 			</div>
 			<div className={cn("grid gap-1.5", columns.length === 2 && "grid-cols-2")} aria-live="polite">

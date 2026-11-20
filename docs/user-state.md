@@ -34,7 +34,7 @@ account for existing users' data.
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage                                                                                                    |
 | `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); client preference mirroring the active profile, read only by the [proxy](../src/proxy.ts) to redirect old unprefixed URLs                                                                                                                                       |
 
-Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Test), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
+Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Season 2, UNTAR), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
 Story chapter completion uses the existing mode-scoped progress writer and adds
 only active required step IDs after route choices resolve. Its undo receipt is
 ephemeral, scoped to the chapter/profile visit, and removes only IDs added by
@@ -60,7 +60,7 @@ The battle-pass UI preference `optimizerEnabled` defaults to false across profil
 [useBattlePassSave](../src/features/battle-pass/BattlePassSeason.tsx) owns
 `tarkov-battle-pass-{seasonId}-v1`, an independent account-wide save for each
 season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
-`tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
+`tarkov-battle-pass-season-1-v1` key. Season 2 uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 avoided document types, and document-type swaps (both defaulting to none for older saves).
 The inline document inventory edits ordinary counts in the selected PVP/PVE/seasonal
@@ -153,11 +153,12 @@ returns to the primary list. Past characters stay editable. A banner on an old
 seasonal character offers Activate or Switch to the current season. Availability
 refreshes on focus and periodically while the page remains open.
 
-Season 2 uses the placeholder name **Test** and blue identity color. Its character
+Season 2 is named **UNTAR** (title "Season 2 UNTAR Control") with a deep blue
+identity color distinct from PVE's. Its character
 starts with default progress, while shared app preferences remain intact. Profit
 filters fall back to existing preferences until edited, but character skill
 levels start at zero. No Season 1 character, battlepass or auxiliary key is
-removed or copied into Test. Uploader receipts remount per seasonal identity.
+removed or copied into Season 2. Uploader receipts remount per seasonal identity.
 The storage adapter merges unchanged seasonal fields from newer saved payloads
 to preserve characters created in another tab; simultaneous edits to the same
 field remain last-writer-wins.

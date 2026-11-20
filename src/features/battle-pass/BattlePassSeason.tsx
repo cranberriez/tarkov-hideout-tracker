@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useMemo, type ReactNode, type CSSProperties } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
+import { getSeason, SEASONS, type SeasonId } from "@/lib/cfg/seasons";
 import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
 import { getBattlePassData, type BattlePassData } from "@/lib/battle-pass-seasons";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
@@ -55,12 +55,11 @@ export function BattlePassSeason({
 					{showHeader && (
 						<div className="container mx-auto flex flex-wrap items-center gap-3 px-4 pt-4 text-sm">
 							<strong style={{ color: season.color }}>{season.title} Battle Pass</strong>
-							<a href="/battle-pass?season=season-1" className="underline">
-								KORD
-							</a>
-							<a href="/battle-pass?season=season-2" className="underline">
-								Test
-							</a>
+							{SEASONS.map((entry) => (
+								<a key={entry.id} href={`/battle-pass?season=${entry.id}`} className="underline">
+									{entry.name}
+								</a>
+							))}
 							{showNotice && data.notice && <p className="text-muted-foreground">{data.notice}</p>}
 						</div>
 					)}

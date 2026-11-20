@@ -218,6 +218,7 @@ export function BattlePassPage({ initialPage }: { initialPage?: number }) {
 				</div>
 				<BattlePassSummary
 					endsAt={getSeason(seasonId).endsAt}
+					showSeasonTwoLink={seasonId === "season-1"}
 					goalTotal={progress.goals.length ? goalTotal : null}
 					remainingTotal={remainingTotal}
 				/>

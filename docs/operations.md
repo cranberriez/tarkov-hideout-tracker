@@ -387,25 +387,26 @@ and [data layer](data-layer.md) for their source policies.
 
 The single availability setting is Season 1's `endsAt` in
 [seasons.ts](../src/lib/cfg/seasons.ts). Its configured end remains December 7,
-2026 at 23:59:59 UTC. Season 2 is the blue **Test** placeholder. Crossing the
+2026 at 09:00 UTC (1:00 AM PST). Season 2 is **UNTAR** (UNTAR Control), still using
+placeholder pass data. Crossing the
 boundary changes availability and navigation; character activation is manual.
 
 Use a disposable browser origin/profile rather than an existing player's save:
 
 1. Select KORD, record recognizable level, inventory, story and pass progress.
-2. Temporarily set Season 1's `endsAt` to a UTC timestamp in the past. Reload or
-   refocus the app. The old character must remain selected, with an Activate Test
-   banner and unchanged progress.
-3. Activate Test. Confirm a new default character and separate pass progress.
-   Repeated activation must preserve any Test edits.
+2. In development, set `NEXT_PUBLIC_SEASON_OVERRIDE="season-2"` in `.env` and
+   restart `pnpm run dev` (production builds ignore it). The old character must
+   remain selected, with an Activate UNTAR banner and unchanged progress.
+3. Activate UNTAR. Confirm a new default character and separate pass progress.
+   Repeated activation must preserve any UNTAR edits.
 4. Open the profile menu, choose **View past**, then KORD. The three current
    profile choices are replaced by past seasonal characters. Confirm old progress
-   remains editable and the banner now offers **Switch to Test**.
-5. Switch among KORD, Test, PVP and PVE, reload, and check pass/map links and
+   remains editable and the banner now offers **Switch to UNTAR**.
+5. Switch among KORD, UNTAR, PVP and PVE, reload, and check pass/map links and
    document consumption isolation. Export/import a v2 backup with both seasons;
    a v1 KORD backup must affect Season 1 only.
-6. Restore the original `endsAt`. This changes availability only; it does not
-   remove the disposable Test character. Never clear real player data to rerun.
+6. Remove the override and restart. This changes availability only; it does not
+   remove the disposable UNTAR character. Never clear real player data to rerun.
 
 Focused checks:
 
