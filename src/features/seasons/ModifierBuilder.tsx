@@ -25,7 +25,7 @@ export type BuilderModifier = {
 };
 
 type Selection = { selected: ReadonlySet<string>; toggle: (id: string) => void; reset: () => void };
-type Builder = { selection: Selection; modifiers: BuilderModifier[]; seasonLabel: string };
+type Builder = { selection: Selection; modifiers: BuilderModifier[]; seasonId: string; seasonLabel: string };
 const BuilderContext = createContext<Builder | null>(null);
 
 export const useModifierBuilder = () => use(BuilderContext);
@@ -107,6 +107,7 @@ export function ModifierBuilderProvider({
 		};
 		return {
 			modifiers,
+			seasonId,
 			seasonLabel,
 			selection: {
 				selected,

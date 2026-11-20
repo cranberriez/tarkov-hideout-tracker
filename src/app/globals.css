@@ -309,6 +309,13 @@ body {
 	flex: 1 1 0;
 }
 
+/* Season pages scale everything (text, spacing, icons) down slightly on screens under 1024px. */
+@media (max-width: 1023px) {
+	.season-page {
+		zoom: 0.9;
+	}
+}
+
 .page-content:has(> main) > .page-content-side {
 	display: block;
 }

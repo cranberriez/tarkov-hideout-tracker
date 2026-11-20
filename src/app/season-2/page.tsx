@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
 	return (
-		<main className="container mx-auto space-y-8 px-4 py-6 sm:px-6">
+		<main className="season-page container mx-auto space-y-8 px-4 py-6 sm:px-6">
 			<SeasonPageNav current="season-2" />
 			<SeasonChangesProvider>
 				<SeasonTwoTeaser />
