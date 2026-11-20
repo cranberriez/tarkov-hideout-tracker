@@ -19,6 +19,7 @@ PostgreSQL; production switching follows the separate
 | APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
 | APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
+| SEASON_PREVIEWS_DISABLED       | Only `true` turns off season link-preview images and build embeds; needs a redeploy |
 
 Companion sync is always available under `pnpm run dev`. In production, set
 `syncEnabled=true` to enable `/sync`, its navigation/status indicator, background

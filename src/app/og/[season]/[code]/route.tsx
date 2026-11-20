@@ -7,6 +7,7 @@ import { SEASON_MODIFIERS } from "@/features/seasons/modifiers";
 import { builderTotals, canonicalBuild, decodeBuild } from "@/features/seasons/modifiers/builder";
 import {
 	PREVIEW_FORMATS,
+	SEASON_PREVIEWS_ENABLED,
 	TALL_FORMAT_PARAM,
 	isPreviewSeason,
 	previewImagePath,
@@ -54,7 +55,7 @@ function redirect(request: Request, path: string) {
 
 export async function GET(request: Request, { params }: { params: Promise<{ season: string; code: string }> }) {
 	const { season, code } = await params;
-	if (!isPreviewSeason(season)) return new Response("Not found", { status: 404 });
+	if (!SEASON_PREVIEWS_ENABLED || !isPreviewSeason(season)) return new Response("Not found", { status: 404 });
 	const set = SEASON_MODIFIERS[season];
 	const canonical = canonicalBuild(code, set.shareOrder);
 	const search = new URL(request.url).searchParams;

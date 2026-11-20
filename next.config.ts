@@ -7,6 +7,8 @@ import type { NextConfig } from "next";
 const SEASON_PREVIEW_BOTS =
 	".*(?:Discordbot|redditbot|Twitterbot|facebookexternalhit|Slackbot|Slack-ImgProxy|TelegramBot|WhatsApp|LinkedInBot|Embedly|Iframely|SkypeUriPreview|vkShare|Mastodon|Bluesky|Pinterestbot).*";
 
+const SEASON_PREVIEWS_DISABLED = process.env.SEASON_PREVIEWS_DISABLED === "true";
+
 const nextConfig: NextConfig = {
 	images: {
 		// 31 days to limit image optimization transformations
@@ -38,7 +40,8 @@ const nextConfig: NextConfig = {
 	async rewrites() {
 		return {
 			// Before static pages, or the prerendered season page would always win.
-			beforeFiles: [
+			// SEASON_PREVIEWS_DISABLED=true skips this; see SEASON_PREVIEWS_ENABLED in share-preview.ts.
+			beforeFiles: SEASON_PREVIEWS_DISABLED ? [] : [
 				{
 					// Link-preview crawlers opening a season build link get tiny per-build preview HTML
 					// (src/app/og-share); people and search engines never match and get the static page.

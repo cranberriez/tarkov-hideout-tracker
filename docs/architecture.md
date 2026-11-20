@@ -94,7 +94,8 @@ and drops names when picks are many. It uses the bundled default font, and icons
 the traced WebP files to PNG with sharp, since satori can't decode WebP). Discordbot gets the 4:3
 `&f=tall` card, because Discord keeps aspect ratio; others get 1.91:1. It is
 served with `immutable` `Cache-Control`, `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. Bump
-`PREVIEW_VERSION` when the card design changes.
+`PREVIEW_VERSION` when the card design changes. Setting `SEASON_PREVIEWS_DISABLED=true` and redeploying
+turns all of this off: the bot rewrite is skipped, page metadata has no image, and both routes 404.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |

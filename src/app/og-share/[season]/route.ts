@@ -3,6 +3,7 @@ import { BUILD_PARAM, canonicalBuild, decodeBuild } from "@/features/seasons/mod
 import {
 	PREVIEW_FORMATS,
 	PREVIEW_THEMES,
+	SEASON_PREVIEWS_ENABLED,
 	isPreviewSeason,
 	previewImagePath,
 	type PreviewFormat,
@@ -23,7 +24,7 @@ const escapeHtml = (value: string) =>
 
 export async function GET(request: Request, { params }: { params: Promise<{ season: string }> }) {
 	const { season } = await params;
-	if (!isPreviewSeason(season)) return new Response("Not found", { status: 404 });
+	if (!SEASON_PREVIEWS_ENABLED || !isPreviewSeason(season)) return new Response("Not found", { status: 404 });
 	const set = SEASON_MODIFIERS[season];
 	const url = new URL(request.url);
 	const code = canonicalBuild(url.searchParams.get(BUILD_PARAM), set.shareOrder);

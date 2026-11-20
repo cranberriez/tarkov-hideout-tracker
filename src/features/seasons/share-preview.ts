@@ -12,6 +12,12 @@ import type { SeasonId } from "@/lib/cfg/seasons";
  *   tags point at the build's canonical image URL.
  */
 export const PREVIEW_VERSION = "3";
+/**
+ * Kill switch: `SEASON_PREVIEWS_DISABLED=true` drops the preview image from season page metadata and
+ * makes both preview routes 404 (next.config also skips the bot rewrite). Needs a redeploy, which
+ * also starts a fresh CDN cache, so previously rendered images stop being served.
+ */
+export const SEASON_PREVIEWS_ENABLED = process.env.SEASON_PREVIEWS_DISABLED !== "true";
 export const GENERIC_PREVIEW_CODE = "_";
 /**
  * `wide` is the 1.91:1 card X, Reddit and others crop to. `tall` (4:3) is served to Discord, which keeps
@@ -51,8 +57,10 @@ export function seasonPagePreviewMetadata(seasonId: SeasonId, title: string, des
 			title,
 			description,
 			url: `/${seasonId}`,
-			images: [{ url: previewImagePath(seasonId, ""), ...PREVIEW_IMAGE_SIZE, alt: title }],
+			...(SEASON_PREVIEWS_ENABLED && {
+				images: [{ url: previewImagePath(seasonId, ""), ...PREVIEW_IMAGE_SIZE, alt: title }],
+			}),
 		},
-		twitter: { card: "summary_large_image", title, description },
+		twitter: { card: SEASON_PREVIEWS_ENABLED ? "summary_large_image" : "summary", title, description },
 	};
 }
