@@ -1,5 +1,5 @@
 import { Wallet } from "lucide-react";
-import { CurrencyComparison } from "./CurrencyComparison";
+import { CurrencyComparison, FarmTip } from "./CurrencyComparison";
 import { useId, useState } from "react";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { CASH_TOLERANCE_CENTS, DOCUMENT_PACKS, TARCOIN_PACKS } from "../lib/funding-model";
@@ -46,14 +46,14 @@ export function FundingInputs() {
 }
 
 export function RouteFundingPanel() {
-	const { route: baseRoute, flowRoute, funding: state, gathering, claimProfileLabel } = useBattlePassPlanContext();
+	const { route: baseRoute, funding: state, gathering, farming } = useBattlePassPlanContext();
 	if (!baseRoute || !state) return null;
 	// The chosen gathering target carries its own purchase schedule, priced on
 	// the route the gathering worker solved; without one, buy every missing document.
 	const point = gathering.selected;
-	const route = point && flowRoute ? flowRoute : baseRoute;
 	const result = point ? point.plan : typeof state === "string" ? state : state.plan;
 	const funding = point ? point.funding : typeof state === "string" ? null : state.comparison;
+	const farm = farming[0];
 	return (
 		<Disclosure
 			title="Route funding"
@@ -75,87 +75,42 @@ export function RouteFundingPanel() {
 				</p>
 			) : (
 				<>
-					<div aria-live="polite" className={cn("space-y-2", syncValue)}>
+					<div aria-live="polite" className={cn("space-y-3", syncValue)}>
+						<CurrencyComparison funding={funding!} savedCents={point?.savingsCents} />
 						<p className="text-xs text-muted-foreground">
-							{point ? (
-								<>
-									With your gathering target: gather{" "}
-									<strong className="text-foreground">{point.gathered.toLocaleString()} documents</strong>, then buy the
-									rest. Saves <strong className="text-success">{usd(point.savingsCents)}</strong> against buying
-									everything ({usd(point.cashCents + point.savingsCents)}).
-								</>
-							) : (
-								"No gathering: every missing document is bought as classified."
-							)}
+							{point ? `Gather ${point.gathered.toLocaleString()} documents, buy the rest. ` : "No gathering. "}
+							{result.balanceDocuments} classified left over.
 						</p>
-						<CurrencyComparison funding={funding!} />
-						<p className="text-xs text-muted-foreground">{result.balanceDocuments} classified documents left</p>
+						{farm && <FarmTip extraTarCoins={farm.extraTarCoins} savingsCents={farm.savingsCents} />}
 					</div>
-					<div className="flex flex-col gap-3">
-						<SubDisclosure title="Pack purchases by claim">
-							<ol className="max-h-96 space-y-3 overflow-auto text-sm">
-								{result.steps.map((step, index) => (
-									<li key={step.rewardId} className="space-y-1 rounded-md bg-surface-raised/30 p-3">
-										<p className="font-medium">
-											{index + 1}. {route.selected.find((tile) => tile.id === step.rewardId)?.displayName}{" "}
-											<span className="ml-2 font-normal text-muted-foreground">
-												{(() => {
-													const claim = route.claims.find((entry) => entry.rewardId === step.rewardId);
-													return claim && claimProfileLabel(claim);
-												})()}
-											</span>
-										</p>
-										{step.documentPacks.map((pack, i) => (
-											<p key={i} className="text-xs">
-												Buy {pack.count} × {pack.documents} classified at {pack.tarCoins.toLocaleString()} <TarCoin />{" "}
-												each = {(pack.tarCoins * pack.count).toLocaleString()} <TarCoin />
-											</p>
-										))}
-										<p className="text-xs text-muted-foreground">
-											Claim reward
-											{step.rewardTarCoins > 0 && (
-												<>
-													{" "}
-													and receive {step.rewardTarCoins.toLocaleString()} <TarCoin />
-												</>
-											)}{" "}
-											<br />
-											Balance {step.balanceTarCoins.toLocaleString()} <TarCoin />, {step.balanceDocuments} purchased
-											classified left
-										</p>
-									</li>
-								))}
-							</ol>
-						</SubDisclosure>
-						<SubDisclosure title="Pack prices">
-							<div className="grid gap-4 sm:grid-cols-2">
-								<div>
-									<h4 className="mb-2 text-xs font-medium">Classified documents</h4>
-									<ul className="space-y-1 text-xs text-muted-foreground">
-										{DOCUMENT_PACKS.map((pack) => (
-											<li key={pack.documents}>
-												{pack.documents} classified for {pack.tarCoins.toLocaleString()} <TarCoin />
-											</li>
-										))}
-									</ul>
-								</div>
-								<div>
-									<h4 className="mb-2 text-xs font-medium">TarCoins in USD</h4>
-									<ul className="space-y-1 text-xs text-muted-foreground">
-										{TARCOIN_PACKS.map((pack, index) => (
-											<li key={index}>
-												{pack.tarCoins.toLocaleString()} <TarCoin /> for {usd(pack.cents)}
-												{pack.special && <span className="text-amber-300"> (once only)</span>}
-											</li>
-										))}
-									</ul>
-								</div>
+					<SubDisclosure title="Pack prices">
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<h4 className="mb-2 text-xs font-medium">Classified documents</h4>
+								<ul className="space-y-1 text-xs text-muted-foreground">
+									{DOCUMENT_PACKS.map((pack) => (
+										<li key={pack.documents}>
+											{pack.documents} classified for {pack.tarCoins.toLocaleString()} <TarCoin />
+										</li>
+									))}
+								</ul>
 							</div>
-							<p className="mt-3 text-xs text-muted-foreground">
-								Most TarCoins within {usd(CASH_TOLERANCE_CENTS)} of the minimum. Prices in USD before tax.
-							</p>
-						</SubDisclosure>
-					</div>
+							<div>
+								<h4 className="mb-2 text-xs font-medium">TarCoins in USD</h4>
+								<ul className="space-y-1 text-xs text-muted-foreground">
+									{TARCOIN_PACKS.map((pack, index) => (
+										<li key={index}>
+											{pack.tarCoins.toLocaleString()} <TarCoin /> for {usd(pack.cents)}
+											{pack.special && <span className="text-amber-300"> (once only)</span>}
+										</li>
+									))}
+								</ul>
+							</div>
+						</div>
+						<p className="mt-3 text-xs text-muted-foreground">
+							Most TarCoins within {usd(CASH_TOLERANCE_CENTS)} of the minimum. Prices in USD before tax.
+						</p>
+					</SubDisclosure>
 				</>
 			)}
 		</Disclosure>

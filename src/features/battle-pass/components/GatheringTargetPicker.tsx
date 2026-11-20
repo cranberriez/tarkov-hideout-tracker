@@ -1,6 +1,7 @@
 import { Circle, CircleCheck } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { GATHERING_DAILY_CAPS } from "../lib/gathering-caps";
 import type { GatheringBreakpoint } from "../lib/gathering-savings-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { liftedControl, syncValue } from "./ui/field";
@@ -18,7 +19,15 @@ export function GatheringTargetPicker() {
 	const { gathering: target, deadline } = useBattlePassPlanContext();
 	const [more, setMore] = useState(false);
 	const { breakpoints, recommended, selected, baselineCents, pastSeason } = target;
-	if (baselineCents === null || !breakpoints.length) return null;
+	if (baselineCents === null || !breakpoints.length) {
+		if (target.calculating || target.error)
+			return (
+				<p role="status" className="text-xs text-muted-foreground">
+					{target.error ?? "Calculating gathering options…"}
+				</p>
+			);
+		return null;
+	}
 	const pinned = new Set([...breakpoints.slice(0, VISIBLE), recommended, selected].filter(Boolean));
 	// Hiding only one or two options is not worth a button.
 	const hidden = breakpoints.filter((point) => !pinned.has(point));
@@ -77,11 +86,17 @@ export function GatheringTargetPicker() {
 			<div className="space-y-1">
 				<h4 className="text-sm font-semibold">Gathering target</h4>
 				<p className="text-xs leading-relaxed text-muted-foreground">
-					Each option is the next drop in what you pay. The step plan follows your choice.
+					Each option is the next drop in what you pay. The step plan follows your choice. Daily caps: PVE{" "}
+					{GATHERING_DAILY_CAPS.PVE}, PVP {GATHERING_DAILY_CAPS.PVP}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
 					{Number.isFinite(deadline.daysLeft) &&
 						` Options gather only what fits in the ${days(deadline.daysLeft)} left.`}
 				</p>
 			</div>
+			{target.error && (
+				<p role="status" className="text-xs text-warning">
+					{target.error}
+				</p>
+			)}
 			<div
 				className={cn("grid grid-cols-2 gap-2 lg:grid-cols-4", syncValue)}
 				role="radiogroup"

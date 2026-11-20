@@ -1,21 +1,12 @@
 import type { Tile } from "./battle-pass-model";
 import type { DocumentRouteRequest, interpretDocumentRoute } from "./document-route-model";
-import {
-	CASH_TOLERANCE_CENTS,
-	DOCUMENT_PACKS,
-	fundingOptions,
-	rewardTarCoins,
-	singlePackOption,
-	type FundingClaim,
-	type FundingOption,
-} from "./funding-model";
+import { optimizeRouteFunding, rewardTarCoins, type FundingClaim } from "./funding-model";
+import { gatheringScenario, type GatheringFilters } from "./gathering-savings-model";
 
 type Route = ReturnType<typeof interpretDocumentRoute>;
 
 /** Alternative routes may buy at most this many more classified documents than the active route. */
 export const ROUTE_OPTION_EXTRA_DOCUMENTS = 20;
-/** Purchases are compared up to this much above each route's minimum checkout. */
-export const ROUTE_OPTION_CASH_WINDOW_CENTS = 1000;
 /** Upper bound on solver calls; each call raises the required reward TarCoins. */
 export const ROUTE_OPTION_MAX_LEVELS = 12;
 
@@ -82,128 +73,71 @@ export function routeSwaps(base: Route, route: Route): RouteSwap[] {
 }
 
 export interface RouteOption {
+	/** 0 is the fewest-documents route; i is alternatives[i - 1]. */
 	routeIndex: number;
 	route: Route;
+	/** Against the fewest-documents route. */
 	swaps: RouteSwap[];
-	purchase: FundingOption;
-	/** The nearest single larger pack, shown after "Show more options". */
-	singlePack: boolean;
-	/** Classified documents to buy for this route. */
-	classifiedToBuy: number;
+	/** Documents gathered for this route at the target. */
+	gathered: number;
+	/** The recommended purchase, the same plan Route funding shows for this route. */
+	cashCents: number;
+	tarCoinsBought: number;
+	tarCoinsLeft: number;
+	packs: { tarCoins: number; count: number; special: boolean }[];
+	/** Against the suggested route. */
 	cashDeltaCents: number;
 	tarCoinsLeftDelta: number;
-	classifiedDelta: number;
 }
 
-/** Packs combine into many near-identical totals, so purchases are grouped into
- * price tiers no wider than the funding tolerance. Each tier keeps the purchase
- * leaving the most TarCoins; the first tier also keeps the exact minimum. */
-export function purchaseTiers(options: FundingOption[]) {
-	const tiers: FundingOption[][] = [];
-	for (const option of options) {
-		const tier = tiers.at(-1);
-		if (tier && option.cashCents <= tier[0].cashCents + CASH_TOLERANCE_CENTS) tier.push(option);
-		else tiers.push([option]);
-	}
-	return tiers.flatMap((tier, index) => {
-		const best = tier.reduce((a, b) => (b.balanceTarCoins > a.balanceTarCoins ? b : a));
-		return index === 0 && best !== tier[0] ? [tier[0], best] : [best];
-	});
-}
-
-/** Price each route's purchase options and keep those no other option beats on
- * checkout, classified documents to buy and TarCoins left after the pass. The
- * active route always keeps its cheapest and recommended purchases, so its card
- * matches Route funding. Deltas compare against the cheapest purchase on the
- * first (optimizer) route. */
-export function buildRouteOptions(
+/** Prices every route gathering `target` documents, exactly as Route funding
+ * does. The suggested route is the cheapest checkout; ties gather fewer
+ * documents, then leave more TarCoins, then keep the earlier route. Routes that
+ * cannot be priced are skipped. */
+export function priceRoutes(
 	routes: Route[],
-	startingTarCoins: number,
+	target: number,
+	filters: GatheringFilters,
+	days: number,
+	wallet: number,
 	allowSpecial: boolean,
-	expanded: (routeIndex: number) => boolean = () => false,
-	activeIndex = 0,
-): { options: RouteOption[]; singlePacks: (FundingOption | null)[] } {
-	if (!routes.length) return { options: [], singlePacks: [] };
-	// "Show more options" adds one purchase per route: the nearest single larger
-	// pack beyond the compared range. It is offered only when that purchase would
-	// survive against every other purchase, including other routes' single packs.
-	const row = (routeIndex: number, purchase: FundingOption, singlePack: boolean) => ({
-		routeIndex,
-		route: routes[routeIndex],
-		purchase,
-		singlePack,
-		classifiedToBuy: routes[routeIndex].additionalClassified,
+	reserve = 0,
+): { options: RouteOption[]; suggestedIndex: number } {
+	const priced = routes.flatMap((route, routeIndex) => {
+		try {
+			const scenario = gatheringScenario(route, target, filters, days, reserve);
+			const plan = optimizeRouteFunding(scenario.claims, wallet, allowSpecial);
+			return [
+				{
+					routeIndex,
+					route,
+					swaps: routeSwaps(routes[0], route),
+					gathered: scenario.quantities.reduce((sum, row) => sum + row.quantity, 0),
+					cashCents: plan.cashCents,
+					tarCoinsBought: plan.totalTarCoins,
+					tarCoinsLeft: plan.balanceTarCoins,
+					packs: plan.cashReceipt.map(({ tarCoins, count, special }) => ({ tarCoins, count, special })),
+				},
+			];
+		} catch {
+			return [];
+		}
 	});
-	type Row = ReturnType<typeof row>;
-	const tierRows: Row[] = [];
-	const pinned = new Set<Row>();
-	const singleRows: (Row | null)[] = [];
-	routes.forEach((route, routeIndex) => {
-		const claims = fundingClaims(route);
-		const tiers = purchaseTiers(fundingOptions(claims, startingTarCoins, allowSpecial, ROUTE_OPTION_CASH_WINDOW_CENTS));
-		const rows = tiers.map((purchase) => row(routeIndex, purchase, false));
-		if (routeIndex === activeIndex)
-			for (const [index, option] of rows.entries()) if (index === 0 || option.purchase.recommended) pinned.add(option);
-		tierRows.push(...rows);
-		const single = singlePackOption(claims, startingTarCoins, allowSpecial, tiers.at(-1)!.cashCents);
-		singleRows.push(single && row(routeIndex, single, true));
-	});
-	const dominated = (option: Row, pool: Row[]) =>
-		pool.some(
-			(other) =>
-				other !== option &&
-				other.purchase.cashCents <= option.purchase.cashCents &&
-				other.classifiedToBuy <= option.classifiedToBuy &&
-				other.purchase.balanceTarCoins >= option.purchase.balanceTarCoins &&
-				(other.purchase.cashCents < option.purchase.cashCents ||
-					other.classifiedToBuy < option.classifiedToBuy ||
-					other.purchase.balanceTarCoins > option.purchase.balanceTarCoins),
-		);
-	const everything = [...tierRows, ...singleRows.filter((option): option is Row => option !== null)];
-	const available = singleRows.map((option) => (option && !dominated(option, everything) ? option : null));
-	const singlePacks = available.map((option) => option?.purchase ?? null);
-	const priced = [
-		...tierRows,
-		...available.filter((option): option is Row => option !== null && expanded(option.routeIndex)),
-	];
-	const kept = priced.filter((option) => pinned.has(option) || !dominated(option, priced));
-	const baseline = priced[0];
-	const options = kept
-		.sort(
-			(a, b) =>
-				a.purchase.cashCents - b.purchase.cashCents ||
-				b.purchase.balanceTarCoins - a.purchase.balanceTarCoins ||
-				a.classifiedToBuy - b.classifiedToBuy,
-		)
-		.map((option) => ({
-			...option,
-			swaps: routeSwaps(routes[0], option.route),
-			cashDeltaCents: option.purchase.cashCents - baseline.purchase.cashCents,
-			tarCoinsLeftDelta: option.purchase.balanceTarCoins - baseline.purchase.balanceTarCoins,
-			classifiedDelta: option.classifiedToBuy - baseline.classifiedToBuy,
-		}));
-	return { options, singlePacks };
-}
-
-/** Classified packs a purchase buys, in total and before each claim. */
-export function documentPlan(purchase: FundingOption) {
-	const counts = DOCUMENT_PACKS.map(() => 0);
-	const schedule = purchase.steps.flatMap((step, claimIndex) =>
-		step.documentPacks.length ? [{ claimIndex, rewardId: step.rewardId, packs: step.documentPacks }] : [],
+	priced.sort(
+		(a, b) =>
+			a.cashCents - b.cashCents ||
+			a.gathered - b.gathered ||
+			b.tarCoinsLeft - a.tarCoinsLeft ||
+			a.routeIndex - b.routeIndex,
 	);
-	for (const step of schedule)
-		for (const pack of step.packs)
-			counts[DOCUMENT_PACKS.findIndex((p) => p.documents === pack.documents)] += pack.count;
-	const packs = DOCUMENT_PACKS.flatMap((pack, k) => (counts[k] ? [{ ...pack, count: counts[k] }] : []));
+	const suggested = priced[0];
+	if (!suggested) return { options: [], suggestedIndex: -1 };
 	return {
-		key: schedule
-			.map((step) => `${step.claimIndex}:${step.packs.map((p) => `${p.count}x${p.documents}`).join("+")}`)
-			.join("|"),
-		packs,
-		bought: purchase.totalDocuments,
-		spare: purchase.balanceDocuments,
-		tarCoins: packs.reduce((sum, pack) => sum + pack.tarCoins * pack.count, 0),
-		schedule,
+		options: priced.map((option) => ({
+			...option,
+			cashDeltaCents: option.cashCents - suggested.cashCents,
+			tarCoinsLeftDelta: option.tarCoinsLeft - suggested.tarCoinsLeft,
+		})),
+		suggestedIndex: suggested.routeIndex,
 	};
 }
-export type DocumentPlan = ReturnType<typeof documentPlan>;

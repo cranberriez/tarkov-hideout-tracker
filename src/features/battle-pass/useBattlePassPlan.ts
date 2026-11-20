@@ -34,7 +34,7 @@ import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
-import { buildRouteOptions, fundingClaims } from "./lib/route-options-model";
+import { fundingClaims, priceRoutes } from "./lib/route-options-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { useDocumentInventory } from "./useDocumentInventory";
 import { CALCULATING_ROUTE, useDocumentRoute } from "./useDocumentRoute";
@@ -79,7 +79,6 @@ interface GatheringResult {
 
 /** Shown instead of a profile for claims paid only with classified documents. */
 export const ANY_PROFILE = "Any";
-const NONE: number[] = [];
 /** The breakpoint recommended when no gathering target is saved: the first saving $4.99 or more. */
 const recommendedBreakpoint = (breakpoints: GatheringBreakpoint[]) =>
 	breakpoints.find((point) => point.savingsCents >= 499) ?? breakpoints.at(-1);
@@ -377,27 +376,31 @@ export function useBattlePassPlan(
 						baseBreakpoints.find((point) => point.gathered === gatheringTarget) ??
 						recommendedBreakpoint(baseBreakpoints)
 					)?.gathered ?? 0);
-	const cheapest = useMemo(() => {
+	// Every route priced at the compared gathering amount; the suggested route is the cheapest checkout.
+	const routeOptions = useMemo(() => {
 		if (!preferredBase || !alternatives?.length || comparedGathering === null) return null;
-		const priced = [preferredBase, ...alternatives.map((alternative) => alternative.route)].flatMap(
-			(candidate, index) => {
-				try {
-					const scenario = gatheringScenario(candidate, comparedGathering, filters, daysLeft, reserve);
-					const plan = optimizeRouteFunding(scenario.claims, startingTarCoins, allowSpecial);
-					const gathered = scenario.quantities.reduce((sum, row) => sum + row.quantity, 0);
-					return [{ index, cashCents: plan.cashCents, gathered, left: plan.balanceTarCoins }];
-				} catch {
-					return [];
-				}
-			},
+		const priced = priceRoutes(
+			[preferredBase, ...alternatives.map((alternative) => alternative.route)],
+			comparedGathering,
+			filters,
+			daysLeft,
+			startingTarCoins,
+			allowSpecial,
+			reserve,
 		);
-		// Cheapest first; ties gather fewer documents, then leave more TarCoins, then keep the earlier route.
-		priced.sort((a, b) => a.cashCents - b.cashCents || a.gathered - b.gathered || b.left - a.left || a.index - b.index);
-		const fewest = priced.find((entry) => entry.index === 0);
-		return priced[0] && fewest
-			? { index: priced[0].index, gathering: comparedGathering, savingsCents: fewest.cashCents - priced[0].cashCents }
-			: null;
+		return priced.options.length ? priced : null;
 	}, [preferredBase, alternatives, comparedGathering, filters, startingTarCoins, allowSpecial, daysLeft, reserve]);
+	const cheapest = useMemo(() => {
+		const suggested = routeOptions?.options.find((option) => option.routeIndex === routeOptions.suggestedIndex);
+		const fewest = routeOptions?.options.find((option) => option.routeIndex === 0);
+		return suggested && fewest && comparedGathering !== null
+			? {
+					index: suggested.routeIndex,
+					gathering: comparedGathering,
+					savingsCents: fewest.cashCents - suggested.cashCents,
+				}
+			: null;
+	}, [routeOptions, comparedGathering]);
 
 	// A route the player picks lasts until any route input changes or the page reloads.
 	const [adopted, setAdopted] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
@@ -427,30 +430,6 @@ export function useBattlePassPlan(
 	if (ready && result !== lastRoute) setLastRoute(result);
 	const route = ready ? result : calculating ? lastRoute : null;
 	const syncing = !ready && !!route;
-
-	// Route options: every route priced with the same wallet and offer.
-	const [expanded, setExpanded] = useState<{ alternatives: typeof alternatives; routes: number[] }>({
-		alternatives: null,
-		routes: [],
-	});
-	// "Show more options" resets whenever the routes are re-solved.
-	const expandedRoutes = expanded.alternatives === alternatives ? expanded.routes : NONE;
-	const routeOptions = useMemo(() => {
-		if (!preferredBase || !alternatives) return null;
-		try {
-			return buildRouteOptions(
-				[preferredBase, ...alternatives.map((alternative) => alternative.route)],
-				startingTarCoins,
-				allowSpecial,
-				(index) => expandedRoutes.includes(index),
-				adoptedIndex + 1,
-			);
-		} catch (error) {
-			// Pricing throws on routes it cannot fund; hide the options rather than blank the page.
-			console.error("Could not price battle pass route options", error);
-			return null;
-		}
-	}, [preferredBase, alternatives, startingTarCoins, allowSpecial, expandedRoutes, adoptedIndex]);
 
 	// Funding for the active route.
 	const funding = useMemo(() => {
@@ -1026,12 +1005,6 @@ export function useBattlePassPlan(
 		/** Go back to the cheapest route chosen automatically. */
 		pickCheapestRoute: () => setAdopted(null),
 		routeOptions,
-		setRouteExpanded: (routeIndex: number, show: boolean) =>
-			setExpanded({
-				alternatives,
-				routes: show ? [...expandedRoutes, routeIndex] : expandedRoutes.filter((index) => index !== routeIndex),
-			}),
-		expandedRoutes,
 		// Funding, gathering and the step plan
 		funding,
 		gathering,

@@ -10,7 +10,6 @@ import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lu
 import { RouteSummary } from "./RouteSummary";
 import { useBattlePassPlanContext, type PlannedRoute } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
-import { GatheringSavings } from "./GatheringSavings";
 import { StepPlan } from "./StepPlan";
 import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
@@ -40,7 +39,6 @@ export function DocumentRoutePanel({
 		route: shownRoute,
 		syncing,
 		calculating,
-		funding,
 		selectedGoal,
 		buyAll,
 		allProfiles,
@@ -164,7 +162,6 @@ export function DocumentRoutePanel({
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
 							<RouteOptions />
 							<RouteFundingPanel />
-							{typeof funding === "object" && funding?.plan.cashCents ? <GatheringSavings /> : null}
 							<StepPlan />
 						</div>
 					) : (
