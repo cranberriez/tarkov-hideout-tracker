@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { SeasonTwoModifiers } from "@/features/seasons/SeasonTwoModifiers";
+import { MostPicked, SeasonModifiers } from "@/features/seasons/SeasonModifiers";
+import { SeasonChangesProvider } from "@/features/seasons/SeasonChanges";
+import { SeasonPageNav } from "@/features/seasons/SeasonPageNav";
 import { SeasonTwoTeaser } from "@/features/seasons/SeasonTwoTeaser";
 
 export const metadata: Metadata = {
@@ -12,8 +14,12 @@ export const metadata: Metadata = {
 export default function Page() {
 	return (
 		<main className="container mx-auto space-y-8 px-4 py-6 sm:px-6">
-			<SeasonTwoTeaser />
-			<SeasonTwoModifiers />
+			<SeasonPageNav current="season-2" />
+			<SeasonChangesProvider>
+				<SeasonTwoTeaser />
+				<SeasonModifiers seasonId="season-2" />
+			</SeasonChangesProvider>
+			<MostPicked seasonId="season-1" title="Most picked in Season 1" />
 		</main>
 	);
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { SEASONS } from "@/lib/cfg/seasons";
+import { SeasonChangesToggle } from "./SeasonChanges";
 import { useCurrentSeason } from "./useCurrentSeason";
 
 /** Hotlinked from Battlestate's X posts; nothing is self-hosted. A broken link hides its image. */
@@ -14,7 +15,7 @@ const twimg = (id: string, size: "small" | "4096x4096") => `https://pbs.twimg.co
 const STATEMENT =
 	"Uncover the truth behind the UN mission in Tarkov - where diplomatic mandates conceal private agendas, alliances are built on silence, and every intervention comes at a price. Trace the decisions that led to the crisis, and discover who stands to gain from its aftermath. Everything is connected. The official record tells one story. What it leaves out tells another.";
 
-function RemoteImage({ src, alt, className }: { src: string; alt: string; className: string }) {
+export function RemoteImage({ src, alt, className }: { src: string; alt: string; className: string }) {
 	const [failed, setFailed] = useState(false);
 	if (failed) return null;
 	return (
@@ -84,6 +85,9 @@ export function SeasonTwoTeaser() {
 							/>
 						</a>
 					))}
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					<SeasonChangesToggle />
 				</div>
 			</div>
 			<RemoteImage src={BANNER} alt="UNTAR Control key art" className="size-full max-h-80 object-cover lg:max-h-none" />

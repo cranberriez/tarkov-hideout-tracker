@@ -1,21 +1,14 @@
 /**
  * Season 2 (UNTAR Control) modifiers, transcribed from Battlestate's English modifier poster.
- * Static content: no database or provider reads. `id` is stable and will key future builder
- * selections in share URLs, so never rename one; add new IDs instead.
- * Personal `points` keep the poster's sign: positives cost points (negative), negatives grant them.
  * Icons are cropped from the poster into public/images/season-2/modifiers/<id>.webp.
+ * See ./types.ts for ID, sign and comparison rules.
  */
-export type Season2Modifier = {
-	id: string;
-	name: string;
-	effects: string[];
-};
-export type Season2PersonalModifier = Season2Modifier & { points: number };
+import { personal, type SeasonModifierSet } from "./types";
 
-export const SEASON_2_MODIFIER_NOTE =
-	"Modifier values may be adjusted before the start of the season for balancing purposes.";
+type Entry = { id: string; name: string; effects: string[] };
+type PersonalEntry = Entry & { points: number };
 
-export const SEASON_2_GLOBAL_MODIFIERS: Season2Modifier[] = [
+const GLOBAL: Entry[] = [
 	{
 		id: "untar-control",
 		name: "UNTAR Control",
@@ -50,7 +43,7 @@ export const SEASON_2_GLOBAL_MODIFIERS: Season2Modifier[] = [
 ];
 
 /** Poster order: rows left to right, three per row. */
-export const SEASON_2_POSITIVE_MODIFIERS: Season2PersonalModifier[] = [
+const POSITIVE: PersonalEntry[] = [
 	{
 		id: "lockpicker",
 		name: "Lockpicker",
@@ -200,7 +193,7 @@ export const SEASON_2_POSITIVE_MODIFIERS: Season2PersonalModifier[] = [
 ];
 
 /** Poster order: rows left to right, three per row. */
-export const SEASON_2_NEGATIVE_MODIFIERS: Season2PersonalModifier[] = [
+const NEGATIVE: PersonalEntry[] = [
 	{
 		id: "extrovert",
 		name: "Extrovert",
@@ -307,4 +300,34 @@ export const SEASON_2_NEGATIVE_MODIFIERS: Season2PersonalModifier[] = [
 	{ id: "unlucky", name: "Unlucky", points: 1, effects: ["Your bad luck can sometimes have dire consequences"] },
 ];
 
-export const season2ModifierIcon = (id: string) => `/images/season-2/modifiers/${id}.webp`;
+const icon = (id: string) => `/images/season-2/modifiers/${id}.webp`;
+
+/** Season 1 values where the derived "was" number alone would be unclear. */
+const PREVIOUS_NOTES: Record<string, string> = {
+	"sturdy-bones": "25% fracture chance, 20% fall damage",
+	osteoporosis: "25% fracture chance, 20% fall damage",
+	youth: "10 stamina",
+	"the-tarkov-shooter": "level 25 start, 100% faster leveling",
+	incompetent: "25% slower leveling, level 30 cap",
+	exhaustion: "20% slower recovery, −10 stamina",
+	"sailors-nostalgia": "+2 regen for 30s",
+	"personality-vacuum": "20% higher trader prices",
+	safecracker: "25%, keys only",
+	bushborne: "slowdown reduced, not removed",
+	"broken-secure-container": "no stimulants",
+	allergic: "3 items",
+	"third-leg": "1% slower movement",
+};
+
+export const SEASON_2_MODIFIERS: SeasonModifierSet = {
+	seasonId: "season-2",
+	source: { label: "Battlestate Games Season 2 modifier poster" },
+	note: "Modifier values may be adjusted before the start of the season for balancing purposes.",
+	modifiers: [
+		...GLOBAL.map((entry) => ({ ...entry, kind: "global" as const, icon: icon(entry.id) })),
+		...personal("positive", POSITIVE, icon),
+		...personal("negative", NEGATIVE, icon),
+	].map((modifier) =>
+		PREVIOUS_NOTES[modifier.id] ? { ...modifier, previousNote: PREVIOUS_NOTES[modifier.id] } : modifier,
+	),
+};

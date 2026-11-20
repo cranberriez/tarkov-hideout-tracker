@@ -61,6 +61,12 @@
 	--untar-strong: #2b78d9;
 	--untar-ink: #e9e7e1;
 	--untar-surface: #141c24;
+	/* Season 1 (KORD Breach): the KORD profile yellow (profile-colors.ts) and a dark warm backdrop in every theme. */
+	--kord: #fbbf24;
+	--kord-surface: #17140c;
+	/* "New" badge on seasonal modifiers: fixed black chip with white text in every theme. */
+	--new-badge: #000000;
+	--new-badge-foreground: #ffffff;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -201,6 +207,10 @@
 	--color-untar-strong: var(--untar-strong);
 	--color-untar-ink: var(--untar-ink);
 	--color-untar-surface: var(--untar-surface);
+	--color-kord: var(--kord);
+	--color-kord-surface: var(--kord-surface);
+	--color-new-badge: var(--new-badge);
+	--color-new-badge-foreground: var(--new-badge-foreground);
 	--color-acquisition-craft: var(--acquisition-craft);
 	--color-acquisition-barter: var(--acquisition-barter);
 	--color-acquisition-trader: var(--acquisition-trader);
