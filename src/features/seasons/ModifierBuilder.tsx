@@ -230,9 +230,10 @@ export function SelectableCard({
 	const hard = builder?.conflicts?.mode === "hard";
 	// Hard rules lock out unpicked cards; a picked one stays removable even if a shared link conflicts.
 	const blocked = hard && !checked && conflicts.length > 0;
-	// Warnings sit only on unpicked cards that the current picks rule out, never on the picks themselves.
-	const warning =
-		builder && !checked && conflicts.length > 0 ? conflictWarning(conflicts, builder.modifiers, hard) : null;
+	// Warns about other picks only: a lone pick stays clean, while both cards of a picked conflicting pair warn.
+	const warning = builder && conflicts.length > 0 ? conflictWarning(conflicts, builder.modifiers, hard) : null;
+	// Unpicked conflicting cards fade their tint (overrides the caller's gradient via tailwind-merge).
+	const cautioned = !hard && !checked && conflicts.length > 0;
 	return (
 		<li className="flex">
 			<button
@@ -253,6 +254,12 @@ export function SelectableCard({
 									: "hover:shadow-[0_0_14px_color-mix(in_oklab,var(--danger)_28%,transparent)]",
 							),
 					checked && (kind === "positive" ? "ring-1 ring-success/60" : "ring-1 ring-danger/60"),
+					// Hard block: a grayed-out tint over the first 10%. Soft warning: 60% fainter tint over 30%.
+					blocked &&
+						(kind === "positive"
+							? "from-[color-mix(in_oklab,color-mix(in_oklab,var(--success)_35%,var(--muted-foreground))_12%,transparent)] to-10%"
+							: "from-[color-mix(in_oklab,color-mix(in_oklab,var(--danger)_35%,var(--muted-foreground))_12%,transparent)] to-10%"),
+					cautioned && (kind === "positive" ? "from-success/5 to-30%" : "from-danger/5 to-30%"),
 				)}
 			>
 				{/* Blocked cards drain to gray; the warning below keeps its color. */}
