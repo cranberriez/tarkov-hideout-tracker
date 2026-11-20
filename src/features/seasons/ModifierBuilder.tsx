@@ -29,6 +29,7 @@ import {
 } from "./modifiers/builder";
 import { formatPoints, type IncompatibilityMode, type ModifierIncompatibilities } from "./modifiers/types";
 import { BuildScreenshotButton } from "./BuildScreenshot";
+import { BuildPresetsButton } from "./BuildPresets";
 import { SeasonViewOptions } from "./SeasonChanges";
 
 /** Serializable personal modifier facts the builder, share link and screenshot need. */
@@ -40,7 +41,13 @@ export type BuilderModifier = {
 	icon?: string;
 };
 
-type Selection = { selected: ReadonlySet<string>; toggle: (id: string) => void; reset: () => void };
+type Selection = {
+	selected: ReadonlySet<string>;
+	toggle: (id: string) => void;
+	reset: () => void;
+	/** Replaces the selection and makes it the saved build (leaving any shared view). */
+	load: (ids: Iterable<string>) => void;
+};
 /** Set while viewing someone else's `?b=` link: edits stay in the URL and never overwrite the saved build. */
 type SharedView = { backToMine: () => void; saveAsMine: () => void };
 type Builder = {
@@ -176,6 +183,12 @@ export function ModifierBuilderProvider({
 					commit(next);
 				},
 				reset: () => commit(new Set()),
+				load: (picks) => {
+					const next = new Set(picks);
+					writeBuild(encodeBuild(next, shareOrder));
+					savePicks(seasonId, serializePicks(next, ids));
+					setViewingShared(false);
+				},
 			},
 		};
 	}, [modifiers, conflicts, seasonLabel, selected, ids, seasonId, shareOrder, viewingShared]);
@@ -487,6 +500,7 @@ export function ModifierBuilderBar() {
 							<BuildScreenshotButton />
 						</>
 					)}
+					<BuildPresetsButton />
 				</div>
 			</div>
 			{/* View options live in the full banner only; hidden once the bar pins to the top. */}
