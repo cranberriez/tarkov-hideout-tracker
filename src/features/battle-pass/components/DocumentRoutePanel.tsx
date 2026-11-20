@@ -76,7 +76,7 @@ export function DocumentRoutePanel({
 						aria-labelledby="route-config-heading"
 						className={cn(
 							"space-y-6 rounded-lg p-4",
-							ready && incompleteCount === 0 ? "bg-surface-raised/40" : "bg-brand/[0.07]",
+							(ready && incompleteCount === 0) || calculating ? "bg-surface-raised/40" : "bg-brand/[0.07]",
 						)}
 					>
 						<div className="flex flex-wrap items-center justify-between gap-2">

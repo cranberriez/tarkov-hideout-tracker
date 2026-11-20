@@ -37,9 +37,21 @@ export function GatheringTargetPicker() {
 	if (baselineCents === null || !entries?.length) {
 		if (target.calculating || target.error)
 			return (
-				<p role="status" className="text-xs text-muted-foreground">
-					{target.error ?? "Calculating gathering options…"}
-				</p>
+				<section className="w-full space-y-3" aria-busy={!target.error || undefined}>
+					<h4 className="text-base font-semibold">Gathering target</h4>
+					{target.error ? (
+						<p role="status" className="text-xs text-warning">
+							{target.error}
+						</p>
+					) : (
+						// Rows hold the list's space so it does not push the sections below down when it arrives.
+						<div className="space-y-2" role="status" aria-label="Calculating gathering options">
+							{[0, 1, 2, 3].map((row) => (
+								<div key={row} className="h-[52px] animate-pulse rounded-lg bg-surface-raised/60" />
+							))}
+						</div>
+					)}
+				</section>
 			);
 		return null;
 	}
@@ -89,20 +101,17 @@ export function GatheringTargetPicker() {
 				aria-checked={active}
 				onClick={() => (entry ? target.selectEntry(entry.routeIndex, entry.gathered) : target.selectEntry(0, 0))}
 				className={cn(
-					"group flex w-full items-start gap-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
+					"group flex flex-wrap items-start gap-x-3 gap-y-1 rounded-lg px-3 py-2.5 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand sm:col-span-full sm:grid sm:items-center sm:[grid-template-columns:subgrid]",
 					liftedControl,
 					active &&
 						"bg-[color-mix(in_oklab,var(--brand)_4%,var(--surface-raised))] hover:bg-[color-mix(in_oklab,var(--brand)_7%,var(--surface-raised))]",
 				)}
 			>
 				<Check
-					className={cn(
-						"mt-0.5 size-4 shrink-0",
-						active ? "text-brand" : "text-muted-foreground group-hover:text-foreground",
-					)}
+					className={cn("size-4 shrink-0", active ? "text-brand" : "text-muted-foreground group-hover:text-foreground")}
 					aria-hidden
 				/>
-				<span className="min-w-0 flex-1 space-y-1">
+				<span className="min-w-0 space-y-0.5 max-sm:basis-[calc(100%-1.75rem)]">
 					<span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
 						{entry && entry.gathered > 0 ? `Gather ${entry.gathered}` : "No gathering"}
 						{alternate && (
@@ -114,18 +123,6 @@ export function GatheringTargetPicker() {
 							</span>
 						)}
 					</span>
-					<span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 tabular-nums">
-						<span>
-							Pay {usd(entry ? entry.cashCents : baselineCents)}
-							{entry && <span className="text-success"> · save {usd(entry.savingsCents)}</span>}
-						</span>
-						{coinsLeft !== null && (
-							<span className="inline-flex items-center gap-0.5 text-muted-foreground">
-								<TarCoin />
-								{coinsLeft.toLocaleString()} left
-							</span>
-						)}
-					</span>
 					{entry && entry.gathered > 0 && (
 						<span className="block text-muted-foreground">
 							{entry.windows.map((row) => `${row.profileLabel} ${row.quantity}`).join(", ") +
@@ -133,7 +130,17 @@ export function GatheringTargetPicker() {
 						</span>
 					)}
 					{alternate && entry.swaps.length > 0 && (
-						<span className="mt-1.5 block text-muted-foreground">{swapText(entry.swaps)}</span>
+						<span className="block text-muted-foreground">{swapText(entry.swaps)}</span>
+					)}
+				</span>
+				<span className="tabular-nums max-sm:ml-7">Pay {usd(entry ? entry.cashCents : baselineCents)}</span>
+				<span className="tabular-nums text-success">{entry ? `save ${usd(entry.savingsCents)}` : ""}</span>
+				<span className="inline-flex items-center gap-0.5 tabular-nums text-muted-foreground sm:justify-end">
+					{coinsLeft !== null && (
+						<>
+							<TarCoin />
+							{coinsLeft.toLocaleString()} left
+						</>
 					)}
 				</span>
 			</button>
@@ -155,7 +162,7 @@ export function GatheringTargetPicker() {
 				</p>
 			)}
 			<div
-				className={cn("grid grid-cols-2 gap-2 lg:grid-cols-3", syncValue)}
+				className={cn("grid gap-2 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto]", syncValue)}
 				role="radiogroup"
 				aria-label="Gathering target"
 			>
@@ -166,7 +173,7 @@ export function GatheringTargetPicker() {
 						role="radio"
 						aria-checked
 						aria-disabled
-						className="flex w-full items-start gap-2 rounded-lg bg-warning/[0.07] p-3 text-left text-xs"
+						className="flex w-full items-start gap-2 rounded-lg bg-warning/[0.07] p-3 text-left text-xs sm:col-span-full"
 					>
 						<CircleCheck className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
 						<span className="min-w-0 space-y-1">
@@ -189,7 +196,7 @@ export function GatheringTargetPicker() {
 						aria-expanded={more}
 						onClick={() => setMore(!more)}
 						className={cn(
-							"h-8 self-center justify-self-start rounded-md px-3 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand",
+							"h-8 justify-self-start rounded-md px-3 sm:col-span-full text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-brand",
 							liftedControl,
 						)}
 					>
