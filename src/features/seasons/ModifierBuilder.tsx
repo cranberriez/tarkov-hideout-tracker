@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, useMemo, useState, type ReactNode } from "react";
+import { createContext, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { builderTotals } from "./modifiers/builder";
@@ -104,13 +104,30 @@ export function SelectableCard({
 export function ModifierBuilderBar() {
 	const selection = use(SelectionContext);
 	const points = use(PointsContext);
+	const bar = useRef<HTMLDivElement>(null);
+	const [stuck, setStuck] = useState(false);
+	useEffect(() => {
+		const sync = () => setStuck(!!bar.current && bar.current.getBoundingClientRect().top <= 0);
+		sync();
+		window.addEventListener("scroll", sync, { passive: true });
+		window.addEventListener("resize", sync);
+		return () => {
+			window.removeEventListener("scroll", sync);
+			window.removeEventListener("resize", sync);
+		};
+	}, []);
 	if (!selection) return null;
 	const totals = builderTotals(selection.selected, points);
 	return (
 		<div
+			ref={bar}
 			role="status"
 			aria-live="polite"
-			className="sticky top-2 z-20 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg bg-card/95 px-4 py-2.5 text-sm shadow-lg backdrop-blur"
+			className={cn(
+				"sticky top-0 z-20 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg bg-card/95 px-4 py-2.5 text-sm shadow-lg backdrop-blur",
+				// Pinned to the top edge: square top corners, thin border on the sides and bottom only.
+				stuck && "rounded-t-none border-x border-b border-border",
+			)}
 		>
 			<span className="font-semibold">Your build</span>
 			<span className="text-foreground/85">
