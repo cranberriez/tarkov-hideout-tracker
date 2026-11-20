@@ -1,6 +1,16 @@
 "use client";
 
-import { createContext, use, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+	createContext,
+	use,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+	type ReactNode,
+} from "react";
 import { Check, Link2, RotateCcw, Save, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +24,7 @@ import {
 } from "./modifiers/builder";
 import { formatPoints } from "./modifiers/types";
 import { BuildScreenshotButton } from "./BuildScreenshot";
+import { SeasonViewOptions } from "./SeasonChanges";
 
 /** Serializable personal modifier facts the builder, share link and screenshot need. */
 export type BuilderModifier = {
@@ -273,7 +284,23 @@ export function PointsToggleChip({
 export function ModifierBuilderBar() {
 	const builder = use(BuilderContext);
 	const bar = useRef<HTMLDivElement>(null);
+	const unpinned = useRef({ height: 0, margin: 0 });
 	const [stuck, setStuck] = useState(false);
+	/**
+	 * While pinned, the bottom margin grows by the height lost from hiding view options, so content
+	 * below doesn't jump. Set on the node before paint; skipped if the page loads already pinned.
+	 */
+	useLayoutEffect(() => {
+		const element = bar.current;
+		if (!element) return;
+		if (stuck) {
+			const { height, margin } = unpinned.current;
+			if (height) element.style.marginBottom = `${margin + Math.max(0, height - element.offsetHeight)}px`;
+		} else {
+			element.style.marginBottom = "";
+			unpinned.current = { height: element.offsetHeight, margin: parseFloat(getComputedStyle(element).marginBottom) };
+		}
+	}, [stuck]);
 	useEffect(() => {
 		const sync = () => setStuck(!!bar.current && bar.current.getBoundingClientRect().top <= 0);
 		sync();
@@ -360,6 +387,12 @@ export function ModifierBuilderBar() {
 					<ShareButton />
 					<BuildScreenshotButton />
 				</>
+			)}
+			{/* View options live in the full banner only; hidden once the bar pins to the top. */}
+			{!stuck && (
+				<div className="basis-full pt-1">
+					<SeasonViewOptions />
+				</div>
 			)}
 		</div>
 	);

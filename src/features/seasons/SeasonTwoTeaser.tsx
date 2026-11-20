@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { SEASONS } from "@/lib/cfg/seasons";
-import { SeasonChangesToggle } from "./SeasonChanges";
 import { useCurrentSeason } from "./useCurrentSeason";
 
 /** Hotlinked from Battlestate's X posts; nothing is self-hosted. A broken link hides its image. */
@@ -85,9 +84,6 @@ export function SeasonTwoTeaser() {
 							/>
 						</a>
 					))}
-				</div>
-				<div className="flex flex-wrap items-center gap-2">
-					<SeasonChangesToggle />
 				</div>
 			</div>
 			<RemoteImage src={BANNER} alt="UNTAR Control key art" className="size-full max-h-80 object-cover lg:max-h-none" />

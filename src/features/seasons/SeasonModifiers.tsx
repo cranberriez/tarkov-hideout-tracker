@@ -9,7 +9,7 @@ import {
 	SelectableCard,
 	type BuilderModifier,
 } from "./ModifierBuilder";
-import { ChangeChip, ChangeRow } from "./SeasonChanges";
+import { ChangeChip, ChangeRow, SeasonView } from "./SeasonChanges";
 import {
 	SEASON_MODIFIERS,
 	formatPoints,
@@ -54,11 +54,11 @@ function Chip({ className, label, children }: { className: string; label?: strin
 	);
 }
 
-function ModifierIcon({ modifier, size }: { modifier: SeasonModifier; size: number }) {
+/** `className` sizes the icon instead of the inline `size` style (for responsive or variant sizing). */
+function ModifierIcon({ modifier, size, className }: { modifier: SeasonModifier; size: number; className?: string }) {
+	const style = className ? undefined : { width: size, height: size };
 	if (!modifier.icon)
-		return (
-			<span aria-hidden className="shrink-0 rounded-md bg-surface-raised/40" style={{ width: size, height: size }} />
-		);
+		return <span aria-hidden className={cn("shrink-0 rounded-md bg-surface-raised/40", className)} style={style} />;
 	return (
 		<Image
 			src={modifier.icon}
@@ -66,8 +66,8 @@ function ModifierIcon({ modifier, size }: { modifier: SeasonModifier; size: numb
 			width={size}
 			height={size}
 			unoptimized
-			className="shrink-0 opacity-90"
-			style={{ width: size, height: size }}
+			className={cn("shrink-0 opacity-90", className)}
+			style={style}
 		/>
 	);
 }
@@ -119,7 +119,7 @@ function ModifierCard({ seasonId, modifier }: { seasonId: SeasonId; modifier: Se
 	const content = (
 		<>
 			<div className="flex gap-3">
-				<ModifierIcon modifier={modifier} size={48} />
+				<ModifierIcon modifier={modifier} size={48} className="size-12 group-data-compact/season-view:size-8" />
 				<div className="min-w-0 flex-1 space-y-1">
 					<div className="flex items-start gap-2">
 						<h3 className="min-w-0 flex-1 pt-1 text-sm font-semibold uppercase tracking-wide">{modifier.name}</h3>
@@ -137,8 +137,8 @@ function ModifierCard({ seasonId, modifier }: { seasonId: SeasonId; modifier: Se
 							</div>
 						)}
 					</div>
-					{/* foreground/85 over the 12% tint keeps descriptions at WCAG AAA (≥ 7:1) in every theme. */}
-					<ul className="list-disc space-y-0.5 pl-4 text-sm leading-5 text-foreground/85">
+					{/* foreground/85 over the 12% tint keeps descriptions at WCAG AAA (≥ 7:1) in every theme. Hidden in compact view. */}
+					<ul className="list-disc space-y-0.5 pl-4 text-sm leading-5 text-foreground/85 group-data-compact/season-view:hidden">
 						{modifier.effects.map((effect) => (
 							<li key={effect}>{effect}</li>
 						))}
@@ -179,6 +179,7 @@ function ModifierSection({ seasonId, kind }: { seasonId: SeasonId; kind: Modifie
 				</h2>
 				<p className="text-xs text-muted-foreground">{caption}</p>
 			</div>
+			{/* Same columns in compact view, so each card keeps its position when toggling. */}
 			<ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 				{modifiers.map((modifier) => (
 					<ModifierCard key={modifier.id} seasonId={seasonId} modifier={modifier} />
@@ -258,8 +259,10 @@ export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 				seasonLabel={seasonLabel}
 			>
 				<ModifierBuilderBar />
-				<ModifierSection seasonId={seasonId} kind="positive" />
-				<ModifierSection seasonId={seasonId} kind="negative" />
+				<SeasonView className="space-y-8">
+					<ModifierSection seasonId={seasonId} kind="positive" />
+					<ModifierSection seasonId={seasonId} kind="negative" />
+				</SeasonView>
 			</ModifierBuilderProvider>
 			<p className="rounded-lg bg-card px-4 py-3 text-sm text-muted-foreground">
 				{set.note} You start with 0 points: negatives grant points that positives spend. Source:{" "}
