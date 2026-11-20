@@ -12,7 +12,6 @@ import { TarCoin } from "./ui/TarCoin";
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
-const sign = (value: number) => (value > 0 ? "+" : value < 0 ? "−" : "");
 const tileName = (tile: Tile) => {
 	const coins = rewardTarCoins(tile);
 	return coins > 0 ? `${tile.displayName} ×${coins}` : tile.displayName;
@@ -21,7 +20,7 @@ const names = (tiles: Tile[]) => tiles.map(tileName).join(" and ");
 /** Legend text for an alternate route: per page, what it skips and what it claims instead. */
 const swapText = (swaps: RouteEntry["swaps"]) =>
 	swaps
-		.map((swap) => `page ${swap.page} ${swap.skip.length ? `${names(swap.skip)} → ` : "+ "}${names(swap.claim)}`)
+		.map((swap) => `Pg.${swap.page}: ${swap.skip.length ? `${names(swap.skip)} → ` : "+ "}${names(swap.claim)}`)
 		.join("; ");
 const same = (a: { routeIndex: number; gathered: number } | undefined, b: { routeIndex: number; gathered: number }) =>
 	!!a && a.routeIndex === b.routeIndex && a.gathered === b.gathered;
@@ -80,7 +79,7 @@ export function GatheringTargetPicker() {
 		// A saved target past the season end stays the choice; the plan gathers what fits.
 		const active = entry ? same(activeEntry, entry) && !pastSeason : !activeEntry;
 		const Check = active ? CircleCheck : Circle;
-		const versus = entry?.versus;
+		const coinsLeft = entry ? entry.tarCoinsLeft : target.baselineTarCoinsLeft;
 		const alternate = !!entry && entry.routeIndex > 0;
 		return (
 			<button
@@ -103,7 +102,7 @@ export function GatheringTargetPicker() {
 					)}
 					aria-hidden
 				/>
-				<span className="min-w-0 space-y-1">
+				<span className="min-w-0 flex-1 space-y-1">
 					<span className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
 						{entry && entry.gathered > 0 ? `Gather ${entry.gathered}` : "No gathering"}
 						{alternate && (
@@ -115,48 +114,26 @@ export function GatheringTargetPicker() {
 							</span>
 						)}
 					</span>
-					<span className="block tabular-nums">
-						Pay {usd(entry ? entry.cashCents : baselineCents)}
-						{entry && <span className="text-success"> · save {usd(entry.savingsCents)}</span>}
+					<span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 tabular-nums">
+						<span>
+							Pay {usd(entry ? entry.cashCents : baselineCents)}
+							{entry && <span className="text-success"> · save {usd(entry.savingsCents)}</span>}
+						</span>
+						{coinsLeft !== null && (
+							<span className="inline-flex items-center gap-0.5 text-muted-foreground">
+								<TarCoin />
+								{coinsLeft.toLocaleString()} left
+							</span>
+						)}
 					</span>
-					{versus && (
-						<span className="flex flex-wrap items-center gap-x-1.5 tabular-nums text-muted-foreground">
-							{versus.cashDeltaCents !== 0 && (
-								<span>
-									{sign(versus.cashDeltaCents)}
-									{usd(Math.abs(versus.cashDeltaCents))}
-								</span>
-							)}
-							{versus.gatheredDelta !== 0 && (
-								<span>
-									{sign(versus.gatheredDelta)}
-									{Math.abs(versus.gatheredDelta)} {Math.abs(versus.gatheredDelta) === 1 ? "doc" : "docs"}
-								</span>
-							)}
-							{versus.tarCoinsLeftDelta !== 0 && (
-								<span className="inline-flex items-center gap-0.5">
-									keeps {Math.abs(versus.tarCoinsLeftDelta).toLocaleString()}
-									<TarCoin />
-									<span className={cn(versus.tarCoinsLeftDelta > 0 && "text-success")}>
-										{versus.tarCoinsLeftDelta > 0 ? "more" : "fewer"}
-									</span>
-								</span>
-							)}
-						</span>
-					)}
-					{!alternate && (
-						<span className="block text-muted-foreground">
-							{entry && entry.gathered > 0
-								? entry.windows.map((row) => `${row.profileLabel} ${row.quantity}`).join(", ") +
-									` · ${days(entry.parallelWindows)}`
-								: "Buy every missing document"}
-						</span>
-					)}
-					{alternate && entry.gathered > 0 && (
+					{entry && entry.gathered > 0 && (
 						<span className="block text-muted-foreground">
 							{entry.windows.map((row) => `${row.profileLabel} ${row.quantity}`).join(", ") +
 								` · ${days(entry.parallelWindows)}`}
 						</span>
+					)}
+					{alternate && entry.swaps.length > 0 && (
+						<span className="mt-1.5 block text-muted-foreground">{swapText(entry.swaps)}</span>
 					)}
 				</span>
 			</button>
@@ -164,25 +141,13 @@ export function GatheringTargetPicker() {
 	};
 	return (
 		<section data-syncing={target.stale || undefined} className="group/sync w-full space-y-3">
-			<div className="space-y-1">
-				<h4 className="text-sm font-semibold">Gathering target</h4>
-				<p className="text-xs leading-relaxed text-muted-foreground">
-					Each option is the next drop in what you pay, on the fewest-documents route or an alternative that does
-					better. The step plan follows your choice. Daily caps: PVE {GATHERING_DAILY_CAPS.PVE}, PVP{" "}
-					{GATHERING_DAILY_CAPS.PVP}, Seasonal {GATHERING_DAILY_CAPS.seasonal}.
-					{Number.isFinite(deadline.daysLeft) &&
-						` Options gather only what fits in the ${days(deadline.daysLeft)} left.`}
+			<div className="space-y-1.5">
+				<h4 className="text-base font-semibold">Gathering target</h4>
+				<p className="text-xs text-muted-foreground">
+					Daily caps: PVE {GATHERING_DAILY_CAPS.PVE}, PVP {GATHERING_DAILY_CAPS.PVP}, Seasonal{" "}
+					{GATHERING_DAILY_CAPS.seasonal}
+					{Number.isFinite(deadline.daysLeft) && ` · ${days(deadline.daysLeft)} left`}
 				</p>
-				{altRoutes.length > 0 && (
-					<ul className="space-y-0.5 text-xs leading-relaxed text-muted-foreground">
-						{altRoutes.map((routeIndex) => (
-							<li key={routeIndex}>
-								<strong className="font-medium text-foreground">Alt {altNumber(routeIndex)}:</strong>{" "}
-								{swapText(entries.find((entry) => entry.routeIndex === routeIndex)!.swaps)}
-							</li>
-						))}
-					</ul>
-				)}
 			</div>
 			{target.error && (
 				<p role="status" className="text-xs text-warning">
@@ -190,7 +155,7 @@ export function GatheringTargetPicker() {
 				</p>
 			)}
 			<div
-				className={cn("grid grid-cols-2 gap-2 lg:grid-cols-4", syncValue)}
+				className={cn("grid grid-cols-2 gap-2 lg:grid-cols-3", syncValue)}
 				role="radiogroup"
 				aria-label="Gathering target"
 			>

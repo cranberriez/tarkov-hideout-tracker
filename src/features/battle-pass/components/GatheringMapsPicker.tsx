@@ -122,12 +122,12 @@ export function GatheringMapsPicker() {
 			data-syncing={gathering.stale || gathering.calculating || undefined}
 			className="group/sync w-full space-y-3"
 		>
-			<div className="space-y-1">
-				<h4 className="text-sm font-semibold">Maps to farm</h4>
-				<p className="text-xs leading-relaxed text-muted-foreground">
-					Pick the maps you want to farm. Document types that spawn on none of them are bought as classified instead.
-				</p>
-			</div>
+			<h5
+				className="text-sm font-semibold"
+				title="Document types that spawn on none of the chosen maps are bought as classified instead."
+			>
+				Maps to farm
+			</h5>
 			<div
 				className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
 				role="group"
