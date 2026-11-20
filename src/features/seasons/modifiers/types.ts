@@ -41,7 +41,29 @@ export type SeasonModifierSet = {
 	 */
 	shareOrder: readonly string[];
 	modifiers: SeasonModifier[];
+	/** Personal modifiers that can't be combined; omitted when the season has none. */
+	incompatibilities?: ModifierIncompatibilities;
 };
+
+/**
+ * - `hard`: the game refuses the combination, so the builder blocks picking a conflicting card.
+ * - `soft`: unconfirmed rules, so the builder only warns and any combination can still be picked.
+ */
+export type IncompatibilityMode = "hard" | "soft";
+/**
+ * Where a rule comes from: `confirmed` in the live game, `carried` over from an earlier season and
+ * likely to repeat, or `speculative` (our guess). Only soft seasons should use carried/speculative.
+ */
+export type IncompatibilityBasis = "confirmed" | "carried" | "speculative";
+/** At most one of `ids` may be picked (a pair is the common case). */
+export type IncompatibilityRule = { ids: readonly string[]; basis: IncompatibilityBasis };
+export type ModifierIncompatibilities = { mode: IncompatibilityMode; rules: IncompatibilityRule[] };
+
+/** `id` conflicts with each of `others` (but `others` may combine with each other). */
+export const excludes = (id: string, others: readonly string[], basis: IncompatibilityBasis): IncompatibilityRule[] =>
+	others.map((other) => ({ ids: [id, other], basis }));
+/** Every listed ID conflicts with every other one: only one can be picked. */
+export const oneOf = (ids: readonly string[], basis: IncompatibilityBasis): IncompatibilityRule[] => [{ ids, basis }];
 
 /** Builds personal modifiers of one kind from compact entries. */
 export function personal(

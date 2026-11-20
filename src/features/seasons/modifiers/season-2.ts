@@ -3,7 +3,7 @@
  * Icons are cropped from the poster into public/images/season-2/modifiers/<id>.webp.
  * See ./types.ts for ID, sign and comparison rules.
  */
-import { personal, type SeasonModifierSet } from "./types";
+import { excludes, oneOf, personal, type IncompatibilityRule, type SeasonModifierSet } from "./types";
 
 type Entry = { id: string; name: string; effects: string[] };
 type PersonalEntry = Entry & { points: number };
@@ -319,6 +319,36 @@ const PREVIOUS_NOTES: Record<string, string> = {
 	"third-leg": "1% slower movement",
 };
 
+/**
+ * Not confirmed for Season 2, so the builder only warns. `carried` copies Season 1's in-game
+ * exclusions (likely to repeat); `speculative` are our guesses for new modifiers.
+ */
+const INCOMPATIBLE: IncompatibilityRule[] = [
+	...excludes("average", ["prodigy", "hercules", "the-tarkov-shooter", "incompetent"], "carried"),
+	...excludes("incompetent", ["prodigy"], "carried"),
+	...oneOf(["polyphagia", "youth", "chronic-fatigue-syndrome"], "carried"),
+	...excludes("youth", ["exhaustion"], "carried"),
+	...excludes("sprinter", ["third-leg", "marathon-runner"], "carried"),
+	...excludes("third-leg", ["personality-vacuum"], "carried"),
+	...oneOf(["lucky", "unlucky"], "carried"),
+	...oneOf(["hemophilia", "thrombophilia"], "carried"),
+	...oneOf(["polydipsia", "hypodipsia"], "carried"),
+	...oneOf(["osteoporosis", "sturdy-bones"], "carried"),
+
+	...oneOf(["introvert", "extrovert"], "speculative"),
+	// Kappa Protocol + Broken Secure Container was allowed in S1.
+	...oneOf(["enhanced-secure-container", "broken-secure-container"], "speculative"),
+	...excludes("coagulopathy", ["thrombophilia"], "speculative"),
+	// Average fixes every skill at 25 (S1 also blocked other skill starts and speed changes).
+	...excludes("average", ["tap-rack-roll", "fast-crafting", "kleptomaniac", "introvert", "extrovert"], "speculative"),
+	...excludes("incompetent", ["introvert"], "speculative"),
+	...excludes("heavyweight", ["sprinter"], "speculative"),
+	...oneOf(["refs-builders", "advanced-hideout"], "speculative"),
+	...excludes("kleptomaniac", ["three-fingered", "shaky-aim"], "speculative"),
+	...excludes("shaky-aim", ["the-tarkov-shooter"], "speculative"),
+	...excludes("zero-to-hero", ["kappa-protocol", "enhanced-secure-container"], "speculative"),
+];
+
 export const SEASON_2_MODIFIERS: SeasonModifierSet = {
 	seasonId: "season-2",
 	source: { label: "Battlestate Games Season 2 modifier poster" },
@@ -382,6 +412,7 @@ export const SEASON_2_MODIFIERS: SeasonModifierSet = {
 		"third-leg",
 		"unlucky",
 	],
+	incompatibilities: { mode: "soft", rules: INCOMPATIBLE },
 	modifiers: [
 		...GLOBAL.map((entry) => ({ ...entry, kind: "global" as const, icon: icon(entry.id) })),
 		...personal("positive", POSITIVE, icon),

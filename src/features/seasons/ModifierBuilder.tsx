@@ -11,18 +11,23 @@ import {
 	useSyncExternalStore,
 	type ReactNode,
 } from "react";
-import { Check, Link2, RotateCcw, Save, Undo2 } from "lucide-react";
+import { Check, Link2, RotateCcw, Save, TriangleAlert, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
 	BUILD_PARAM,
 	builderTotals,
+	conflictIndex,
+	conflictsWith,
 	decodeBuild,
 	encodeBuild,
 	parsePicks,
 	PICKS_PARAM,
+	selectedConflictCount,
 	serializePicks,
+	type Conflict,
+	type ConflictIndex,
 } from "./modifiers/builder";
-import { formatPoints } from "./modifiers/types";
+import { formatPoints, type IncompatibilityMode, type ModifierIncompatibilities } from "./modifiers/types";
 import { BuildScreenshotButton } from "./BuildScreenshot";
 import { SeasonViewOptions } from "./SeasonChanges";
 
@@ -44,6 +49,8 @@ type Builder = {
 	seasonId: string;
 	seasonLabel: string;
 	shared: SharedView | null;
+	/** Null when the season defines no incompatibilities. */
+	conflicts: { mode: IncompatibilityMode; index: ConflictIndex } | null;
 };
 const BuilderContext = createContext<Builder | null>(null);
 
@@ -100,14 +107,20 @@ export function ModifierBuilderProvider({
 	modifiers,
 	shareOrder,
 	seasonLabel,
+	incompatibilities,
 	children,
 }: {
 	seasonId: string;
 	modifiers: BuilderModifier[];
 	shareOrder: readonly string[];
 	seasonLabel: string;
+	incompatibilities?: ModifierIncompatibilities;
 	children: ReactNode;
 }) {
+	const conflicts = useMemo(
+		() => (incompatibilities ? { mode: incompatibilities.mode, index: conflictIndex(incompatibilities.rules) } : null),
+		[incompatibilities],
+	);
 	const ids = useMemo(() => modifiers.map((modifier) => modifier.id), [modifiers]);
 	const code = useSyncExternalStore(subscribeToBuild, readBuild, () => "");
 	const selected = useMemo(() => decodeBuild(code, shareOrder), [code, shareOrder]);
@@ -135,6 +148,7 @@ export function ModifierBuilderProvider({
 		};
 		return {
 			modifiers,
+			conflicts,
 			seasonId,
 			seasonLabel,
 			shared: viewingShared
@@ -154,13 +168,17 @@ export function ModifierBuilderProvider({
 				toggle: (id) => {
 					// Read the live URL, not the render snapshot, so rapid toggles never drop one.
 					const next = decodeBuild(readBuild(), shareOrder);
-					if (!next.delete(id)) next.add(id);
+					if (!next.delete(id)) {
+						// Hard exclusions block adding; removing always works (shared links may hold conflicts).
+						if (conflicts?.mode === "hard" && conflictsWith(id, next, conflicts.index).length > 0) return;
+						next.add(id);
+					}
 					commit(next);
 				},
 				reset: () => commit(new Set()),
 			},
 		};
-	}, [modifiers, seasonLabel, selected, ids, seasonId, shareOrder, viewingShared]);
+	}, [modifiers, conflicts, seasonLabel, selected, ids, seasonId, shareOrder, viewingShared]);
 	return <BuilderContext value={builder}>{children}</BuilderContext>;
 }
 
@@ -183,7 +201,7 @@ function ShareButton() {
 					window.prompt("Copy this link", location.href);
 				}
 			}}
-			className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70"
+			className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-3 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70"
 		>
 			{copied ? <Check aria-hidden className="size-3.5 text-success" /> : <Link2 aria-hidden className="size-3.5" />}
 			{copied ? "Copied" : "Share"}
@@ -205,28 +223,72 @@ export function SelectableCard({
 	className: string;
 	children: ReactNode;
 }) {
-	const selection = use(BuilderContext)?.selection;
+	const builder = use(BuilderContext);
+	const selection = builder?.selection;
 	const checked = selection?.selected.has(id) ?? false;
+	const conflicts = builder?.conflicts ? conflictsWith(id, selection?.selected ?? [], builder.conflicts.index) : [];
+	const hard = builder?.conflicts?.mode === "hard";
+	// Hard rules lock out unpicked cards; a picked one stays removable even if a shared link conflicts.
+	const blocked = hard && !checked && conflicts.length > 0;
+	// Warnings sit only on unpicked cards that the current picks rule out, never on the picks themselves.
+	const warning =
+		builder && !checked && conflicts.length > 0 ? conflictWarning(conflicts, builder.modifiers, hard) : null;
 	return (
 		<li className="flex">
 			<button
 				type="button"
 				aria-pressed={checked}
-				aria-label={`${checked ? "Remove" : "Add"} ${name}`}
-				onClick={() => selection?.toggle(id)}
+				aria-disabled={blocked || undefined}
+				aria-label={`${blocked ? "Unavailable:" : checked ? "Remove" : "Add"} ${name}${warning ? `. ${warning}` : ""}`}
+				onClick={() => !blocked && selection?.toggle(id)}
 				className={cn(
-					"relative flex w-full cursor-pointer flex-col rounded-lg p-3 text-left transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
+					"relative flex w-full flex-col rounded-lg p-3 text-left transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
 					className,
-					kind === "positive"
-						? "hover:shadow-[0_0_14px_color-mix(in_oklab,var(--success)_28%,transparent)]"
-						: "hover:shadow-[0_0_14px_color-mix(in_oklab,var(--danger)_28%,transparent)]",
+					blocked
+						? "cursor-not-allowed"
+						: cn(
+								"cursor-pointer",
+								kind === "positive"
+									? "hover:shadow-[0_0_14px_color-mix(in_oklab,var(--success)_28%,transparent)]"
+									: "hover:shadow-[0_0_14px_color-mix(in_oklab,var(--danger)_28%,transparent)]",
+							),
 					checked && (kind === "positive" ? "ring-1 ring-success/60" : "ring-1 ring-danger/60"),
 				)}
 			>
-				{children}
+				{/* Blocked cards drain to gray; the warning below keeps its color. */}
+				<div className={cn("flex flex-1 flex-col transition-[filter,opacity]", blocked && "opacity-55 grayscale")}>
+					{children}
+				</div>
+				{warning && (
+					<p className={cn("mt-2 flex items-start gap-1.5 text-xs font-medium", hard ? "text-danger" : "text-warning")}>
+						<TriangleAlert aria-hidden className="mt-px size-3.5 shrink-0" />
+						{warning}
+					</p>
+				)}
 			</button>
 		</li>
 	);
+}
+
+const BASIS_PREFIX = {
+	confirmed: "Incompatible with",
+	carried: "Likely incompatible with",
+	speculative: "May be incompatible with",
+} as const;
+const BASIS_SUFFIX = { confirmed: "", carried: " (as in S1)", speculative: " (our guess)" } as const;
+
+/** "Incompatible with Hercules"; soft seasons get one clause per basis, strongest first. */
+function conflictWarning(conflicts: Conflict[], modifiers: BuilderModifier[], hard: boolean): string {
+	const names = (items: Conflict[]) =>
+		items.map((conflict) => modifiers.find((modifier) => modifier.id === conflict.id)?.name ?? conflict.id).join(", ");
+	if (hard) return `${BASIS_PREFIX.confirmed} ${names(conflicts)}`;
+	return (["confirmed", "carried", "speculative"] as const)
+		.map((basis) => {
+			const items = conflicts.filter((conflict) => conflict.basis === basis);
+			return items.length ? `${BASIS_PREFIX[basis]} ${names(items)}${BASIS_SUFFIX[basis]}` : null;
+		})
+		.filter(Boolean)
+		.join(". ");
 }
 
 /**
@@ -312,11 +374,12 @@ export function ModifierBuilderBar() {
 		};
 	}, []);
 	if (!builder) return null;
-	const { selection, modifiers, shared } = builder;
+	const { selection, modifiers, shared, conflicts } = builder;
 	const totals = builderTotals(
 		selection.selected,
 		Object.fromEntries(modifiers.map((modifier) => [modifier.id, modifier.points])),
 	);
+	const conflictPairs = conflicts ? selectedConflictCount(selection.selected, conflicts.index) : 0;
 	return (
 		<div
 			ref={bar}
@@ -353,41 +416,57 @@ export function ModifierBuilderBar() {
 			>
 				{totals.valid ? "Valid" : `Over budget by ${-totals.balance}`}
 			</span>
-			<span className="ml-auto text-xs text-foreground/85 tabular-nums">{totals.count} selected</span>
-			{shared ? (
-				<>
-					<button
-						type="button"
-						onClick={shared.backToMine}
-						className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-card/70"
-					>
-						<Undo2 aria-hidden className="size-3.5" />
-						Back to mine
-					</button>
-					<button
-						type="button"
-						onClick={shared.saveAsMine}
-						className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1 text-xs font-semibold text-background transition-colors hover:bg-foreground/85"
-					>
-						<Save aria-hidden className="size-3.5" />
-						Save as mine
-					</button>
-				</>
-			) : (
-				<>
-					<button
-						type="button"
-						onClick={selection.reset}
-						disabled={totals.count === 0}
-						className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70 disabled:opacity-50"
-					>
-						<RotateCcw aria-hidden className="size-3.5" />
-						Reset
-					</button>
-					<ShareButton />
-					<BuildScreenshotButton />
-				</>
+			{conflictPairs > 0 && (
+				<span
+					className={cn(
+						"inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-foreground",
+						conflicts?.mode === "hard" ? "bg-danger/18" : "bg-warning/18",
+					)}
+				>
+					<TriangleAlert aria-hidden className="size-3.5" />
+					{conflicts?.mode === "hard"
+						? `${conflictPairs} incompatible ${conflictPairs === 1 ? "pair" : "pairs"}`
+						: `${conflictPairs} possible ${conflictPairs === 1 ? "conflict" : "conflicts"}`}
+				</span>
 			)}
+			<span className="ml-auto text-xs text-foreground/85 tabular-nums">{totals.count} selected</span>
+			{/* Actions stay together as one group, spaced like the view options. */}
+			<div role="group" aria-label="Build actions" className="flex flex-wrap items-center gap-2">
+				{shared ? (
+					<>
+						<button
+							type="button"
+							onClick={shared.backToMine}
+							className="inline-flex items-center gap-1.5 rounded-md bg-card px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-card/70"
+						>
+							<Undo2 aria-hidden className="size-3.5" />
+							Back to mine
+						</button>
+						<button
+							type="button"
+							onClick={shared.saveAsMine}
+							className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1 text-xs font-semibold text-background transition-colors hover:bg-foreground/85"
+						>
+							<Save aria-hidden className="size-3.5" />
+							Save as mine
+						</button>
+					</>
+				) : (
+					<>
+						<button
+							type="button"
+							onClick={selection.reset}
+							disabled={totals.count === 0}
+							className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70 disabled:opacity-50"
+						>
+							<RotateCcw aria-hidden className="size-3.5" />
+							Reset
+						</button>
+						<ShareButton />
+						<BuildScreenshotButton />
+					</>
+				)}
+			</div>
 			{/* View options live in the full banner only; hidden once the bar pins to the top. */}
 			{!stuck && (
 				<div className="basis-full pt-1">
