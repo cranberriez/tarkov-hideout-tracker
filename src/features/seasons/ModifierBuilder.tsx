@@ -33,6 +33,27 @@ function subscribeToPicks(listener: () => void) {
 		window.removeEventListener("popstate", listener);
 	};
 }
+/**
+ * Global, profile-independent convenience copy of a season's picks so returning without `?picks=`
+ * restores the last build. Storage may be unavailable (private mode); the URL still works.
+ */
+const picksStorageKey = (seasonId: string) => `tarkov-season-picks-${seasonId}-v1`;
+function loadSavedPicks(seasonId: string) {
+	try {
+		return localStorage.getItem(picksStorageKey(seasonId)) ?? "";
+	} catch {
+		return "";
+	}
+}
+function savePicks(seasonId: string, value: string) {
+	try {
+		if (value) localStorage.setItem(picksStorageKey(seasonId), value);
+		else localStorage.removeItem(picksStorageKey(seasonId));
+	} catch {
+		// Storage unavailable: the selection still lives in the URL.
+	}
+}
+
 function writePicks(value: string) {
 	// Built by hand so the IDs' commas stay readable (URLSearchParams would encode them as %2C).
 	const others = new URLSearchParams(location.search);
@@ -47,10 +68,12 @@ function writePicks(value: string) {
  * query (read on load, replaced as it changes), so the address bar is always the share link.
  */
 export function ModifierBuilderProvider({
+	seasonId,
 	modifiers,
 	seasonLabel,
 	children,
 }: {
+	seasonId: string;
 	modifiers: BuilderModifier[];
 	seasonLabel: string;
 	children: ReactNode;
@@ -58,8 +81,18 @@ export function ModifierBuilderProvider({
 	const ids = useMemo(() => modifiers.map((modifier) => modifier.id), [modifiers]);
 	const picks = useSyncExternalStore(subscribeToPicks, readPicks, () => "");
 	const selected = useMemo(() => parsePicks(picks, ids), [picks, ids]);
-	const builder = useMemo<Builder>(
-		() => ({
+	// A link with picks wins; otherwise restore this season's last saved build into the URL.
+	useEffect(() => {
+		if (new URLSearchParams(location.search).has(PICKS_PARAM)) return;
+		const saved = serializePicks(parsePicks(loadSavedPicks(seasonId), ids), ids);
+		if (saved) writePicks(saved);
+	}, [seasonId, ids]);
+	const builder = useMemo<Builder>(() => {
+		const commit = (value: string) => {
+			writePicks(value);
+			savePicks(seasonId, value);
+		};
+		return {
 			modifiers,
 			seasonLabel,
 			selection: {
@@ -68,13 +101,12 @@ export function ModifierBuilderProvider({
 					// Read the live URL, not the render snapshot, so rapid toggles never drop one.
 					const next = parsePicks(readPicks(), ids);
 					if (!next.delete(id)) next.add(id);
-					writePicks(serializePicks(next, ids));
+					commit(serializePicks(next, ids));
 				},
-				reset: () => writePicks(""),
+				reset: () => commit(""),
 			},
-		}),
-		[modifiers, seasonLabel, selected, ids],
-	);
+		};
+	}, [modifiers, seasonLabel, selected, ids, seasonId]);
 	return <BuilderContext value={builder}>{children}</BuilderContext>;
 }
 

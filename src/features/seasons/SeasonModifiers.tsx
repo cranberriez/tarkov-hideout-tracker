@@ -251,7 +251,7 @@ export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 	return (
 		<div className="space-y-8">
 			<ModifierSection seasonId={seasonId} kind="global" />
-			<ModifierBuilderProvider modifiers={personal} seasonLabel={seasonLabel}>
+			<ModifierBuilderProvider seasonId={seasonId} modifiers={personal} seasonLabel={seasonLabel}>
 				<ModifierBuilderBar />
 				<ModifierSection seasonId={seasonId} kind="positive" />
 				<ModifierSection seasonId={seasonId} kind="negative" />

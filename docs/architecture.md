@@ -70,7 +70,9 @@ skips the navbar, seasonal banner, game-mode sync, setup and global modals on `/
 stores or data connections mount there; a slim [top row](../src/features/seasons/SeasonPageNav.tsx) links
 back to the tracker. The [modifier builder](../src/features/seasons/ModifierBuilder.tsx) keeps its
 selection only in the URL (`?picks=<id>,<id>`, stable modifier IDs in list order; unknown IDs are
-ignored), so the address bar is the share link; nothing is saved to player data. The screenshot
+ignored), so the address bar is the share link. A global per-season convenience copy in
+`localStorage` (see [user state](user-state.md)) restores the last build when the URL has no
+`picks`; a shared link wins and is only saved once edited. Nothing is saved to player data. The screenshot
 dialog renders a compact sheet of the build from the same selection.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
