@@ -64,6 +64,14 @@ Sync, News, Battle Pass and Dev stay unprefixed. Route paths below omit the pref
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
 | `/season-1`                                        | [Season 1](../src/app/season-1/page.tsx): KORD Breach hero (hotlinked key art), Battlestate's most-picked tiles and the static [modifier list](../src/features/seasons/modifiers/season-1.ts); no server reads. Modifier data rules (per-season files, stable IDs shared across seasons for comparisons, point signs) live in [types.ts](../src/features/seasons/modifiers/types.ts) |
 | `/season-2`                                        | [Season 2](../src/app/season-2/page.tsx): UNTAR Control hero (statement, KORD end date until Season 2 is current, key art hotlinked from `pbs.twimg.com` with plain `<img>`; failed images hide) and the static [modifier list](../src/features/seasons/modifiers/season-2.ts) with Season 1 changes and pick rates; linked from the KORD Battle Pass "Season ends" row; no server reads |
+
+Season pages are standalone and data-less: [HideOnSeasonPages](../src/components/core/HideOnSeasonPages.tsx)
+skips the navbar, seasonal banner, game-mode sync, setup and global modals on `/season-*`, so no player
+stores or data connections mount there; a slim [top row](../src/features/seasons/SeasonPageNav.tsx) links
+back to the tracker. The [modifier builder](../src/features/seasons/ModifierBuilder.tsx) keeps its
+selection only in the URL (`?picks=<id>,<id>`, stable modifier IDs in list order; unknown IDs are
+ignored), so the address bar is the share link; nothing is saved to player data. The screenshot
+dialog renders a compact sheet of the build from the same selection.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |

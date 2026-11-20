@@ -67,6 +67,10 @@
 	/* "New" badge on seasonal modifiers: fixed black chip with white text in every theme. */
 	--new-badge: #000000;
 	--new-badge-foreground: #ffffff;
+	/* Selected seasonal modifier points chip: solid fills with fixed black ink, kept at WCAG AAA (light theme lightens the fills). */
+	--modifier-picked-positive: var(--success);
+	--modifier-picked-negative: var(--danger);
+	--modifier-picked-foreground: #000000;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -154,6 +158,8 @@
    overlays under foreground text. Status and acquisition colors are mid-tones that tint pastel. */
 [data-theme="light"] {
 	color-scheme: light;
+	--modifier-picked-positive: #4ade80;
+	--modifier-picked-negative: #ff6568;
 	--background: oklch(0.925 0.004 286);
 	--card-bg: oklch(0.962 0.003 286);
 	--surface-raised: oklch(0.9 0.005 286);
@@ -211,6 +217,9 @@
 	--color-kord-surface: var(--kord-surface);
 	--color-new-badge: var(--new-badge);
 	--color-new-badge-foreground: var(--new-badge-foreground);
+	--color-modifier-picked-positive: var(--modifier-picked-positive);
+	--color-modifier-picked-negative: var(--modifier-picked-negative);
+	--color-modifier-picked-foreground: var(--modifier-picked-foreground);
 	--color-acquisition-craft: var(--acquisition-craft);
 	--color-acquisition-barter: var(--acquisition-barter);
 	--color-acquisition-trader: var(--acquisition-trader);

@@ -2,7 +2,13 @@ import Image from "next/image";
 import { ArrowUpRight, Users } from "lucide-react";
 import { SEASONS, type SeasonId } from "@/lib/cfg/seasons";
 import { cn } from "@/lib/utils";
-import { ModifierBuilderBar, ModifierBuilderProvider, SelectableCard } from "./ModifierBuilder";
+import {
+	ModifierBuilderBar,
+	ModifierBuilderProvider,
+	PointsToggleChip,
+	SelectableCard,
+	type BuilderModifier,
+} from "./ModifierBuilder";
 import { ChangeChip, ChangeRow } from "./SeasonChanges";
 import {
 	SEASON_MODIFIERS,
@@ -120,10 +126,13 @@ function ModifierCard({ seasonId, modifier }: { seasonId: SeasonId; modifier: Se
 						{(modifier.pickRate !== undefined || modifier.points !== undefined) && (
 							<div className="flex shrink-0 items-center gap-1.5">
 								{modifier.pickRate !== undefined && <PickRate value={modifier.pickRate} />}
-								{modifier.points !== undefined && (
-									<Chip className={cn("px-2.5 text-sm", tone.accent)} label={pointsLabel(modifier.points)}>
-										{formatPoints(modifier.points)}
-									</Chip>
+								{modifier.points !== undefined && modifier.kind !== "global" && (
+									<PointsToggleChip
+										id={modifier.id}
+										kind={modifier.kind}
+										points={formatPoints(modifier.points)}
+										label={pointsLabel(modifier.points)}
+									/>
 								)}
 							</div>
 						)}
@@ -234,13 +243,15 @@ export function MostPicked({ seasonId, title }: { seasonId: SeasonId; title: str
 /** Static modifier list for one season. No data connections. */
 export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 	const set = SEASON_MODIFIERS[seasonId];
-	const points = Object.fromEntries(
-		set.modifiers.flatMap((modifier) => (modifier.points === undefined ? [] : [[modifier.id, modifier.points]])),
+	const personal: BuilderModifier[] = set.modifiers.flatMap(({ id, name, kind, points, icon }) =>
+		kind === "global" || points === undefined ? [] : [{ id, name, kind, points, icon }],
 	);
+	const season = SEASONS.find((entry) => entry.id === seasonId)!;
+	const seasonLabel = `${seasonShort(seasonId)} · ${season.title.replace(/^Season \d+ /, "")}`;
 	return (
 		<div className="space-y-8">
 			<ModifierSection seasonId={seasonId} kind="global" />
-			<ModifierBuilderProvider points={points}>
+			<ModifierBuilderProvider modifiers={personal} seasonLabel={seasonLabel}>
 				<ModifierBuilderBar />
 				<ModifierSection seasonId={seasonId} kind="positive" />
 				<ModifierSection seasonId={seasonId} kind="negative" />

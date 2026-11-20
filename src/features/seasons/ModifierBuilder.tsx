@@ -1,35 +1,107 @@
 "use client";
 
-import { createContext, use, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { RotateCcw } from "lucide-react";
+import { createContext, use, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Check, Link2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { builderTotals } from "./modifiers/builder";
+import { builderTotals, parsePicks, PICKS_PARAM, serializePicks } from "./modifiers/builder";
 import { formatPoints } from "./modifiers/types";
+import { BuildScreenshotButton } from "./BuildScreenshot";
+
+/** Serializable personal modifier facts the builder, share link and screenshot need. */
+export type BuilderModifier = {
+	id: string;
+	name: string;
+	kind: "positive" | "negative";
+	points: number;
+	icon?: string;
+};
 
 type Selection = { selected: ReadonlySet<string>; toggle: (id: string) => void; reset: () => void };
-const SelectionContext = createContext<Selection | null>(null);
-const PointsContext = createContext<Record<string, number>>({});
+type Builder = { selection: Selection; modifiers: BuilderModifier[]; seasonLabel: string };
+const BuilderContext = createContext<Builder | null>(null);
 
-/** Personal modifier selections for one season page. Local state for now; share URLs come later. */
-export function ModifierBuilderProvider({ points, children }: { points: Record<string, number>; children: ReactNode }) {
-	const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-	const selection = useMemo<Selection>(
+export const useModifierBuilder = () => use(BuilderContext);
+
+/** The URL's `picks` query is the selection's single source of truth (and the share link). */
+const pickListeners = new Set<() => void>();
+const readPicks = () => new URLSearchParams(location.search).get(PICKS_PARAM) ?? "";
+function subscribeToPicks(listener: () => void) {
+	pickListeners.add(listener);
+	window.addEventListener("popstate", listener);
+	return () => {
+		pickListeners.delete(listener);
+		window.removeEventListener("popstate", listener);
+	};
+}
+function writePicks(value: string) {
+	// Built by hand so the IDs' commas stay readable (URLSearchParams would encode them as %2C).
+	const others = new URLSearchParams(location.search);
+	others.delete(PICKS_PARAM);
+	const search = [others.toString(), value && `${PICKS_PARAM}=${value}`].filter(Boolean).join("&");
+	history.replaceState(history.state, "", `${location.pathname}${search ? `?${search}` : ""}${location.hash}`);
+	pickListeners.forEach((listener) => listener());
+}
+
+/**
+ * Personal modifier selections for one season page. The selection lives in the URL's `picks`
+ * query (read on load, replaced as it changes), so the address bar is always the share link.
+ */
+export function ModifierBuilderProvider({
+	modifiers,
+	seasonLabel,
+	children,
+}: {
+	modifiers: BuilderModifier[];
+	seasonLabel: string;
+	children: ReactNode;
+}) {
+	const ids = useMemo(() => modifiers.map((modifier) => modifier.id), [modifiers]);
+	const picks = useSyncExternalStore(subscribeToPicks, readPicks, () => "");
+	const selected = useMemo(() => parsePicks(picks, ids), [picks, ids]);
+	const builder = useMemo<Builder>(
 		() => ({
-			selected,
-			toggle: (id) =>
-				setSelected((current) => {
-					const next = new Set(current);
+			modifiers,
+			seasonLabel,
+			selection: {
+				selected,
+				toggle: (id) => {
+					// Read the live URL, not the render snapshot, so rapid toggles never drop one.
+					const next = parsePicks(readPicks(), ids);
 					if (!next.delete(id)) next.add(id);
-					return next;
-				}),
-			reset: () => setSelected(new Set()),
+					writePicks(serializePicks(next, ids));
+				},
+				reset: () => writePicks(""),
+			},
 		}),
-		[selected],
+		[modifiers, seasonLabel, selected, ids],
 	);
+	return <BuilderContext value={builder}>{children}</BuilderContext>;
+}
+
+/** Copies the current page URL, which carries the picks, and confirms for a second. */
+function ShareButton() {
+	const [copied, setCopied] = useState(false);
+	useEffect(() => {
+		if (!copied) return;
+		const timer = setTimeout(() => setCopied(false), 1200);
+		return () => clearTimeout(timer);
+	}, [copied]);
 	return (
-		<PointsContext value={points}>
-			<SelectionContext value={selection}>{children}</SelectionContext>
-		</PointsContext>
+		<button
+			type="button"
+			onClick={async () => {
+				try {
+					await navigator.clipboard.writeText(location.href);
+					setCopied(true);
+				} catch {
+					window.prompt("Copy this link", location.href);
+				}
+			}}
+			className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70"
+		>
+			{copied ? <Check aria-hidden className="size-3.5 text-success" /> : <Link2 aria-hidden className="size-3.5" />}
+			{copied ? "Copied" : "Share"}
+		</button>
 	);
 }
 
@@ -47,7 +119,7 @@ export function SelectableCard({
 	className: string;
 	children: ReactNode;
 }) {
-	const selection = use(SelectionContext);
+	const selection = use(BuilderContext)?.selection;
 	const checked = selection?.selected.has(id) ?? false;
 	return (
 		<li className="flex">
@@ -65,45 +137,66 @@ export function SelectableCard({
 					checked && (kind === "positive" ? "ring-1 ring-success/60" : "ring-1 ring-danger/60"),
 				)}
 			>
-				{/* Sized and inset to sit inside the card's rounded corner. */}
-				{/* SVG keeps the ring even when the card lands on a sub-pixel (fractional grid columns). */}
-				<svg
-					aria-hidden
-					viewBox="0 0 14 14"
-					className={cn(
-						"absolute left-1 top-1 size-3.5",
-						checked ? (kind === "positive" ? "text-success" : "text-danger") : "text-foreground/50",
-					)}
-				>
-					<circle
-						cx="7"
-						cy="7"
-						r={checked ? 7 : 6}
-						fill={checked ? "currentColor" : "none"}
-						stroke={checked ? "none" : "currentColor"}
-						strokeWidth="2"
-					/>
-					{checked && (
-						<path
-							d="M4 7.2 6.1 9.2 10 5"
-							fill="none"
-							stroke="var(--background)"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						/>
-					)}
-				</svg>
 				{children}
 			</button>
 		</li>
 	);
 }
 
+/**
+ * Points chip that doubles as the selection indicator: "−2 ○", filling solid with a check when the
+ * card is selected. Display only; the whole card is the toggle.
+ */
+export function PointsToggleChip({
+	id,
+	points,
+	kind,
+	label,
+}: {
+	id: string;
+	points: string;
+	kind: "positive" | "negative";
+	label: string;
+}) {
+	const checked = use(BuilderContext)?.selection.selected.has(id) ?? false;
+	return (
+		<span
+			aria-label={label}
+			className={cn(
+				"inline-flex items-center gap-1.5 rounded-full py-0.5 pl-2.5 pr-1.5 text-sm font-semibold normal-case tracking-normal tabular-nums",
+				checked
+					? kind === "positive"
+						? "bg-modifier-picked-positive text-modifier-picked-foreground"
+						: "bg-modifier-picked-negative text-modifier-picked-foreground"
+					: kind === "positive"
+						? "bg-success/18 text-foreground"
+						: "bg-danger/18 text-foreground",
+			)}
+		>
+			{points}
+			{/* SVG keeps the ring even when the card lands on a sub-pixel (fractional grid columns). */}
+			<svg aria-hidden viewBox="0 0 14 14" className="size-3.5">
+				{checked ? (
+					<path
+						d="M3.5 7.2 6 9.6 10.5 4.8"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				) : (
+					// Unselected: a solid "hole" in the page background color.
+					<circle cx="7" cy="7" r="6" fill="var(--background)" />
+				)}
+			</svg>
+		</span>
+	);
+}
+
 /** Point totals for the current selection; sticks near the top while scrolling the personal lists. */
 export function ModifierBuilderBar() {
-	const selection = use(SelectionContext);
-	const points = use(PointsContext);
+	const builder = use(BuilderContext);
 	const bar = useRef<HTMLDivElement>(null);
 	const [stuck, setStuck] = useState(false);
 	useEffect(() => {
@@ -116,8 +209,12 @@ export function ModifierBuilderBar() {
 			window.removeEventListener("resize", sync);
 		};
 	}, []);
-	if (!selection) return null;
-	const totals = builderTotals(selection.selected, points);
+	if (!builder) return null;
+	const { selection, modifiers } = builder;
+	const totals = builderTotals(
+		selection.selected,
+		Object.fromEntries(modifiers.map((modifier) => [modifier.id, modifier.points])),
+	);
 	return (
 		<div
 			ref={bar}
@@ -160,6 +257,8 @@ export function ModifierBuilderBar() {
 				<RotateCcw aria-hidden className="size-3.5" />
 				Reset
 			</button>
+			<ShareButton />
+			<BuildScreenshotButton />
 		</div>
 	);
 }

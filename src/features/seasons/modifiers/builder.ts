@@ -11,6 +11,20 @@ export type BuilderTotals = {
 	count: number;
 };
 
+/** Share-URL query key holding the selected personal modifier IDs, e.g. `?picks=lockpicker,extrovert`. */
+export const PICKS_PARAM = "picks";
+
+/** Selected IDs from a `picks` value, keeping only IDs this season knows (stale links stay safe). */
+export function parsePicks(value: string | null, knownIds: readonly string[]): Set<string> {
+	const known = new Set(knownIds);
+	return new Set((value ?? "").split(",").filter((id) => known.has(id)));
+}
+
+/** The `picks` value for a selection in the season's list order, so equal builds share one URL. */
+export function serializePicks(selected: ReadonlySet<string>, orderedIds: readonly string[]): string {
+	return orderedIds.filter((id) => selected.has(id)).join(",");
+}
+
 export function builderTotals(selected: Iterable<string>, points: Record<string, number>): BuilderTotals {
 	let granted = 0;
 	let spent = 0;
