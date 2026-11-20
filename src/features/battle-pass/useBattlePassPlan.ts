@@ -332,13 +332,14 @@ export function useBattlePassPlan(
 	// one) across modes, in a worker; it runs whenever several profiles plan, so
 	// the Balanced card can preview it. The same preference applies to every
 	// route before it is priced.
-	const balanced = preferredMode === BALANCED_MODE;
 	const preferFor = useCallback(
 		(mode: string | null, candidate: Route) =>
 			preferOwners(request, candidate, (key) => (key === mode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1)),
 		[request, gatheringFilters],
 	);
 	const balancing = !locked && input.profiles.length > 1;
+	/** Balanced needs two or more profiles; with one, a saved Balanced preference means no preference. */
+	const balanced = balancing && preferredMode === BALANCED_MODE;
 	const baseRoutes = useMemo(() => (balancing && base ? [base] : null), [balancing, base]);
 	const candidateRoutes = useMemo(
 		() => (balancing && Array.isArray(candidates) ? candidates.map((candidate) => candidate.route) : null),
@@ -434,19 +435,22 @@ export function useBattlePassPlan(
 	});
 	// "Show more options" resets whenever the routes are re-solved.
 	const expandedRoutes = expanded.alternatives === alternatives ? expanded.routes : NONE;
-	const routeOptions = useMemo(
-		() =>
-			preferredBase && alternatives
-				? buildRouteOptions(
-						[preferredBase, ...alternatives.map((alternative) => alternative.route)],
-						startingTarCoins,
-						allowSpecial,
-						(index) => expandedRoutes.includes(index),
-						adoptedIndex + 1,
-					)
-				: null,
-		[preferredBase, alternatives, startingTarCoins, allowSpecial, expandedRoutes, adoptedIndex],
-	);
+	const routeOptions = useMemo(() => {
+		if (!preferredBase || !alternatives) return null;
+		try {
+			return buildRouteOptions(
+				[preferredBase, ...alternatives.map((alternative) => alternative.route)],
+				startingTarCoins,
+				allowSpecial,
+				(index) => expandedRoutes.includes(index),
+				adoptedIndex + 1,
+			);
+		} catch (error) {
+			// Pricing throws on routes it cannot fund; hide the options rather than blank the page.
+			console.error("Could not price battle pass route options", error);
+			return null;
+		}
+	}, [preferredBase, alternatives, startingTarCoins, allowSpecial, expandedRoutes, adoptedIndex]);
 
 	// Funding for the active route.
 	const funding = useMemo(() => {

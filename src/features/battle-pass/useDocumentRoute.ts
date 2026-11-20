@@ -2,6 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { interpretDocumentRoute, type DocumentRouteRequest, type RouteColumns } from "./lib/document-route-model";
 
 export const CALCULATING_ROUTE = "Calculating document route…";
+const ROUTE_ERROR =
+	"Could not read the calculated route. Check your saved goals and inventory profiles, then try again.";
+
+/** Interpreting a solved route throws on inconsistent input (for example a missing claiming profile). */
+function interpretSafely(...args: Parameters<typeof interpretDocumentRoute>) {
+	try {
+		return interpretDocumentRoute(...args);
+	} catch (error) {
+		console.error("Could not interpret battle pass route", error);
+		return ROUTE_ERROR;
+	}
+}
 
 export function useDocumentRoute(request: DocumentRouteRequest, enabled = true) {
 	const [result, setResult] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
@@ -24,10 +36,10 @@ export function useDocumentRoute(request: DocumentRouteRequest, enabled = true) 
 			return "This seasonal character is not activated. Select an available inventory profile or include all profiles.";
 		if (request.unresolvedIds.length)
 			return `Unavailable saved goals: ${request.unresolvedIds.join(", ")}. Select an available destination.`;
-		if (!request.model) return interpretDocumentRoute(request, {});
+		if (!request.model) return interpretSafely(request, {});
 		if (result?.request !== request) return CALCULATING_ROUTE;
 		if (!result.columns)
-			return "Could not calculate a complete route. Configure costs for the destination and enough rewards on every preceding page, then try again.";
-		return interpretDocumentRoute(request, result.columns);
+			return "Could not calculate a complete route. Configure costs for the destination and enough rewards on every preceding page, then try again. If costs are set, the route may have taken too long to solve; try a nearer destination or fewer gathering limits.";
+		return interpretSafely(request, result.columns);
 	}, [enabled, request, result]);
 }

@@ -46,6 +46,20 @@ function loadIcon(path: string): Promise<string | undefined> {
 	return icon;
 }
 
+/**
+ * `ImageResponse` streams: it sends 200 and our immutable headers before satori runs, so a failed
+ * render would be cached for a year by crawlers. Render fully first; only a finished PNG is cacheable.
+ */
+async function cachedImage(image: ImageResponse) {
+	try {
+		const body = await image.arrayBuffer();
+		return new Response(body, { headers: { "Content-Type": "image/png", ...CACHE_HEADERS } });
+	} catch (error) {
+		console.error("Season preview image failed to render", error);
+		return new Response("Preview unavailable", { status: 500, headers: { "Cache-Control": "no-store" } });
+	}
+}
+
 function redirect(request: Request, path: string) {
 	return new Response(null, {
 		status: 308,
@@ -67,11 +81,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 		(modifier): modifier is typeof modifier & { kind: "positive" | "negative"; points: number } =>
 			modifier.kind !== "global" && modifier.points !== undefined,
 	);
-	const options = { ...PREVIEW_FORMATS[format], headers: CACHE_HEADERS };
+	const options = PREVIEW_FORMATS[format];
 	if (!canonical) {
-		return new ImageResponse(
-			<GenericPreviewCard seasonId={season} format={format} modifierCount={personal.length} />,
-			options,
+		return cachedImage(
+			new ImageResponse(
+				<GenericPreviewCard seasonId={season} format={format} modifierCount={personal.length} />,
+				options,
+			),
 		);
 	}
 
@@ -86,9 +102,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 			picked.map(async (modifier) => [modifier.id, modifier.icon && (await loadIcon(modifier.icon))] as const),
 		).then((entries) => entries.filter((entry): entry is [string, string] => Boolean(entry[1]))),
 	);
-	const totals = builderTotals(selected, Object.fromEntries(personal.map((modifier) => [modifier.id, modifier.points])));
-	return new ImageResponse(
-		<BuildPreviewCard seasonId={season} format={format} modifiers={modifiers} totals={totals} icons={icons} />,
-		options,
+	const totals = builderTotals(
+		selected,
+		Object.fromEntries(personal.map((modifier) => [modifier.id, modifier.points])),
+	);
+	return cachedImage(
+		new ImageResponse(
+			<BuildPreviewCard seasonId={season} format={format} modifiers={modifiers} totals={totals} icons={icons} />,
+			options,
+		),
 	);
 }

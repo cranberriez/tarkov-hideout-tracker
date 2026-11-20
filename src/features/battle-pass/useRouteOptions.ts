@@ -29,16 +29,21 @@ export function useRouteOptions(request: DocumentRouteRequest, base: Route | nul
 			});
 		(async () => {
 			const candidates: RouteCandidate[] = [];
-			let minCoins = routeRewardTarCoins(base) + 1;
-			const maxMissing = base.additionalClassified + ROUTE_OPTION_EXTRA_DOCUMENTS;
-			const keepIds = base.selected.map((tile) => tile.id);
-			for (let level = 0; level < ROUTE_OPTION_MAX_LEVELS && !cancelled; level++) {
-				const model = coinLevelModel(request, minCoins, maxMissing, keepIds);
-				const columns = model ? await solve(model) : null;
-				if (!columns || cancelled) break;
-				const route = interpretDocumentRoute(request, columns);
-				candidates.push({ columns, route });
-				minCoins = routeRewardTarCoins(route) + 1;
+			try {
+				let minCoins = routeRewardTarCoins(base) + 1;
+				const maxMissing = base.additionalClassified + ROUTE_OPTION_EXTRA_DOCUMENTS;
+				const keepIds = base.selected.map((tile) => tile.id);
+				for (let level = 0; level < ROUTE_OPTION_MAX_LEVELS && !cancelled; level++) {
+					const model = coinLevelModel(request, minCoins, maxMissing, keepIds);
+					const columns = model ? await solve(model) : null;
+					if (!columns || cancelled) break;
+					const route = interpretDocumentRoute(request, columns);
+					candidates.push({ columns, route });
+					minCoins = routeRewardTarCoins(route) + 1;
+				}
+			} catch (error) {
+				// Keep the candidates found so far instead of leaving the options calculating forever.
+				console.error("Could not build battle pass route options", error);
 			}
 			if (!cancelled) setState({ request, candidates });
 			worker.terminate();
