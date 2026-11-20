@@ -48,6 +48,18 @@ export function decodeBuild(code: string | null, shareOrder: readonly string[]):
 	return selected;
 }
 
+/**
+ * The one canonical code for a build, or "" when the input is empty, malformed, longer than this
+ * season's bitmask can be, or selects nothing. Equivalent inputs (padding, junk high bits) collapse
+ * to one string, so cache keys such as link-preview image URLs stay deduplicated.
+ */
+export function canonicalBuild(code: string | null, shareOrder: readonly string[]): string {
+	if (!code) return "";
+	const maxLength = Math.ceil((Math.ceil(shareOrder.length / 8) * 4) / 3);
+	if (code.length > maxLength || !/^[A-Za-z0-9_-]+$/.test(code)) return "";
+	return encodeBuild(decodeBuild(code, shareOrder), shareOrder);
+}
+
 /** Selected IDs from a `picks` value, keeping only IDs this season knows (stale links stay safe). */
 export function parsePicks(value: string | null, knownIds: readonly string[]): Set<string> {
 	const known = new Set(knownIds);

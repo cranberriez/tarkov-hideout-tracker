@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import { MostPicked, SeasonModifiers } from "@/features/seasons/SeasonModifiers";
 import { SeasonOneHero } from "@/features/seasons/SeasonOneHero";
 import { SeasonPageNav } from "@/features/seasons/SeasonPageNav";
+import { seasonPagePreviewMetadata } from "@/features/seasons/share-preview";
+
+const title = "Season 1 KORD Breach";
+const description =
+	"Escape from Tarkov Season 1, KORD Breach: every global, positive and negative modifier and the most picked ones.";
 
 export const metadata: Metadata = {
-	title: "Season 1 KORD Breach",
-	description:
-		"Escape from Tarkov Season 1, KORD Breach: every global, positive and negative modifier and the most picked ones.",
+	title,
+	description,
 	alternates: { canonical: "/season-1" },
+	...seasonPagePreviewMetadata("season-1", title, description),
 };
 
 export default function Page() {

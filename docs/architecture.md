@@ -76,6 +76,21 @@ remove entries, or old links change meaning), so the address bar is the share li
 `localStorage` (see [user state](user-state.md)) restores the last build when the URL has neither; a
 shared link wins and is only saved once edited. Nothing is saved to player data. The screenshot
 dialog renders a compact sheet of the build from the same selection.
+
+Build links show the build in link previews, while the pages stay prerendered and never read
+`searchParams` ([share-preview.ts](../src/features/seasons/share-preview.ts)). Static page metadata
+points at the generic per-season card. A `beforeFiles` rewrite in [next.config](../next.config.ts)
+sends only known link-preview crawlers (Discord, Reddit, X, Slack and others; search engines are
+excluded) that request `/season-N?b=` to a tiny [preview HTML route](../src/app/og-share/[season]/route.ts).
+That route's tags carry the build title, totals and picks, plus the canonical image URL. People never
+hit a function. That HTML is `private` because it sits behind a User-Agent rewrite of a public URL.
+The [image route](../src/app/og/[season]/[code]/route.tsx) `/og/<season>/<code>?v=<PREVIEW_VERSION>`
+runs `canonicalBuild` first. Non-canonical, oversized or malformed codes and stale versions 308 to
+the canonical or generic (`_`) URL without rendering. Each canonical image renders once
+([card](../src/features/seasons/BuildPreviewCard.tsx): only selected modifiers, bundled default font,
+icons converted from the traced WebP files to PNG with sharp, since satori can't decode WebP). It is
+served with `immutable` `Cache-Control`, `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. Bump
+`PREVIEW_VERSION` when the card design changes.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |

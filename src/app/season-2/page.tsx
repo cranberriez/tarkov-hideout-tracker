@@ -3,12 +3,17 @@ import { MostPicked, SeasonModifiers } from "@/features/seasons/SeasonModifiers"
 import { SeasonChangesProvider } from "@/features/seasons/SeasonChanges";
 import { SeasonPageNav } from "@/features/seasons/SeasonPageNav";
 import { SeasonTwoTeaser } from "@/features/seasons/SeasonTwoTeaser";
+import { seasonPagePreviewMetadata } from "@/features/seasons/share-preview";
+
+const title = "Season 2 UNTAR Control";
+const description =
+	"Escape from Tarkov Season 2, UNTAR Control: announcement and every global, positive and negative modifier.";
 
 export const metadata: Metadata = {
-	title: "Season 2 UNTAR Control",
-	description:
-		"Escape from Tarkov Season 2, UNTAR Control: announcement and every global, positive and negative modifier.",
+	title,
+	description,
 	alternates: { canonical: "/season-2" },
+	...seasonPagePreviewMetadata("season-2", title, description),
 };
 
 export default function Page() {
