@@ -11,7 +11,7 @@ import type { SeasonId } from "@/lib/cfg/seasons";
  *   link are rewritten (next.config `beforeFiles`) to `/og-share/<season>`, a tiny HTML page whose
  *   tags point at the build's canonical image URL.
  */
-export const PREVIEW_VERSION = "2";
+export const PREVIEW_VERSION = "3";
 export const GENERIC_PREVIEW_CODE = "_";
 /**
  * `wide` is the 1.91:1 card X, Reddit and others crop to. `tall` (4:3) is served to Discord, which keeps

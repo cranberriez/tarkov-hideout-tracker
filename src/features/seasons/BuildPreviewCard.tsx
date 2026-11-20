@@ -112,21 +112,16 @@ function Header({ seasonId, totals }: { seasonId: SeasonId; totals?: BuilderTota
 				</div>
 			</div>
 			{totals && (
-				<div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-					<div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-						<span style={{ fontSize: 30, letterSpacing: 3, color: MUTED }}>NET</span>
-						<span
-							style={{
-								fontSize: 72,
-								lineHeight: 1,
-								color: totals.valid ? TONES.positive.chip : TONES.negative.chip,
-							}}
-						>
-							{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
-						</span>
-					</div>
-					<span style={{ fontSize: 28, color: MUTED }}>
-						+{totals.granted} granted · −{totals.spent} spent
+				<div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+					<span style={{ fontSize: 30, letterSpacing: 3, color: MUTED }}>NET</span>
+					<span
+						style={{
+							fontSize: 72,
+							lineHeight: 1,
+							color: totals.valid ? TONES.positive.chip : TONES.negative.chip,
+						}}
+					>
+						{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
 					</span>
 				</div>
 			)}

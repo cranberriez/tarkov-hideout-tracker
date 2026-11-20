@@ -1,6 +1,5 @@
 import { SEASON_MODIFIERS } from "@/features/seasons/modifiers";
-import { BUILD_PARAM, builderTotals, canonicalBuild, decodeBuild } from "@/features/seasons/modifiers/builder";
-import { formatPoints } from "@/features/seasons/modifiers/types";
+import { BUILD_PARAM, canonicalBuild, decodeBuild } from "@/features/seasons/modifiers/builder";
 import {
 	PREVIEW_FORMATS,
 	PREVIEW_THEMES,
@@ -35,22 +34,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ seas
 	let description = `Every ${seasonTitle} modifier, plus a point-budget build planner.`;
 	if (code) {
 		const selected = decodeBuild(code, set.shareOrder);
-		const personal = set.modifiers.filter((modifier) => modifier.points !== undefined);
-		const totals = builderTotals(selected, Object.fromEntries(personal.map((modifier) => [modifier.id, modifier.points!])));
-		const names = (kind: string) =>
-			personal
-				.filter((modifier) => modifier.kind === kind && selected.has(modifier.id))
-				.map((modifier) => modifier.name)
-				.join(", ");
-		const net = totals.balance === 0 ? "0" : formatPoints(totals.balance);
-		title = `${seasonTitle} build · Net ${net}`;
-		description = [
-			names("positive") && `Positive: ${names("positive")}.`,
-			names("negative") && `Negative: ${names("negative")}.`,
-		]
-			.filter(Boolean)
-			.join(" ");
-		if (description.length > 300) description = `${description.slice(0, 297)}…`;
+		const count = (kind: string) =>
+			set.modifiers.filter((modifier) => modifier.kind === kind && selected.has(modifier.id)).length;
+		title = `${seasonTitle} build`;
+		description = `${count("positive")} positive and ${count("negative")} negative modifiers.`;
 	}
 	// Discord keeps the image's aspect ratio, so it gets the taller card; others crop to 1.91:1.
 	const format: PreviewFormat = request.headers.get("user-agent")?.includes("Discordbot") ? "tall" : "wide";
