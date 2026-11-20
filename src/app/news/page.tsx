@@ -4,6 +4,7 @@ import { Post_v3_6_3 } from "./_posts/post_v3_6-3";
 import { Post_v2_11_28 } from "./_posts/post_v2_11-28";
 import { PostTarkov11 } from "./_posts/post_tarkov_1-1";
 import { PostDevelopmentPreview } from "./_posts/post_development_preview";
+import { PostBattlePassSeasons } from "./_posts/post_battle_pass_seasons";
 
 export default function NewsPage() {
 	return (
@@ -49,6 +50,7 @@ export default function NewsPage() {
 			)}
 
 			<div className="flex flex-col gap-7">
+				<PostBattlePassSeasons />
 				<PostDevelopmentPreview />
 				<PostTarkov11 />
 				<Post_v3_6_3 />
