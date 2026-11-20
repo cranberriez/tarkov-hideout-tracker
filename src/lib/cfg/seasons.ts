@@ -1,4 +1,4 @@
-import { PROFILE_BASE_COLORS } from "./profile-colors";
+import { PROFILE_BASE_COLORS, SEASON_2_COLOR } from "./profile-colors";
 
 export type SeasonId = "season-1" | "season-2";
 export const FIRST_SEASON_ID: SeasonId = "season-1";
@@ -16,8 +16,7 @@ export const SEASONS = [
 		id: "season-2",
 		name: "UNTAR",
 		title: "Season 2 UNTAR Control",
-		// Deeper than the logo's #3d8fe0 so it stays distinct from the PVE sky blue (#60a5fa).
-		color: "#2b78d9",
+		color: SEASON_2_COLOR,
 		endsAt: null,
 		forceEliteCrafting: false,
 	},

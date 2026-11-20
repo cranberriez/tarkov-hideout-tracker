@@ -45,11 +45,11 @@ export function BattlePassSummary({
 				{showSeasonTwoLink && (
 					<Link
 						href="/season-2"
-						className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#2b78d9] px-3 text-xs font-semibold transition-colors hover:bg-[#3d8fe0]"
+						className="flex shrink-0 items-center gap-1.5 rounded-lg bg-untar-strong px-3 text-xs font-semibold transition-colors hover:bg-untar"
 					>
-						<span className="text-[#141c24]">S2</span>
-						<span className="uppercase tracking-wide text-white">Untar Control</span>
-						<ArrowRight size={14} aria-hidden className="text-white" />
+						<span className="text-untar-surface">S2</span>
+						<span className="uppercase tracking-wide text-untar-ink">Untar Control</span>
+						<ArrowRight size={14} aria-hidden className="text-untar-ink" />
 					</Link>
 				)}
 			</div>

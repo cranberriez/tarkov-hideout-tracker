@@ -56,6 +56,11 @@
 	/* Fixed dark surface and light ink for the unobtrusive site-rating chip. */
 	--rating-surface: #111111;
 	--rating-foreground: #eeeeee;
+	/* Season 2 (UNTAR Control) key art: fixed logo blue, deeper button blue, off-white ink and slate backdrop in every theme. */
+	--untar: #3d8fe0;
+	--untar-strong: #2b78d9;
+	--untar-ink: #e9e7e1;
+	--untar-surface: #141c24;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -192,6 +197,10 @@
 }
 
 @theme inline {
+	--color-untar: var(--untar);
+	--color-untar-strong: var(--untar-strong);
+	--color-untar-ink: var(--untar-ink);
+	--color-untar-surface: var(--untar-surface);
 	--color-acquisition-craft: var(--acquisition-craft);
 	--color-acquisition-barter: var(--acquisition-barter);
 	--color-acquisition-trader: var(--acquisition-trader);
