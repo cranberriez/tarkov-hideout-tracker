@@ -3,7 +3,15 @@
 import { createContext, use, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Check, Link2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { builderTotals, parsePicks, PICKS_PARAM, serializePicks } from "./modifiers/builder";
+import {
+	BUILD_PARAM,
+	builderTotals,
+	decodeBuild,
+	encodeBuild,
+	parsePicks,
+	PICKS_PARAM,
+	serializePicks,
+} from "./modifiers/builder";
 import { formatPoints } from "./modifiers/types";
 import { BuildScreenshotButton } from "./BuildScreenshot";
 
@@ -22,20 +30,20 @@ const BuilderContext = createContext<Builder | null>(null);
 
 export const useModifierBuilder = () => use(BuilderContext);
 
-/** The URL's `picks` query is the selection's single source of truth (and the share link). */
-const pickListeners = new Set<() => void>();
-const readPicks = () => new URLSearchParams(location.search).get(PICKS_PARAM) ?? "";
-function subscribeToPicks(listener: () => void) {
-	pickListeners.add(listener);
+/** The URL's compact `b` query is the selection's single source of truth (and the share link). */
+const buildListeners = new Set<() => void>();
+const readBuild = () => new URLSearchParams(location.search).get(BUILD_PARAM) ?? "";
+function subscribeToBuild(listener: () => void) {
+	buildListeners.add(listener);
 	window.addEventListener("popstate", listener);
 	return () => {
-		pickListeners.delete(listener);
+		buildListeners.delete(listener);
 		window.removeEventListener("popstate", listener);
 	};
 }
 /**
- * Global, profile-independent convenience copy of a season's picks so returning without `?picks=`
- * restores the last build. Storage may be unavailable (private mode); the URL still works.
+ * Global, profile-independent convenience copy of a season's picks (readable comma-separated IDs)
+ * so returning without `?b=` restores the last build. Storage may be unavailable; the URL still works.
  */
 const picksStorageKey = (seasonId: string) => `tarkov-season-picks-${seasonId}-v1`;
 function loadSavedPicks(seasonId: string) {
@@ -54,43 +62,48 @@ function savePicks(seasonId: string, value: string) {
 	}
 }
 
-function writePicks(value: string) {
-	// Built by hand so the IDs' commas stay readable (URLSearchParams would encode them as %2C).
-	const others = new URLSearchParams(location.search);
-	others.delete(PICKS_PARAM);
-	const search = [others.toString(), value && `${PICKS_PARAM}=${value}`].filter(Boolean).join("&");
-	history.replaceState(history.state, "", `${location.pathname}${search ? `?${search}` : ""}${location.hash}`);
-	pickListeners.forEach((listener) => listener());
+/** Replaces `?b=` (dropping any legacy `?picks=`) without a navigation, then notifies subscribers. */
+function writeBuild(code: string) {
+	const url = new URL(location.href);
+	url.searchParams.delete(PICKS_PARAM);
+	if (code) url.searchParams.set(BUILD_PARAM, code);
+	else url.searchParams.delete(BUILD_PARAM);
+	history.replaceState(history.state, "", url);
+	buildListeners.forEach((listener) => listener());
 }
 
 /**
- * Personal modifier selections for one season page. The selection lives in the URL's `picks`
+ * Personal modifier selections for one season page. The selection lives in the URL's compact `b`
  * query (read on load, replaced as it changes), so the address bar is always the share link.
  */
 export function ModifierBuilderProvider({
 	seasonId,
 	modifiers,
+	shareOrder,
 	seasonLabel,
 	children,
 }: {
 	seasonId: string;
 	modifiers: BuilderModifier[];
+	shareOrder: readonly string[];
 	seasonLabel: string;
 	children: ReactNode;
 }) {
 	const ids = useMemo(() => modifiers.map((modifier) => modifier.id), [modifiers]);
-	const picks = useSyncExternalStore(subscribeToPicks, readPicks, () => "");
-	const selected = useMemo(() => parsePicks(picks, ids), [picks, ids]);
-	// A link with picks wins; otherwise restore this season's last saved build into the URL.
+	const code = useSyncExternalStore(subscribeToBuild, readBuild, () => "");
+	const selected = useMemo(() => decodeBuild(code, shareOrder), [code, shareOrder]);
+	// A `?b=` link wins; a legacy `?picks=` link is converted; otherwise restore the saved build.
 	useEffect(() => {
-		if (new URLSearchParams(location.search).has(PICKS_PARAM)) return;
-		const saved = serializePicks(parsePicks(loadSavedPicks(seasonId), ids), ids);
-		if (saved) writePicks(saved);
-	}, [seasonId, ids]);
+		const params = new URLSearchParams(location.search);
+		if (params.has(BUILD_PARAM)) return;
+		const source = params.has(PICKS_PARAM) ? params.get(PICKS_PARAM) : loadSavedPicks(seasonId);
+		const restored = encodeBuild(parsePicks(source, ids), shareOrder);
+		if (restored || params.has(PICKS_PARAM)) writeBuild(restored);
+	}, [seasonId, ids, shareOrder]);
 	const builder = useMemo<Builder>(() => {
-		const commit = (value: string) => {
-			writePicks(value);
-			savePicks(seasonId, value);
+		const commit = (next: ReadonlySet<string>) => {
+			writeBuild(encodeBuild(next, shareOrder));
+			savePicks(seasonId, serializePicks(next, ids));
 		};
 		return {
 			modifiers,
@@ -99,14 +112,14 @@ export function ModifierBuilderProvider({
 				selected,
 				toggle: (id) => {
 					// Read the live URL, not the render snapshot, so rapid toggles never drop one.
-					const next = parsePicks(readPicks(), ids);
+					const next = decodeBuild(readBuild(), shareOrder);
 					if (!next.delete(id)) next.add(id);
-					commit(serializePicks(next, ids));
+					commit(next);
 				},
-				reset: () => commit(""),
+				reset: () => commit(new Set()),
 			},
 		};
-	}, [modifiers, seasonLabel, selected, ids, seasonId]);
+	}, [modifiers, seasonLabel, selected, ids, seasonId, shareOrder]);
 	return <BuilderContext value={builder}>{children}</BuilderContext>;
 }
 

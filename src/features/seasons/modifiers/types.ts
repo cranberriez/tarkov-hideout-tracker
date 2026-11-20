@@ -35,6 +35,11 @@ export type SeasonModifierSet = {
 	note?: string;
 	/** Where the published pick rates come from. */
 	pickRateSource?: string;
+	/**
+	 * Bit position of every personal modifier in compact share links (`?b=`). APPEND-ONLY: add new
+	 * IDs at the end and never reorder or remove entries, or existing share links change meaning.
+	 */
+	shareOrder: readonly string[];
 	modifiers: SeasonModifier[];
 };
 
