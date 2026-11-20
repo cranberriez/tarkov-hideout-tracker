@@ -7,7 +7,14 @@
  * pick-rate entries), so they reuse the Season 2 crops. Global modifier art (128px, supplied by the
  * maintainer) lives in public/images/season-1/modifiers/<id>.webp.
  */
-import { personal, type SeasonModifier, type SeasonModifierSet } from "./types";
+import {
+	excludes,
+	oneOf,
+	personal,
+	type IncompatibilityRule,
+	type SeasonModifier,
+	type SeasonModifierSet,
+} from "./types";
 
 const sharedIcon = (id: string) => `/images/season-2/modifiers/${id}.webp`;
 const globalIcon = (id: string) => `/images/season-1/modifiers/${id}.webp`;
@@ -172,6 +179,20 @@ const NEGATIVE = [
 	},
 ];
 
+/** In-game exclusions: picking one blocks the others. */
+const INCOMPATIBLE: IncompatibilityRule[] = [
+	...excludes("average", ["prodigy", "hercules", "the-tarkov-shooter", "incompetent"], "confirmed"),
+	...excludes("incompetent", ["prodigy"], "confirmed"),
+	...oneOf(["polyphagia", "youth", "chronic-fatigue-syndrome"], "confirmed"),
+	...excludes("youth", ["exhaustion"], "confirmed"),
+	...excludes("sprinter", ["third-leg", "marathon-runner"], "confirmed"),
+	...excludes("third-leg", ["personality-vacuum"], "confirmed"),
+	...oneOf(["lucky", "unlucky"], "confirmed"),
+	...oneOf(["hemophilia", "thrombophilia"], "confirmed"),
+	...oneOf(["polydipsia", "hypodipsia"], "confirmed"),
+	...oneOf(["osteoporosis", "sturdy-bones"], "confirmed"),
+];
+
 export const SEASON_1_MODIFIERS: SeasonModifierSet = {
 	seasonId: "season-1",
 	source: { label: "Tarkov Market (season preview transcription)", url: "https://tarkov-market.com/season-1/perks" },
@@ -213,6 +234,7 @@ export const SEASON_1_MODIFIERS: SeasonModifierSet = {
 		"unlucky",
 		"exhaustion",
 	],
+	incompatibilities: { mode: "hard", rules: INCOMPATIBLE },
 	modifiers: (
 		[
 			{ id: "no-insurance", name: "No Insurance", kind: "global", effects: ["Cannot insure items before raid"] },

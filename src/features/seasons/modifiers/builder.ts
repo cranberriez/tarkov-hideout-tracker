@@ -1,3 +1,5 @@
+import type { IncompatibilityBasis, IncompatibilityRule } from "./types";
+
 /**
  * Personal modifier builder totals. A character starts at 0 points: negatives grant points,
  * positives spend them, and a build is valid while the balance stays at 0 or above.
@@ -84,4 +86,44 @@ export function builderTotals(selected: Iterable<string>, points: Record<string,
 	}
 	const balance = granted - spent;
 	return { granted, spent, balance, valid: balance >= 0, count };
+}
+
+/** Per modifier ID: every ID it can't be combined with, and the rule's basis. */
+export type ConflictIndex = ReadonlyMap<string, ReadonlyMap<string, IncompatibilityBasis>>;
+
+/** Basis strength when two rules link the same pair: the stronger claim wins. */
+const BASIS_RANK: Record<IncompatibilityBasis, number> = { speculative: 0, carried: 1, confirmed: 2 };
+
+export function conflictIndex(rules: readonly IncompatibilityRule[]): ConflictIndex {
+	const index = new Map<string, Map<string, IncompatibilityBasis>>();
+	for (const { ids, basis } of rules) {
+		for (const id of ids) {
+			const others = index.get(id) ?? new Map<string, IncompatibilityBasis>();
+			index.set(id, others);
+			for (const other of ids) {
+				const current = others.get(other);
+				if (other !== id && (!current || BASIS_RANK[basis] > BASIS_RANK[current])) others.set(other, basis);
+			}
+		}
+	}
+	return index;
+}
+
+export type Conflict = { id: string; basis: IncompatibilityBasis };
+
+/** Selected modifiers that `id` conflicts with, in selection order. */
+export function conflictsWith(id: string, selected: Iterable<string>, index: ConflictIndex): Conflict[] {
+	const others = index.get(id);
+	if (!others) return [];
+	return [...selected].flatMap((other) => {
+		const basis = others.get(other);
+		return basis ? [{ id: other, basis }] : [];
+	});
+}
+
+/** Number of conflicting pairs inside a selection. */
+export function selectedConflictCount(selected: ReadonlySet<string>, index: ConflictIndex): number {
+	let pairs = 0;
+	for (const id of selected) pairs += conflictsWith(id, selected, index).length;
+	return pairs / 2;
 }

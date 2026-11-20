@@ -41,20 +41,43 @@ export function RemoteImage({ src, alt, className }: { src: string; alt: string;
 	);
 }
 
-/** Season 2 page hero: shows the KORD end date until Season 2 is current. */
+/** Bump by hand whenever the Season 2 page content (modifiers, gallery, rules) changes. */
+const LAST_UPDATED = "2026-11-20";
+/** BSG usually announces about 6 hours of maintenance between seasons; it may run longer. */
+const MAINTENANCE_HOURS = 6;
+
+const ordinal = (day: number) =>
+	`${day}${day % 10 === 1 && day !== 11 ? "st" : day % 10 === 2 && day !== 12 ? "nd" : day % 10 === 3 && day !== 13 ? "rd" : "th"}`;
+
+/** Estimated start, e.g. "Starts Dec 7th 7am PST": KORD's end plus the usual maintenance window. */
+function estimatedStart() {
+	const start = new Date(SEASONS[0].endsAt + MAINTENANCE_HOURS * 3_600_000);
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat("en-US", {
+			timeZone: "America/Los_Angeles",
+			month: "short",
+			day: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+			timeZoneName: "short",
+		})
+			.formatToParts(start)
+			.map((part) => [part.type, part.value]),
+	);
+	const minutes = parts.minute === "00" ? "" : `:${parts.minute}`;
+	return `Starts ${parts.month} ${ordinal(Number(parts.day))} ${parts.hour}${minutes}${parts.dayPeriod.toLowerCase()} ${parts.timeZoneName}`;
+}
+
+/** Season 2 page hero: shows the estimated start until Season 2 is current. */
 export function SeasonTwoTeaser() {
 	const upcoming = useCurrentSeason().id === "season-1";
-	const status = upcoming
-		? `KORD ends ${new Date(SEASONS[0].endsAt).toLocaleString("en-US", {
-				timeZone: "America/Los_Angeles",
-				weekday: "short",
-				month: "short",
-				day: "numeric",
-				hour: "numeric",
-				minute: "2-digit",
-				timeZoneName: "short",
-			})}`
-		: "Now live";
+	const status = upcoming ? estimatedStart() : "Now live";
+	const updated = new Date(`${LAST_UPDATED}T12:00:00Z`).toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		timeZone: "UTC",
+	});
 	const [open, setOpen] = useState<{ post: number; image: number } | null>(null);
 	return (
 		<>
@@ -68,6 +91,7 @@ export function SeasonTwoTeaser() {
 							Season 2
 						</span>
 						<span className="text-xs text-untar-ink/70">{status}</span>
+						<span className="ml-auto text-xs text-untar-ink/60">Last updated {updated}</span>
 					</div>
 					<h1 id="untar-control-heading" className="text-3xl font-black uppercase leading-none tracking-wide">
 						Untar <span className="text-untar">Control</span>

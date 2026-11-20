@@ -14,6 +14,12 @@ for (const set of [SEASON_1_MODIFIERS, SEASON_2_MODIFIERS]) {
 			"append new personal modifier IDs to the end of shareOrder",
 		);
 	});
+
+	test(`${set.seasonId} incompatibility rules name known personal modifiers`, () => {
+		const personal = new Set(set.shareOrder);
+		const unknown = (set.incompatibilities?.rules ?? []).flatMap((rule) => rule.ids).filter((id) => !personal.has(id));
+		assert.deepEqual(unknown, [], "typo or removed modifier in incompatibilities");
+	});
 }
 
 test("compact build codes round-trip and ignore junk", () => {

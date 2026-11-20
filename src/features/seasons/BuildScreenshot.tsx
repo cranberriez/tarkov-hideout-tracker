@@ -138,7 +138,7 @@ export function BuildScreenshotButton() {
 			<DialogTrigger asChild>
 				<button
 					type="button"
-					className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70"
+					className="inline-flex items-center gap-1.5 rounded-md bg-surface-raised px-3 py-1 text-xs font-semibold transition-colors hover:bg-surface-raised/70"
 				>
 					<Camera aria-hidden className="size-3.5" />
 					Screenshot

@@ -5,9 +5,9 @@ import { SeasonPageNav } from "@/features/seasons/SeasonPageNav";
 import { SeasonTwoTeaser } from "@/features/seasons/SeasonTwoTeaser";
 import { seasonPagePreviewMetadata } from "@/features/seasons/share-preview";
 
-const title = "Season 2 UNTAR Control";
+const title = "Season 2 UNTAR Control Modifiers";
 const description =
-	"Escape from Tarkov Season 2, UNTAR Control: announcement and every global, positive and negative modifier.";
+	"Every Escape from Tarkov Season 2 UNTAR Control modifier, with a build planner for personal modifiers.";
 
 export const metadata: Metadata = {
 	title,

@@ -257,6 +257,7 @@ export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 				modifiers={personal}
 				shareOrder={set.shareOrder}
 				seasonLabel={seasonLabel}
+				incompatibilities={set.incompatibilities}
 			>
 				<ModifierBuilderBar />
 				<SeasonView className="space-y-8">
