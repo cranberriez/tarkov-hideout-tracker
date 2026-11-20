@@ -422,6 +422,19 @@ export function useBattlePassPlan(
 			preferredBase && alternatives ? [preferredBase, ...alternatives.map((alternative) => alternative.route)] : null,
 		[preferredBase, alternatives],
 	);
+	/** TarCoins left after the pass when nothing is gathered on the fewest-documents route. */
+	const noGatheringTarCoinsLeft = useMemo(() => {
+		if (!preferredBase) return null;
+		try {
+			return optimizeRouteFunding(
+				gatheringScenario(preferredBase, 0, filters, daysLeft, reserve).claims,
+				startingTarCoins,
+				allowSpecial,
+			).balanceTarCoins;
+		} catch {
+			return null;
+		}
+	}, [preferredBase, filters, daysLeft, reserve, startingTarCoins, allowSpecial]);
 	const cheapestIndex = cheapest?.index ?? null;
 	const cheapestGathering = cheapest?.gathering ?? null;
 	const [alternateState, setAlternateState] = useState<{ entries: RouteEntry[]; suggested?: RouteEntry }>({
@@ -625,7 +638,9 @@ export function useBattlePassPlan(
 		/** Adopt the entry's route and save its count as the gathering target in one update. */
 		selectEntry,
 		/** Checkout without gathering. */
-		baselineCents: first ? first.cashCents + first.savingsCents : null,
+		baselineCents: entryBaseline ?? (first ? first.cashCents + first.savingsCents : null),
+		/** TarCoins left without gathering; null while unknown. */
+		baselineTarCoinsLeft: noGatheringTarCoinsLeft,
 		/** Fastest cash-free finish: undefined while calculating, null when none exists. */
 		cashFree: shown ? (shown.cashFree ?? null) : undefined,
 		select: settings.setGatheringTarget,

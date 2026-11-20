@@ -31,6 +31,23 @@ export interface GatheringPreview {
 	cashCents: number;
 	/** Days the slowest mode needs at its daily cap. */
 	days: number;
+	/** Documents gathered in each mode, most first. */
+	byMode: { profileKey: string; profileLabel: string; quantity: number }[];
+}
+
+/** Documents gathered in each mode, most first. */
+function modeTotals(quantities: ReturnType<typeof gatheringScenario>["quantities"]) {
+	const modes = new Map<string, { profileKey: string; profileLabel: string; quantity: number }>();
+	for (const row of quantities) {
+		const mode = modes.get(row.profileKey) ?? {
+			profileKey: row.profileKey,
+			profileLabel: row.profileLabel,
+			quantity: 0,
+		};
+		mode.quantity += row.quantity;
+		modes.set(row.profileKey, mode);
+	}
+	return [...modes.values()].sort((a, b) => b.quantity - a.quantity);
 }
 
 /** Price gathering `target` documents on a fixed route with `filters`, each
@@ -49,6 +66,7 @@ export function previewGathering(
 		gathered: quantities.reduce((sum, row) => sum + row.quantity, 0),
 		cashCents: optimizeRouteFunding(claims, startingTarCoins, allowSpecial).cashCents,
 		days: parallelDays(quantities, reserve),
+		byMode: modeTotals(quantities),
 	};
 }
 
@@ -152,6 +170,7 @@ export function fewestTypes(input: FewestTypesInput): FewestTypesResult {
 		gathered: base.quantities.reduce((sum, row) => sum + row.quantity, 0),
 		cashCents: optimizeRouteFunding(base.claims, input.startingTarCoins, input.allowSpecial).cashCents,
 		days: parallelDays(base.quantities, reserve),
+		byMode: modeTotals(base.quantities),
 	};
 	const candidates = neededTypes(route).filter((key) =>
 		profileKeys.some((profile) => !filters[profile]?.disabled && !filters[profile]?.excluded?.includes(key)),
@@ -167,6 +186,7 @@ export function fewestTypes(input: FewestTypesInput): FewestTypesResult {
 					gathered: all.gathered,
 					cashCents: optimizeRouteFunding(claims, input.startingTarCoins, input.allowSpecial).cashCents,
 					days: parallelDays(quantities, reserve),
+					byMode: modeTotals(quantities),
 				};
 				if (preview.cashCents > all.cashCents + CASH_TOLERANCE_CENTS) return;
 				if (
