@@ -214,7 +214,7 @@ search manifest. Preserve the existing browser manifest DTO/cache protocol.
 
 ### Catalog: fetch Tarkov.dev and update domain tables
 
-Keep `npm run db:update` as the catalog command. Fold the current generate,
+Keep `pnpm run db:update` as the catalog command. Fold the current generate,
 validate, and upload steps into that command:
 
 1. Fetch all requested domain datasets for all three modes using the existing
@@ -241,7 +241,7 @@ policies remain authoritative. This writer never overwrites existing prices.
 
 ### Prices: update the item price relation separately
 
-Keep `npm run db:prices:refresh`, selected-mode options, and the market analyzer
+Keep `pnpm run db:prices:refresh`, selected-mode options, and the market analyzer
 scheduler. Reuse current normalization, conditional requests, concurrency/chunking,
 and effective-price calculations behind the PostgreSQL PriceRefreshStore.
 

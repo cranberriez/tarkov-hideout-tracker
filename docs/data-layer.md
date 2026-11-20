@@ -74,7 +74,7 @@ preserves the source flag. Item IDs intentionally have no item-table FK because
 synthetic, quest and unresolved references must survive ingestion.
 The migration backfills existing JSON arrays. The catalog writer validates inputs,
 upserts both representations and prunes stale input positions in the same transaction.
-Apply `npm run db:migrate` before deploying the updated catalog writer.
+Apply `pnpm run db:migrate` before deploying the updated catalog writer.
 Full recipe and station-graph readers reconstruct input arrays from the normalized
 rows. Item usage reads select only recipes producing the requested item or using
 it through the reverse indexes, including tools and quest inputs. They hydrate
@@ -106,9 +106,9 @@ route imports it locally without provider services or runtime database queries.
 Each page's `req` counts claimed tiles on the immediately previous page, not
 cumulative rewards. `unlockRequirement` makes that relationship explicit. Each
 tile's `cost` maps document keys to quantities; `totalDocumentCost` is their sum.
-These costs are one player's assignment: totals match the wiki for every tile, but
-document types differ between players, so players can swap types (see
-[user state](user-state.md#battle-pass-progress)).
+For the Season 1 viewer, only the total and number of distinct required types are reliable.
+The snapshot's individual types and per-type quantities describe one assignment.
+Season 2 requires independent validation. See [configuration requirements](battle-pass-configuration.md).
 The final page's six trader offers share one tile and one cost. Trader rewards
 unlock offers rather than directly granting items.
 
@@ -124,8 +124,8 @@ and EFT Docs Map. Classified documents come from the Expansion Hub and replace
 one required document each; the separate five-for-one ordinary-document exchange
 is not applied by the planner.
 
-The Locations dropdown defaults to one column per map, with the existing map
-preview artwork and square document tiles. Its Table toggle shows the map-overlap
+The Locations dropdown defaults to a grid with one map-image tile per map and its
+documents overlaid along the bottom as labelled rows, filterable by document type. Its Table toggle shows the map-overlap
 matrix. Both views show seven possible spawns of each relevant type by default,
 five on Factory, and `?` on Icebreaker for unknown counts. These counts represent
 possible spawn locations. Icebreaker Medical document availability comes from

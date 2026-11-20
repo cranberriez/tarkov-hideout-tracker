@@ -26,7 +26,7 @@ function createData(seasonId: SeasonId) {
 		placeholder: seasonId === "season-2",
 		notice:
 			seasonId === "season-2"
-				? "Test placeholder: rewards, documents and locations currently copy Season 1. Test progress is saved separately."
+				? "UNTAR Control placeholder: rewards, documents and locations still copy Season 1 until Season 2 data is reviewed. Progress is saved separately."
 				: null,
 		storageKey: "tarkov-battle-pass-" + seasonId + "-v1",
 		pages,

@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { generatedBattlePassArtwork } from "@/lib/generated-battle-pass-artwork";
 import styles from "../../battle-pass.module.css";
 
+/** Artwork with extra transparent padding; scaled visually only, so layout size is unchanged. */
+const ENLARGED_ARTWORK = new Set(["personnel", "technical", "user"]);
+
 /** Locations alone use the transparent item artwork, retaining the source fallback. */
 export function LocationsDocumentArtwork({
 	doc,
@@ -38,7 +41,7 @@ export function LocationsDocumentArtwork({
 					alt=""
 					loading="lazy"
 					onError={() => setSourceIndex((index) => index + 1)}
-					className="h-full w-full object-contain"
+					className={cn("h-full w-full object-contain", ENLARGED_ARTWORK.has(doc.key) && "scale-105")}
 				/>
 			) : (
 				<FileText aria-label="Image unavailable" className="h-full w-full object-contain text-subtle-foreground" />

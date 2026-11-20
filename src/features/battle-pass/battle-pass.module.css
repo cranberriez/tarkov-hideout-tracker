@@ -214,15 +214,16 @@
 	outline-offset: 2px;
 }
 .rewardGrid {
+	--reward-row-height: clamp(240px, 32dvh, 300px);
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	grid-auto-rows: clamp(240px, 32dvh, 300px);
+	grid-auto-rows: var(--reward-row-height);
 	gap: 12px;
 }
 @media (min-width: 1100px) {
 	.rewardGrid {
 		/* Leave room around rewards for navigation, the summary, and the minimap. */
-		grid-auto-rows: clamp(180px, calc((100dvh - 460px) / 3), 300px);
+		--reward-row-height: clamp(180px, calc((100dvh - 460px) / 3), 300px);
 	}
 }
 .card {
@@ -291,12 +292,13 @@
 .minimap {
 	position: fixed;
 	inset: auto 0 0 0;
-	z-index: 30;
+	z-index: 80;
+	view-transition-name: battle-pass-minimap;
 	/* Fixed overlays must not inherit the page's space-y flow margins. */
 	margin: 0;
 	padding: 10px 0;
 	border-top: 1px solid var(--border);
-	background: color-mix(in srgb, var(--background) 92%, transparent);
+	background: var(--background);
 	backdrop-filter: blur(8px);
 }
 .mini {
@@ -320,6 +322,18 @@
 	outline: 2px solid var(--brand);
 	outline-offset: 2px;
 }
+/* Named overlay snapshots stay above the sliding page snapshots. */
+::view-transition-group(battle-pass-minimap) {
+	z-index: 80;
+	animation: none;
+}
+::view-transition-old(battle-pass-minimap) {
+	display: none;
+}
+::view-transition-new(battle-pass-minimap) {
+	animation: none;
+	mix-blend-mode: normal;
+}
 ::view-transition-new(.slideInRight) {
 	animation: slideFromRight 260ms ease-out both;
 }
@@ -341,7 +355,8 @@
 }
 
 .costGrid {
-	display: grid;
+	display: flex;
+	flex-wrap: wrap;
 	gap: 4px;
 }
 .costGrid .chip {
@@ -354,6 +369,32 @@
 	gap: 2px;
 	padding-right: 0;
 	background: color-mix(in srgb, var(--background) 75%, var(--card));
+}
+/* Reward costs: equal squares, the amount and type mark together on the artwork. */
+.costGrid .compact,
+.compact {
+	width: 50px;
+	height: 50px;
+}
+.amountBadge {
+	position: absolute;
+	right: 5px;
+	bottom: 2px;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	/* Shadows the number and the clipped mark together, without a backing box. */
+	filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.95));
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 18px;
+	font-variant-numeric: tabular-nums;
+}
+.amountBadge .mark {
+	position: static;
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
 }
 @media (min-width: 1100px) and (max-height: 1199px) {
 	.rewardGrid {
@@ -372,16 +413,25 @@
 	}
 	/* Three cumulative-cost rows must still clear the full-size action buttons. */
 	.card .costGrid .chip {
-		height: 30px;
+		height: 44px;
 	}
 	.card .costGrid .face > span:first-child,
 	.card .costGrid .face > span:first-child > img,
 	.card .costGrid .face > span:first-child > svg,
-	.card .costGrid .face > span:first-child > span:not(.mark) {
-		width: 30px;
-		height: 30px;
+	.card .costGrid .face > span:first-child > span:not(.mark, .amountBadge) {
+		width: 44px;
+		height: 44px;
 	}
-	.card .costGrid .face > span:first-child > span:not(.mark) > svg {
+	.card .costGrid .compact {
+		width: 44px;
+	}
+	.card .costGrid .amountBadge {
+		right: 3px;
+		bottom: 1px;
+		font-size: 14px;
+		line-height: 16px;
+	}
+	.card .costGrid .face > span:first-child > span:not(.mark, .amountBadge) > svg {
 		max-width: 100%;
 		max-height: 100%;
 	}

@@ -1,13 +1,18 @@
 "use client";
 import { createContext, useContext, useMemo, type ReactNode, type CSSProperties } from "react";
 import { useUserStore } from "@/lib/stores/useUserStore";
-import { getSeason, type SeasonId } from "@/lib/cfg/seasons";
+import { getSeason, SEASONS, type SeasonId } from "@/lib/cfg/seasons";
 import { useCurrentSeason } from "@/features/seasons/useCurrentSeason";
-import { getBattlePassData, withCostSwaps, type BattlePassData } from "@/lib/battle-pass-seasons";
+import { getBattlePassData, type BattlePassData } from "@/lib/battle-pass-seasons";
 import { useStoredProfitValue } from "@/features/profit-pages/useStoredProfitValue";
 import { parseProgress, type Progress } from "./lib/battle-pass-model";
 const BattlePassSeasonContext = createContext<BattlePassData | null>(null);
-type BattlePassSave = { stored: Progress; write: ReturnType<typeof useStoredProfitValue>[1] };
+type BattlePassSave = {
+	stored: Progress;
+	/** The unparsed save, for fields `Progress` does not carry. */
+	raw: string | null;
+	write: ReturnType<typeof useStoredProfitValue>[1];
+};
 const BattlePassSaveContext = createContext<BattlePassSave | null>(null);
 export function useBattlePassData() {
 	return useContext(BattlePassSeasonContext) ?? getBattlePassData("season-1");
@@ -23,11 +28,8 @@ function useSeasonSave(seasonId: SeasonId) {
 	const base = getBattlePassData(seasonId);
 	const [raw, write] = useStoredProfitValue(base.storageKey);
 	const stored = useMemo(() => parseProgress(raw), [raw]);
-	// Keyed by content so unrelated saves (completions, balances) keep the data identity stable.
-	const swapsKey = JSON.stringify(stored.costSwaps);
-	const data = useMemo(() => withCostSwaps(base, JSON.parse(swapsKey)), [base, swapsKey]);
-	const save = useMemo(() => ({ stored, write }), [stored, write]);
-	return { data, save };
+	const save = useMemo(() => ({ stored, raw, write }), [stored, raw, write]);
+	return { data: base, save };
 }
 export function BattlePassSeason({
 	seasonId,
@@ -53,12 +55,11 @@ export function BattlePassSeason({
 					{showHeader && (
 						<div className="container mx-auto flex flex-wrap items-center gap-3 px-4 pt-4 text-sm">
 							<strong style={{ color: season.color }}>{season.title} Battle Pass</strong>
-							<a href="/battle-pass?season=season-1" className="underline">
-								KORD
-							</a>
-							<a href="/battle-pass?season=season-2" className="underline">
-								Test
-							</a>
+							{SEASONS.map((entry) => (
+								<a key={entry.id} href={`/battle-pass?season=${entry.id}`} className="underline">
+									{entry.name}
+								</a>
+							))}
 							{showNotice && data.notice && <p className="text-muted-foreground">{data.notice}</p>}
 						</div>
 					)}

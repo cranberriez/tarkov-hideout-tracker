@@ -43,6 +43,8 @@
 
 	/* Warning: unmet prerequisites, caution and partial/missing-data notices. */
 	--warning: oklch(0.828 0.16 84.429);
+	/* Classified documents: wildcard currency and classified-only battle pass costs. */
+	--classified: oklch(0.78 0.18 325);
 
 	/* Found in raid: Tarkov's FiR orange for FiR requirements, counts and markers. Kept distinct from warning yellow and craft orange. */
 	--fir: oklch(0.77 0.165 64);
@@ -54,6 +56,21 @@
 	/* Fixed dark surface and light ink for the unobtrusive site-rating chip. */
 	--rating-surface: #111111;
 	--rating-foreground: #eeeeee;
+	/* Season 2 (UNTAR Control) key art: fixed logo blue, deeper button blue, off-white ink and slate backdrop in every theme. */
+	--untar: #3d8fe0;
+	--untar-strong: #2b78d9;
+	--untar-ink: #e9e7e1;
+	--untar-surface: #141c24;
+	/* Season 1 (KORD Breach): the KORD profile yellow (profile-colors.ts) and a dark warm backdrop in every theme. */
+	--kord: #fbbf24;
+	--kord-surface: #17140c;
+	/* "New" badge on seasonal modifiers: fixed black chip with white text in every theme. */
+	--new-badge: #000000;
+	--new-badge-foreground: #ffffff;
+	/* Selected seasonal modifier points chip: solid fills with fixed black ink, kept at WCAG AAA (light theme lightens the fills). */
+	--modifier-picked-positive: var(--success);
+	--modifier-picked-negative: var(--danger);
+	--modifier-picked-foreground: #000000;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
 	--info: oklch(0.746 0.16 232.661);
@@ -141,6 +158,8 @@
    overlays under foreground text. Status and acquisition colors are mid-tones that tint pastel. */
 [data-theme="light"] {
 	color-scheme: light;
+	--modifier-picked-positive: #4ade80;
+	--modifier-picked-negative: #ff6568;
 	--background: oklch(0.925 0.004 286);
 	--card-bg: oklch(0.962 0.003 286);
 	--surface-raised: oklch(0.9 0.005 286);
@@ -153,6 +172,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.62 0.15 150);
 	--warning: oklch(0.6 0.13 65);
+	--classified: oklch(0.5 0.2 325);
 	--fir: oklch(0.6 0.15 52);
 	--danger: oklch(0.59 0.2 27);
 	--info: oklch(0.57 0.13 245);
@@ -179,6 +199,7 @@
 	--brand-hover: color-mix(in oklab, var(--brand) 80%, var(--background));
 	--success: oklch(0.84 0.18 150);
 	--warning: oklch(0.87 0.15 88);
+	--classified: oklch(0.85 0.16 325);
 	--fir: oklch(0.82 0.16 66);
 	--danger: oklch(0.76 0.17 22);
 	--info: oklch(0.8 0.12 232);
@@ -188,6 +209,17 @@
 }
 
 @theme inline {
+	--color-untar: var(--untar);
+	--color-untar-strong: var(--untar-strong);
+	--color-untar-ink: var(--untar-ink);
+	--color-untar-surface: var(--untar-surface);
+	--color-kord: var(--kord);
+	--color-kord-surface: var(--kord-surface);
+	--color-new-badge: var(--new-badge);
+	--color-new-badge-foreground: var(--new-badge-foreground);
+	--color-modifier-picked-positive: var(--modifier-picked-positive);
+	--color-modifier-picked-negative: var(--modifier-picked-negative);
+	--color-modifier-picked-foreground: var(--modifier-picked-foreground);
 	--color-acquisition-craft: var(--acquisition-craft);
 	--color-acquisition-barter: var(--acquisition-barter);
 	--color-acquisition-trader: var(--acquisition-trader);
@@ -206,6 +238,7 @@
 	--color-accent-alternate: var(--accent-alternate);
 	--color-success: var(--success);
 	--color-warning: var(--warning);
+	--color-classified: var(--classified);
 	--color-fir: var(--fir);
 	--color-danger: var(--danger);
 	--color-danger-foreground: var(--danger-foreground);
@@ -274,6 +307,13 @@ body {
 .page-content-side {
 	display: none;
 	flex: 1 1 0;
+}
+
+/* Season pages scale everything (text, spacing, icons) down slightly on screens under 1024px. */
+@media (max-width: 1023px) {
+	.season-page {
+		zoom: 0.9;
+	}
 }
 
 .page-content:has(> main) > .page-content-side {

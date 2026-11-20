@@ -9,7 +9,7 @@ import { useBattlePassData } from "./BattlePassSeason";
 
 const EMPTY_COUNTS = {};
 
-/** Read-only ordinary document totals for PVP, PVE and this pass's seasonal character. */
+/** Read-only ordinary document totals for PVE, PVP and this pass's seasonal character, in that display order. */
 export function useProfileDocuments() {
 	const data = useBattlePassData();
 	const pvp = useUserStore((state) => state.profiles.PVP.itemCounts);
@@ -18,17 +18,14 @@ export function useProfileDocuments() {
 	return useMemo(() => {
 		const season = getSeason(data.seasonId);
 		const profiles = [
-			{ key: "PVP", label: "PVP", color: PROFILE_BASE_COLORS.PVP, counts: pvp },
 			{ key: "PVE", label: "PVE", color: PROFILE_BASE_COLORS.PVE, counts: pve },
+			{ key: "PVP", label: "PVP", color: PROFILE_BASE_COLORS.PVP, counts: pvp },
 			{ key: data.seasonId, label: season.name, color: season.color, counts: seasonal },
 		].map(({ counts, ...profile }) => ({
 			...profile,
 			inventory: profileDocumentCounts(counts, data.documentItemIds),
 		}));
-		const total: Record<string, number> = {};
-		for (const profile of profiles)
-			for (const [key, amount] of Object.entries(profile.inventory)) total[key] = (total[key] ?? 0) + amount;
-		return { profiles, total };
+		return { profiles };
 	}, [pvp, pve, seasonal, data]);
 }
 export type ProfileDocuments = ReturnType<typeof useProfileDocuments>;

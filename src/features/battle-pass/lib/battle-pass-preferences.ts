@@ -6,10 +6,17 @@ export interface BattlePassPreferences {
 	cumulative: boolean;
 	showPossibleProgress: boolean;
 	listMode: boolean;
-	consumeDocs: boolean;
 	showMaps: boolean;
 	documentsOpen: boolean;
+	documentInventoryExpanded: boolean;
 	allProfiles: boolean;
+	showProfileRecommendations: boolean;
+	/** Runs the docs-breakdown route optimizer and its reward-card profile recommendations. */
+	optimizerEnabled: boolean;
+	/** Document inventory needs follow the saved plan while one exists. */
+	planNeeds: boolean;
+	/** Reward cards show what the active route spends on each claim instead of the configured cost. */
+	plannedCosts: boolean;
 }
 
 export const defaultPreferences: BattlePassPreferences = {
@@ -18,10 +25,14 @@ export const defaultPreferences: BattlePassPreferences = {
 	cumulative: false,
 	showPossibleProgress: false,
 	listMode: false,
-	consumeDocs: false,
 	showMaps: false,
 	documentsOpen: false,
+	documentInventoryExpanded: true,
 	allProfiles: false,
+	showProfileRecommendations: true,
+	optimizerEnabled: false,
+	planNeeds: true,
+	plannedCosts: false,
 };
 
 /** Normalize known fields without dropping preferences written by a newer build. */

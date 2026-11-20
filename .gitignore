@@ -64,3 +64,4 @@ tarkov-hideout-test1.db-wal
 
 # Generated at dev/build time from checked-in artwork
 /public/images/generated-artwork/
+/public/battle-pass/highs/

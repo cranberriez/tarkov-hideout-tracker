@@ -2,6 +2,34 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { defaultPreferences, parsePreferences, updatePreference } from "./battle-pass-preferences";
 
+test("inventory expansion defaults open and roundtrips independently of location visibility and player preferences", () => {
+	assert.equal(parsePreferences(null).documentInventoryExpanded, true);
+	assert.equal(parsePreferences(JSON.stringify({ showMaps: false })).documentInventoryExpanded, true);
+	let raw = JSON.stringify({ showMaps: true, consumeDocs: true, future: { retained: true } });
+	for (const expanded of [false, true]) {
+		raw = updatePreference(raw, "documentInventoryExpanded", expanded);
+		const restored = parsePreferences(raw);
+		assert.equal(restored.documentInventoryExpanded, expanded);
+		assert.equal(restored.showMaps, true);
+		assert.equal(restored.consumeDocs, true);
+		assert.deepEqual(restored.future, { retained: true });
+	}
+	assert.equal(parsePreferences('{"documentInventoryExpanded":"false"}').documentInventoryExpanded, true);
+});
+
+test("document locations default collapsed and remember both toggle states without replacing preferences", () => {
+	assert.equal(parsePreferences(null).showMaps, false);
+	assert.equal(parsePreferences(JSON.stringify({ listMode: true })).showMaps, false);
+	let raw = JSON.stringify({ listMode: true, future: { retained: true } });
+	for (const expanded of [true, false]) {
+		raw = updatePreference(raw, "showMaps", expanded);
+		const restored = parsePreferences(raw);
+		assert.equal(restored.showMaps, expanded);
+		assert.equal(restored.listMode, true);
+		assert.deepEqual(restored.future, { retained: true });
+	}
+});
+
 test("preference reads normalize fields independently without changing saved bytes", () => {
 	assert.deepEqual(parsePreferences(null), defaultPreferences);
 	assert.deepEqual(parsePreferences("invalid"), defaultPreferences);
@@ -23,7 +51,6 @@ test("all shared UI preferences survive edits and reload while retaining unknown
 		"cumulative",
 		"showPossibleProgress",
 		"listMode",
-		"consumeDocs",
 		"showMaps",
 		"documentsOpen",
 	] as const) {
@@ -31,13 +58,22 @@ test("all shared UI preferences survive edits and reload while retaining unknown
 	}
 	const restored = parsePreferences(raw);
 	assert.equal(restored.requestedScope, "all");
-	assert.equal(restored.consumeDocs, true);
 	assert.equal(restored.documentsOpen, true);
 	assert.deepEqual(restored.future, ["retained"]);
 	assert.deepEqual(parsePreferences(JSON.stringify(restored)), restored);
 	const updated = parsePreferences(updatePreference(raw, "showPossibleProgress", false));
 	assert.equal(updated.showPossibleProgress, false);
-	assert.equal(updated.consumeDocs, true);
 	assert.equal(updated.requestedScope, "all");
 	assert.deepEqual(updated.future, ["retained"]);
+});
+
+test("profile recommendation visibility preserves existing preferences and unknown fields", () => {
+	assert.equal(parsePreferences(null).showProfileRecommendations, true);
+	const raw = JSON.stringify({ consumeDocs: true, future: { retained: true } });
+	const hidden = updatePreference(raw, "showProfileRecommendations", false);
+	assert.equal(parsePreferences(hidden).showProfileRecommendations, false);
+	assert.equal(parsePreferences(hidden).consumeDocs, true);
+	assert.deepEqual(parsePreferences(hidden).future, { retained: true });
+	assert.equal(parsePreferences(updatePreference(hidden, "showMaps", true)).showProfileRecommendations, false);
+	assert.equal(parsePreferences('{"showProfileRecommendations":"false"}').showProfileRecommendations, true);
 });

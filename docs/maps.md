@@ -46,7 +46,7 @@ mode in the game-data scope.
 
 Loose loot spawns get handbook categories (two levels, posters split out) from the
 committed [loot category table](../src/lib/data/map-loot-categories.json), refreshed with
-`npm run pull-map-loot-categories`; items missing from it stay uncategorised. Item names
+`pnpm run pull-map-loot-categories`; items missing from it stay uncategorised. Item names
 come from the search manifest. Prices load only while valuable-loot icons are on, as
 one shared price request for that map's loose loot items.
 
@@ -115,7 +115,7 @@ visible (see the library's [attribution](../src/features/maps/tarkov-map/ATTRIBU
 ## Battle-pass document maps
 
 Battle Pass document locations are a layer of the [maps explorer](#maps-explorer).
-The Battle Pass overview and Season overview link to
+The document map is available at
 `/maps?preset=documents`, which opens maps with only documents and extracts shown.
 Location photos stay bundled under
 `public/images/battle-pass/map-assets/tarkovdoc.com/assets/previews`.
@@ -136,8 +136,8 @@ visited-objective undo, and narrow/wide layouts as relevant.
 
 [battle-pass-seasons.ts](../src/lib/battle-pass-seasons.ts) associates each season
 with its pass rewards, document IDs, location summaries, thumbnails and artwork.
-Test currently uses an independent clone of the Season 1 snapshot and is labeled
-as placeholder data. Replace Test's registry data when reviewed Season 2 data is
+Season 2 (UNTAR) currently uses an independent clone of the Season 1 snapshot and is labeled
+as placeholder data. Replace its registry data when reviewed Season 2 data is
 available; retain Season 1's snapshot and stable entity IDs. Map document
 locations in [documents.ts](../src/features/maps/tarkov-map/documents.ts) are
 season-specific and not yet keyed by season. Character inventory and

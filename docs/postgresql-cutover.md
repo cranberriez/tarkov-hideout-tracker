@@ -11,19 +11,19 @@ The target is a fresh catalog; the only imported business data is item discovery
    runtime pooler cannot support migration session locks. Verify TLS certificate
    validation, connection limits, statement timeouts, network access, and restore
    procedures. `.env.local` overrides `.env`; process variables override both.
-2. Run `npm ci` and `npm run db:migrate` against the target. Migrations are explicit;
+2. Run `pnpm install` and `pnpm run db:migrate` against the target. Migrations are explicit;
    page requests and builds never create schema. Do not reuse production as
    `TEST_DATABASE_URL`; integration fixtures require a disposable database.
 3. **Optional history preservation:** set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
    locally and export just discovery from the source while it keeps serving traffic:
 
    ```bash
-   npm run db:discovery:export -- --turso discovery.json
+   pnpm run db:discovery:export --turso discovery.json
    ```
 
    This reads `item_catalog_history` and `catalog_tracking` in one read-only snapshot.
    A consistent database download also works with Node 22.13+ (24 recommended):
-   `npm run db:discovery:export -- source.db discovery.json`. The `.db` extension
+   `pnpm run db:discovery:export source.db discovery.json`. The `.db` extension
    needs no conversion. Direct export avoids dependence on a complete binary download.
 
    Keep the manifest/checksum and compare every mode's counts with the source.
@@ -32,7 +32,7 @@ The target is a fresh catalog; the only imported business data is item discovery
    the entire import; never overwrite first-seen facts or assign today's date to
    an unknown baseline. Identical reimports are harmless. `db:update` automatically
    imports this file in its catalog transaction; no separate import command is needed.
-   For metadata-only import, `npm run db:discovery:import -- discovery.json` remains available.
+   For metadata-only import, `pnpm run db:discovery:import discovery.json` remains available.
 
    To start without historical metadata, skip this step and leave `discovery.json`
    absent. Bootstrap initializes current items with unknown dates/patches; later
@@ -44,10 +44,10 @@ The target is a fresh catalog; the only imported business data is item discovery
    flea observations:
 
    ```bash
-   npm run db:update -- --dry-run
-   npm run db:update
-   npm run db:prices:refresh -- --modes regular,pve,pvp-season
-   npm run db:status
+   pnpm run db:update --dry-run
+   pnpm run db:update
+   pnpm run db:prices:refresh --modes regular,pve,pvp-season
+   pnpm run db:status
    ```
 
    Configure known release dates in the release timeline. Catalog updates require all three

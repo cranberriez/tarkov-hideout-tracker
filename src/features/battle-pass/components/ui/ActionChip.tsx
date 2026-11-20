@@ -9,6 +9,7 @@ export function ActionChip({
 	icon,
 	onClick,
 	tone,
+	disabled = false,
 }: {
 	active: boolean;
 	label: string;
@@ -16,10 +17,12 @@ export function ActionChip({
 	icon: ReactNode;
 	onClick: () => void;
 	tone: "goal" | "done" | "avoid";
+	disabled?: boolean;
 }) {
 	return (
 		<button
 			type="button"
+			disabled={disabled}
 			aria-label={accessibleLabel}
 			aria-pressed={active}
 			onClick={onClick}

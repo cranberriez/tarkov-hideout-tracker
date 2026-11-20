@@ -59,12 +59,6 @@ export function MapGrid() {
 					))}
 				</tbody>
 			</table>
-			<div className="mt-3 flex justify-between text-[11px] text-subtle-foreground">
-				<span>Possible spawns, not guaranteed pickups.</span>
-				<a href={locations.corroboratingSourceUrl} target="_blank" rel="noreferrer" className="hover:text-brand">
-					Spawn guides ↗
-				</a>
-			</div>
 		</div>
 	);
 }

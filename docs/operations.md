@@ -2,7 +2,7 @@
 
 ## Local setup
 
-Install dependencies with npm ci. Copy [.sample.env](../.sample.env) only when no
+Install dependencies with pnpm install. Copy [.sample.env](../.sample.env) only when no
 local environment file already exists. The runtime and routine commands use
 PostgreSQL; production switching follows the separate
 [cutover runbook](postgresql-cutover.md).
@@ -19,8 +19,9 @@ PostgreSQL; production switching follows the separate
 | APINATOR_KEY, APINATOR_SECRET, APINATOR_CLUSTER | Apinator app that signs Mappinator group channels (`/api/group/auth`); unset returns 503 |
 | APINATOR_GROUP_ACCESS_KEY      | Optional shared key the desktop app sends (`X-Group-Key`); empty leaves group auth open |
 | TARKOV_JSON_REQUEST_TIMEOUT_MS | Existing provider per-attempt timeout override          |
+| SEASON_PREVIEWS_DISABLED       | Only `true` turns off season link-preview images and build embeds; needs a redeploy |
 
-Companion sync is always available under `npm run dev`. In production, set
+Companion sync is always available under `pnpm run dev`. In production, set
 `syncEnabled=true` to enable `/sync`, its navigation/status indicator, background
 companion polling and queued updates, and `/api/group/auth`. Otherwise the page
 and group auth endpoint return 404 and the controller stays unmounted. Disabling
@@ -34,10 +35,10 @@ for direct export and local `.db` export alternatives.
 The [environment loader](../db-scripts/lib/config.mjs) preserves process values,
 then reads .env.local before .env. Never commit credentials. Use your provider's
 verified TLS configuration; migration/build operations do not disable certificate
-validation. Apply schema explicitly with npm run db:migrate. Runtime and builds
+validation. Apply schema explicitly with pnpm run db:migrate. Runtime and builds
 never run migrations.
 
-Before deploying database-backed site ratings, run `npm run db:migrate` to apply
+Before deploying database-backed site ratings, run `pnpm run db:migrate` to apply
 [0007_feedback.sql](../db-scripts/migrations/0007_feedback.sql). It adds and seeds
 the singleton `feedback` aggregate without changing catalog or player data. The
 runtime database role needs SELECT/INSERT/UPDATE access to this table. Existing
@@ -46,14 +47,14 @@ cannot be reconstructed from the new counters. Verify recorder behavior with
 `node --test --import jiti/register src/server/site-rating/record-site-rating.test.ts`;
 database cases require `TEST_DATABASE_URL` and use disposable isolated schemas.
 
-Run `npm run db:update` to bootstrap the catalog and discovery directly in PostgreSQL,
-then `npm run db:prices:refresh`. No SQLite backup or discovery import is required.
+Run `pnpm run db:update` to bootstrap the catalog and discovery directly in PostgreSQL,
+then `pnpm run db:prices:refresh`. No SQLite backup or discovery import is required.
 If a verified `discovery.json` exists in the project root, the update imports it
 atomically with catalog changes; `--discovery path.json` selects a different file.
 Without a file, the first update records current items with unknown first-seen dates;
 later updates timestamp genuinely new items. See the [CLI guide](../db-scripts/README.md).
-Run npm run dev and open [localhost:3000](http://localhost:3000). A production
-build uses npm run build followed by npm start. Database routes require initialized
+Run pnpm run dev and open [localhost:3000](http://localhost:3000). A production
+build uses pnpm run build followed by pnpm start. Database routes require initialized
 catalog data and bootstrapped offers/prices for every served mode.
 
 ## Measuring database activity locally
@@ -62,7 +63,7 @@ Start a fresh server from PowerShell with logging enabled:
 
 ```powershell
 $env:PG_QUERY_LOG = '1'
-npm run dev
+pnpm run dev
 ```
 
 Browse normally and watch `[postgres]` lines next to Next.js request logs. Each
@@ -82,8 +83,8 @@ other clients, connection activity, background jobs, and separate CLI pools are
 not captured. Standard pool and transaction queries are covered; streaming
 Submittable queries are passed through without logging. The logger issues no SQL.
 
-For caching closer to deployment, stop the dev server and run `npm run build`,
-then `npm start` with the same environment variable. Treat build-time activity
+For caching closer to deployment, stop the dev server and run `pnpm run build`,
+then `pnpm start` with the same environment variable. Treat build-time activity
 separately. Development reloads and caching behavior can distort comparisons.
 Keep the same game mode for repeated visits, then test mode switches separately.
 
@@ -91,14 +92,14 @@ Use `PG_QUERY_LOG=verbose` to include SQL text. Bound parameter values, result
 rows, connection strings, and error messages are never printed by this logger;
 verbose SQL can still contain literals embedded directly in a statement. Logs
 stay in the server terminal unless you redirect them. To save a local session,
-use `npm run dev 2>&1 | Tee-Object -FilePath "$env:TEMP\tarkov-postgres.log"`.
+use `pnpm run dev 2>&1 | Tee-Object -FilePath "$env:TEMP\tarkov-postgres.log"`.
 Set the variable to `0` or remove it, then restart the server to disable logging.
 
 ## Validation
 
 ### Local artwork generation
 
-`npm run dev` and `npm run build` run `npm run artwork:generate` first. The
+`pnpm run dev` and `pnpm run build` run `pnpm run artwork:generate` first. The
 [generator](../scripts/generate-artwork.mjs) reads checked-in local artwork and
 creates WebP story hover previews and battle-pass variants under
 `public/images/generated-artwork/` (ignored by Git). No external storage or image
@@ -107,7 +108,7 @@ its updated feature manifests in the same commit. Warm runs reuse existing files
 
 Generated URLs hash the encoded bytes and use a one-year immutable cache header.
 Story thumbnails and full-size dialogs retain their existing paths; provider-hosted
-item and map imagery is unchanged. Deploy with `npm run build` so every referenced
+item and map imagery is unchanged. Deploy with `pnpm run build` so every referenced
 variant exists. Invoking `next build` directly skips the generation lifecycle.
 
 ### Checks
@@ -115,17 +116,17 @@ variant exists. Invoking `next build` directly skips the generation lifecycle.
 Run from the repository root:
 
 ```bash
-npm run docs:check
-npm run test:architecture
-npm run test:theme
-npm run test:contracts
-npm run test:query
-npm run test:search
-npm run test:page-data
-npm run test:reusable-reads
-npm run test:postgres
-npm run lint
-npm run build
+pnpm run docs:check
+pnpm run test:architecture
+pnpm run test:theme
+pnpm run test:contracts
+pnpm run test:query
+pnpm run test:search
+pnpm run test:page-data
+pnpm run test:reusable-reads
+pnpm run test:postgres
+pnpm run lint
+pnpm run build
 node --test --import jiti/register src/lib/quests/quest-availability.test.ts
 ```
 
@@ -144,13 +145,13 @@ dependencies or Next.js output. The migration-test checkout prepared for this
 change is based on local `main` at `a86a28e9e1f4c69668c58f2b51e2ae6c93326af4`
 (Zustand user state v15). When preparing a production cutover, select the actual
 deployed commit and record it; do not assume a moving branch still matches it.
-Install that checkout's dependencies with `npm ci`. For the old JSON-backed build,
+Install that checkout's dependencies with `pnpm install`. For the old JSON-backed build,
 run these commands in its own PowerShell terminal (no production credentials needed):
 
 ```powershell
 $env:TARKOV_DATA_SOURCE = 'json'
 $env:CACHE_ENABLED = 'false'
-npm run dev -- --port 3000
+pnpm run dev --port 3000
 ```
 
 1. Use a disposable browser profile, and keep it for the entire test. Open
@@ -159,7 +160,7 @@ npm run dev -- --port 3000
    Save the exact `tarkov-hideout-user-state` localStorage value as a local fixture
    using browser developer tools. The old compact export alone cannot back up items.
 2. Close the old app's tabs, stop its server with Ctrl+C, then run
-   `npm run dev -- --port 3000` in the new checkout with its usual PostgreSQL setup.
+   `pnpm run dev --port 3000` in the new checkout with its usual PostgreSQL setup.
    Open the same origin in the same browser profile. The conversion dialog should
    open automatically and explicitly say that quests will not be imported.
 3. Convert to PVE (or another chosen profile). Verify station levels and each
@@ -187,10 +188,10 @@ cannot spawn child processes, add `--experimental-test-isolation=none`.
 ## Catalog updates
 
 ```bash
-npm run db:update -- --dry-run
-npm run db:update
-npm run db:status
-npm run db:status -- --storage
+pnpm run db:update --dry-run
+pnpm run db:update
+pnpm run db:status
+pnpm run db:status --storage
 ```
 
 Catalog ingestion fetches/normalizes all three modes, validates complete input,
@@ -215,7 +216,7 @@ Conflicts are checked before expensive catalog preparation and again under the
 transaction lock. Console output shows counts and at most five examples; the full
 prior/incoming records are written to `db-scripts/.generated/diagnostics/`.
 Capture complete command output when diagnosing a run, for example in PowerShell:
-`npm run db:update *> db-scripts/.generated/catalog-update.log` (create the output
+`pnpm run db:update *> db-scripts/.generated/catalog-update.log` (create the output
 directory first). Keep logs and reports local; never include environment values.
 
 ## Release timeline
@@ -281,8 +282,8 @@ or read failure is shown explicitly while the rest of the page remains available
 ## Mutable price refresh
 
 ```bash
-npm run db:prices:refresh -- --modes pvp-season
-npm run db:prices:refresh -- --modes regular,pve --concurrency 12
+pnpm run db:prices:refresh --modes pvp-season
+pnpm run db:prices:refresh --modes regular,pve --concurrency 12
 ```
 
 [refresh-prices.ts](../src/server/prices/refresh-prices.ts) separately accepts
@@ -310,8 +311,8 @@ retry after 15 minutes without advancing success. Catalog failures are logged as
 `catalog-failed` and do not prevent the per-mode price/analytics steps from running.
 `catalog-started` and `catalog-completed` identify successful passes. The volume
 lock and heartbeat remain refreshed during long catalog runs. `status` reports
-catalog timestamps alongside mode state. Use `npm run db:status` for database
-freshness and `npm run db:update` for an immediate manual recovery.
+catalog timestamps alongside mode state. Use `pnpm run db:status` for database
+freshness and `pnpm run db:update` for an immediate manual recovery.
 
 [vercel.json](../vercel.json) has no cron schedules and the catalog cron endpoint
 is removed. Deploy the rebuilt worker first, verify `catalog-completed`, then
@@ -380,32 +381,33 @@ summaries; --storage adds PostgreSQL relation sizes. Inspect
 [price store](../src/server/prices/price-store.ts) for the corresponding failures.
 Do not treat content_version as a restore point.
 
-Map/quest-content utilities remain independent: npm run pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
+Map/quest-content utilities remain independent: pnpm run pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
 and [data layer](data-layer.md) for their source policies.
 
 ## Seasonal rollover rehearsal
 
 The single availability setting is Season 1's `endsAt` in
 [seasons.ts](../src/lib/cfg/seasons.ts). Its configured end remains December 7,
-2026 at 23:59:59 UTC. Season 2 is the blue **Test** placeholder. Crossing the
+2026 at 09:00 UTC (1:00 AM PST). Season 2 is **UNTAR** (UNTAR Control), still using
+placeholder pass data. Crossing the
 boundary changes availability and navigation; character activation is manual.
 
 Use a disposable browser origin/profile rather than an existing player's save:
 
 1. Select KORD, record recognizable level, inventory, story and pass progress.
-2. Temporarily set Season 1's `endsAt` to a UTC timestamp in the past. Reload or
-   refocus the app. The old character must remain selected, with an Activate Test
-   banner and unchanged progress.
-3. Activate Test. Confirm a new default character and separate pass progress.
-   Repeated activation must preserve any Test edits.
+2. In development, set `NEXT_PUBLIC_SEASON_OVERRIDE="season-2"` in `.env` and
+   restart `pnpm run dev` (production builds ignore it). The old character must
+   remain selected, with an Activate UNTAR banner and unchanged progress.
+3. Activate UNTAR. Confirm a new default character and separate pass progress.
+   Repeated activation must preserve any UNTAR edits.
 4. Open the profile menu, choose **View past**, then KORD. The three current
    profile choices are replaced by past seasonal characters. Confirm old progress
-   remains editable and the banner now offers **Switch to Test**.
-5. Switch among KORD, Test, PVP and PVE, reload, and check pass/map links and
+   remains editable and the banner now offers **Switch to UNTAR**.
+5. Switch among KORD, UNTAR, PVP and PVE, reload, and check pass/map links and
    document consumption isolation. Export/import a v2 backup with both seasons;
    a v1 KORD backup must affect Season 1 only.
-6. Restore the original `endsAt`. This changes availability only; it does not
-   remove the disposable Test character. Never clear real player data to rerun.
+6. Remove the override and restart. This changes availability only; it does not
+   remove the disposable UNTAR character. Never clear real player data to rerun.
 
 Focused checks:
 

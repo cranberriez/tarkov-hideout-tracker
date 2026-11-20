@@ -272,6 +272,7 @@ interface UserState {
 
 	addItemCounts: (itemId: string, haveDelta: number, haveFirDelta: number) => void;
 	addItemCountsForSeason: (seasonId: SeasonId, itemId: string, haveDelta: number, haveFirDelta: number) => void;
+	addItemCountsForProfile: (mode: "PVP" | "PVE", itemId: string, haveDelta: number, haveFirDelta: number) => void;
 
 	setChecklistViewMode: (mode: "all" | "nextLevel") => void;
 	setItemSourceFilter: (value: ItemSourceFilter) => void;
@@ -686,6 +687,22 @@ export const useUserStore = create<UserState>()(
 						},
 					})),
 
+				addItemCountsForProfile: (mode, itemId, haveDelta, haveFirDelta) =>
+					rawSet((state) => {
+						const previous = state.profiles[mode];
+						const counts = previous.itemCounts[itemId] ?? { have: 0, haveFir: 0 };
+						const profile = {
+							...previous,
+							itemCounts: {
+								...previous.itemCounts,
+								[itemId]: { have: counts.have + haveDelta, haveFir: counts.haveFir + haveFirDelta },
+							},
+						};
+						return {
+							profiles: { ...state.profiles, [mode]: profile },
+							...(state.gameMode === mode ? profile : {}),
+						};
+					}),
 				addItemCountsForSeason: (seasonId, itemId, haveDelta, haveFirDelta) =>
 					rawSet((state) => {
 						const previous = state.seasonalProfiles[seasonId];

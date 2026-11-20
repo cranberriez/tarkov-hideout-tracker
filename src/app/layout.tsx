@@ -6,6 +6,7 @@ import { SetupModal } from "../features/setup/SetupModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SeasonCharacterBanner } from "@/features/seasons/SeasonCharacterBanner";
 import { ActiveGameModeSync } from "@/components/core/ActiveGameModeSync";
+import { HideOnSeasonPages } from "@/components/core/HideOnSeasonPages";
 import { QuickAddModal } from "@/features/quick-add/QuickAddModal";
 import { GlobalItemDetailModal } from "@/features/items/item-detail/GlobalItemDetailModal";
 import { QueryProvider } from "@/lib/query/QueryProvider";
@@ -42,19 +43,24 @@ export default function RootLayout({
 			<body className="antialiased flex min-h-dvh flex-col">
 				<QueryProvider>
 					<HoverPreviewProvider>
-						<ActiveGameModeSync />
 						<AppThemeSync />
-						<Navbar syncEnabled={isSyncEnabled()} />
-						<SeasonCharacterBanner />
+						{/* Season pages (/season-*) are data-less: no app shell, stores or global modals. */}
+						<HideOnSeasonPages>
+							<ActiveGameModeSync />
+							<Navbar syncEnabled={isSyncEnabled()} />
+							<SeasonCharacterBanner />
+						</HideOnSeasonPages>
 						<div className="page-content flex min-h-0 flex-1 flex-col">
 							<div className="page-content-side" aria-hidden="true" />
 							{children}
 							<div className="page-content-side" aria-hidden="true" />
 						</div>
-						<SetupModal />
-						<SiteRating />
-						<QuickAddModal />
-						<GlobalItemDetailModal />
+						<HideOnSeasonPages>
+							<SetupModal />
+							<SiteRating />
+							<QuickAddModal />
+							<GlobalItemDetailModal />
+						</HideOnSeasonPages>
 						<Analytics />
 					</HoverPreviewProvider>
 				</QueryProvider>

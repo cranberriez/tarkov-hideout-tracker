@@ -72,13 +72,13 @@ covers connection settings, catalog updates, and independent price maintenance.
 Install dependencies:
 
 ```bash
-npm ci
+pnpm install
 ```
 
 Start the dev server:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
@@ -86,11 +86,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 Run production checks:
 
 ```bash
-npm run lint
-npm run build
-npm run docs:check
-npm run test:architecture
-npm run test:contracts
+pnpm run lint
+pnpm run build
+pnpm run docs:check
+pnpm run test:architecture
+pnpm run test:contracts
 ```
 
 ## Learn More

@@ -22,6 +22,7 @@ export function DocumentChip({
 	fulfilled = false,
 	partial = false,
 	large = false,
+	inventory = false,
 	original,
 	swap,
 }: {
@@ -31,6 +32,8 @@ export function DocumentChip({
 	fulfilled?: boolean;
 	partial?: boolean;
 	large?: boolean;
+	/** Fill an inventory card with square artwork; its name and mark are rendered above it. */
+	inventory?: boolean;
 	/** Snapshot document name when the player swapped this line's type; marks the chip. */
 	original?: string;
 	/** Edit mode: the menu picks a replacement type instead of listing locations. */
@@ -54,6 +57,9 @@ export function DocumentChip({
 	const displayName = documentDisplayName(doc.name);
 	const maps = mapNames[doc.key] ?? [];
 	const changedFrom = original ? `Changed from ${documentDisplayName(original)}` : undefined;
+	// Reward costs: a fixed square with the amount and type mark on the artwork.
+	const compact = amount !== undefined && !large;
+	const artSize = large ? "h-14 w-14" : compact ? "h-[50px] w-[50px]" : "h-11 w-11";
 	return (
 		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
@@ -63,64 +69,98 @@ export function DocumentChip({
 					onFocus={placeLabel}
 					style={{ "--label-width": `${placement.width}px`, "--doc-color": mark?.color } as CSSProperties}
 					aria-label={`${displayName}${amount !== undefined ? `: ${amount}` : ""}${changedFrom ? ` (${changedFrom.toLowerCase()})` : ""}${fulfilled ? ", available in inventory" : partial ? ", partially covered by owned documents" : ""}. ${swap ? (swap.locked ? "Completed, locked" : "Change document type") : "Show locations"}`}
-					className={cn(
-						styles.chip,
-						"cursor-pointer border-0 bg-transparent p-0 text-left align-top",
-						swap && !swap.locked && "rounded outline-dashed outline-1 outline-offset-1 outline-brand/60",
-						placement.end && styles.end,
-						amount === undefined && styles.documentOnly,
-						large && styles.large,
-					)}
+					className={
+						inventory
+							? "block aspect-square w-full cursor-pointer overflow-hidden rounded-md border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+							: cn(
+									styles.chip,
+									"cursor-pointer border-0 bg-transparent p-0 text-left align-top",
+									swap && !swap.locked && "rounded outline-dashed outline-1 outline-offset-1 outline-brand/60",
+									placement.end && styles.end,
+									amount === undefined && styles.documentOnly,
+									large && styles.large,
+									compact && styles.compact,
+								)
+					}
 				>
-					<span className={styles.chipInner}>
-						<span className={cn(styles.face, "items-center")}>
-							<span className={cn("relative shrink-0", large ? "h-14 w-14" : "h-11 w-11")}>
-								{doc.img ? (
-									<Artwork src={doc.img} className={cn("!object-cover", large ? "h-14 w-14" : "h-11 w-11")} />
-								) : (
-									<span
-										className={cn("grid place-items-center", large ? "h-14 w-14" : "h-11 w-11")}
-										style={{ color: mark?.color }}
-									>
-										<FileText className={large ? "h-10 w-10" : "h-8 w-8"} />
-									</span>
+					{inventory ? (
+						doc.img ? (
+							<Artwork
+								src={doc.img}
+								sizes="160px"
+								// Classified artwork is a tall icon padded to 258x512; fit it and scale past the padding.
+								className={cn(
+									"h-full w-full",
+									doc.key === "classified" ? "scale-150 !object-contain" : "!object-cover",
 								)}
-								{mark && <span aria-hidden className={styles.mark} data-shape={mark.shape} />}
-								{original && (
-									<span
-										aria-hidden
-										className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-warning ring-2 ring-card"
-									/>
-								)}
-							</span>
-							{amount !== undefined && (
-								<span
-									className={cn(
-										"inline-flex items-center gap-0.5 px-1.5 font-semibold tabular-nums",
-										large ? "flex-1 justify-center text-lg" : "text-xs",
-										fulfilled && "text-success",
-									)}
-								>
-									{amount}
-									{fulfilled && <Check size={11} strokeWidth={2.5} aria-hidden className="shrink-0" />}
-									{partial && !fulfilled && (
-										<span aria-hidden className="text-warning">
-											~
+							/>
+						) : (
+							<FileText className="h-full w-full" style={{ color: mark?.color }} aria-hidden />
+						)
+					) : (
+						<span className={styles.chipInner}>
+							<span className={cn(styles.face, "items-center")}>
+								<span className={cn("relative shrink-0", artSize)}>
+									{doc.img ? (
+										<Artwork
+											src={doc.img}
+											className={cn(
+												artSize,
+												// Classified artwork is a tall icon; tilt and offset it so it fills the square like a document photo.
+												doc.key === "classified"
+													? "!object-contain -translate-x-[16%] rotate-12 scale-[1.35]"
+													: "!object-cover",
+											)}
+										/>
+									) : (
+										<span className={cn("grid place-items-center", artSize)} style={{ color: mark?.color }}>
+											<FileText className={large ? "h-10 w-10" : "h-8 w-8"} />
 										</span>
 									)}
+									{compact ? (
+										<span
+											aria-hidden
+											className={cn(
+												styles.amountBadge,
+												doc.key === "classified" ? "text-classified" : fulfilled ? "text-success" : "text-foreground",
+											)}
+										>
+											{mark && doc.key !== "classified" && <span className={styles.mark} data-shape={mark.shape} />}
+											{amount}
+										</span>
+									) : (
+										mark &&
+										doc.key !== "classified" && <span aria-hidden className={styles.mark} data-shape={mark.shape} />
+									)}
 								</span>
-							)}
-						</span>
-						<span className={cn(styles.label, styles.documentLabel)}>
-							<span>
-								{displayName}
-								{changedFrom && <span className="mt-0.5 block text-[10px] text-warning">{changedFrom}</span>}
-								<span className="mt-0.5 block text-[10px] text-muted-foreground">
-									{swap ? (swap.locked ? "Completed: locked" : "Click to change type") : "Click for locations"}
+								{amount !== undefined && !compact && (
+									<span
+										className={cn(
+											"inline-flex items-center gap-0.5 px-1.5 font-semibold tabular-nums",
+											large ? "flex-1 justify-center text-lg" : "text-xs",
+											fulfilled && "text-success",
+										)}
+									>
+										{amount}
+										{fulfilled && <Check size={11} strokeWidth={2.5} aria-hidden className="shrink-0" />}
+										{partial && !fulfilled && (
+											<span aria-hidden className="text-warning">
+												~
+											</span>
+										)}
+									</span>
+								)}
+							</span>
+							<span className={cn(styles.label, styles.documentLabel)}>
+								<span>
+									{displayName}
+									<span className="mt-0.5 block text-[10px] text-muted-foreground">
+										{swap ? (swap.locked ? "Completed: locked" : "Click to change type") : "Click for locations"}
+									</span>
 								</span>
 							</span>
 						</span>
-					</span>
+					)}
 				</button>
 			</DropdownMenuTrigger>
 			{swap ? (
@@ -140,7 +180,12 @@ export function DocumentChip({
 								<span className="font-medium text-foreground">{displayName}</span> with
 							</DropdownMenuLabel>
 							{swap.options.map((option) => (
-								<DropdownMenuItem key={option.key} onSelect={() => swap.onSelect(option.key)} className="gap-2">
+								<DropdownMenuItem
+									key={option.key}
+									disabled={option.key === doc.key}
+									onSelect={() => swap.onSelect(option.key)}
+									className="gap-2"
+								>
 									<span
 										aria-hidden
 										className="relative h-8 w-8 shrink-0"
@@ -159,9 +204,6 @@ export function DocumentChip({
 									{option.key === swap.baseline && <span className="text-[10px] text-muted-foreground">Original</span>}
 								</DropdownMenuItem>
 							))}
-							{swap.options.length === 0 && (
-								<p className="px-2 py-1.5 text-xs text-muted-foreground">Every other type is already on this reward.</p>
-							)}
 						</>
 					)}
 				</DropdownMenuContent>

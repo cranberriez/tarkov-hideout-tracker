@@ -6,15 +6,15 @@ and the separate [production cutover runbook](../docs/postgresql-cutover.md).
 
 ## Commands
 
-| Command                                                     | Responsibility                                                                  |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| npm run db:migrate                                          | Apply checked-in SQL migrations explicitly                                      |
-| npm run db:update                                           | Fetch all modes, normalize/validate, compose details, atomically upsert catalog |
-| npm run db:update -- --dry-run                              | Validate upstream input and report without writes                               |
-| npm run db:prices:refresh -- --modes regular,pve,pvp-season | Independently refresh reference prices/offers and flea observations             |
-| npm run db:prices:refresh -- --concurrency 12               | Limit HTTP concurrency (1–32)                                                   |
-| npm run db:status                                           | Read catalog/discovery/price readiness and latest timestamps                    |
-| npm run db:status -- --storage                              | Also report PostgreSQL relation sizes                                           |
+| Command                                                   | Responsibility                                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| pnpm run db:migrate                                       | Apply checked-in SQL migrations explicitly                                      |
+| pnpm run db:update                                        | Fetch all modes, normalize/validate, compose details, atomically upsert catalog |
+| pnpm run db:update --dry-run                              | Validate upstream input and report without writes                               |
+| pnpm run db:prices:refresh --modes regular,pve,pvp-season | Independently refresh reference prices/offers and flea observations             |
+| pnpm run db:prices:refresh --concurrency 12               | Limit HTTP concurrency (1–32)                                                   |
+| pnpm run db:status                                        | Read catalog/discovery/price readiness and latest timestamps                    |
+| pnpm run db:status --storage                              | Also report PostgreSQL relation sizes                                           |
 
 DATABASE_URL is required. DATABASE_MIGRATION_URL optionally selects a direct
 migration connection. Process environment wins over .env.local, which wins over
@@ -29,9 +29,9 @@ artifacts, not a production migration source or durable catalog history.
 
 ## Optional discovery import
 
-`npm run db:update` works without SQLite or an import. It automatically uses a
+`pnpm run db:update` works without SQLite or an import. It automatically uses a
 verified `discovery.json` in the project root when present; choose another file
-with `npm run db:update -- --discovery path/to/discovery.json`. The import and catalog
+with `pnpm run db:update --discovery path/to/discovery.json`. The import and catalog
 write share one transaction. Invalid files or conflicting records abort that update;
 an explicitly requested missing file is an error. Dry runs preview without writing.
 
@@ -46,8 +46,8 @@ To preserve old history without downloading the database, set the old source's
 `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in your local environment and run:
 
 ```bash
-npm run db:discovery:export -- --turso discovery.json
-npm run db:update
+pnpm run db:discovery:export --turso discovery.json
+pnpm run db:update
 ```
 
 This one-time exporter uses [Turso's SQL-over-HTTP API](https://docs.turso.tech/sdk/http/reference)
@@ -63,8 +63,8 @@ download is the right file type; no separate backup format or rename is needed.
 With Node 22.13+ (24 recommended):
 
 ```bash
-npm run db:discovery:export -- source.db discovery.json
-npm run db:update
+pnpm run db:discovery:export source.db discovery.json
+pnpm run db:update
 ```
 
 The exporter opens local files read-only and refuses an existing output file in
@@ -77,7 +77,7 @@ validates the checksum/counts, atomically reports conflicts without overwriting,
 and makes identical reimports no-ops. Baseline null dates and removed IDs survive.
 Missing established discovery stops for an explicit initialization decision.
 
-For a standalone metadata-only import, run `npm run db:discovery:import -- discovery.json`;
+For a standalone metadata-only import, run `pnpm run db:discovery:import discovery.json`;
 it updates PostgreSQL without running the catalog workflow. Identical reimports are
 safe. Late imports can enrich bootstrap records only when date, patch and provenance
 are all null. Known historical baselines and later discoveries remain protected:

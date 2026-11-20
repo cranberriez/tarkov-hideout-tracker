@@ -108,8 +108,21 @@ export function swappedKey(key: string, swaps: Record<string, string> | undefine
 	return swaps && keys.includes(swaps[key]) ? swaps[key] : key;
 }
 /** Setting a line back to its baseline type removes the swap. */
-export function setCostSwap(swaps: CostSwaps, tileId: string, from: string, to: string): CostSwaps {
+export function setCostSwap(
+	swaps: CostSwaps,
+	tileId: string,
+	from: string,
+	to: string,
+	baseline: Costs,
+	keys = documentKeys,
+): CostSwaps {
 	const tile = { ...swaps[tileId] };
+	const current = swappedKey(from, tile, keys);
+	if (current === to) return swaps;
+	// Exchange types when the target is already used by another cost line.
+	const other = Object.keys(baseline).find((key) => key !== from && swappedKey(key, tile, keys) === to);
+	if (other === current) delete tile[other];
+	else if (other) tile[other] = current;
 	if (to === from) delete tile[from];
 	else tile[from] = to;
 	const result = { ...swaps };
@@ -140,6 +153,17 @@ export function planGoals(
 	const avoided = new Set(avoidedDocuments);
 	const avoidedCost = (tile: Tile) =>
 		Object.entries(tile.cost).reduce((sum, [key, amount]) => sum + (avoided.has(key) ? amount : 0), 0);
+	const selection = selectGoalRewards(goalIds, completedIds, passPages, avoidedCost);
+	const costs = sumCosts(selection.selected);
+	return { ...selection, costs, total: totalCost(costs) };
+}
+
+export function selectGoalRewards(
+	goalIds: string[],
+	completedIds: string[],
+	passPages: PassPage[],
+	tieCost: (tile: Tile) => number = () => 0,
+) {
 	const known = new Set(passPages.flatMap((page) => page.cells.map((tile) => tile.id)));
 	const completed = new Set(completedIds.filter((id) => known.has(id)));
 	const goals = new Set(goalIds.filter((id) => known.has(id) && !completed.has(id)));
@@ -153,13 +177,12 @@ export function planGoals(
 		const required = i < lastPage ? passPages[i + 1].req : 0;
 		const candidates = page.cells
 			.filter((tile) => !completed.has(tile.id) && !goals.has(tile.id))
-			.sort((a, b) => totalCost(a.cost) - totalCost(b.cost) || avoidedCost(a) - avoidedCost(b) || a.slot - b.slot);
+			.sort((a, b) => a.totalDocumentCost - b.totalDocumentCost || tieCost(a) - tieCost(b) || a.slot - b.slot);
 		const fillers = candidates.slice(0, Math.max(0, required - done - chosen.length));
 		selected.push(...chosen, ...fillers);
 		fillerIds.push(...fillers.map((tile) => tile.id));
 	}
-	const costs = sumCosts(selected);
-	return { selected, fillerIds, costs, total: totalCost(costs), unresolvedIds: goalIds.filter((id) => !known.has(id)) };
+	return { selected, fillerIds, unresolvedIds: goalIds.filter((id) => !known.has(id)) };
 }
 
 /** Allocate owned stock once to the entire plan, then a shared 1:1 wildcard pool. */

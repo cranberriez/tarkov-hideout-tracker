@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 
+/**
+ * Link-preview crawlers (anchored, case-sensitive; non-capturing so no params are created).
+ * Search-engine bots are deliberately absent: they index the static canonical page.
+ */
+const SEASON_PREVIEW_BOTS =
+	".*(?:Discordbot|redditbot|Twitterbot|facebookexternalhit|Slackbot|Slack-ImgProxy|TelegramBot|WhatsApp|LinkedInBot|Embedly|Iframely|SkypeUriPreview|vkShare|Mastodon|Bluesky|Pinterestbot).*";
+
+const SEASON_PREVIEWS_DISABLED = process.env.SEASON_PREVIEWS_DISABLED === "true";
+
 const nextConfig: NextConfig = {
 	images: {
 		// 31 days to limit image optimization transformations
@@ -24,14 +33,35 @@ const nextConfig: NextConfig = {
 			},
 		];
 	},
+	// Season preview images read the bundled modifier icons from disk.
+	outputFileTracingIncludes: {
+		"/og/**": ["./public/images/season-*/modifiers/*.webp"],
+	},
 	async rewrites() {
-		return [
-			{
-				// Same-origin item art, so the screenshot uploader can compare icon pixels on a canvas.
-				source: "/item-assets/:path*",
-				destination: "https://assets.tarkov.dev/:path*",
-			},
-		];
+		return {
+			// Before static pages, or the prerendered season page would always win.
+			// SEASON_PREVIEWS_DISABLED=true skips this; see SEASON_PREVIEWS_ENABLED in share-preview.ts.
+			beforeFiles: SEASON_PREVIEWS_DISABLED ? [] : [
+				{
+					// Link-preview crawlers opening a season build link get tiny per-build preview HTML
+					// (src/app/og-share); people and search engines never match and get the static page.
+					source: "/:season(season-1|season-2)",
+					destination: "/og-share/:season",
+					has: [
+						{ type: "query", key: "b" },
+						{ type: "header", key: "user-agent", value: SEASON_PREVIEW_BOTS },
+					],
+				},
+			],
+			afterFiles: [
+				{
+					// Same-origin item art, so the screenshot uploader can compare icon pixels on a canvas.
+					source: "/item-assets/:path*",
+					destination: "https://assets.tarkov.dev/:path*",
+				},
+			],
+			fallback: [],
+		};
 	},
 };
 

@@ -497,8 +497,8 @@ export function generateQuestSeriesCandidates(snapshot) {
 
 function usage() {
 	return [
-		"Usage: npm run quest-series-candidates -- <task-snapshot.json>",
-		"   or: npm run quest-series-candidates -- --input <task-snapshot.json>",
+		"Usage: pnpm run quest-series-candidates <task-snapshot.json>",
+		"   or: pnpm run quest-series-candidates --input <task-snapshot.json>",
 		"",
 		"Reads a downloaded task snapshot and prints a deterministic review report to stdout.",
 		"The command never writes files or changes production quest organization.",

@@ -62,6 +62,40 @@ Sync, News, Battle Pass and Dev stay unprefixed. Route paths below omit the pref
 | `/settings`                                        | [Player progression backups, import review, legacy tools and reset controls](<../src/app/(data)/settings/page.tsx>); see [user state](user-state.md)                                                                                                  |
 | `/sync`                                            | [Desktop companion sync](<../src/app/(data)/sync/page.tsx>): pair with the Mappinator app, view the quest/raid activity feed, raw protocol log and review log-recovered events; see [user state](user-state.md#companion-sync) |
 | `/news`                                            | [News page](../src/app/news/page.tsx)                                                                                                                                                                                                                 |
+| `/season-1`                                        | [Season 1](../src/app/season-1/page.tsx): KORD Breach hero (hotlinked key art), Battlestate's most-picked tiles and the static [modifier list](../src/features/seasons/modifiers/season-1.ts); no server reads. Modifier data rules (per-season files, stable IDs shared across seasons for comparisons, point signs) live in [types.ts](../src/features/seasons/modifiers/types.ts) |
+| `/season-2`                                        | [Season 2](../src/app/season-2/page.tsx): UNTAR Control hero (statement, KORD end date until Season 2 is current, key art hotlinked from `pbs.twimg.com` with plain `<img>`; failed images hide) and the static [modifier list](../src/features/seasons/modifiers/season-2.ts) with Season 1 changes and pick rates; linked from the KORD Battle Pass "Season ends" row; no server reads |
+
+Season pages are standalone and data-less: [HideOnSeasonPages](../src/components/core/HideOnSeasonPages.tsx)
+skips the navbar, seasonal banner, game-mode sync, setup and global modals on `/season-*`, so no player
+stores or data connections mount there; a slim [top row](../src/features/seasons/SeasonPageNav.tsx) links
+back to the tracker. The [modifier builder](../src/features/seasons/ModifierBuilder.tsx) keeps its
+selection only in the URL as a compact `?b=` code: a base64url bitmask over the season's
+append-only `shareOrder` ([builder.ts](../src/features/seasons/modifiers/builder.ts); never reorder or
+remove entries, or old links change meaning), so the address bar is the share link. Legacy readable
+`?picks=<id>,<id>` links still load and are rewritten to `?b=`. A global per-season convenience copy in
+`localStorage` (see [user state](user-state.md)) restores the last build when the URL has neither. A
+`?b=` link that differs from a non-empty saved build opens as a shared view: the build bar turns gray and
+swaps Reset/Share/Screenshot for "Back to mine" and "Save as mine", and edits stay in the URL without touching the saved copy until then. Nothing is saved to player data. The screenshot
+dialog renders a compact sheet of the build from the same selection.
+
+Build links show the build in link previews, while the pages stay prerendered and never read
+`searchParams` ([share-preview.ts](../src/features/seasons/share-preview.ts)). Static page metadata
+points at the generic per-season card. A `beforeFiles` rewrite in [next.config](../next.config.ts)
+sends only known link-preview crawlers (Discord, Reddit, X, Slack and others; search engines are
+excluded) that request `/season-N?b=` to a tiny [preview HTML route](../src/app/og-share/[season]/route.ts).
+That route's tags carry the build title, totals and picks, plus the canonical image URL. People never
+hit a function. That HTML is `private` because it sits behind a User-Agent rewrite of a public URL.
+The [image route](../src/app/og/[season]/[code]/route.tsx) `/og/<season>/<code>?v=<PREVIEW_VERSION>`
+runs `canonicalBuild` first. Non-canonical, oversized or malformed codes and stale versions 308 to
+the canonical or generic (`_`) URL without rendering. Each canonical image and format renders once
+([card](../src/features/seasons/BuildPreviewCard.tsx), sized for the roughly 3× shrink platforms
+apply: a large Net figure and an icon-first grid of only the selected modifiers that fills the canvas
+and drops names when picks are many. It uses the bundled default font, and icons are converted from
+the traced WebP files to PNG with sharp, since satori can't decode WebP). Discordbot gets the 4:3
+`&f=tall` card, because Discord keeps aspect ratio; others get 1.91:1. It is
+served with `immutable` `Cache-Control`, `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. Bump
+`PREVIEW_VERSION` when the card design changes. Setting `SEASON_PREVIEWS_DISABLED=true` and redeploying
+turns all of this off: the bot rewrite is skipped, page metadata has no image, and both routes 404.
 | `/battle-pass`                                     | [Battle Pass](../src/app/battle-pass/page.tsx): season-selected static rewards, per-season account-wide completion/goals and character document inventory; in the secondary (☰) navigation menu. Two pass pages per desktop row, one on smaller screens; no server reads or `(data)` layout dependency |
 | `/maps`, `/maps/[mapKey]`                          | [Maps index](<../src/app/(data)/[mode]/maps/page.tsx>) with visibility presets, and the full-screen [Maps explorer](<../src/app/(data)/[mode]/maps/[mapKey]/page.tsx>) below the site nav; see [maps](maps.md#maps-explorer) |
 | `/dev`                                             | [Development-only current dataset status](../src/app/dev/page.tsx): read-only mode tabs, counts, and timestamps; see [operations](operations.md)                                                                                                      |
@@ -75,7 +109,8 @@ in a final separate section. Mobile also lists the main navigation pages in this
 Seasonal overview routes have been removed; Battle Pass remains available in every mode.
 Without an explicit `?season=season-1` or `?season=season-2`, Battle Pass uses the
 selected KORD character's season or the available season for permanent profiles.
-Test content is clearly labeled as placeholder data. Profile activation/history is
+Season 2 (UNTAR Control) pass content is clearly labeled as placeholder data. The KORD pass's
+"Season ends" row links to the `/season-2` page. Profile activation/history is
 described in [user state](user-state.md#seasonal-activation-and-history).
 
 Battle Pass supports `/battle-pass?page=N#pass-page-N`: it validates the one-based
@@ -91,24 +126,17 @@ Reward and document artwork is bundled in `public/images/battle-pass` and render
 with lazy-loaded Next.js `Image` components, including the existing unavailable-image fallbacks.
 Reward rows adapt to viewport height with a readable minimum; short screens and
 expanded planning panels can still scroll.
-The top overview groups completion, planning/display controls, plan totals, and
-an icon-and-quantity row of documents still to collect, and Breakdown. The row
-uses the same inventory and classified allocation as the totals, including
-classified documents needed for avoided types. With no saved goals, the plan
-defaults to Everything; completed rewards remain excluded.
-The collect row, reward costs, planner breakdown, and document inventory all use
-the same DocumentChip: its hover label and glow identify the document, and
-clicking opens map names from the shared location data. Classified documents
-show their Expansion Hub source instead.
-Location dropdowns are non-modal: clicking another chip switches directly to it,
-and clicking elsewhere dismisses the dropdown without blocking that click.
-Page navigation is centered above the reward cards, with the document
-consumption toggle aligned right and retained in list view. The same toggle also
-appears below Total in the document panel. Reward document costs turn green with
-a checkmark when the effective owned balance covers that displayed cost.
-Locations expands below the overview with map columns and an optional comparison table.
-The overview's Document map link opens the [maps explorer](maps.md#battle-pass-document-maps)
-with the Documents preset.
+The default Battle Pass viewer shows each reward's total document cost, claimed rewards, goals,
+and prerequisite suggestions. Everything totals unclaimed rewards; Goals totals outstanding goals
+and the cheapest outstanding prerequisites. These are purchase costs before inventory.
+The banner compares both totals and their classified-only 1:1 alternatives, hiding
+Goals when none are selected, and displays the configured season deadline in Pacific time.
+Setup Costs edits per-season reward document costs in a draft. The viewer shows a
+verified document breakdown only when every outstanding reward in the chosen scope
+is configured, including the cheapest goal prerequisites. See
+[Battle Pass document configuration](battle-pass-configuration.md) for the setup flow. The Docs breakdown's
+route, funding and gathering plan come from a single client-side owner; see the
+[planning pipeline](battle-pass-optimizer.md#planning-pipeline).
 
 Detail routes use bounded reads: [getItemDetailPageData](../src/server/queries/getItemDetailPageData.ts)
 reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPageData.ts)
@@ -193,6 +221,8 @@ Use the documented neutral surface/text hierarchy and `warning`, `danger`, `info
 and `special` roles instead of named Tailwind palettes or local color literals.
 Found-in-raid requirements, counts and markers use the dedicated `fir` orange, not
 `warning`.
+Classified Battle Pass documents and classified-only costs use the dedicated
+`classified` purple role, including their markers, inventory and controls.
 Opacity, `color-mix`, `transparent` and `currentColor` are supported variations.
 Charts and objective groups use the documented chart palette; map navigation has
 separate extract/transit aliases. The route loading illustration keeps its artwork
@@ -210,7 +240,7 @@ wells with those roles rather than assuming a dark canvas. The theme list lives 
 applies later changes. Nested theme previews must reset through
 `data-theme="default"` and use base roles, because derived roles resolve at `<html>`.
 
-`npm run test:theme` checks application source for palette drift. New color roles
+`pnpm run test:theme` checks application source for palette drift. New color roles
 belong in globals with a purpose before use in a component.
 
 ## Dependency direction

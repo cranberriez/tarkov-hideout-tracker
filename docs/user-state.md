@@ -27,13 +27,15 @@ account for existing users' data.
 | `tarkov-story-progress-v1:{mode}`               | [useStoryProgress](../src/features/story/useStoryProgress.ts) with [story-progress](../src/features/story/story-progress.ts); target ending, Lightkeeper access answer, decisions by ID and completed steps per chapter; tolerant parsing keeps unknown IDs; not in backups or resets yet               |
 | `tarkov-filter-drawer-v1:{page}`                | [ProfitPageClient](../src/features/profit-pages/ProfitPageClient.tsx); `shown`/`hidden` filter-drawer visibility per profit page (`barter-profits`, `crafting-profits`), not mode-scoped                                                                                                                |
 | `tarkov-app-preferences-v1`                     | [useAppPreferencesStore](../src/lib/stores/useAppPreferencesStore.ts), Zustand persist **v1**; global `theme`, `hoverCards` and `uploaderIntroSeen`, shared by all profiles; not in backups or any reset; also read by the theme boot script in [app-preferences.ts](../src/lib/cfg/app-preferences.ts) |
-| `tarkov-battle-pass-ui-preferences-v1`          | [useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts); reward-page UI preferences shared across all profiles and modes; not in backups or resets |
+| `tarkov-battle-pass-ui-preferences-v1`          | [useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts); reward-page UI preferences shared across all profiles and modes, including document locations expansion (`showMaps`, default collapsed) and inventory expansion (`documentInventoryExpanded`, default expanded); not in backups or resets |
+| `tarkov-battle-pass-route-{seasonId}-v1`       | [useBattlePassPlan](../src/features/battle-pass/useBattlePassPlan.ts) with [saved-route-model](../src/features/battle-pass/lib/saved-route-model.ts); docs-breakdown route settings and the saved plan for one season, shared by every profile and mode; not in backups or resets |
+| `tarkov-season-picks-{seasonId}-v1`             | [ModifierBuilder](../src/features/seasons/ModifierBuilder.tsx); last selected personal modifier IDs (readable comma-separated IDs, not the compact `?b=` share code) for one season page, restored only when the URL has no `b` or legacy `picks`; never overwritten while viewing a differing shared link unless "Save as mine" is chosen; global, not profile- or mode-scoped; not in backups or resets |
 | `tarkov-map-explorer-preferences-v1`            | [useMapExplorerPreferences](../src/features/maps/explorer/useMapExplorerPreferences.ts), Zustand persist **v1**; Maps explorer marker filters, three saved filter slots and panel/floor/split/art/valuable-loot toggles, shared by every map, profile and mode; not in backups or resets |
 | `tarkov-companion-sync-v1` | [useCompanionSyncStore](../src/lib/stores/useCompanionSyncStore.ts), Zustand persist **v2** (v1 `log` dropped); desktop companion pairing (port, token), sync cursor, handled event IDs per profile, queued and review quest events, per-event `feed` (newest first, 300), undo `batches` (50) and unknown-mode count. Latest position, `/v1/status` details and the raw protocol log (last 100 exchanges) are session-only. Account-wide, not in backups, untouched by every reset including Delete ALL data |
 | `tarkov-hideout:quest-log-import:seen-files:v1` | [quest-log-import.ts](../src/lib/quests/quest-log-import.ts) and [import controller](../src/features/quests/import/useQuestLogImportController.ts); processed-file metadata, not per-profile storage                                                                                                    |
 | `tarkov-active-game-mode` cookie                | [game-mode.ts](../src/lib/game-mode.ts); client preference mirroring the active profile, read only by the [proxy](../src/proxy.ts) to redirect old unprefixed URLs                                                                                                                                       |
 
-Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Test), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
+Profile key suffixes are `PVP`, `PVE`, `KORD` (Season 1), and `KORD:season-2` (Season 2, UNTAR), not dataset names. Existing Season 1 keys are retained unchanged; later seasonal characters use separate keys. The same scope applies to Kappa completion, story progress, profit options, craft boards, pins, price overrides, fuel routes and installed graphics cards.
 Story chapter completion uses the existing mode-scoped progress writer and adds
 only active required step IDs after route choices resolve. Its undo receipt is
 ephemeral, scoped to the chapter/profile visit, and removes only IDs added by
@@ -48,85 +50,84 @@ maintain a copied interface in documentation.
 
 ## Profiles, hydration, and setup
 
+The battle-pass funding calculator shares the starting TarCoin balance and one-time offer availability across profiles and seasons. Its [settings hook](../src/features/battle-pass/useFundingSettings.ts) merges edits into `tarkov-battle-pass-funding-v1`. The same key stores gathering choices by route profile key (PVP, PVE, or seasonal ID) and document key. It also stores the preferred gathering mode as a route profile key, `"balanced"` to spread gathering across modes, or null for no preference; older saves have none. **Simplest** adds the document types it turns off to every mode's excluded list, keeping each mode's other choices. The maps the player farms are stored as `gatheringMaps`, a list of map names, or null for every map (older saves have none); document types that spawn on none of them are excluded from gathering in every mode, on top of the per-mode choices, without rewriting those choices. Map edits are drafts until applied. Daily headroom is stored as a boolean, off by default. The gathering target is stored as a document count (0 for no gathering); without one, or when it no longer matches a breakpoint, the recommended breakpoint is used. Each edit merges into the latest saved profile settings, including profiles absent from the current route. Older saves and new profiles allow every document by default. A new calculator starts at zero with the offer disabled. Calculating a route spends no inventory and makes no change to the saved balance or offer availability.
+
+The docs-breakdown route settings (destination, rewards mode, all profiles) and the saved plan live in `tarkov-battle-pass-route-{seasonId}-v1`, one key per season shared by every profile, so a new season starts unconfigured. Saving a plan stores its claims (reward ID and claiming profile key, in claim order), the settings and classified preference it was solved with, the gathering target, the document shortfall and the rewards completed at save time. A saved plan never re-solves: each render replays its remaining claims against current progress and inventory, and documents acquired since saving count toward its gathering target. An unknown reward or unavailable claiming profile marks the plan for re-optimizing; it is never cleared automatically. Rewards completed outside the plan and a larger shortfall than at save time are reported as warnings. Reconfiguring edits the settings while the saved plan is kept until it is replaced, cancelled back to, or discarded after confirmation. Funding settings stay in the shared funding key.
+
+The battle-pass UI preference `optimizerEnabled` defaults to false across profiles and seasons, including saves written before it existed. While it is off, the docs-breakdown route optimizer does not run and reward cards show no claiming-profile recommendations. The battle-pass UI preference `showProfileRecommendations` defaults to true and applies only while the optimizer is enabled. It controls the visibility of the route’s claiming-profile labels on reward cards. The battle-pass UI preference `plannedCosts` defaults to false; while it is on and the optimizer has an active route, reward cards show what the route spends on each unclaimed planned reward instead of its configured cost. The battle-pass UI preference `planNeeds` defaults to true and is set to true whenever a plan is saved. While a saved plan replays, it switches the document inventory from the plan-scope needs to what the plan does with each document type for the claiming profile: the documents it gathers, then its need split into owned, owned-classified and bought documents, plus the plan's classified use and purchases; documents the plan does not use read Not planned. The inventory header totals then count the plan's documents on the profiles in view, covered by owned ordinary and classified documents. The selected inventory profile still determines where recording a claim deducts documents.
+
 ### Battle pass progress
 
-[useBattlePass](../src/features/battle-pass/useBattlePass.ts) owns
+[useBattlePassSave](../src/features/battle-pass/BattlePassSeason.tsx) owns
 `tarkov-battle-pass-{seasonId}-v1`, an independent account-wide save for each
 season, shared across PVP/PVE/seasonal characters. Season 1 retains the exact
-`tarkov-battle-pass-season-1-v1` key. Test uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
+`tarkov-battle-pass-season-1-v1` key. Season 2 uses `tarkov-battle-pass-season-2-v1`. It stores completed tile IDs,
 goal tile IDs, retained legacy ordinary-document balances, a classified-document balance,
 avoided document types, and document-type swaps (both defaulting to none for older saves).
-Document types per reward differ between players while quantities and totals do not, so
-`costSwaps` maps tile ID -> baseline document key -> replacement key. Swaps never change
-quantities and a reward never repeats a type; setting a line back to its baseline type
-removes it, and all rewards can be reset to baseline. Editing is a session-only page
-mode and completed rewards are locked, since their documents were already consumed.
-[BattlePassSeason](../src/features/battle-pass/BattlePassSeason.tsx)
-applies swaps once, so planning, previews, cumulative costs and document consumption all
-use the player's costs; unknown tiles or targets are ignored but survive in the save. Collection
-preferences persist in the same save and are shared across modes. They only break
-equal-total-cost suggestion ties; explicit goals and minimum total cost remain
-authoritative. After ordinary inventory, avoided shortages become classified
-demand. When enabled, owned classified stock covers avoided types first, then
-other shortages, once across the plan. The top document section and floating document panel show the same live remaining
-ordinary and classified needs, owned-balance inputs, and collection toggles. Edits
-in either view immediately update both. Known document item IDs read the selected seasonal character's inventory when
-using KORD or viewing a non-current pass. For the current pass in PVP/PVE, they
-read the active permanent profile. Explicit historical links never spend the new
-seasonal character's stock. An absent historical character supplies zero stock
-and is not created by editing the pass. Counts combine non-FiR and FiR stock. Missing records and
-tracked zeros both mean zero owned ordinary documents. Legacy account-wide
-ordinary balances remain saved but are inactive; they are never automatically
-assigned to a profile. Reads never copy balances between profiles or rewrite the
-account-wide save. Editing an ordinary balance uses the existing item count action,
-creating an absent profile record as needed and retaining FiR stock where possible.
-Classified balances remain account-wide and independent of profile inventory.
-It reuses the external-store storage helper, never writes on mount, and synchronizes
-between tabs. Battlepass saves remain independent of profile migrations, progression backups
+The inline document inventory edits ordinary counts in the selected PVP/PVE/seasonal
+character's existing item inventory without changing the active character. Permanent
+profile edits use `addItemCountsForProfile`; seasonal edits use `addItemCountsForSeason`.
+The owner keeps the active projection synchronized, preserves other profiles and
+does not create missing seasonal characters. Classified balance and collection
+choices still live in the shared pass save. UI edits merge changed fields into the
+latest save, retaining unknown fields and legacy ordinary balances.
+Without a saved plan, individual and bulk claims only record completed reward
+IDs; they never change profile item counts or the classified balance. While a
+saved plan replays with the optimizer on, claiming opens a confirmation with the
+documents each claim should consume
+([claim-deduction-model](../src/features/battle-pass/lib/claim-deduction-model.ts)).
+Following the game, owned documents of a cost line are consumed and classified
+documents fill only what is missing, so entering fewer than the cost sets that
+document to zero on the claiming profile. Confirming sets the profile item counts,
+then saves the claims, the reduced classified balance and a `claimDeductions`
+record per reward (`{ profileKey, documents, classified }`, what was removed) in
+one pass-save write. Each write is checked; if any fails, item counts and the pass
+save are restored to their prior values and the player is told whether the undo
+succeeded. Unchecking a reward with a record adds its documents and classified
+documents back the same way and deletes the record; a reward without one is only
+unchecked. Claims recorded without deducting drop any older record for that reward.
+Records are not exported. The retired `consumeDocs` UI preference stays in saved
+preferences but no longer has any effect.
+Old balances, document swaps, collection preferences, and unknown IDs remain in their existing saves.
+Legacy swaps do not establish a verified reward cost. The viewer uses the existing list-view and
+plan-scope preferences. The save synchronizes across tabs and stays independent of progression backups
 and Settings resets.
 
-Individual completion toggles only the selected tile. Page headers also offer
-Complete suggested (the currently suggested prerequisite tiles on that page)
-and Complete all (every tile on that page). Both add completion IDs without
-uncompleting existing rewards. The **Consume Docs from Inventory** toggle defaults
-off until changed and appears beside page navigation and below the
-document panel's total. When enabled, individual and bulk completion spend only
-newly completed rewards' actual document costs, using available non-FiR stock
-before FiR stock and never deducting more than is available. Missing ordinary
-inventory records spend nothing. Repeating a bulk completion spends nothing for
-already completed rewards; marking a reward incomplete does not refund documents.
-Classified allocation remains a preview and does not spend classified stock.
-Completion never infers prior completions or clears goals. This permits recording
-existing progress on a later page. Unknown saved IDs and inventory keys survive
-updates; unknown goals are reported and cannot satisfy prerequisites. Numeric
-balances normalize to integers from 0 to 99,999. Cumulative display, plan scope
-and classified allocation never spend stored balances.
-[useBattlePassPreferences](../src/features/battle-pass/useBattlePassPreferences.ts)
-stores the requested plan scope, Use classified, Cumulative costs, Possible
-progress, List view, Consume Docs from Inventory, Locations visibility,
-document-panel visibility, and All profiles in `tarkov-battle-pass-ui-preferences-v1`.
-**All profiles** is read-only: the overview's documents to collect and breakdown
-sum ordinary stock from PVP, PVE and the pass's seasonal character, with a row per
-profile. Pages, the document panel, previews and edits still use the active profile. These UI
-preferences survive navigation and reload and are shared across profiles and
-PVP/PVE/KORD. All boolean preferences default off; plan scope defaults to Goals
-(displaying Everything when no goals exist). Reads normalize invalid fields
-without writing, edits preserve unknown preferences, and the external-store
-helper synchronizes open consumers and browser tabs. Page navigation position
-remains transient. No profile
-migration, backup, or reset scope changes.
-The **Possible progress** toggle previews
-the current plan in page and slot order with one shared owned-document pool,
-including classified stock only when **Use classified** is enabled. Classified
-allocation covers avoided shortages first within each reward. Only fully covered
-rewards count toward unlocking the next page; partial coverage never satisfies a
-prerequisite.
-Incomplete plan rewards show a green check for full coverage and a yellow `~`
-beside each partially covered document count. Yellow portions of the overview
-and page-minimap bars count full rewards plus the covered document fraction of
-partial rewards. Completed
-rewards contribute only to actual progress. This local preview does not change
-completion, goals, saved balances, or **Consume Docs from Inventory** behavior.
+[useBattlePassConfiguration](../src/features/battle-pass/useBattlePassConfiguration.ts)
+owns a separate `tarkov-battle-pass-costs-{seasonId}-v1` save with `{ version: 1,
+rewards: { [stableRewardId]: [{ key, quantity }] } }`. Rewards with a custom type
+count use `{ entries: [{ key, quantity }], typeCount }` instead of the array;
+older arrays retain the dataset type count. Counts are whole numbers from 1–10.
+Quantities are strings so
+partial inputs survive Save. All profiles share each season's configuration;
+other seasons, legacy progress and saved type swaps are untouched. Draft edits
+stay local until Save, and Cancel confirms before discarding changed drafts.
+Use Defaults stores a separate season-scoped `useDefaults` boolean in this save,
+defaulting to false. Enabling it confirms only when custom entries or type-count
+overrides exist. It selects dataset defaults for display, planning and claims
+without changing saved custom records; disabling restores those records exactly.
+Setup Costs always edits the custom records; Save selects custom costs, while
+Cancel retains the prior source. Other seasons, unknown fields and progress remain untouched.
+Save merges edited reward records into the latest value and rejects same-reward
+conflicts. Unknown records and fields are preserved. This save uses the existing
+cross-tab storage subscription and is outside progression backups and Settings
+resets. Validity is derived at read time; only complete, valid scope costs produce
+a plan document breakdown. See [Battle Pass document configuration](battle-pass-configuration.md).
+
+### Battle pass export and import
+
+The battle-pass page's utility row exports one season to JSON with
+[battle-pass-transfer-model](../src/features/battle-pass/lib/battle-pass-transfer-model.ts):
+ordinary document counts for each available profile, completed rewards, goals,
+classified balance, avoided documents, cost configuration, route settings and saved plan,
+the shared funding settings and the planning toggles (`requestedScope`, `useClassified`,
+`optimizerEnabled`, `showProfileRecommendations`). View-only preferences, legacy balances
+and document swaps are not exported. Import rejects other kinds, newer versions and other
+seasons; it skips unknown rewards and profiles that are not available here (seasonal
+characters are never created) and reports them as warnings. Only checked rows are written,
+each merged into the latest save with unknown fields kept; rewards this build does not know
+stay in completed rewards and custom costs. Document counts use `setOwnedFor`. This is
+separate from progression backups and Settings resets.
 
 ### Companion sync
 
@@ -153,11 +154,12 @@ returns to the primary list. Past characters stay editable. A banner on an old
 seasonal character offers Activate or Switch to the current season. Availability
 refreshes on focus and periodically while the page remains open.
 
-Season 2 uses the placeholder name **Test** and blue identity color. Its character
+Season 2 is named **UNTAR** (title "Season 2 UNTAR Control") with a deep blue
+identity color distinct from PVE's. Its character
 starts with default progress, while shared app preferences remain intact. Profit
 filters fall back to existing preferences until edited, but character skill
 levels start at zero. No Season 1 character, battlepass or auxiliary key is
-removed or copied into Test. Uploader receipts remount per seasonal identity.
+removed or copied into Season 2. Uploader receipts remount per seasonal identity.
 The storage adapter merges unchanged seasonal fields from newer saved payloads
 to preserve characters created in another tab; simultaneous edits to the same
 field remain last-writer-wins.

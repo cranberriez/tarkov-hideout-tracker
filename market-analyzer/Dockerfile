@@ -2,8 +2,8 @@
 #   docker build -f market-analyzer/Dockerfile -t tarkov-market-analyzer .
 FROM node:24-alpine AS build
 WORKDIR /repo
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts --no-audit --no-fund
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 COPY market-analyzer/package.json market-analyzer/package-lock.json market-analyzer/
 RUN cd market-analyzer && npm ci --no-audit --no-fund
 COPY tsconfig.json ./

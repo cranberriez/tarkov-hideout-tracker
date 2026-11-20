@@ -60,6 +60,7 @@ const eslintConfig = defineConfig([
 	},
 	// Override default ignores of eslint-config-next.
 	globalIgnores([
+		"public/battle-pass/highs/**",
 		// Default ignores of eslint-config-next:
 		".next/**",
 		"out/**",

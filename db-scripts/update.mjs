@@ -152,7 +152,7 @@ main().catch(async (error) => {
 		// The bounded summary and complete report replace an unbounded exception dump.
 	} else if (error?.code === "42P01") {
 		console.error(
-			"PostgreSQL schema is missing. Run npm run db:migrate against the same database/schema as DATABASE_URL, then retry db:update. Discovery import is optional.",
+			"PostgreSQL schema is missing. Run pnpm run db:migrate against the same database/schema as DATABASE_URL, then retry db:update. Discovery import is optional.",
 		);
 	} else console.error(error instanceof Error ? error.stack : String(error));
 	process.exitCode = 1;

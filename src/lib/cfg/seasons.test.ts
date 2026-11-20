@@ -5,6 +5,7 @@ import { getSeasonalCraftingSettings } from "./seasonal";
 
 test("the prior season end determines availability and season rules remain independent", () => {
 	const first = getSeason(FIRST_SEASON_ID);
+	assert.equal(new Date(first.endsAt!).toISOString(), "2026-12-07T09:00:00.000Z");
 	assert.equal(getCurrentSeason(first.endsAt!).id, "season-1");
 	assert.equal(getCurrentSeason(first.endsAt! + 1).id, "season-2");
 	assert.equal(getSeason("season-2").endsAt, null);

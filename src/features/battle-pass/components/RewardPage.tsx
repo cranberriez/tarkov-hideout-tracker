@@ -4,49 +4,56 @@ import { useBattlePassData } from "../BattlePassSeason";
 import { ViewTransition } from "react";
 import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toggleId, type PassPage, type Costs } from "../lib/battle-pass-model";
+import { type Tile, type PassPage } from "../lib/battle-pass-model";
 
-import type { useBattlePass } from "../useBattlePass";
 import { RewardCard } from "./RewardCard";
+import { RewardCostEditor } from "./RewardCostEditor";
+import {
+	rewardCostStatus,
+	rewardEntries,
+	type RewardConfiguration,
+	type CostEntry,
+} from "../lib/battle-pass-configuration";
+import type { PlannedSpend } from "../lib/claim-deduction-model";
 import styles from "../battle-pass.module.css";
 
 export function RewardPage({
 	page,
 	complete,
 	goals,
-	filler,
+	suggestedOrder,
 	openPages,
-	cumulative,
-	cumulativeCosts,
-	update,
-	inventory,
+	toggleGoal,
 	completeTiles,
 	toggleTile,
-	possibleFractions,
-	possibleAllocations,
-	swapCost,
+	costSetup,
+	recommendedProfiles,
+	plannedSpend,
 }: {
 	page: PassPage;
 	complete: Set<string>;
 	goals: Set<string>;
-	filler: Set<string>;
+	/** Optimizer claim order (1-based) for rewards it suggests claiming. */
+	suggestedOrder: Map<string, number>;
 	openPages: boolean[];
-	cumulative: boolean;
-	cumulativeCosts: Map<string, Costs>;
-	update: ReturnType<typeof useBattlePass>[1];
-	inventory: Costs;
+	toggleGoal: (id: string) => void;
 	completeTiles: (ids: string[]) => void;
 	toggleTile: (id: string) => void;
-	possibleFractions: Map<string, number>;
-	possibleAllocations?: Map<string, Costs>;
-	/** Set while editing costs; cards then show each reward's own cost. */
-	swapCost?: (tileId: string, from: string, to: string) => void;
+	recommendedProfiles: Map<string, { label: string; color: string } | undefined>;
+	/** When set, unclaimed planned rewards show what the route spends instead of their configured cost. */
+	plannedSpend?: Map<string, PlannedSpend> | null;
+	costSetup: {
+		editing: boolean;
+		configuration: RewardConfiguration;
+		change: (id: string, entries: CostEntry[]) => void;
+		changeTypeCount: (tile: Tile, count: number) => void;
+	};
 }) {
-	const { pages, tileSpans } = useBattlePassData();
+	const { pages, tileSpans, documentKeys } = useBattlePassData();
 	const index = pages.indexOf(page);
 	const doneCount = page.cells.filter((tile) => complete.has(tile.id)).length;
 	const suggestedIds = page.cells
-		.filter((tile) => filler.has(tile.id) && !complete.has(tile.id))
+		.filter((tile) => suggestedOrder.has(tile.id) && !complete.has(tile.id))
 		.map((tile) => tile.id);
 	const previousDone = index > 0 ? pages[index - 1].cells.filter((tile) => complete.has(tile.id)).length : 0;
 	return (
@@ -71,47 +78,76 @@ export function RewardPage({
 							</span>
 						)}
 					</div>
-					<div className="ml-auto flex items-center gap-1">
-						<Button
-							size="xs"
-							variant="ghost"
-							disabled={suggestedIds.length === 0}
-							aria-label={`Complete suggested: Page ${page.num}`}
-							onClick={() => completeTiles(suggestedIds)}
-						>
-							Complete suggested
-						</Button>
-						<Button
-							size="xs"
-							variant="ghost"
-							disabled={doneCount === page.cells.length}
-							aria-label={`Complete all: Page ${page.num}`}
-							onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
-						>
-							Complete all
-						</Button>
-					</div>
+					{
+						<div className="ml-auto flex items-center gap-1">
+							<Button
+								size="xs"
+								variant="ghost"
+								disabled={costSetup.editing || suggestedIds.length === 0}
+								aria-label={`Claim suggested: Page ${page.num}`}
+								onClick={() => completeTiles(suggestedIds)}
+							>
+								Claim suggested
+							</Button>
+							<Button
+								size="xs"
+								variant="ghost"
+								disabled={costSetup.editing || doneCount === page.cells.length}
+								aria-label={`Claim all: Page ${page.num}`}
+								onClick={() => completeTiles(page.cells.map((tile) => tile.id))}
+							>
+								Claim all
+							</Button>
+						</div>
+					}
 				</header>
 				<div className={styles.rewardGrid}>
-					{page.cells.map((tile) => (
-						<RewardCard
-							key={tile.id}
-							tile={tile}
-							span={tileSpans[tile.id]}
-							pageNumber={page.num}
-							done={complete.has(tile.id)}
-							goal={goals.has(tile.id)}
-							filler={filler.has(tile.id)}
-							costs={cumulative && !swapCost ? (cumulativeCosts.get(tile.id) ?? {}) : tile.cost}
-							ownCost={!cumulative || swapCost !== undefined}
-							swapCost={swapCost && ((from, to) => swapCost(tile.id, from, to))}
-							inventory={possibleAllocations ? (possibleAllocations.get(tile.id) ?? {}) : inventory}
-							possibleFraction={possibleFractions.get(tile.id) ?? 0}
-							previewEnabled={possibleAllocations !== undefined}
-							toggleGoal={() => update((current) => ({ ...current, goals: toggleId(current.goals, tile.id) }))}
-							toggleDone={() => toggleTile(tile.id)}
-						/>
-					))}
+					{page.cells.map((tile) => {
+						const status = rewardCostStatus(tile, costSetup.configuration[tile.id], documentKeys);
+						const planned = complete.has(tile.id) ? undefined : plannedSpend?.get(tile.id);
+						return (
+							<RewardCard
+								key={`${tile.id}:${costSetup.editing}`}
+								tile={tile}
+								span={tileSpans[tile.id]}
+								pageNumber={page.num}
+								done={complete.has(tile.id)}
+								goal={goals.has(tile.id)}
+								suggestedOrder={suggestedOrder.get(tile.id)}
+								recommendedProfile={recommendedProfiles.get(tile.id)}
+								editing={costSetup.editing}
+								costErrors={status.errors}
+								costWarning={!status.valid}
+								requiredTypes={status.requiredTypes}
+								onTypeCountChange={
+									costSetup.editing && !complete.has(tile.id)
+										? (count) => costSetup.changeTypeCount(tile, count)
+										: undefined
+								}
+								costsIncomplete={status.hasEntries && !status.valid}
+								editor={
+									costSetup.editing && !complete.has(tile.id) ? (
+										<RewardCostEditor
+											tile={tile}
+											entries={rewardEntries(costSetup.configuration[tile.id])}
+											requiredTypes={status.requiredTypes}
+											onChange={(entries) => costSetup.change(tile.id, entries)}
+										/>
+									) : undefined
+								}
+								configuredCosts={
+									planned
+										? Object.fromEntries(Object.entries(planned.documents).filter(([, amount]) => amount > 0))
+										: Object.keys(status.displayCosts).length
+											? status.displayCosts
+											: null
+								}
+								classifiedCost={planned?.classified}
+								toggleGoal={() => toggleGoal(tile.id)}
+								toggleDone={() => toggleTile(tile.id)}
+							/>
+						);
+					})}
 				</div>
 			</section>
 		</ViewTransition>
