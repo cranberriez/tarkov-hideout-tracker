@@ -209,25 +209,33 @@ export function BuildScreenshotButton() {
 								</p>
 							</div>
 						</div>
-						{(["positive", "negative"] as const).map((kind) => (
-							<section key={kind} className="mt-3 space-y-1.5">
-								<h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/85">
-									{kind === "positive" ? "Positive" : "Negative"}
-								</h3>
-								<ul className={cn("grid gap-1", layout.columns)}>
-									{modifiers
-										.filter((modifier) => modifier.kind === kind)
-										.map((modifier) => (
-											<Tile
-												key={modifier.id}
-												modifier={modifier}
-												picked={selection.selected.has(modifier.id)}
-												compact={layout.compact}
-											/>
-										))}
-								</ul>
-							</section>
-						))}
+						{(["positive", "negative"] as const).map((kind) => {
+							// The stacked phone layout shows only picks; wider layouts show every modifier.
+							const shown = modifiers.filter(
+								(modifier) => modifier.kind === kind && (!layout.compact || selection.selected.has(modifier.id)),
+							);
+							return (
+								<section key={kind} className="mt-3 space-y-1.5">
+									<h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/85">
+										{kind === "positive" ? "Positive" : "Negative"}
+									</h3>
+									{shown.length === 0 ? (
+										<p className="text-xs text-foreground/85">No picks</p>
+									) : (
+										<ul className={cn("grid gap-1", layout.columns)}>
+											{shown.map((modifier) => (
+												<Tile
+													key={modifier.id}
+													modifier={modifier}
+													picked={selection.selected.has(modifier.id)}
+													compact={layout.compact}
+												/>
+											))}
+										</ul>
+									)}
+								</section>
+							);
+						})}
 					</div>
 				</div>
 			</DialogContent>
