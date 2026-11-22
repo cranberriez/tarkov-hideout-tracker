@@ -10,9 +10,7 @@ import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lu
 import { RouteSummary } from "./RouteSummary";
 import { useBattlePassPlanContext, type PlannedRoute } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
-import { GatheringSavings } from "./GatheringSavings";
 import { StepPlan } from "./StepPlan";
-import { RouteOptions } from "./RouteOptions";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
@@ -40,7 +38,6 @@ export function DocumentRoutePanel({
 		route: shownRoute,
 		syncing,
 		calculating,
-		funding,
 		selectedGoal,
 		buyAll,
 		allProfiles,
@@ -79,7 +76,7 @@ export function DocumentRoutePanel({
 						aria-labelledby="route-config-heading"
 						className={cn(
 							"space-y-6 rounded-lg p-4",
-							ready && incompleteCount === 0 ? "bg-surface-raised/40" : "bg-brand/[0.07]",
+							(ready && incompleteCount === 0) || calculating ? "bg-surface-raised/40" : "bg-brand/[0.07]",
 						)}
 					>
 						<div className="flex flex-wrap items-center justify-between gap-2">
@@ -103,13 +100,11 @@ export function DocumentRoutePanel({
 							<SavedPlanSummary />
 						) : (
 							<>
+								<h4 className="text-base font-semibold">Route</h4>
 								<div className="flex flex-wrap items-start gap-x-6 gap-y-5">
 									<div className={cn(fieldLabel, "w-full min-w-0 sm:w-auto")}>
 										<span>Destination</span>
 										<DestinationPicker />
-										{selectedGoal === "finish" && !buyAll && (
-											<span className="font-normal">Includes the final page and its prerequisites.</span>
-										)}
 									</div>
 									{selectedGoal !== "owned" && (
 										<div className={fieldLabel}>
@@ -147,9 +142,8 @@ export function DocumentRoutePanel({
 								<GatheringTargetPicker />
 								{incompleteCount > 0 && (
 									<p className="text-xs text-warning">
-										{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs{" "}
-										{selectedGoal === "owned" ? "in this season" : "through this destination"}. Only configured rewards
-										are included.
+										{incompleteCount} {incompleteCount === 1 ? "reward has" : "rewards have"} incomplete costs and{" "}
+										{incompleteCount === 1 ? "is" : "are"} left out.
 									</p>
 								)}
 								<GatheringAdvanced />
@@ -162,9 +156,7 @@ export function DocumentRoutePanel({
 							<RouteSummary />
 							<GatherDocuments />
 							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
-							<RouteOptions />
 							<RouteFundingPanel />
-							{typeof funding === "object" && funding?.plan.cashCents ? <GatheringSavings /> : null}
 							<StepPlan />
 						</div>
 					) : (
@@ -176,20 +168,17 @@ export function DocumentRoutePanel({
 				</>
 			) : (
 				<div className="space-y-3">
-					<p
-						role="note"
-						className="flex items-start gap-2 rounded-lg bg-warning/10 px-4 py-3 text-sm text-foreground"
-					>
+					<p role="note" className="flex items-start gap-2 rounded-lg bg-warning/10 px-4 py-3 text-sm text-foreground">
 						<CircleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
 						<span>
-							<span className="font-semibold">Hey! This is a work in progress.</span> It should work as intended,
-							but please double check. UI will be actively improved as we go.
+							<span className="font-semibold">Hey! This is a work in progress.</span> It should work as intended, but
+							please double check. UI will be actively improved as we go.
 						</span>
 					</p>
 					<p className="text-sm text-muted-foreground">
-						Enable the optimizer to plan claim order, funding and profile recommendations. Pick a destination and
-						it works out which rewards to claim and in what order, which profile should claim each one, and how
-						many documents you still need to gather or buy, using the documents you already own.
+						Enable the optimizer to plan claim order, funding and profile recommendations. Pick a destination and it
+						works out which rewards to claim and in what order, which profile should claim each one, and how many
+						documents you still need to gather or buy, using the documents you already own.
 					</p>
 				</div>
 			)}

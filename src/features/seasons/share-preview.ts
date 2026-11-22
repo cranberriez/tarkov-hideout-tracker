@@ -11,7 +11,7 @@ import type { SeasonId } from "@/lib/cfg/seasons";
  *   link are rewritten (next.config `beforeFiles`) to `/og-share/<season>`, a tiny HTML page whose
  *   tags point at the build's canonical image URL.
  */
-export const PREVIEW_VERSION = "3";
+export const PREVIEW_VERSION = "4";
 /**
  * Kill switch: `SEASON_PREVIEWS_DISABLED=true` drops the preview image from season page metadata and
  * makes both preview routes 404 (next.config also skips the bot rewrite). Needs a redeploy, which

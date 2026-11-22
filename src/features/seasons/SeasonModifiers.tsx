@@ -10,6 +10,7 @@ import {
 	type BuilderModifier,
 } from "./ModifierBuilder";
 import { ChangeChip, ChangeRow, SeasonView } from "./SeasonChanges";
+import { MODIFIER_CARD_TINT } from "./modifier-tones";
 import {
 	SEASON_MODIFIERS,
 	formatPoints,
@@ -20,17 +21,17 @@ import {
 	type SeasonModifier,
 } from "./modifiers";
 
-/** Card tint 12% and chip tint 18% are tuned so foreground text stays at WCAG AAA in every theme. */
+/** Chip tint 18% is tuned so foreground text stays at WCAG AAA in every theme (card tints: see MODIFIER_CARD_TINT). */
 const TONES: Record<ModifierKind, { band: string; card: string; accent: string }> = {
 	global: { band: "via-surface-raised", card: "bg-card", accent: "bg-surface-raised text-foreground" },
 	positive: {
 		band: "via-success/20",
-		card: "bg-linear-to-r from-success/12 to-card to-70%",
+		card: MODIFIER_CARD_TINT.positive,
 		accent: "bg-success/18 text-foreground",
 	},
 	negative: {
 		band: "via-danger/20",
-		card: "bg-linear-to-r from-danger/12 to-card to-70%",
+		card: MODIFIER_CARD_TINT.negative,
 		accent: "bg-danger/18 text-foreground",
 	},
 };
@@ -244,8 +245,8 @@ export function MostPicked({ seasonId, title }: { seasonId: SeasonId; title: str
 /** Static modifier list for one season. No data connections. */
 export function SeasonModifiers({ seasonId }: { seasonId: SeasonId }) {
 	const set = SEASON_MODIFIERS[seasonId];
-	const personal: BuilderModifier[] = set.modifiers.flatMap(({ id, name, kind, points, icon }) =>
-		kind === "global" || points === undefined ? [] : [{ id, name, kind, points, icon }],
+	const personal: BuilderModifier[] = set.modifiers.flatMap(({ id, name, kind, points, icon, effects }) =>
+		kind === "global" || points === undefined ? [] : [{ id, name, kind, points, icon, effects }],
 	);
 	const season = SEASONS.find((entry) => entry.id === seasonId)!;
 	const seasonLabel = `${seasonShort(seasonId)} · ${season.title.replace(/^Season \d+ /, "")}`;

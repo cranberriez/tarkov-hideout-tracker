@@ -2,7 +2,6 @@ import { Circle, CircleCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
 import { documentDisplayName } from "../lib/battle-pass-display";
-import { DAILY_HEADROOM, gatheringDailyCap } from "../lib/gathering-caps";
 import { BALANCED_MODE } from "../lib/owner-preference-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { SubDisclosure } from "./ui/Disclosure";
@@ -12,168 +11,111 @@ import { Toggle } from "./ui/Toggle";
 import { liftedControl, syncValue } from "./ui/field";
 
 const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
-const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-/** Mode colour mixed into the raised surface, so a selected card stays opaque and lifted. */
-const tint = (color: string, percent: number) => `color-mix(in srgb, ${color} ${percent}%, var(--surface-raised))`;
 
 /** Marks a day count past the season end. */
 function Late({ count, limit }: { count: number; limit: number }) {
 	return count > limit ? <span className="text-warning"> · late</span> : null;
 }
 
-/** A before → after value, coloured by whether the change helps (lower is better). */
-function Change({
-	from,
-	to,
-	format,
-	limit = Infinity,
-}: {
-	from: number;
-	to: number;
-	format: (value: number) => string;
-	/** Values above it are marked late (days past the season end). */
-	limit?: number;
-}) {
-	if (from === to)
-		return (
-			<span className="text-subtle-foreground">
-				No change
-				<Late count={to} limit={limit} />
-			</span>
-		);
-	return (
-		<span className="tabular-nums">
-			<span className="text-muted-foreground">{format(from)} → </span>
-			<span className={to < from ? "text-success" : "text-warning"}>{format(to)}</span>
-			<Late count={to} limit={limit} />
-		</span>
-	);
-}
-
 /** Preferred gathering mode: claims that need gathering go to this profile
- * whenever that costs nothing. Each card shows what switching to it changes. */
+ * whenever that costs nothing. Each card shows its gathering days at the target. */
 export function ModePreference() {
-	const { profiles, gathering, settings, modePreviews, modeCashFree, deadline } = useBattlePassPlanContext();
-	const { preferredMode, gatheringFilters, dailyHeadroom } = settings;
+	const { profiles, gathering, settings, modePreviews, deadline } = useBattlePassPlanContext();
+	const { preferredMode, gatheringFilters } = settings;
 	if (profiles.length <= 1) return null;
 	const { daysLeft } = deadline;
-	const cards = [...profiles, { key: BALANCED_MODE, label: "Balanced", color: "var(--brand)", note: "Spread out" }];
+	const cards = [...profiles, { key: BALANCED_MODE, label: "Balanced", color: "var(--brand)" }];
 	const current = modePreviews?.current;
-	const currentCashFree = modeCashFree?.[0];
+	// Hidden until some mode would gather differently: with nothing to choose between it does not matter.
+	const signature = (preview: NonNullable<typeof current>) =>
+		`${preview.byMode.map((row) => `${row.profileKey}:${row.quantity}`).join(",")}|${preview.days}`;
+	const identical = !current || modePreviews.modes.every((mode) => signature(mode.preview) === signature(current));
 	return (
-		<section data-syncing={gathering.stale || undefined} className="group/sync w-full space-y-3">
-			<div className="space-y-1">
-				<h4 className="text-sm font-semibold">Preferred gathering mode</h4>
-				<p className="text-xs leading-relaxed text-muted-foreground">
-					Pick one. Claims that need gathering go there when it costs nothing extra; Balanced spreads them so the modes
-					finish together. Each card shows what changes if you switch
-					{modePreviews ? `, gathering ${modePreviews.gathered} documents` : ""}.
-				</p>
-			</div>
-			<div
-				className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-4", syncValue)}
-				role="radiogroup"
-				aria-label="Preferred gathering mode"
-			>
-				{cards.map((profile) => {
-					const selected = preferredMode === profile.key;
-					const off = !!gatheringFilters[profile.key]?.disabled;
-					const modeIndex = modePreviews?.modes.findIndex((entry) => entry.profileKey === profile.key) ?? -1;
-					const mode = modeIndex >= 0 ? modePreviews!.modes[modeIndex] : undefined;
-					const cashFree = modeIndex >= 0 ? modeCashFree?.[modeIndex + 1] : undefined;
-					const Check = selected ? CircleCheck : Circle;
-					return (
-						<button
-							key={profile.key}
-							type="button"
-							role="radio"
-							aria-checked={selected}
-							onClick={() => settings.setPreferredMode(selected ? null : profile.key)}
-							style={selected ? { backgroundColor: tint(profile.color, 14) } : undefined}
-							className={cn(
-								"group flex flex-col justify-start space-y-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
-								liftedControl,
-								off && !selected && "opacity-60",
-							)}
-						>
-							<span className="flex items-center gap-2">
-								<Check
+		// Folds away (after a short delay, so a brief flip while recalculating does not flash) and unfolds without jumping the sections below.
+		<div
+			aria-hidden={identical || undefined}
+			inert={identical || undefined}
+			className={cn(
+				"grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out motion-reduce:transition-none",
+				identical ? "mb-0 grid-rows-[0fr] opacity-0 delay-300" : "mb-6 grid-rows-[1fr] opacity-100",
+			)}
+		>
+			<div className="min-h-0 overflow-hidden">
+				<section data-syncing={gathering.stale || undefined} className="group/sync w-full space-y-3">
+					<h4
+						className="text-base font-semibold"
+						title="Claims that need gathering go to this mode when it costs nothing extra. Balanced spreads them so the modes finish together."
+					>
+						Preferred mode
+					</h4>
+					<div
+						className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-4", syncValue)}
+						role="radiogroup"
+						aria-label="Preferred gathering mode"
+					>
+						{cards.map((profile) => {
+							const selected = preferredMode === profile.key;
+							const off = !!gatheringFilters[profile.key]?.disabled;
+							const modeIndex = modePreviews?.modes.findIndex((entry) => entry.profileKey === profile.key) ?? -1;
+							const mode = modeIndex >= 0 ? modePreviews!.modes[modeIndex] : undefined;
+							const Check = selected ? CircleCheck : Circle;
+							return (
+								<button
+									key={profile.key}
+									type="button"
+									role="radio"
+									aria-checked={selected}
+									onClick={() => settings.setPreferredMode(selected ? null : profile.key)}
 									className={cn(
-										"size-4 shrink-0 transition-colors",
-										!selected && "text-muted-foreground group-hover:text-foreground",
+										"group flex flex-col justify-start space-y-2 rounded-lg p-3 text-left text-xs focus-visible:outline-2 focus-visible:outline-brand",
+										liftedControl,
+										selected &&
+											"bg-[color-mix(in_oklab,var(--brand)_4%,var(--surface-raised))] hover:bg-[color-mix(in_oklab,var(--brand)_7%,var(--surface-raised))]",
+										off && !selected && "opacity-60",
 									)}
-									style={{ color: selected ? profile.color : undefined }}
-									aria-hidden
-								/>
-								<span className="text-sm font-semibold" style={{ color: profile.color }}>
-									{profile.label}
-								</span>
-								<span className="ml-auto text-[11px] text-muted-foreground">
-									{selected ? "Current" : off ? "Gathering off" : "note" in profile ? profile.note : null}
-								</span>
-							</span>
-							{!mode || !current ? (
-								<span className="block text-muted-foreground">Calculating…</span>
-							) : selected ? (
-								<span className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
-									<span className="text-muted-foreground">Gathering</span>
-									<span className="text-right tabular-nums">{days(current.days)}</span>
-									<span className="text-muted-foreground">Cash-free finish</span>
-									<span className="text-right tabular-nums">
-										{currentCashFree === undefined ? (
-											"…"
-										) : currentCashFree === null ? (
-											"—"
+								>
+									<span className="flex items-center gap-2">
+										<Check
+											className={cn(
+												"size-4 shrink-0 transition-colors",
+												!selected && "text-muted-foreground group-hover:text-foreground",
+											)}
+											style={{ color: selected ? profile.color : undefined }}
+											aria-hidden
+										/>
+										<span className="text-sm font-semibold" style={{ color: profile.color }}>
+											{profile.label}
+										</span>
+										{off && !selected && <span className="ml-auto text-[11px] text-muted-foreground">Off</span>}
+									</span>
+									<span className="block min-h-10 space-y-0.5 tabular-nums text-muted-foreground">
+										{!mode || !current ? (
+											<span className="block">Calculating…</span>
 										) : (
-											<>
-												{days(currentCashFree)}
-												<Late count={currentCashFree} limit={daysLeft} />
-											</>
+											(() => {
+												const preview = selected ? current : mode.preview;
+												return (
+													<>
+														<span className="block">
+															{preview.byMode.map((row) => `${row.profileLabel} ${row.quantity}`).join(" · ") ||
+																"Nothing to gather"}
+														</span>
+														<span className="block">
+															{days(preview.days)}
+															<Late count={preview.days} limit={daysLeft} />
+														</span>
+													</>
+												);
+											})()
 										)}
 									</span>
-								</span>
-							) : (
-								<span className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
-									<span className="text-muted-foreground">Gathering</span>
-									<span className="text-right">
-										<Change from={current.days} to={mode.preview.days} format={days} />
-									</span>
-									<span className="text-muted-foreground">Cash-free finish</span>
-									<span className="text-right">
-										{cashFree === undefined || currentCashFree === undefined ? (
-											"…"
-										) : cashFree === null || currentCashFree === null ? (
-											<span className="text-subtle-foreground">—</span>
-										) : (
-											<Change from={currentCashFree} to={cashFree} format={days} limit={daysLeft} />
-										)}
-									</span>
-									<span className="text-muted-foreground">Claims</span>
-									<span className={cn("text-right", !mode.moved && "text-subtle-foreground")}>
-										{mode.moved ? `${mode.moved} change mode` : "No change"}
-									</span>
-									<span className="text-muted-foreground">Checkout</span>
-									<span className="text-right">
-										<Change from={current.cashCents} to={mode.preview.cashCents} format={usd} />
-									</span>
-								</span>
-							)}
-						</button>
-					);
-				})}
+								</button>
+							);
+						})}
+					</div>
+				</section>
 			</div>
-			<div className="space-y-1">
-				<Toggle indicator className="w-fit" checked={dailyHeadroom} onChange={settings.setDailyHeadroom}>
-					Leave {DAILY_HEADROOM} unplanned per day
-				</Toggle>
-				<p className="text-xs text-muted-foreground">
-					Near the daily limit, raids spawn far fewer documents, so the last few are slow to find. This plans each mode{" "}
-					{DAILY_HEADROOM} below its cap (PVE {gatheringDailyCap("PVE", DAILY_HEADROOM)}, PVP{" "}
-					{gatheringDailyCap("PVP", DAILY_HEADROOM)}, seasonal {gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Only
-					the days change, not the cost.
-				</p>
-			</div>
-		</section>
+		</div>
 	);
 }
 
@@ -183,15 +125,16 @@ export function GatheringAdvanced() {
 	const { gatheringFilters } = settings;
 	const { documents } = useBattlePassData();
 	return (
-		<SubDisclosure className="text-sm text-foreground/80" title="Advanced: maps, modes and documents to gather">
+		<SubDisclosure className="text-sm text-foreground/80" title="Advanced">
 			<div className="mb-4">
 				<GatheringMapsPicker />
 			</div>
-			<h5 className="mb-1 text-xs font-semibold">Modes and documents</h5>
-			<p className="mb-3 text-xs text-muted-foreground">
-				Turn off modes or document types you will not gather. Owned documents still count, and claims move to other
-				modes when that costs nothing. Saved on this device.
-			</p>
+			<h5
+				className="mb-2 text-sm font-semibold"
+				title="Turn off modes or document types you will not gather. Owned documents still count, and claims move to other modes when that costs nothing."
+			>
+				Modes and documents
+			</h5>
 			<div className="divide-y divide-border/50">
 				{profiles.map((profile) => {
 					const filter = gatheringFilters[profile.key] ?? {};

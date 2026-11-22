@@ -34,7 +34,8 @@ import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
-import { buildRouteOptions, fundingClaims } from "./lib/route-options-model";
+import { fundingClaims, priceRoutes } from "./lib/route-options-model";
+import { alternateEntries, baseEntry, routeEntryAt, type RouteEntry } from "./lib/alternate-entries-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import type { useDocumentInventory } from "./useDocumentInventory";
 import { CALCULATING_ROUTE, useDocumentRoute } from "./useDocumentRoute";
@@ -79,7 +80,6 @@ interface GatheringResult {
 
 /** Shown instead of a profile for claims paid only with classified documents. */
 export const ANY_PROFILE = "Any";
-const NONE: number[] = [];
 /** The breakpoint recommended when no gathering target is saved: the first saving $4.99 or more. */
 const recommendedBreakpoint = (breakpoints: GatheringBreakpoint[]) =>
 	breakpoints.find((point) => point.savingsCents >= 499) ?? breakpoints.at(-1);
@@ -368,36 +368,149 @@ export function useBattlePassPlan(
 	// solved, so switching to an alternative cannot move the comparison.
 	const [baseGathering, setBaseGathering] = useState<{ route: Route; breakpoints: GatheringBreakpoint[] } | null>(null);
 	const baseBreakpoints = baseGathering && baseGathering.route === preferredBase ? baseGathering.breakpoints : null;
+	// Picking an alternate entry saves that entry's own count as the target, which
+	// need not be a fewest-documents breakpoint. The comparison keeps the amount it
+	// had, so the suggested route cannot move because an alternate was picked.
+	const [entryPick, setEntryPick] = useState<{ request: typeof request; target: number; compared: number } | null>(
+		null,
+	);
+	const pinnedCompared =
+		entryPick && entryPick.request === request && entryPick.target === gatheringTarget ? entryPick.compared : null;
 	const comparedGathering =
 		baseBreakpoints === null
 			? null
-			: gatheringTarget === 0
-				? 0
-				: ((
-						baseBreakpoints.find((point) => point.gathered === gatheringTarget) ??
-						recommendedBreakpoint(baseBreakpoints)
-					)?.gathered ?? 0);
-	const cheapest = useMemo(() => {
+			: (pinnedCompared ??
+				(gatheringTarget === 0
+					? 0
+					: ((
+							baseBreakpoints.find((point) => point.gathered === gatheringTarget) ??
+							recommendedBreakpoint(baseBreakpoints)
+						)?.gathered ?? 0)));
+	// Every route priced at the compared gathering amount; the suggested route is the cheapest checkout.
+	const routeOptions = useMemo(() => {
 		if (!preferredBase || !alternatives?.length || comparedGathering === null) return null;
-		const priced = [preferredBase, ...alternatives.map((alternative) => alternative.route)].flatMap(
-			(candidate, index) => {
-				try {
-					const scenario = gatheringScenario(candidate, comparedGathering, filters, daysLeft, reserve);
-					const plan = optimizeRouteFunding(scenario.claims, startingTarCoins, allowSpecial);
-					const gathered = scenario.quantities.reduce((sum, row) => sum + row.quantity, 0);
-					return [{ index, cashCents: plan.cashCents, gathered, left: plan.balanceTarCoins }];
-				} catch {
-					return [];
-				}
-			},
+		const priced = priceRoutes(
+			[preferredBase, ...alternatives.map((alternative) => alternative.route)],
+			comparedGathering,
+			filters,
+			daysLeft,
+			startingTarCoins,
+			allowSpecial,
+			reserve,
 		);
-		// Cheapest first; ties gather fewer documents, then leave more TarCoins, then keep the earlier route.
-		priced.sort((a, b) => a.cashCents - b.cashCents || a.gathered - b.gathered || b.left - a.left || a.index - b.index);
-		const fewest = priced.find((entry) => entry.index === 0);
-		return priced[0] && fewest
-			? { index: priced[0].index, gathering: comparedGathering, savingsCents: fewest.cashCents - priced[0].cashCents }
-			: null;
+		return priced.options.length ? priced : null;
 	}, [preferredBase, alternatives, comparedGathering, filters, startingTarCoins, allowSpecial, daysLeft, reserve]);
+	const cheapest = useMemo(() => {
+		const suggested = routeOptions?.options.find((option) => option.routeIndex === routeOptions.suggestedIndex);
+		const fewest = routeOptions?.options.find((option) => option.routeIndex === 0);
+		return suggested && fewest && comparedGathering !== null
+			? {
+					index: suggested.routeIndex,
+					gathering: comparedGathering,
+					savingsCents: fewest.cashCents - suggested.cashCents,
+				}
+			: null;
+	}, [routeOptions, comparedGathering]);
+
+	// Target-list entries: the fewest-documents route's breakpoints (kept while an
+	// alternate is active) plus the alternates that beat them. Alternates cost tens
+	// of milliseconds, so they are priced in a timer after render; the previous
+	// ones stay on screen meanwhile.
+	const entryBaseline = baseBreakpoints?.[0] ? baseBreakpoints[0].cashCents + baseBreakpoints[0].savingsCents : null;
+	const entryRoutes = useMemo(
+		() =>
+			preferredBase && alternatives ? [preferredBase, ...alternatives.map((alternative) => alternative.route)] : null,
+		[preferredBase, alternatives],
+	);
+	/** TarCoins left after the pass when nothing is gathered on the fewest-documents route. */
+	const noGatheringTarCoinsLeft = useMemo(() => {
+		if (!preferredBase) return null;
+		try {
+			return optimizeRouteFunding(
+				gatheringScenario(preferredBase, 0, filters, daysLeft, reserve).claims,
+				startingTarCoins,
+				allowSpecial,
+			).balanceTarCoins;
+		} catch {
+			return null;
+		}
+	}, [preferredBase, filters, daysLeft, reserve, startingTarCoins, allowSpecial]);
+	const cheapestIndex = cheapest?.index ?? null;
+	const cheapestGathering = cheapest?.gathering ?? null;
+	const [alternateState, setAlternateState] = useState<{ entries: RouteEntry[]; suggested?: RouteEntry }>({
+		entries: [],
+	});
+	useEffect(() => {
+		if (!baseBreakpoints || entryBaseline === null || !entryRoutes) return;
+		const timer = setTimeout(() => {
+			const entries = alternateEntries(
+				entryRoutes,
+				baseBreakpoints,
+				entryBaseline,
+				filters,
+				daysLeft,
+				reserve,
+				startingTarCoins,
+				allowSpecial,
+			);
+			// The suggested alternate is always listed, even when the show rule would hide it.
+			const suggested =
+				cheapestIndex !== null && cheapestIndex > 0 && cheapestGathering !== null
+					? routeEntryAt(
+							entryRoutes,
+							cheapestIndex,
+							cheapestGathering,
+							baseBreakpoints,
+							entryBaseline,
+							filters,
+							daysLeft,
+							reserve,
+							startingTarCoins,
+							allowSpecial,
+						)
+					: undefined;
+			if (suggested && !entries.some((e) => e.routeIndex === suggested.routeIndex && e.gathered === suggested.gathered))
+				entries.push(suggested);
+			setAlternateState({ entries, suggested });
+		}, 0);
+		return () => clearTimeout(timer);
+	}, [
+		baseBreakpoints,
+		entryBaseline,
+		entryRoutes,
+		cheapestIndex,
+		cheapestGathering,
+		filters,
+		daysLeft,
+		reserve,
+		startingTarCoins,
+		allowSpecial,
+	]);
+	const [lastBase, setLastBase] = useState<RouteEntry[]>([]);
+	const baseEntries = useMemo(
+		() =>
+			baseBreakpoints && entryBaseline !== null
+				? baseBreakpoints.map((point) => baseEntry(point, entryBaseline))
+				: null,
+		[baseBreakpoints, entryBaseline],
+	);
+	if (baseEntries && baseEntries !== lastBase) setLastBase(baseEntries);
+	const entries = useMemo(
+		() =>
+			[...(baseEntries ?? lastBase), ...alternateState.entries].sort(
+				(a, b) => a.gathered - b.gathered || a.routeIndex - b.routeIndex,
+			),
+		[baseEntries, lastBase, alternateState.entries],
+	);
+	/** The default pick: the cheapest route at the compared amount; undefined for no gathering on route 0 or while comparing. */
+	const suggestedEntry =
+		cheapestIndex === null
+			? undefined
+			: cheapestIndex > 0
+				? alternateState.suggested && { routeIndex: cheapestIndex, gathered: alternateState.suggested.gathered }
+				: cheapestGathering
+					? { routeIndex: 0, gathered: cheapestGathering }
+					: undefined;
 
 	// A route the player picks lasts until any route input changes or the page reloads.
 	const [adopted, setAdopted] = useState<{ request: typeof request; columns: RouteColumns | null } | null>(null);
@@ -427,30 +540,6 @@ export function useBattlePassPlan(
 	if (ready && result !== lastRoute) setLastRoute(result);
 	const route = ready ? result : calculating ? lastRoute : null;
 	const syncing = !ready && !!route;
-
-	// Route options: every route priced with the same wallet and offer.
-	const [expanded, setExpanded] = useState<{ alternatives: typeof alternatives; routes: number[] }>({
-		alternatives: null,
-		routes: [],
-	});
-	// "Show more options" resets whenever the routes are re-solved.
-	const expandedRoutes = expanded.alternatives === alternatives ? expanded.routes : NONE;
-	const routeOptions = useMemo(() => {
-		if (!preferredBase || !alternatives) return null;
-		try {
-			return buildRouteOptions(
-				[preferredBase, ...alternatives.map((alternative) => alternative.route)],
-				startingTarCoins,
-				allowSpecial,
-				(index) => expandedRoutes.includes(index),
-				adoptedIndex + 1,
-			);
-		} catch (error) {
-			// Pricing throws on routes it cannot fund; hide the options rather than blank the page.
-			console.error("Could not price battle pass route options", error);
-			return null;
-		}
-	}, [preferredBase, alternatives, startingTarCoins, allowSpecial, expandedRoutes, adoptedIndex]);
 
 	// Funding for the active route.
 	const funding = useMemo(() => {
@@ -502,12 +591,36 @@ export function useBattlePassPlan(
 	);
 	const pastSeason = wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
+	// On an alternate route the target is usually another route's count, and the
+	// largest breakpoint within it prices the same as gathering exactly that many.
+	// Without a saved target the default route keeps the amount it was compared at.
+	const alternateTarget = gatheringTarget ?? comparedGathering ?? 0;
 	const selected = locked
 		? breakpoints.findLast((point) => point.gathered <= lockedGathering)
 		: gatheringTarget === 0
 			? undefined
-			: (wantedPoint ?? (pastSeason ? breakpoints.at(-1) : recommended));
+			: (wantedPoint ??
+				(pastSeason
+					? breakpoints.at(-1)
+					: activeCandidate > 0
+						? breakpoints.findLast((point) => point.gathered <= alternateTarget)
+						: recommended));
 	const first = breakpoints[0];
+	const adoptRoute = (columns: RouteColumns | null) => setAdopted({ request, columns });
+	/** Adopt the entry's route and save its gathered count as the target together. */
+	const selectEntry = (routeIndex: number, gathered: number) => {
+		if (routeIndex > 0 && !alternatives?.[routeIndex - 1]) return;
+		adoptRoute(routeIndex === 0 ? null : alternatives![routeIndex - 1].columns);
+		setEntryPick(
+			routeIndex === 0 || comparedGathering === null
+				? null
+				: { request, target: gathered, compared: comparedGathering },
+		);
+		settings.setGatheringTarget(gathered);
+	};
+	/** The route and gathered count the plan is on, or undefined for the fewest-documents route without gathering. */
+	const activeEntry =
+		selected || activeCandidate > 0 ? { routeIndex: activeCandidate, gathered: selected?.gathered ?? 0 } : undefined;
 	const gathering = {
 		calculating: !shown,
 		stale: !!shown && !current,
@@ -516,8 +629,18 @@ export function useBattlePassPlan(
 		recommended,
 		/** The chosen breakpoint, or undefined for no gathering. */
 		selected,
+		/** Target-list rows: the fewest-documents route's breakpoints plus the alternates that beat them, by gathered then route. */
+		entries,
+		/** The route and count in use: undefined is the fewest-documents route without gathering. */
+		activeEntry,
+		/** The entry the default pick chooses (cheapest route at the compared amount); undefined without gathering on route 0 or while comparing. */
+		suggested: suggestedEntry,
+		/** Adopt the entry's route and save its count as the gathering target in one update. */
+		selectEntry,
 		/** Checkout without gathering. */
-		baselineCents: first ? first.cashCents + first.savingsCents : null,
+		baselineCents: entryBaseline ?? (first ? first.cashCents + first.savingsCents : null),
+		/** TarCoins left without gathering; null while unknown. */
+		baselineTarCoinsLeft: noGatheringTarCoinsLeft,
 		/** Fastest cash-free finish: undefined while calculating, null when none exists. */
 		cashFree: shown ? (shown.cashFree ?? null) : undefined,
 		select: settings.setGatheringTarget,
@@ -1026,12 +1149,6 @@ export function useBattlePassPlan(
 		/** Go back to the cheapest route chosen automatically. */
 		pickCheapestRoute: () => setAdopted(null),
 		routeOptions,
-		setRouteExpanded: (routeIndex: number, show: boolean) =>
-			setExpanded({
-				alternatives,
-				routes: show ? [...expandedRoutes, routeIndex] : expandedRoutes.filter((index) => index !== routeIndex),
-			}),
-		expandedRoutes,
 		// Funding, gathering and the step plan
 		funding,
 		gathering,

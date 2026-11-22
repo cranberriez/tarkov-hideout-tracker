@@ -39,6 +39,8 @@ export type BuilderModifier = {
 	kind: "positive" | "negative";
 	points: number;
 	icon?: string;
+	/** What the modifier does, one line per effect (shown on the screenshot sheet). */
+	effects: readonly string[];
 };
 
 type Selection = {

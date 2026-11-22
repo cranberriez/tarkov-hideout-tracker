@@ -133,7 +133,10 @@ export function SavePlanBar() {
 				</Button>
 			) : (
 				<>
-					<span title={blocked} className="inline-flex">
+					<span
+						title={blocked ?? "Locks this route in. It follows your progress without re-optimizing."}
+						className="inline-flex"
+					>
 						<Button tone="brand" variant="solid" size="md" disabled={!canSave} onClick={savePlan}>
 							{replacing ? "Replace saved plan" : "Save plan"}
 						</Button>
@@ -145,11 +148,8 @@ export function SavePlanBar() {
 					)}
 				</>
 			)}
-			<p className="min-w-0 flex-1 basis-56 text-xs text-muted-foreground">
-				{replacing && unchanged
-					? "This matches your saved plan."
-					: "Saving locks this route in. It follows your progress without re-optimizing."}
-			</p>
+			<span className="min-w-0 flex-1 basis-56" />
+			{replacing && unchanged && <span className="sr-only">This matches your saved plan.</span>}
 			{replacing && (
 				<span className="flex items-center gap-1">
 					{confirming && (

@@ -67,9 +67,10 @@
 	/* "New" badge on seasonal modifiers: fixed black chip with white text in every theme. */
 	--new-badge: #000000;
 	--new-badge-foreground: #ffffff;
-	/* Selected seasonal modifier points chip: solid fills with fixed black ink, kept at WCAG AAA (light theme lightens the fills). */
-	--modifier-picked-positive: var(--success);
-	--modifier-picked-negative: var(--danger);
+	/* Selected seasonal modifier points chip: solid fills with fixed black ink, kept at WCAG AAA (light theme lightens the fills).
+	   Chroma is cut by 30% (lightness kept, so ink contrast holds) to sit with the muted card tints. */
+	--modifier-picked-positive: oklch(from var(--success) l calc(c * 0.7) h);
+	--modifier-picked-negative: oklch(from var(--danger) l calc(c * 0.7) h);
 	--modifier-picked-foreground: #000000;
 
 	/* Information: active/in-progress states, pinned quests, informational links and notices. */
@@ -158,8 +159,8 @@
    overlays under foreground text. Status and acquisition colors are mid-tones that tint pastel. */
 [data-theme="light"] {
 	color-scheme: light;
-	--modifier-picked-positive: #4ade80;
-	--modifier-picked-negative: #ff6568;
+	--modifier-picked-positive: oklch(from #4ade80 l calc(c * 0.7) h);
+	--modifier-picked-negative: oklch(from #ff6568 l calc(c * 0.7) h);
 	--background: oklch(0.925 0.004 286);
 	--card-bg: oklch(0.962 0.003 286);
 	--surface-raised: oklch(0.9 0.005 286);
