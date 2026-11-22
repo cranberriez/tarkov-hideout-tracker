@@ -13,41 +13,52 @@ import {
 } from "@/components/ui/dialog";
 import { SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { MODIFIER_CARD_TINT } from "./modifier-tones";
 import { builderTotals } from "./modifiers/builder";
 import { formatPoints } from "./modifiers/types";
 import { useModifierBuilder, type BuilderModifier } from "./ModifierBuilder";
 
-const TONE = {
-	positive: { picked: "bg-success/18", chip: "bg-modifier-picked-positive text-modifier-picked-foreground" },
-	negative: { picked: "bg-danger/18", chip: "bg-modifier-picked-negative text-modifier-picked-foreground" },
+const CHIP = {
+	positive: "bg-modifier-picked-positive text-modifier-picked-foreground",
+	negative: "bg-modifier-picked-negative text-modifier-picked-foreground",
 } as const;
 
-function Tile({ modifier, picked, compact }: { modifier: BuilderModifier; picked: boolean; compact: boolean }) {
+/** Mirrors the season page's modifier card: icon, name, points chip and effects, on the same tint. */
+function Card({ modifier, compact }: { modifier: BuilderModifier; compact: boolean }) {
+	const icon = compact ? 32 : 48;
 	return (
-		<li
-			className={cn(
-				"flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5",
-				picked ? TONE[modifier.kind].picked : "opacity-40",
-			)}
-		>
+		<li className={cn("flex min-w-0 gap-3 rounded-lg p-3", MODIFIER_CARD_TINT[modifier.kind])}>
 			{modifier.icon ? (
-				<Image src={modifier.icon} alt="" width={24} height={24} unoptimized className="size-6 shrink-0" />
+				<Image
+					src={modifier.icon}
+					alt=""
+					width={icon}
+					height={icon}
+					unoptimized
+					className="shrink-0 opacity-90"
+					style={{ width: icon, height: icon }}
+				/>
 			) : (
-				<span aria-hidden className="size-6 shrink-0" />
+				<span aria-hidden className="shrink-0" style={{ width: icon, height: icon }} />
 			)}
-			<span
-				className={cn(
-					"line-clamp-2 min-w-0 flex-1 text-xs font-semibold uppercase leading-tight",
-					compact ? "tracking-normal" : "tracking-wide",
-				)}
-			>
-				{modifier.name}
-			</span>
-			{picked && (
-				<span className={cn("shrink-0 rounded-full px-1.5 text-xs font-bold tabular-nums", TONE[modifier.kind].chip)}>
-					{formatPoints(modifier.points)}
-				</span>
-			)}
+			<div className="min-w-0 flex-1 space-y-1">
+				<div className="flex items-start gap-2">
+					<h4 className="min-w-0 flex-1 pt-0.5 text-sm font-semibold uppercase tracking-wide">{modifier.name}</h4>
+					<span
+						className={cn(
+							"shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold tabular-nums",
+							CHIP[modifier.kind],
+						)}
+					>
+						{formatPoints(modifier.points)}
+					</span>
+				</div>
+				<ul className="list-disc space-y-0.5 pl-4 text-sm leading-5 text-foreground/85">
+					{modifier.effects.map((effect) => (
+						<li key={effect}>{effect}</li>
+					))}
+				</ul>
+			</div>
 		</li>
 	);
 }
@@ -81,10 +92,10 @@ const SITE_HOST = new URL(SITE_URL).host;
  * scaled as a whole to fit the screen, so it never scrolls and looks the same in every screenshot.
  */
 const LAYOUTS = {
-	wide: { width: 960, columns: "grid-cols-5", title: "text-4xl", compact: false },
-	medium: { width: 720, columns: "grid-cols-4", title: "text-3xl", compact: false },
+	wide: { width: 960, title: "text-3xl", compact: false },
+	medium: { width: 720, title: "text-2xl", compact: false },
 	// Phones are height-bound, so a wider design costs no extra shrink but gives names room.
-	narrow: { width: 500, columns: "grid-cols-3", title: "text-2xl", compact: true },
+	narrow: { width: 500, title: "text-xl", compact: true },
 } as const;
 
 /** Room kept around the sheet: side gutters, plus the floating close button above it. */
@@ -127,6 +138,13 @@ export function BuildScreenshotButton() {
 		selection.selected,
 		Object.fromEntries(modifiers.map((modifier) => [modifier.id, modifier.points])),
 	);
+	const sections = (["positive", "negative"] as const)
+		.map((kind) => ({
+			kind,
+			picks: modifiers.filter((modifier) => modifier.kind === kind && selection.selected.has(modifier.id)),
+			total: kind === "positive" ? `−${totals.spent}` : `+${totals.granted}`,
+		}))
+		.filter((section) => section.picks.length > 0);
 	const layout = viewport.width >= 1024 ? LAYOUTS.wide : viewport.width >= 640 ? LAYOUTS.medium : LAYOUTS.narrow;
 	const scale = Math.min(
 		1,
@@ -169,8 +187,8 @@ export function BuildScreenshotButton() {
 						</DialogDescription>
 						<div
 							className={cn(
-								"flex justify-between gap-x-6 gap-y-2 border-b border-border pb-3",
-								layout.compact ? "flex-col" : "items-end",
+								"flex justify-between gap-x-6 gap-y-2",
+								layout.compact ? "flex-col" : "items-start",
 							)}
 						>
 							<DialogTitle
@@ -186,56 +204,38 @@ export function BuildScreenshotButton() {
 									{theme.first} <span className={theme.accent}>{theme.second}</span>
 								</span>
 							</DialogTitle>
-							<div className={cn("flex flex-col gap-1", layout.compact ? "items-start" : "items-end")}>
-								<p className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
-									<Link2 aria-hidden className="size-3.5" />
-									{SITE_HOST}/{seasonId}
-								</p>
-								<p className="flex items-baseline gap-3 text-sm text-foreground/85 tabular-nums">
-									<span>
-										Granted <span className="font-bold text-foreground">+{totals.granted}</span>
-									</span>
-									<span aria-hidden>·</span>
-									<span>
-										Spent <span className="font-bold text-foreground">−{totals.spent}</span>
-									</span>
-									<span aria-hidden>·</span>
-									<span>
-										Net{" "}
-										<span className={cn("font-bold", totals.valid ? "text-success" : "text-danger")}>
-											{totals.balance === 0 ? "0" : formatPoints(totals.balance)}
-										</span>
-									</span>
-								</p>
-							</div>
+							<p className="flex items-center gap-1.5 text-xs font-semibold text-foreground/85">
+								<Link2 aria-hidden className="size-3.5" />
+								{SITE_HOST}/{seasonId}
+							</p>
 						</div>
-						{(["positive", "negative"] as const).map((kind) => {
-							// The stacked phone layout shows only picks; wider layouts show every modifier.
-							const shown = modifiers.filter(
-								(modifier) => modifier.kind === kind && (!layout.compact || selection.selected.has(modifier.id)),
-							);
-							return (
-								<section key={kind} className="mt-3 space-y-1.5">
-									<h3 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/85">
-										{kind === "positive" ? "Positive" : "Negative"}
-									</h3>
-									{shown.length === 0 ? (
-										<p className="text-xs text-foreground/85">No picks</p>
-									) : (
-										<ul className={cn("grid gap-1", layout.columns)}>
-											{shown.map((modifier) => (
-												<Tile
-													key={modifier.id}
-													modifier={modifier}
-													picked={selection.selected.has(modifier.id)}
-													compact={layout.compact}
-												/>
+						{sections.length === 0 ? (
+							<p className="mt-3 text-xs text-foreground/85">No picks</p>
+						) : (
+							// Picks only: positives and negatives side by side; a lone side takes the full width.
+							<div className={cn("mt-3 grid gap-4", sections.length === 2 && "grid-cols-2")}>
+								{sections.map(({ kind, picks, total }) => (
+									<section key={kind} className="min-w-0 space-y-1.5">
+										<h3 className="flex items-baseline gap-2 text-xs font-bold uppercase tracking-[0.2em] text-foreground/85">
+											{kind === "positive" ? "Positive" : "Negative"}
+											<span
+												className={cn(
+													"text-sm tracking-normal tabular-nums",
+													kind === "positive" ? "text-success" : "text-danger",
+												)}
+											>
+												{total}
+											</span>
+										</h3>
+										<ul className={cn("grid gap-2", sections.length === 1 && "grid-cols-2")}>
+											{picks.map((modifier) => (
+												<Card key={modifier.id} modifier={modifier} compact={layout.compact} />
 											))}
 										</ul>
-									)}
-								</section>
-							);
-						})}
+									</section>
+								))}
+							</div>
+						)}
 					</div>
 				</div>
 			</DialogContent>
