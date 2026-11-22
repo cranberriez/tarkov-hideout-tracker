@@ -17,6 +17,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
 import { cn } from "@/lib/utils";
@@ -97,7 +98,10 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 		</button>
 	);
 	const setSetupOpen = useUserStore((state) => state.setSetupOpen);
+	// Hidden until saved state loads, so returning players never see it flash in and out.
+	const hydrated = useUserStoreHydrated();
 	const hasCompletedSetup = useUserStore((state) => state.hasCompletedSetup);
+	const showSetup = hydrated && !hasCompletedSetup;
 	const isQuickAddOpen = useUIStore((state) => state.isQuickAddOpen);
 	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
 	const isMainNavHidden = useUIStore((state) => state.isMainNavHidden);
@@ -155,7 +159,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 
 								{syncEnabled && <SyncStatusPill />}
 
-								{!hasCompletedSetup && (
+								{showSetup && (
 									<div className="hidden sm:block">
 										<SetupButton onClick={() => setSetupOpen(true)} compact />
 									</div>
@@ -206,7 +210,7 @@ function NavbarContent({ syncEnabled }: { syncEnabled: boolean }) {
 
 							{syncEnabled && <SyncStatusPill />}
 
-							{!hasCompletedSetup && <SetupButton onClick={() => setSetupOpen(true)} />}
+							{showSetup && <SetupButton onClick={() => setSetupOpen(true)} />}
 
 							<DropdownMenu>
 								<DropdownMenuTrigger
