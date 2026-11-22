@@ -140,6 +140,99 @@ export function cashFreeGatheringPlan(route: SavingsRoute, wallet: number, filte
 	return { days, total: low, modes };
 }
 
+/** The breakpoint record for gathering `count` documents, priced by `solved`. */
+function breakpointAt(
+	route: SavingsRoute,
+	count: number,
+	filters: GatheringFilters,
+	days: number,
+	reserve: number,
+	solved: { plan: FundingPlan; funding: CurrencyComparison },
+	baselineCents: number,
+): GatheringBreakpoint {
+	const { claims, quantities } = gatheringScenario(route, count, filters, days, reserve);
+	const windows: GatheringBreakpoint["windows"] = [];
+	for (const row of quantities) {
+		let profile = windows.find((item) => item.profileKey === row.profileKey);
+		if (!profile) {
+			profile = {
+				profileKey: row.profileKey,
+				profileLabel: row.profileLabel,
+				quantity: 0,
+				cap: gatheringDailyCap(row.profileKey, reserve),
+				windows: 0,
+			};
+			windows.push(profile);
+		}
+		profile.quantity += row.quantity;
+		profile.windows = Math.ceil(profile.quantity / profile.cap);
+	}
+	return {
+		// An unlimited count gathers every eligible shortage; record what that is.
+		gathered: Number.isFinite(count) ? count : quantities.reduce((sum, row) => sum + row.quantity, 0),
+		quantities,
+		windows,
+		parallelWindows: Math.max(0, ...windows.map((row) => row.windows)),
+		cashCents: solved.funding.cashCents,
+		...solved,
+		savingsCents: baselineCents - solved.funding.cashCents,
+		remainingClassified: claims.reduce((sum, claim) => sum + claim.additionalClassified, 0),
+	};
+}
+
+/** Fewest documents to gather (earliest shortages first) so owned classified
+ * covers the rest; null when gathering every eligible shortage is not enough. */
+function fewestToCoverAll(route: SavingsRoute, filters: GatheringFilters, reserve: number) {
+	const left = (count: number) =>
+		gatheringScenario(route, count, filters, Infinity, reserve).claims.reduce(
+			(sum, claim) => sum + claim.additionalClassified,
+			0,
+		);
+	if (left(Infinity) > 0) return null;
+	let low = 0,
+		high = route.additionalClassified + route.classifiedUsed;
+	while (low < high) {
+		const middle = Math.floor((low + high) / 2);
+		if (left(middle) === 0) high = middle;
+		else low = middle + 1;
+	}
+	return low;
+}
+
+/** The gathering a purchase restriction forces. "tarcoins" gathers the fastest
+ * cash-free amount; "none" gathers the fewest documents that, with owned
+ * classified, cover every claim, without a season cap. Both fall back to
+ * gathering every eligible shortage; `blocked` then counts the classified
+ * documents still to buy (modes or document types turned off, or too few TarCoins). */
+export function restrictedGathering(
+	route: SavingsRoute,
+	purchases: "tarcoins" | "none",
+	startingTarCoins: number,
+	filters: GatheringFilters,
+	reserve = 0,
+) {
+	const free = purchases === "tarcoins" ? cashFreeGatheringPlan(route, startingTarCoins, filters, reserve) : null;
+	const count = free
+		? free.total
+		: purchases === "none"
+			? (fewestToCoverAll(route, filters, reserve) ?? Infinity)
+			: Infinity;
+	const days = free ? free.days : Infinity;
+	const price = (gathered: number) => {
+		const plan = optimizeRouteFunding(
+			gatheringScenario(route, gathered, filters, days, reserve).claims,
+			startingTarCoins,
+			false,
+		);
+		return { plan, funding: compareCurrencyBundles(plan, false) };
+	};
+	const point = breakpointAt(route, count, filters, days, reserve, price(count), price(0).funding.cashCents);
+	const blocked =
+		purchases === "none" ? point.remainingClassified : point.cashCents > 0 ? point.remainingClassified : 0;
+	return { purchases, point, days: free ? free.days : point.parallelWindows, scenarioDays: days, blocked };
+}
+export type RestrictedGathering = ReturnType<typeof restrictedGathering>;
+
 /** Binary-search each next cash drop on the monotone gathering path. Avoids one
  * funding solve per document, and runs only on demand in a dedicated worker.
  * `days` caps each mode at that many daily allowances (the days left in the
@@ -182,33 +275,7 @@ export function buildGatheringSavings(
 		}
 		count = low;
 		previous = cash(count);
-		const { claims, quantities } = gatheringScenario(route, count, filters, days, reserve);
-		const windows: GatheringBreakpoint["windows"] = [];
-		for (const row of quantities) {
-			let profile = windows.find((item) => item.profileKey === row.profileKey);
-			if (!profile) {
-				profile = {
-					profileKey: row.profileKey,
-					profileLabel: row.profileLabel,
-					quantity: 0,
-					cap: gatheringDailyCap(row.profileKey, reserve),
-					windows: 0,
-				};
-				windows.push(profile);
-			}
-			profile.quantity += row.quantity;
-			profile.windows = Math.ceil(profile.quantity / profile.cap);
-		}
-		result.push({
-			gathered: count,
-			quantities,
-			windows,
-			parallelWindows: Math.max(...windows.map((row) => row.windows)),
-			cashCents: previous,
-			...solve(count),
-			savingsCents: baseline - previous,
-			remainingClassified: claims.reduce((sum, claim) => sum + claim.additionalClassified, 0),
-		});
+		result.push(breakpointAt(route, count, filters, days, reserve, solve(count), baseline));
 	}
 	return result;
 }

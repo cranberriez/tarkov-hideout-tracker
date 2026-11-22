@@ -27,8 +27,10 @@ import {
 	type cashFreeGatheringPlan,
 	type GatheringBreakpoint,
 	type GatheringFilters,
+	type RestrictedGathering,
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
+import type { PurchaseMode } from "./lib/funding-settings-model";
 import { BALANCED_MODE, preferOwners } from "./lib/owner-preference-model";
 import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-model";
 import type { Costs } from "./lib/battle-pass-model";
@@ -72,11 +74,14 @@ interface GatheringInput {
 	reserve: number;
 	/** Days left in the season: no mode gathers beyond it. */
 	days: number;
+	purchases: PurchaseMode;
 }
 interface GatheringResult {
 	input: GatheringInput;
 	breakpoints?: GatheringBreakpoint[];
 	cashFree?: CashFreePlan;
+	/** The forced gathering while purchases are restricted. */
+	restricted?: RestrictedGathering;
 	error?: string;
 }
 
@@ -193,7 +198,11 @@ export function useBattlePassPlan(
 	const seasonalAvailable = useUserStore((state) => !!state.seasonalProfiles[seasonId]);
 	const { stored } = useBattlePassSave();
 	const settings = useFundingSettings();
-	const { startingTarCoins, allowSpecial, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget } = settings;
+	const { startingTarCoins, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget, purchases } = settings;
+	// The one-time offer is a cash purchase.
+	const allowSpecial = settings.allowSpecial && purchases === "cash";
+	/** Buying is restricted, so the gathering is fixed rather than chosen. */
+	const restrictedPurchases = purchases !== "cash";
 	const daysLeft = useSeasonDaysLeft(getSeason(seasonId).endsAt);
 
 	// Route settings and the saved plan, per season and shared by every profile.
@@ -522,8 +531,9 @@ export function useBattlePassPlan(
 				? 0
 				: alternatives.findIndex((alternative) => alternative.columns === adopted.columns) + 1 || undefined
 			: undefined;
-	/** Route options index of the active route: 0 is the fewest-documents route. */
-	const activeCandidate = adoptedCandidate ?? cheapest?.index ?? 0;
+	/** Route options index of the active route: 0 is the fewest-documents route.
+	 * Without cash, the cheapest-checkout pick does not apply: keep the fewest documents. */
+	const activeCandidate = adoptedCandidate ?? (restrictedPurchases ? 0 : (cheapest?.index ?? 0));
 	const adoptedIndex = activeCandidate - 1;
 	/** The active route, or a message while it cannot be shown. */
 	const result: Route | string = locked
@@ -558,16 +568,19 @@ export function useBattlePassPlan(
 	// Gathering breakpoints and cash-free plan (worker). The previous answer
 	// stays on screen while the worker recalculates.
 	const gatheringInput = useMemo(
-		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve, days: daysLeft } : null),
-		[route, startingTarCoins, allowSpecial, filters, reserve, daysLeft],
+		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve, days: daysLeft, purchases } : null),
+		[route, startingTarCoins, allowSpecial, filters, reserve, daysLeft, purchases],
 	);
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
+	/** The forced gathering, only while the shown answer is for the current purchase setting. */
+	const restricted = shown?.input.purchases === purchases ? (shown?.restricted ?? null) : null;
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
 	const recommended = recommendedBreakpoint(breakpoints);
 	// Remember the fewest-documents route's breakpoints for pricing every route.
 	if (
 		!locked &&
 		current &&
+		!restrictedPurchases &&
 		shown?.breakpoints &&
 		shown.input.route === preferredBase &&
 		baseGathering?.route !== preferredBase
@@ -581,7 +594,11 @@ export function useBattlePassPlan(
 	// Breakpoints only gather what fits before the season ends. A target that
 	// needs more days is kept as saved and gathers the most that fits (the last
 	// breakpoint); the rest is bought.
-	const shownInput = shown?.input;
+	// A forced gathering is replayed with the days it was solved for, not the season cap.
+	const shownInput = useMemo(
+		() => (shown?.input && restricted ? { ...shown.input, days: restricted.scenarioDays } : shown?.input),
+		[shown, restricted],
+	);
 	const wanted = locked ? lockedGathering : (gatheringTarget ?? 0);
 	const wantedPoint = breakpoints.find((point) => point.gathered === wanted);
 	const wantedDays = useMemo(
@@ -591,22 +608,25 @@ export function useBattlePassPlan(
 				: 0,
 		[shownInput, wanted],
 	);
-	const pastSeason = wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
+	const pastSeason =
+		!restrictedPurchases && wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
 	// On an alternate route the target is usually another route's count, and the
 	// largest breakpoint within it prices the same as gathering exactly that many.
 	// Without a saved target the default route keeps the amount it was compared at.
 	const alternateTarget = gatheringTarget ?? comparedGathering ?? 0;
-	const selected = locked
-		? breakpoints.findLast((point) => point.gathered <= lockedGathering)
-		: gatheringTarget === 0
-			? undefined
-			: (wantedPoint ??
-				(pastSeason
-					? breakpoints.at(-1)
-					: activeCandidate > 0
-						? breakpoints.findLast((point) => point.gathered <= alternateTarget)
-						: recommended));
+	const selected = restrictedPurchases
+		? restricted?.point
+		: locked
+			? breakpoints.findLast((point) => point.gathered <= lockedGathering)
+			: gatheringTarget === 0
+				? undefined
+				: (wantedPoint ??
+					(pastSeason
+						? breakpoints.at(-1)
+						: activeCandidate > 0
+							? breakpoints.findLast((point) => point.gathered <= alternateTarget)
+							: recommended));
 	// While a saved plan replays, solve its configuration afresh in the background
 	// and offer it only when it pays less, gathers fewer documents for the same
 	// cash, or leaves more TarCoins. Each input change replaces the running solve.
@@ -700,6 +720,11 @@ export function useBattlePassPlan(
 		select: settings.setGatheringTarget,
 		/** The saved target when it needs more days than the season has left, else null. */
 		pastSeason: pastSeason ? { gathered: wanted, days: wantedDays } : null,
+		/** What the plan may buy; anything but "cash" fixes the gathering. */
+		purchases,
+		/** The forced gathering while purchases are restricted: its days and the
+		 * classified still bought because gathering cannot cover them; null otherwise or while solving. */
+		restricted: restricted ? { days: restricted.days, blocked: restricted.blocked } : null,
 	};
 	/** Season-end limits on gathering. */
 	const deadline = {
@@ -707,6 +732,8 @@ export function useBattlePassPlan(
 		daysLeft,
 		/** The fastest cash-free finish's days when it ends after the season, else null. */
 		cashFreeDays: gathering.cashFree && gathering.cashFree.days > daysLeft ? gathering.cashFree.days : null,
+		/** The forced gathering's days when purchases are restricted and it ends after the season, else null. */
+		restrictedDays: restricted && restricted.days > daysLeft ? restricted.days : null,
 	};
 
 	// Step-by-step flow for the gathering target. A breakpoint carries its own
@@ -861,6 +888,8 @@ export function useBattlePassPlan(
 	// Small TarCoin top-ups (farmed in PVP or the seasonal mode) that lower the
 	// cash paid for the chosen gathering target.
 	const farming = useMemo(() => {
+		// Farming TarCoins only lowers cash, which a restriction already rules out.
+		if (restrictedPurchases) return [];
 		try {
 			if (selected && shownInput)
 				return tarCoinFarmingSavings(
@@ -880,7 +909,7 @@ export function useBattlePassPlan(
 			// No hint without a purchase schedule.
 		}
 		return [];
-	}, [selected, shownInput, funding, startingTarCoins, allowSpecial]);
+	}, [restrictedPurchases, selected, shownInput, funding, startingTarCoins, allowSpecial]);
 	// Map choice: price the current gathering amount with other maps, on the
 	// route the breakpoints were solved for.
 	const mapTarget = selected?.gathered ?? 0;

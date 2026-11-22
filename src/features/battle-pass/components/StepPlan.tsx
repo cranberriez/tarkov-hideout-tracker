@@ -60,11 +60,13 @@ export function StepPlan({ mostRewardsNow = false }: { mostRewardsNow?: boolean 
 			) : (
 				<>
 					<p className="text-xs text-muted-foreground">
-						{point
-							? `Gather ${point.gathered} documents, then pay ${usd(point.cashCents)}.`
-							: cashCents
-								? "No gathering: buy every missing document."
-								: "No purchase needed."}
+						{point && gathering.purchases !== "cash"
+							? `Gather ${point.gathered} documents${gathering.purchases === "none" ? "; buying is off." : "; TarCoins are not bought."}`
+							: point
+								? `Gather ${point.gathered} documents, then pay ${usd(point.cashCents)}.`
+								: cashCents
+									? "No gathering: buy every missing document."
+									: "No purchase needed."}
 						{gathering.breakpoints.length > 0 && " Change this with the gathering target in Route configuration."}
 					</p>
 					{totals && (

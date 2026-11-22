@@ -134,8 +134,11 @@ export function DocumentRoutePanel({
 											</Toggle>
 										</div>
 									</div>
-									<FundingInputs />
 								</div>
+								<section className="space-y-3">
+									<h4 className="text-base font-semibold">Purchases</h4>
+									<FundingInputs />
+								</section>
 								<ModePreference />
 								<GatheringTargetPicker />
 								{incompleteCount > 0 && (

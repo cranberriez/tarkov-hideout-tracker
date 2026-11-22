@@ -16,8 +16,10 @@ const days = (count: number) => `${count} ${count === 1 ? "day" : "days"}`;
 function DeadlineWarning() {
 	const { gathering, deadline, settings, modePreviews, modeCashFree } = useBattlePassPlanContext();
 	const { pastSeason } = gathering;
-	const { cashFreeDays, daysLeft } = deadline;
-	if (!pastSeason && cashFreeDays === null) return null;
+	const { cashFreeDays, daysLeft, restrictedDays } = deadline;
+	// With purchases restricted the forced gathering is the whole plan, so its days are what matter.
+	const restricted = gathering.purchases !== "cash";
+	if (restricted ? restrictedDays === null : !pastSeason && cashFreeDays === null) return null;
 	// Suggest Balanced when it gathers faster or pays less than the current choice.
 	const index = modePreviews?.modes.findIndex((mode) => mode.profileKey === BALANCED_MODE) ?? -1;
 	const balanced = index >= 0 ? modePreviews!.modes[index] : undefined;
@@ -42,7 +44,14 @@ function DeadlineWarning() {
 						{gathering.selected?.gathered ?? 0} in time and buys the rest.
 					</p>
 				)}
-				{cashFreeDays !== null && <p>A cash-free finish needs {days(cashFreeDays)}.</p>}
+				{restricted
+					? restrictedDays !== null && (
+							<p>
+								Gathering {gathering.selected?.gathered ?? 0} needs {days(restrictedDays)}. Allow buying to finish in
+								time.
+							</p>
+						)
+					: cashFreeDays !== null && <p>A cash-free finish needs {days(cashFreeDays)}.</p>}
 				{helps && settings.preferredMode !== BALANCED_MODE && (
 					<p className="flex flex-wrap items-center gap-x-2">
 						Balanced spreads gathering so the modes finish together.

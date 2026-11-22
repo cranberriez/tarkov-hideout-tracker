@@ -6,6 +6,7 @@ import {
 	excludeGatheringTypes,
 	FUNDING_SETTINGS_KEY,
 	parseFundingSettings,
+	type PurchaseMode,
 	readSettings,
 	updateGatheringChoice,
 } from "./lib/funding-settings-model";
@@ -43,6 +44,8 @@ export function useFundingSettings() {
 		/** Maps to gather on, or null for every map. */
 		setGatheringMaps: (value: string[] | null) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), gatheringMaps: value })),
+		setPurchases: (value: PurchaseMode) =>
+			write((current) => JSON.stringify({ version: 1, ...readSettings(current), purchases: value })),
 		setAllowSpecial: (value: boolean) =>
 			write((current) => JSON.stringify({ version: 1, ...readSettings(current), allowSpecial: value })),
 	};

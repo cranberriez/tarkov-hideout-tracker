@@ -35,6 +35,68 @@ export function GatheringTargetPicker() {
 	const { gathering: target, deadline, settings } = useBattlePassPlanContext();
 	const [more, setMore] = useState(false);
 	const { entries, activeEntry, suggested, baselineCents, pastSeason, selected } = target;
+	const headroom = (
+		<Toggle
+			indicator
+			className="w-fit"
+			checked={settings.dailyHeadroom}
+			onChange={settings.setDailyHeadroom}
+			title={`Near the daily limit raids spawn far fewer documents. Plans each mode ${DAILY_HEADROOM} below its cap (PVE ${gatheringDailyCap("PVE", DAILY_HEADROOM)}, PVP ${gatheringDailyCap("PVP", DAILY_HEADROOM)}, seasonal ${gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Changes days, not cost.`}
+		>
+			Leave {DAILY_HEADROOM} unplanned per day
+		</Toggle>
+	);
+	// Restricted purchases fix the gathering: there is nothing to choose, only what it takes.
+	if (target.purchases !== "cash") {
+		const { restricted } = target;
+		return (
+			<section data-syncing={target.stale || undefined} className="group/sync w-full space-y-3">
+				<h4 className="text-base font-semibold">Gathering target</h4>
+				{target.error ? (
+					<p role="status" className="text-xs text-warning">
+						{target.error}
+					</p>
+				) : !restricted || !selected ? (
+					<div
+						className="h-[52px] animate-pulse rounded-lg bg-surface-raised/60"
+						role="status"
+						aria-label="Calculating gathering"
+					/>
+				) : (
+					<div className={cn("space-y-1 rounded-lg bg-surface-raised/40 px-3 py-2.5 text-xs", syncValue)}>
+						<p className="text-sm font-semibold">
+							{selected.gathered > 0 ? `Gather ${selected.gathered}` : "No gathering needed"}
+							{selected.gathered > 0 && (
+								<span className="font-normal text-muted-foreground">
+									{" "}
+									· {days(restricted.days)}
+									{Number.isFinite(deadline.daysLeft) && `, ${days(deadline.daysLeft)} left`}
+								</span>
+							)}
+						</p>
+						{selected.gathered > 0 && (
+							<p className="text-muted-foreground">
+								{selected.windows.map((row) => `${row.profileLabel} ${row.quantity}`).join(", ")}
+							</p>
+						)}
+						<p className="text-muted-foreground">
+							{target.purchases === "none"
+								? "Buying is off: gather what owned documents do not cover."
+								: "TarCoins are not bought: gather until TarCoins you hold or earn cover the classified documents."}
+						</p>
+						{restricted.blocked > 0 && (
+							<p role="alert" className="text-warning">
+								{restricted.blocked} classified still {target.purchases === "none" ? "needed" : "need cash"}: gathering
+								is off for some of the documents. Turn them on under Advanced or allow{" "}
+								{target.purchases === "none" ? "buying classified" : "buying TarCoins"}.
+							</p>
+						)}
+					</div>
+				)}
+				{headroom}
+			</section>
+		);
+	}
 	if (baselineCents === null || !entries?.length) {
 		if (target.calculating || target.error)
 			return (
@@ -205,15 +267,7 @@ export function GatheringTargetPicker() {
 					</button>
 				)}
 			</div>
-			<Toggle
-				indicator
-				className="w-fit"
-				checked={settings.dailyHeadroom}
-				onChange={settings.setDailyHeadroom}
-				title={`Near the daily limit raids spawn far fewer documents. Plans each mode ${DAILY_HEADROOM} below its cap (PVE ${gatheringDailyCap("PVE", DAILY_HEADROOM)}, PVP ${gatheringDailyCap("PVP", DAILY_HEADROOM)}, seasonal ${gatheringDailyCap("seasonal", DAILY_HEADROOM)}). Changes days, not cost.`}
-			>
-				Leave {DAILY_HEADROOM} unplanned per day
-			</Toggle>
+			{headroom}
 		</section>
 	);
 }

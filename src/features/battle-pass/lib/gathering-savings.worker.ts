@@ -1,6 +1,7 @@
 import {
 	buildGatheringSavings,
 	cashFreeGatheringPlan,
+	restrictedGathering,
 	type GatheringFilters,
 	type SavingsRoute,
 } from "./gathering-savings-model";
@@ -17,14 +18,28 @@ self.onmessage = (
 		reserve: number;
 		/** Days left in the season: no mode gathers beyond it. */
 		days: number;
+		purchases: "cash" | "tarcoins" | "none";
 	}>,
 ) => {
-	const { route, startingTarCoins, allowSpecial, filters, reserve, days } = event.data;
+	const { route, startingTarCoins, allowSpecial, filters, reserve, days, purchases } = event.data;
 	let cashFree = null;
 	try {
 		cashFree = cashFreeGatheringPlan(route, startingTarCoins, filters, reserve);
 	} catch {
 		// No cash-free plan to show.
+	}
+	// A purchase restriction fixes the gathering, so there are no breakpoints to choose from.
+	if (purchases !== "cash") {
+		try {
+			self.postMessage({
+				breakpoints: [],
+				cashFree,
+				restricted: restrictedGathering(route, purchases, startingTarCoins, filters, reserve),
+			});
+		} catch {
+			self.postMessage({ cashFree, error: "Could not calculate gathering. Try again." });
+		}
+		return;
 	}
 	try {
 		self.postMessage({

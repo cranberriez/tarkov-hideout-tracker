@@ -374,6 +374,15 @@ export function reviewImport(text: string, sources: TransferSources, context: Tr
 		const formats: { [K in keyof FundingSettings]: [string, (value: FundingSettings[K]) => string] } = {
 			startingTarCoins: ["Starting TarCoins", String],
 			allowSpecial: ["One-time offer", onOff],
+			purchases: [
+				"Purchases",
+				(value) =>
+					value === "cash"
+						? "TarCoins and classified"
+						: value === "tarcoins"
+							? "Classified with TarCoins only"
+							: "None",
+			],
 			preferredMode: ["Preferred gathering mode", modeName],
 			dailyHeadroom: ["Daily headroom", onOff],
 			gatheringTarget: [

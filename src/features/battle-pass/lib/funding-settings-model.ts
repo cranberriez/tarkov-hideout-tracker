@@ -2,6 +2,11 @@ import type { GatheringFilters } from "./gathering-savings-model";
 
 export const FUNDING_SETTINGS_KEY = "tarkov-battle-pass-funding-v1";
 
+/** What the plan may buy: TarCoins with cash and classified with TarCoins,
+ * classified with TarCoins already held or earned only, or nothing. */
+export type PurchaseMode = "cash" | "tarcoins" | "none";
+export const PURCHASE_MODES: readonly PurchaseMode[] = ["cash", "tarcoins", "none"];
+
 export function readSettings(raw: string | null): Record<string, unknown> {
 	try {
 		const value: unknown = JSON.parse(raw ?? "{}");
@@ -66,6 +71,7 @@ export function parseFundingSettings(raw: string | null) {
 				? Math.max(0, Math.min(9999999, Math.floor(value.startingTarCoins)))
 				: 0,
 		allowSpecial: value.allowSpecial === true,
+		purchases: PURCHASE_MODES.includes(value.purchases as PurchaseMode) ? (value.purchases as PurchaseMode) : "cash",
 		preferredMode: typeof value.preferredMode === "string" ? value.preferredMode : null,
 		dailyHeadroom: value.dailyHeadroom === true,
 		gatheringTarget:
