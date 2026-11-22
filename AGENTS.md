@@ -55,6 +55,15 @@ loading/error states and mode switches. Docs-only changes need `pnpm run docs:ch
 checks; they are not a requirement to run every suite for every edit. Report
 failures without resetting data or changing unrelated code to hide them.
 
+## Commits
+
+- Start every commit subject with a type prefix for the commit's goal: `feat:` for
+  features, `fix:` for fixes, `docs:` for documentation, and `chore:` for changes
+  that are neither (tooling, refactors, cleanup). Example: `feat: Show picked
+  modifiers as full cards in the build screenshot`.
+- Never add an AI agent as author or co-author: no `Co-Authored-By` trailers or
+  similar attribution lines in commit messages or PR descriptions.
+
 ## Cost-aware delegation
 
 Use a `cheap_explorer` Luna agent for bounded, low-risk work that benefits from
