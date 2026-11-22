@@ -8,6 +8,9 @@ The runtime and routine writers use PostgreSQL domain tables through
 [design](postgresql-migration.md) and separate [cutover runbook](postgresql-cutover.md)
 cover migration and deployment. There are no active release pointers, generic
 payload tables, historical catalogs, or stored search manifests in PostgreSQL.
+The pool logs and discards idle clients the server drops instead of letting the
+unhandled `error` event crash the function, and registers with Vercel's
+`attachDatabasePool` so idle clients close before an instance is suspended.
 
 Site ratings use the site-wide `feedback` table from
 [migration 0007](../db-scripts/migrations/0007_feedback.sql). Its fixed primary key

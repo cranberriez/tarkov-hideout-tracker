@@ -7,6 +7,7 @@ import { Check } from "lucide-react";
 
 import { useShallow } from "zustand/react/shallow";
 
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore, type GameMode, type PlayerProfileState } from "@/lib/stores/useUserStore";
 
 import { cn } from "@/lib/utils";
@@ -40,7 +41,21 @@ export function openCharacterPanel() {
 const profileColorStyle = (mode: GameMode, seasonId: SeasonId = "season-1") =>
 	({ "--profile-color": mode === "KORD" ? getSeason(seasonId).color : PROFILE_BASE_COLORS[mode] }) as CSSProperties;
 
+/** Saved profile values live in localStorage; show a same-size placeholder until they load so the server HTML matches. */
 export function PlayerProfileMenu() {
+	const hydrated = useUserStoreHydrated();
+	if (!hydrated) {
+		return (
+			<div
+				aria-hidden="true"
+				className="h-10 w-28 animate-pulse rounded border border-highlight/10 bg-shadow/35"
+			/>
+		);
+	}
+	return <PlayerProfileMenuContent />;
+}
+
+function PlayerProfileMenuContent() {
 	const selectedSeasonId = useUserStore((state) => state.selectedSeasonId);
 
 	const [hoveredPanel, setHoveredPanel] = useState<OpenPanel | null>(null);

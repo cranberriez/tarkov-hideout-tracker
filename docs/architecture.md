@@ -144,8 +144,15 @@ reads one item, [getQuestDetailPageData](../src/server/queries/getQuestDetailPag
 one quest, and station pages use mode/station-keyed metadata and recipe queries. Each sets
 entity-specific titles, descriptions, and canonical URLs. Missing IDs render
 not-found states; failed reads report errors instead of 404s. Pages render public
-identity from server data; player progress hydrates afterwards. Titles use the root
+identity from server data; player progress hydrates afterwards, so client components that
+read saved state during server rendering (including the shared navbar) wait for
+`useUserStoreHydrated` and show placeholders until then. Titles use the root
 `%s · Tarkov Hideout Tracker` template.
+
+Route error boundaries share [RouteErrorRecovery](../src/components/core/RouteErrorRecovery.tsx):
+behind the route loader it reloads once for stale-deployment asset errors and retries
+once otherwise, guarded per path for 30 seconds, before showing the error and its
+digest. [global-error](../src/app/global-error.tsx) covers root layout failures.
 
 Unmatched URLs use the root [404 page](../src/app/not-found.tsx), below the shared
 navbar. Its MIA banner and recovery controls need no entity reads; Back to Hideout

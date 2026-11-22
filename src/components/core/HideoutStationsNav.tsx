@@ -7,6 +7,7 @@ import { stationOrder } from "@/lib/cfg/stationOrder";
 import { STATIC_STATIONS, stationPortraitSrc } from "@/lib/data/static-stations";
 import { stationHref, stationPath } from "@/lib/entity-routes";
 import { useModeRoute } from "@/lib/useModeRoute";
+import { useUserStoreHydrated } from "@/lib/query/game-data";
 import { useUserStore } from "@/lib/stores/useUserStore";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,8 @@ const stations = [...STATIC_STATIONS].sort(
 
 /** Hideout nav dropdown body: every station with the active profile's saved level. `currentPage` is mode-less. */
 export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
+	// Saved levels live in localStorage; show a placeholder until they load so the server HTML matches.
+	const hydrated = useUserStoreHydrated();
 	const stationLevels = useUserStore((state) => state.stationLevels);
 	const { mode } = useModeRoute();
 	return (
@@ -56,7 +59,9 @@ export function HideoutStationsNav({ currentPage }: { currentPage: string }) {
 							className="size-[18px] shrink-0 rounded-xs object-cover"
 						/>
 						<span className="min-w-0 flex-1 truncate">{station.name}</span>
-						{maxed ? (
+						{!hydrated ? (
+							<span aria-hidden="true" className="h-2.5 w-2 shrink-0 animate-pulse rounded-xs bg-muted-foreground/30" />
+						) : maxed ? (
 							<Crown size={12} aria-label="Max level" className="shrink-0 text-warning" />
 						) : (
 							<span className="shrink-0 font-mono text-[10px] text-muted-foreground" aria-label={`Level ${level}`}>
