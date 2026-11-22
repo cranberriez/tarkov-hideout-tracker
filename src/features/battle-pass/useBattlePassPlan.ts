@@ -708,6 +708,8 @@ export function useBattlePassPlan(
 	]);
 	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
 
+	/** Classified documents the route may spend before buying any. */
+	const ownedClassified = useClassified ? stored.classified : 0;
 	const flow = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
 		try {
@@ -719,13 +721,23 @@ export function useBattlePassPlan(
 					shownInput.days,
 					shownInput.reserve,
 				);
-				return purchaseFlow(selected.plan, scenario.claims, shownInput.startingTarCoins, scenario.gatheredByClaim);
+				return purchaseFlow(
+					selected.plan,
+					scenario.claims,
+					shownInput.startingTarCoins,
+					scenario.gatheredByClaim,
+					ownedClassified,
+				);
 			}
-			return purchaseFlow(funding.plan, funding.claims, startingTarCoins);
+			const claims = funding.claims.map((claim, index) => ({
+				...claim,
+				classifiedUsed: route.claims[index]?.classifiedUsed ?? 0,
+			}));
+			return purchaseFlow(funding.plan, claims, startingTarCoins, [], ownedClassified);
 		} catch {
 			return null;
 		}
-	}, [route, funding, selected, shownInput, startingTarCoins]);
+	}, [route, funding, selected, shownInput, startingTarCoins, ownedClassified]);
 	/** What is left after the whole route at the gathering target, with the recommended purchase. */
 	const leftover = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
