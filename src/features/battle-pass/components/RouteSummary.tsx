@@ -18,7 +18,7 @@ function DeadlineWarning() {
 	const { pastSeason } = gathering;
 	const { cashFreeDays, daysLeft, restrictedDays } = deadline;
 	// With purchases restricted the forced gathering is the whole plan, so its days are what matter.
-	const restricted = gathering.purchases !== "cash";
+	const restricted = gathering.purchases !== "cash" || gathering.stepSelected;
 	if (restricted ? restrictedDays === null : !pastSeason && cashFreeDays === null) return null;
 	// Suggest Balanced when it gathers faster or pays less than the current choice.
 	const index = modePreviews?.modes.findIndex((mode) => mode.profileKey === BALANCED_MODE) ?? -1;
@@ -47,8 +47,8 @@ function DeadlineWarning() {
 				{restricted
 					? restrictedDays !== null && (
 							<p>
-								Gathering {gathering.selected?.gathered ?? 0} needs {days(restrictedDays)}. Allow buying to finish in
-								time.
+								Gathering {gathering.selected?.gathered ?? 0} needs {days(restrictedDays)}.{" "}
+								{gathering.purchases === "cash" ? "Pick a target that buys some" : "Allow buying"} to finish in time.
 							</p>
 						)
 					: cashFreeDays !== null && <p>A cash-free finish needs {days(cashFreeDays)}.</p>}

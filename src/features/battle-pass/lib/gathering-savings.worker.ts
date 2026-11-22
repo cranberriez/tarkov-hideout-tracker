@@ -2,6 +2,8 @@ import {
 	buildGatheringSavings,
 	cashFreeGatheringPlan,
 	restrictedGathering,
+	gatherAllCount,
+	tarCoinSteps,
 	type GatheringFilters,
 	type SavingsRoute,
 } from "./gathering-savings-model";
@@ -42,10 +44,27 @@ self.onmessage = (
 		return;
 	}
 	try {
-		self.postMessage({
-			breakpoints: buildGatheringSavings(route, startingTarCoins, allowSpecial, filters, reserve, days),
-			cashFree,
-		});
+		const breakpoints = buildGatheringSavings(route, startingTarCoins, allowSpecial, filters, reserve, days);
+		// The list ends at the lowest cash. Past it, gathering more spends fewer TarCoins on
+		// classified, down to gathering everything and buying nothing: list those steps too.
+		let steps: ReturnType<typeof tarCoinSteps> = [];
+		try {
+			const last = breakpoints.at(-1)?.gathered ?? 0;
+			steps = tarCoinSteps(
+				route,
+				startingTarCoins,
+				allowSpecial,
+				filters,
+				reserve,
+				last,
+				gatherAllCount(route, filters, reserve),
+			);
+			// A cash breakpoint is already listed; steps continue after it.
+			if (last > 0) steps = steps.slice(1);
+		} catch {
+			// No TarCoin steps.
+		}
+		self.postMessage({ breakpoints, cashFree, steps });
 	} catch {
 		self.postMessage({ cashFree, error: "Could not calculate gathering savings. Try again." });
 	}

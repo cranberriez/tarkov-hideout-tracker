@@ -54,8 +54,8 @@ export function CurrencyComparison({ funding, savedCents }: { funding: Compariso
 					)}
 					{next && (
 						<>
-							Next bundle +{usd(next.cents - funding.cashCents)}: {(next.balanceTarCoins - funding.balanceTarCoins).toLocaleString()} <TarCoin /> more
-							left.
+							Next bundle +{usd(next.cents - funding.cashCents)}:{" "}
+							{(next.balanceTarCoins - funding.balanceTarCoins).toLocaleString()} <TarCoin /> more left.
 						</>
 					)}
 				</p>

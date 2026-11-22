@@ -82,6 +82,9 @@ interface GatheringResult {
 	cashFree?: CashFreePlan;
 	/** The forced gathering while purchases are restricted. */
 	restricted?: RestrictedGathering;
+	/** With cash allowed: after the cash breakpoints, each amount where fewer TarCoins buy classified, up to
+	 * gathering everything; starts at no gathering when there are no breakpoints. Uncapped by the season. */
+	steps?: GatheringBreakpoint[];
 	error?: string;
 }
 
@@ -574,6 +577,11 @@ export function useBattlePassPlan(
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
 	/** The forced gathering, only while the shown answer is for the current purchase setting. */
 	const restricted = shown?.input.purchases === purchases ? (shown?.restricted ?? null) : null;
+	/** The buy-nothing entry offered after the cash breakpoints. */
+	const steps = useMemo(
+		() => (!restrictedPurchases && shown?.input.purchases === "cash" ? (shown?.steps ?? []) : []),
+		[restrictedPurchases, shown],
+	);
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
 	const recommended = recommendedBreakpoint(breakpoints);
 	// Remember the fewest-documents route's breakpoints for pricing every route.
@@ -594,10 +602,18 @@ export function useBattlePassPlan(
 	// Breakpoints only gather what fits before the season ends. A target that
 	// needs more days is kept as saved and gathers the most that fits (the last
 	// breakpoint); the rest is bought.
-	// A forced gathering is replayed with the days it was solved for, not the season cap.
+	// A TarCoin step is chosen by saving its count; a saved plan keeps the largest step its remainder still covers.
+	const lastBreakpoint = breakpoints.at(-1)?.gathered ?? 0;
+	const stepPoint = locked
+		? lockedGathering > lastBreakpoint
+			? steps.findLast((step) => step.gathered > 0 && step.gathered <= lockedGathering)
+			: undefined
+		: steps.find((step) => step.gathered > 0 && step.gathered === gatheringTarget);
+	// Restricted purchases and TarCoin steps are replayed uncapped, as they were solved, not at the season cap.
+	const uncapped = !!restricted || !!stepPoint;
 	const shownInput = useMemo(
-		() => (shown?.input && restricted ? { ...shown.input, days: restricted.scenarioDays } : shown?.input),
-		[shown, restricted],
+		() => (shown?.input && uncapped ? { ...shown.input, days: Infinity } : shown?.input),
+		[shown, uncapped],
 	);
 	const wanted = locked ? lockedGathering : (gatheringTarget ?? 0);
 	const wantedPoint = breakpoints.find((point) => point.gathered === wanted);
@@ -609,24 +625,29 @@ export function useBattlePassPlan(
 		[shownInput, wanted],
 	);
 	const pastSeason =
-		!restrictedPurchases && wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
+		!restrictedPurchases && !stepPoint && wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
 	// On an alternate route the target is usually another route's count, and the
 	// largest breakpoint within it prices the same as gathering exactly that many.
 	// Without a saved target the default route keeps the amount it was compared at.
 	const alternateTarget = gatheringTarget ?? comparedGathering ?? 0;
+	// Without cash, a saved target picks its option when that option needs no cash.
+	const restrictedPoint =
+		restricted?.options?.find((option) => option.gathered === wanted && option.cashCents === 0) ?? restricted?.point;
 	const selected = restrictedPurchases
-		? restricted?.point
-		: locked
-			? breakpoints.findLast((point) => point.gathered <= lockedGathering)
-			: gatheringTarget === 0
-				? undefined
-				: (wantedPoint ??
-					(pastSeason
-						? breakpoints.at(-1)
-						: activeCandidate > 0
-							? breakpoints.findLast((point) => point.gathered <= alternateTarget)
-							: recommended));
+		? restrictedPoint
+		: stepPoint
+			? stepPoint
+			: locked
+				? breakpoints.findLast((point) => point.gathered <= lockedGathering)
+				: gatheringTarget === 0
+					? undefined
+					: (wantedPoint ??
+						(pastSeason
+							? breakpoints.at(-1)
+							: activeCandidate > 0
+								? breakpoints.findLast((point) => point.gathered <= alternateTarget)
+								: recommended));
 	// While a saved plan replays, solve its configuration afresh in the background
 	// and offer it only when it pays less, gathers fewer documents for the same
 	// cash, or leaves more TarCoins. Each input change replaces the running solve.
@@ -724,7 +745,19 @@ export function useBattlePassPlan(
 		purchases,
 		/** The forced gathering while purchases are restricted: its days and the
 		 * classified still bought because gathering cannot cover them; null otherwise or while solving. */
-		restricted: restricted ? { days: restricted.days, blocked: restricted.blocked } : null,
+		restricted: restricted
+			? {
+					days: restrictedPoint!.parallelWindows,
+					blocked: restricted.blocked,
+					/** Without cash: no gathering up to gathering everything, each where fewer TarCoins buy classified. */
+					options: restricted.options,
+				}
+			: null,
+		/** With cash allowed, the entry after the breakpoints that gathers everything and buys nothing; null when none. */
+		/** After the cash breakpoints: amounts where fewer TarCoins buy classified, up to gathering everything. */
+		steps,
+		/** The selected target is a TarCoin step, gathered without the season cap. */
+		stepSelected: !!stepPoint,
 	};
 	/** Season-end limits on gathering. */
 	const deadline = {
@@ -732,8 +765,8 @@ export function useBattlePassPlan(
 		daysLeft,
 		/** The fastest cash-free finish's days when it ends after the season, else null. */
 		cashFreeDays: gathering.cashFree && gathering.cashFree.days > daysLeft ? gathering.cashFree.days : null,
-		/** The forced gathering's days when purchases are restricted and it ends after the season, else null. */
-		restrictedDays: restricted && restricted.days > daysLeft ? restricted.days : null,
+		/** The uncapped gathering's days (restricted purchases or a TarCoin step) when it ends after the season, else null. */
+		restrictedDays: uncapped && selected && selected.parallelWindows > daysLeft ? selected.parallelWindows : null,
 	};
 
 	// Step-by-step flow for the gathering target. A breakpoint carries its own

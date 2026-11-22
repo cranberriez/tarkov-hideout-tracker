@@ -199,11 +199,80 @@ function fewestToCoverAll(route: SavingsRoute, filters: GatheringFilters, reserv
 	return low;
 }
 
-/** The gathering a purchase restriction forces. "tarcoins" gathers the fastest
- * cash-free amount; "none" gathers the fewest documents that, with owned
- * classified, cover every claim, without a season cap. Both fall back to
- * gathering every eligible shortage; `blocked` then counts the classified
- * documents still to buy (modes or document types turned off, or too few TarCoins). */
+/** TarCoins a purchase schedule spends on classified packs. */
+export function packTarCoins(plan: FundingPlan) {
+	return plan.steps.reduce(
+		(sum, step) => sum + step.documentPacks.reduce((total, pack) => total + pack.tarCoins * pack.count, 0),
+		0,
+	);
+}
+
+/** From `start` up to `end` documents gathered, each amount where the cash,
+ * then the TarCoins spent on classified packs, next drops; `start` comes first.
+ * `freeOnly` keeps only later amounts that need no cash. Uncapped by the season,
+ * so each step's days are its own. */
+export function tarCoinSteps(
+	route: SavingsRoute,
+	startingTarCoins: number,
+	allowSpecial: boolean,
+	filters: GatheringFilters,
+	reserve: number,
+	start: number,
+	end: number,
+	freeOnly = false,
+) {
+	const cache = new Map<number, { plan: FundingPlan; funding: CurrencyComparison }>();
+	const solve = (count: number) => {
+		if (!cache.has(count)) {
+			const plan = optimizeRouteFunding(
+				gatheringScenario(route, count, filters, Infinity, reserve).claims,
+				startingTarCoins,
+				allowSpecial,
+			);
+			cache.set(count, { plan, funding: compareCurrencyBundles(plan, allowSpecial) });
+		}
+		return cache.get(count)!;
+	};
+	const below = (a: number, b: number) => {
+		const x = solve(a).plan,
+			y = solve(b).plan;
+		return x.cashCents < y.cashCents || (x.cashCents === y.cashCents && packTarCoins(x) < packTarCoins(y));
+	};
+	const baseline = solve(0).funding.cashCents;
+	const steps = [breakpointAt(route, start, filters, Infinity, reserve, solve(start), baseline)];
+	let count = start;
+	while (count < end && below(end, count)) {
+		let low = count + 1,
+			high = end;
+		while (low < high) {
+			const middle = Math.floor((low + high) / 2);
+			if (below(middle, count)) high = middle;
+			else low = middle + 1;
+		}
+		count = low;
+		if (!freeOnly || solve(count).plan.cashCents === 0)
+			steps.push(breakpointAt(route, count, filters, Infinity, reserve, solve(count), baseline));
+	}
+	return steps;
+}
+
+/** Fewest documents that, with owned classified, cover every claim; failing that, every eligible shortage. */
+export function gatherAllCount(route: SavingsRoute, filters: GatheringFilters, reserve = 0) {
+	return (
+		fewestToCoverAll(route, filters, reserve) ??
+		gatheringScenario(route, Infinity, filters, Infinity, reserve).quantities.reduce(
+			(sum, row) => sum + row.quantity,
+			0,
+		)
+	);
+}
+
+/** The gathering a purchase restriction forces. "none" gathers the fewest
+ * documents that, with owned classified, cover every claim, without a season
+ * cap. "tarcoins" lists `options` from no gathering to that amount, each where
+ * fewer TarCoins buy classified; its default is the first that needs no cash.
+ * Both fall back to gathering every eligible shortage; `blocked` then counts
+ * the classified documents still to buy (modes or document types turned off). */
 export function restrictedGathering(
 	route: SavingsRoute,
 	purchases: "tarcoins" | "none",
@@ -211,25 +280,23 @@ export function restrictedGathering(
 	filters: GatheringFilters,
 	reserve = 0,
 ) {
-	const free = purchases === "tarcoins" ? cashFreeGatheringPlan(route, startingTarCoins, filters, reserve) : null;
-	const count = free
-		? free.total
-		: purchases === "none"
-			? (fewestToCoverAll(route, filters, reserve) ?? Infinity)
-			: Infinity;
-	const days = free ? free.days : Infinity;
+	const end = gatherAllCount(route, filters, reserve);
 	const price = (gathered: number) => {
 		const plan = optimizeRouteFunding(
-			gatheringScenario(route, gathered, filters, days, reserve).claims,
+			gatheringScenario(route, gathered, filters, Infinity, reserve).claims,
 			startingTarCoins,
 			false,
 		);
 		return { plan, funding: compareCurrencyBundles(plan, false) };
 	};
-	const point = breakpointAt(route, count, filters, days, reserve, price(count), price(0).funding.cashCents);
-	const blocked =
-		purchases === "none" ? point.remainingClassified : point.cashCents > 0 ? point.remainingClassified : 0;
-	return { purchases, point, days: free ? free.days : point.parallelWindows, scenarioDays: days, blocked };
+	const options =
+		purchases === "tarcoins" ? tarCoinSteps(route, startingTarCoins, false, filters, reserve, 0, end, true) : null;
+	const point =
+		options?.find((option) => option.cashCents === 0) ??
+		options?.at(-1) ??
+		breakpointAt(route, end, filters, Infinity, reserve, price(end), price(0).funding.cashCents);
+	const blocked = point.cashCents > 0 || purchases === "none" ? point.remainingClassified : 0;
+	return { purchases, point, options, scenarioDays: Infinity, blocked };
 }
 export type RestrictedGathering = ReturnType<typeof restrictedGathering>;
 
