@@ -7,6 +7,7 @@ import { CircleAlert, CircleCheck, Layers3, LoaderCircle } from "lucide-react";
 import { RouteSummary } from "./RouteSummary";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
+import { OptimizerInfo } from "./OptimizerInfo";
 import { StepPlan } from "./StepPlan";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
@@ -59,9 +60,12 @@ export function DocumentRoutePanel({
 					<Layers3 className="size-5 text-brand" aria-hidden />
 					Docs breakdown
 				</h2>
-				<Toggle indicator className="h-9 text-sm" checked={enabled} onChange={onEnabledChange}>
-					Optimizer
-				</Toggle>
+				<div className="flex items-center gap-1">
+					<OptimizerInfo />
+					<Toggle indicator className="h-9 text-sm" checked={enabled} onChange={onEnabledChange}>
+						Optimizer
+					</Toggle>
+				</div>
 			</div>
 			{enabled ? (
 				<>
