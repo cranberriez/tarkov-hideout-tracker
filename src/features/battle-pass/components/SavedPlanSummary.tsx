@@ -1,16 +1,50 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { CircleAlert, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { CircleAlert, SlidersHorizontal, Sparkles, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useBattlePassData } from "../BattlePassSeason";
+import type { BetterRoute } from "../lib/better-route-model";
 import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { DESTINATION_PRESETS } from "./DestinationPicker";
 import { Artwork } from "./ui/Artwork";
-import { flatField } from "./ui/field";
+import { flatField, liftedSelected } from "./ui/field";
 
 const savedDate = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const usd = (cents: number) =>
+	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+
+/** What the better route improves, against the saved plan. */
+function betterRouteText({ reason, saved, fresh }: BetterRoute) {
+	if (reason === "cash")
+		return `Better route found: pay ${usd(fresh.cashCents)} instead of ${usd(saved.cashCents)}${
+			fresh.gathered !== saved.gathered ? `, gathering ${fresh.gathered} instead of ${saved.gathered}` : ""
+		}.`;
+	if (reason === "documents")
+		return `Better route found: gather ${fresh.gathered} instead of ${saved.gathered}, same ${usd(fresh.cashCents)}.`;
+	return `Better route found: same cost and gathering, ${(fresh.tarCoinsLeft - saved.tarCoinsLeft).toLocaleString()} more TarCoins left.`;
+}
+
+/** Shown above the saved plan when a fresh route pays less, gathers fewer documents or leaves more TarCoins. */
+export function BetterRouteBanner() {
+	const { betterRoute, reviewBetterRoute, dismissBetterRoute } = useBattlePassPlanContext();
+	if (!betterRoute) return null;
+	return (
+		<p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-brand/10 px-4 py-2.5 text-sm">
+			<Sparkles className="size-4 shrink-0 text-brand" aria-hidden />
+			<span className="min-w-0 flex-1">{betterRouteText(betterRoute)}</span>
+			<span className="flex gap-1">
+				<button type="button" onClick={reviewBetterRoute} className={cn(flatField, liftedSelected, "h-8 font-medium")}>
+					Review
+				</button>
+				<button type="button" onClick={dismissBetterRoute} className={cn(flatField, "h-8 text-muted-foreground")}>
+					Dismiss
+				</button>
+			</span>
+		</p>
+	);
+}
 
 /** Compact read-out of the saved plan being followed, with a way back to configuring. */
 export function SavedPlanSummary() {

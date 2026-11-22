@@ -34,6 +34,7 @@ import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
+import { findBetterRoute } from "./lib/better-route-model";
 import { fundingClaims, priceRoutes } from "./lib/route-options-model";
 import { alternateEntries, baseEntry, routeEntryAt, type RouteEntry } from "./lib/alternate-entries-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -46,6 +47,7 @@ import {
 	destinationInput,
 	lockedRouteStatus,
 	parseSavedRoute,
+	routeHintKey,
 	savedRouteKey,
 	updateSavedRoute,
 	type RouteSettings,
@@ -605,6 +607,58 @@ export function useBattlePassPlan(
 					: activeCandidate > 0
 						? breakpoints.findLast((point) => point.gathered <= alternateTarget)
 						: recommended));
+	// While a saved plan replays, solve its configuration afresh in the background
+	// and offer it only when it pays less, gathers fewer documents for the same
+	// cash, or leaves more TarCoins. Each input change replaces the running solve.
+	const freshRequest = useMemo(() => {
+		if (!locked || !lockedRoute) return null;
+		const owner = locked.claims[0]?.profileKey;
+		return buildDocumentRouteModel({
+			...input,
+			...destinationInput(locked.destination, locked.buyAll, stored.goals),
+			profiles: locked.allProfiles ? input.profiles : input.profiles.filter((profile) => profile.key === owner),
+			useClassified: locked.useClassified,
+		});
+	}, [locked, lockedRoute, input, stored.goals]);
+	const freshSolved = useDocumentRoute(freshRequest ?? request, enabled && !!freshRequest);
+	const betterRoute = useMemo(() => {
+		if (!freshRequest || !lockedRoute || typeof freshSolved === "string") return null;
+		const mode = preferredMode === BALANCED_MODE ? null : preferredMode;
+		const fresh = preferOwners(freshRequest, freshSolved, (key) =>
+			key === mode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1,
+		);
+		return findBetterRoute(lockedRoute, fresh, lockedGathering, {
+			filters,
+			days: daysLeft,
+			wallet: startingTarCoins,
+			allowSpecial,
+			reserve,
+		});
+	}, [
+		freshRequest,
+		freshSolved,
+		lockedRoute,
+		lockedGathering,
+		preferredMode,
+		gatheringFilters,
+		filters,
+		daysLeft,
+		startingTarCoins,
+		allowSpecial,
+		reserve,
+	]);
+	// A dismissed suggestion stays hidden until the saved plan, inputs or suggestion change.
+	const [dismissedHint, writeDismissedHint] = useStoredProfitValue(routeHintKey(seasonId));
+	const betterRouteSignature = betterRoute
+		? JSON.stringify([
+				locked?.savedAt,
+				input.profiles.map((profile) => profile.inventory),
+				input.classified,
+				startingTarCoins,
+				betterRoute.fresh,
+			])
+		: null;
+	const shownBetterRoute = betterRoute && betterRouteSignature !== dismissedHint ? betterRoute : null;
 	const first = breakpoints[0];
 	const adoptRoute = (columns: RouteColumns | null) => setAdopted({ request, columns });
 	/** Adopt the entry's route and save its gathered count as the target together. */
@@ -708,6 +762,8 @@ export function useBattlePassPlan(
 	]);
 	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
 
+	/** Classified documents the route may spend before buying any. */
+	const ownedClassified = useClassified ? stored.classified : 0;
 	const flow = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
 		try {
@@ -719,13 +775,23 @@ export function useBattlePassPlan(
 					shownInput.days,
 					shownInput.reserve,
 				);
-				return purchaseFlow(selected.plan, scenario.claims, shownInput.startingTarCoins, scenario.gatheredByClaim);
+				return purchaseFlow(
+					selected.plan,
+					scenario.claims,
+					shownInput.startingTarCoins,
+					scenario.gatheredByClaim,
+					ownedClassified,
+				);
 			}
-			return purchaseFlow(funding.plan, funding.claims, startingTarCoins);
+			const claims = funding.claims.map((claim, index) => ({
+				...claim,
+				classifiedUsed: route.claims[index]?.classifiedUsed ?? 0,
+			}));
+			return purchaseFlow(funding.plan, claims, startingTarCoins, [], ownedClassified);
 		} catch {
 			return null;
 		}
-	}, [route, funding, selected, shownInput, startingTarCoins]);
+	}, [route, funding, selected, shownInput, startingTarCoins, ownedClassified]);
 	/** What is left after the whole route at the gathering target, with the recommended purchase. */
 	const leftover = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
@@ -1110,6 +1176,20 @@ export function useBattlePassPlan(
 		/** Reconfiguring ended on exactly the saved plan: closing writes nothing. */
 		unchanged,
 		savePlan,
+		/** A fresh route that beats the saved plan, or null. */
+		betterRoute: shownBetterRoute,
+		/** Reconfigure at the better route's gathering target. */
+		reviewBetterRoute: () => {
+			if (!shownBetterRoute || !saved.locked) return;
+			const { destination, buyAll, allProfiles } = saved.locked;
+			setSetting({ destination, buyAll, allProfiles });
+			inventory.setPreference("useClassified", saved.locked.useClassified);
+			settings.setGatheringTarget(shownBetterRoute.target);
+			setReconfiguring(true);
+		},
+		dismissBetterRoute: () => {
+			if (betterRouteSignature) writeDismissedHint(() => betterRouteSignature);
+		},
 		/** Edit the configuration, starting from the saved plan's settings. */
 		reconfigure: () => {
 			if (saved.locked) {

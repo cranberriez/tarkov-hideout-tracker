@@ -1,27 +1,22 @@
 "use client";
 
-import { useBattlePassData } from "../BattlePassSeason";
 import type { useDocumentInventory } from "../useDocumentInventory";
 import { CALCULATING_ROUTE } from "../useDocumentRoute";
 import { Toggle } from "./ui/Toggle";
-import { DocumentIcon } from "./ui/DocumentIcon";
-import { documentDisplayName } from "../lib/battle-pass-display";
-import { CircleAlert, CircleCheck, Layers3, ListOrdered, LoaderCircle } from "lucide-react";
+import { CircleAlert, CircleCheck, Layers3, LoaderCircle } from "lucide-react";
 import { RouteSummary } from "./RouteSummary";
-import { useBattlePassPlanContext, type PlannedRoute } from "../useBattlePassPlan";
+import { useBattlePassPlanContext } from "../useBattlePassPlan";
 import { FundingInputs, RouteFundingPanel } from "./RouteFundingPanel";
+import { OptimizerInfo } from "./OptimizerInfo";
 import { StepPlan } from "./StepPlan";
 import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
 import { DestinationPicker } from "./DestinationPicker";
-import { SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
-import { Disclosure } from "./ui/Disclosure";
+import { BetterRouteBanner, SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
-import { fieldLabel, syncValue } from "./ui/field";
-
-type Route = PlannedRoute;
+import { fieldLabel } from "./ui/field";
 
 export function DocumentRoutePanel({
 	inventory,
@@ -32,7 +27,6 @@ export function DocumentRoutePanel({
 	enabled: boolean;
 	onEnabledChange: (enabled: boolean) => void;
 }) {
-	const { documents } = useBattlePassData();
 	const {
 		result,
 		route: shownRoute,
@@ -66,12 +60,16 @@ export function DocumentRoutePanel({
 					<Layers3 className="size-5 text-brand" aria-hidden />
 					Docs breakdown
 				</h2>
-				<Toggle indicator className="h-9 text-sm" checked={enabled} onChange={onEnabledChange}>
-					Optimizer
-				</Toggle>
+				<div className="flex items-center gap-1">
+					<OptimizerInfo />
+					<Toggle indicator className="h-9 text-sm" checked={enabled} onChange={onEnabledChange}>
+						Optimizer
+					</Toggle>
+				</div>
 			</div>
 			{enabled ? (
 				<>
+					<BetterRouteBanner />
 					<section
 						aria-labelledby="route-config-heading"
 						className={cn(
@@ -155,9 +153,8 @@ export function DocumentRoutePanel({
 						<div aria-busy={syncing || undefined} data-syncing={syncing} className="group/sync space-y-4">
 							<RouteSummary />
 							<GatherDocuments />
-							<RouteResult result={shownRoute} documents={documents} mostRewardsNow={selectedGoal === "owned"} />
 							<RouteFundingPanel />
-							<StepPlan />
+							<StepPlan mostRewardsNow={selectedGoal === "owned"} />
 						</div>
 					) : (
 						<RouteSkeleton
@@ -183,102 +180,6 @@ export function DocumentRoutePanel({
 				</div>
 			)}
 		</section>
-	);
-}
-
-function RouteResult({
-	result,
-	documents,
-	mostRewardsNow,
-}: {
-	result: Route;
-	documents: ReturnType<typeof useBattlePassData>["documents"];
-	mostRewardsNow: boolean;
-}) {
-	const { claimProfileLabel } = useBattlePassPlanContext();
-	const name = (key: string) => documentDisplayName(documents.find((doc) => doc.key === key)?.name ?? key);
-	return (
-		<Disclosure
-			title="Claim order"
-			icon={<ListOrdered className="size-4 text-brand" aria-hidden />}
-			meta={
-				<>
-					{result.claims.length} {result.claims.length === 1 ? "reward" : "rewards"}
-					{result.claims.length > 0 && <>, {result.possibleNow} ready now</>}
-				</>
-			}
-		>
-			{result.claims.length === 0 ? (
-				<p className="text-sm text-muted-foreground">
-					{mostRewardsNow
-						? "No further rewards are affordable with the selected inventories."
-						: "Destination already reached."}
-				</p>
-			) : (
-				<div className={cn("max-h-[60vh] overflow-auto rounded-md", syncValue)}>
-					<table className="w-full text-left text-sm">
-						<thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-							<tr>
-								<th className="px-3 py-2 font-medium">Reward</th>
-								<th className="px-3 py-2 font-medium">Profile</th>
-								<th className="px-3 py-2 font-medium">
-									Documents <span className="whitespace-nowrap font-normal">(owned / needed)</span>
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							{result.claims.map((claim, index) => (
-								<tr key={claim.rewardId} className="odd:bg-surface-raised/25">
-									<td className="px-3 py-2.5 align-top">
-										<span className="flex gap-2">
-											<span className="w-5 shrink-0 text-right tabular-nums text-muted-foreground">{index + 1}</span>
-											<span>
-												{result.selected.find((tile) => tile.id === claim.rewardId)?.displayName}
-												<span className="flex gap-3 text-xs text-muted-foreground">
-													<span>Page {claim.page}</span>
-													{claim.possibleNow ? (
-														<span className="text-success">Ready</span>
-													) : (
-														<span>{claim.additionalClassified > 0 ? "Missing documents" : "Page locked"}</span>
-													)}
-												</span>
-											</span>
-										</span>
-									</td>
-									<td className="px-3 py-2.5 align-top font-medium">{claimProfileLabel(claim)}</td>
-									<td className="px-3 py-2.5 align-top">
-										<ul className="flex flex-wrap gap-x-4 gap-y-2">
-											{Object.entries(claim.cost).map(([key, amount]) => (
-												<li
-													key={key}
-													className="inline-flex items-center gap-0.5 whitespace-nowrap"
-													aria-label={`${name(key)}: ${claim.ordinaryUsed[key] ?? 0} of ${amount}`}
-													title={name(key)}
-												>
-													<DocumentIcon documentKey={key} className="size-6" />
-													<span className="tabular-nums">
-														<span className="font-semibold">{claim.ordinaryUsed[key] ?? 0}</span>
-														<span className="text-muted-foreground">/{amount}</span>
-													</span>
-												</li>
-											))}
-										</ul>
-										{claim.classifiedUsed > 0 && (
-											<span className="text-xs text-classified">{claim.classifiedUsed} covered by classified</span>
-										)}
-										{claim.additionalClassified > 0 && (
-											<span className="block text-xs text-warning">
-												{claim.additionalClassified} additional classified needed
-											</span>
-										)}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
-		</Disclosure>
 	);
 }
 

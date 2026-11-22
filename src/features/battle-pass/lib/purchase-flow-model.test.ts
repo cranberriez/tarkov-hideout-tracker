@@ -60,6 +60,7 @@ test("buys TarCoins just in time, never before the funding plan, and ends on its
 						assert.ok(bought <= plannedBefore[step.from - 1], "classified bought earlier than planned");
 						wallet += step.rewardTarCoins;
 					}
+					assert.equal(step.tarCoins, wallet, "TarCoin balance after the step");
 				});
 				assert.equal(wallet, plan.balanceTarCoins);
 			}
