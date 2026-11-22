@@ -1,4 +1,5 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { attachDatabasePool } from "@vercel/functions";
 import { Pool } from "pg";
 import { postgresSchema } from "./schema";
 import { enableQueryLogging } from "./query-logging";
@@ -26,6 +27,14 @@ function createPool(): Pool {
 		connectionTimeoutMillis: 10_000,
 		statement_timeout: statementTimeout,
 	});
+	// An idle client dropped by the server (Neon pooler, suspended function) emits `error` on the pool.
+	// Unhandled, that event crashes the process and fails unrelated in-flight requests; pg already
+	// discards the broken client, so log only the message (the error object includes connection details).
+	pool.on("error", (error) => {
+		console.error("[postgres] Idle client error:", error.message);
+	});
+	// On Vercel, keeps the instance alive long enough to close idle clients before suspension. No-op elsewhere.
+	attachDatabasePool(pool);
 	enableQueryLogging(pool);
 	return pool;
 }
