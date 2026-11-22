@@ -6,8 +6,13 @@ type DocumentPack = FundingPlan["steps"][number]["documentPacks"][number];
 type GatherProfile = { profileKey: string; profileLabel: string; documents: GatheringQuantity[] };
 /** Balances held after a step: TarCoins and classified documents (owned and bought). */
 type Balance = { tarCoins: number; classified: number };
-/** One claim in a run: classified documents it spends (owned and bought) and reward TarCoins. */
-export type FlowClaim = Balance & { claim: number; classifiedSpent: number; rewardTarCoins: number };
+/** One claim in a run: documents gathered for it, classified documents it spends (owned and bought) and reward TarCoins. */
+export type FlowClaim = Balance & {
+	claim: number;
+	gathered: GatheringQuantity[];
+	classifiedSpent: number;
+	rewardTarCoins: number;
+};
 
 export type FlowStep = Balance &
 	(
@@ -141,6 +146,7 @@ export function purchaseFlow(
 		run.items.push({
 			...balance(),
 			claim: index + 1,
+			gathered,
 			classifiedSpent: used + claim.additionalClassified,
 			rewardTarCoins: claim.tarCoins,
 		});
