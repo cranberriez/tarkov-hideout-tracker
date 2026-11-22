@@ -88,9 +88,10 @@ hit a function. That HTML is `private` because it sits behind a User-Agent rewri
 The [image route](../src/app/og/[season]/[code]/route.tsx) `/og/<season>/<code>?v=<PREVIEW_VERSION>`
 runs `canonicalBuild` first. Non-canonical, oversized or malformed codes and stale versions 308 to
 the canonical or generic (`_`) URL without rendering. Each canonical image and format renders once
-([card](../src/features/seasons/BuildPreviewCard.tsx), sized for the roughly 3× shrink platforms
-apply: a large Net figure and an icon-first grid of only the selected modifiers that fills the canvas
-and drops names when picks are many. It uses the bundled default font, and icons are converted from
+([card](../src/features/seasons/BuildPreviewCard.tsx), mirroring the in-app screenshot sheet:
+selected positives and negatives side by side with their totals, as tinted icon/name/points cards
+without effect text, sized for the roughly 3× shrink platforms apply and gaining columns when picks
+are many. It uses the bundled default font, and icons are converted from
 the traced WebP files to PNG with sharp, since satori can't decode WebP). Discordbot gets the 4:3
 `&f=tall` card, because Discord keeps aspect ratio; others get 1.91:1. It is
 served with `immutable` `Cache-Control`, `CDN-Cache-Control` and `Vercel-CDN-Cache-Control`. Bump
