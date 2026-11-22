@@ -2,6 +2,8 @@ import type { PassPage } from "./battle-pass-model";
 import type { DocumentRouteInput } from "./document-route-model";
 
 export const savedRouteKey = (seasonId: string) => `tarkov-battle-pass-route-${seasonId}-v1`;
+/** Per-season device key holding the dismissed better-route suggestion's signature. */
+export const routeHintKey = (seasonId: string) => `tarkov-battle-pass-route-hint-${seasonId}-v1`;
 
 /** Route configuration choices, remembered per season across reloads. */
 export interface RouteSettings {

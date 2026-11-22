@@ -12,7 +12,7 @@ import { GatherDocuments } from "./GatherDocuments";
 import { GatheringAdvanced, ModePreference } from "./ModePreference";
 import { GatheringTargetPicker } from "./GatheringTargetPicker";
 import { DestinationPicker } from "./DestinationPicker";
-import { SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
+import { BetterRouteBanner, SavePlanBar, SavedPlanSummary } from "./SavedPlanSummary";
 import { Segmented } from "./ui/Segmented";
 import { cn } from "@/lib/utils";
 import { fieldLabel } from "./ui/field";
@@ -65,6 +65,7 @@ export function DocumentRoutePanel({
 			</div>
 			{enabled ? (
 				<>
+					<BetterRouteBanner />
 					<section
 						aria-labelledby="route-config-heading"
 						className={cn(
