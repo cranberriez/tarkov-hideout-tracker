@@ -27,13 +27,16 @@ import {
 	type cashFreeGatheringPlan,
 	type GatheringBreakpoint,
 	type GatheringFilters,
+	type RestrictedGathering,
 	type SavingsRoute,
 } from "./lib/gathering-savings-model";
+import type { PurchaseMode } from "./lib/funding-settings-model";
 import { BALANCED_MODE, preferOwners } from "./lib/owner-preference-model";
 import { applyClaims, plannedSpend, type ClaimRow } from "./lib/claim-deduction-model";
 import type { Costs } from "./lib/battle-pass-model";
 import { planNeeds } from "./lib/plan-needs-model";
 import { purchaseFlow } from "./lib/purchase-flow-model";
+import { findBetterRoute } from "./lib/better-route-model";
 import { fundingClaims, priceRoutes } from "./lib/route-options-model";
 import { alternateEntries, baseEntry, routeEntryAt, type RouteEntry } from "./lib/alternate-entries-model";
 import { useUserStore } from "@/lib/stores/useUserStore";
@@ -46,6 +49,7 @@ import {
 	destinationInput,
 	lockedRouteStatus,
 	parseSavedRoute,
+	routeHintKey,
 	savedRouteKey,
 	updateSavedRoute,
 	type RouteSettings,
@@ -70,11 +74,17 @@ interface GatheringInput {
 	reserve: number;
 	/** Days left in the season: no mode gathers beyond it. */
 	days: number;
+	purchases: PurchaseMode;
 }
 interface GatheringResult {
 	input: GatheringInput;
 	breakpoints?: GatheringBreakpoint[];
 	cashFree?: CashFreePlan;
+	/** The forced gathering while purchases are restricted. */
+	restricted?: RestrictedGathering;
+	/** With cash allowed: after the cash breakpoints, each amount where fewer TarCoins buy classified, up to
+	 * gathering everything; starts at no gathering when there are no breakpoints. Uncapped by the season. */
+	steps?: GatheringBreakpoint[];
 	error?: string;
 }
 
@@ -191,7 +201,11 @@ export function useBattlePassPlan(
 	const seasonalAvailable = useUserStore((state) => !!state.seasonalProfiles[seasonId]);
 	const { stored } = useBattlePassSave();
 	const settings = useFundingSettings();
-	const { startingTarCoins, allowSpecial, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget } = settings;
+	const { startingTarCoins, preferredMode, gatheringFilters, dailyHeadroom, gatheringTarget, purchases } = settings;
+	// The one-time offer is a cash purchase.
+	const allowSpecial = settings.allowSpecial && purchases === "cash";
+	/** Buying is restricted, so the gathering is fixed rather than chosen. */
+	const restrictedPurchases = purchases !== "cash";
 	const daysLeft = useSeasonDaysLeft(getSeason(seasonId).endsAt);
 
 	// Route settings and the saved plan, per season and shared by every profile.
@@ -520,8 +534,9 @@ export function useBattlePassPlan(
 				? 0
 				: alternatives.findIndex((alternative) => alternative.columns === adopted.columns) + 1 || undefined
 			: undefined;
-	/** Route options index of the active route: 0 is the fewest-documents route. */
-	const activeCandidate = adoptedCandidate ?? cheapest?.index ?? 0;
+	/** Route options index of the active route: 0 is the fewest-documents route.
+	 * Without cash, the cheapest-checkout pick does not apply: keep the fewest documents. */
+	const activeCandidate = adoptedCandidate ?? (restrictedPurchases ? 0 : (cheapest?.index ?? 0));
 	const adoptedIndex = activeCandidate - 1;
 	/** The active route, or a message while it cannot be shown. */
 	const result: Route | string = locked
@@ -556,16 +571,24 @@ export function useBattlePassPlan(
 	// Gathering breakpoints and cash-free plan (worker). The previous answer
 	// stays on screen while the worker recalculates.
 	const gatheringInput = useMemo(
-		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve, days: daysLeft } : null),
-		[route, startingTarCoins, allowSpecial, filters, reserve, daysLeft],
+		() => (route ? { route, startingTarCoins, allowSpecial, filters, reserve, days: daysLeft, purchases } : null),
+		[route, startingTarCoins, allowSpecial, filters, reserve, daysLeft, purchases],
 	);
 	const { result: shown, current } = useGatheringWorker(gatheringInput);
+	/** The forced gathering, only while the shown answer is for the current purchase setting. */
+	const restricted = shown?.input.purchases === purchases ? (shown?.restricted ?? null) : null;
+	/** The buy-nothing entry offered after the cash breakpoints. */
+	const steps = useMemo(
+		() => (!restrictedPurchases && shown?.input.purchases === "cash" ? (shown?.steps ?? []) : []),
+		[restrictedPurchases, shown],
+	);
 	const breakpoints = useMemo(() => shown?.breakpoints ?? [], [shown]);
 	const recommended = recommendedBreakpoint(breakpoints);
 	// Remember the fewest-documents route's breakpoints for pricing every route.
 	if (
 		!locked &&
 		current &&
+		!restrictedPurchases &&
 		shown?.breakpoints &&
 		shown.input.route === preferredBase &&
 		baseGathering?.route !== preferredBase
@@ -579,7 +602,19 @@ export function useBattlePassPlan(
 	// Breakpoints only gather what fits before the season ends. A target that
 	// needs more days is kept as saved and gathers the most that fits (the last
 	// breakpoint); the rest is bought.
-	const shownInput = shown?.input;
+	// A TarCoin step is chosen by saving its count; a saved plan keeps the largest step its remainder still covers.
+	const lastBreakpoint = breakpoints.at(-1)?.gathered ?? 0;
+	const stepPoint = locked
+		? lockedGathering > lastBreakpoint
+			? steps.findLast((step) => step.gathered > 0 && step.gathered <= lockedGathering)
+			: undefined
+		: steps.find((step) => step.gathered > 0 && step.gathered === gatheringTarget);
+	// Restricted purchases and TarCoin steps are replayed uncapped, as they were solved, not at the season cap.
+	const uncapped = !!restricted || !!stepPoint;
+	const shownInput = useMemo(
+		() => (shown?.input && uncapped ? { ...shown.input, days: Infinity } : shown?.input),
+		[shown, uncapped],
+	);
 	const wanted = locked ? lockedGathering : (gatheringTarget ?? 0);
 	const wantedPoint = breakpoints.find((point) => point.gathered === wanted);
 	const wantedDays = useMemo(
@@ -589,22 +624,82 @@ export function useBattlePassPlan(
 				: 0,
 		[shownInput, wanted],
 	);
-	const pastSeason = wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
+	const pastSeason =
+		!restrictedPurchases && !stepPoint && wanted > 0 && !wantedPoint && !!breakpoints.length && wantedDays > daysLeft;
 	// A saved target that no longer exists falls back to the recommended breakpoint; 0 means no gathering.
 	// On an alternate route the target is usually another route's count, and the
 	// largest breakpoint within it prices the same as gathering exactly that many.
 	// Without a saved target the default route keeps the amount it was compared at.
 	const alternateTarget = gatheringTarget ?? comparedGathering ?? 0;
-	const selected = locked
-		? breakpoints.findLast((point) => point.gathered <= lockedGathering)
-		: gatheringTarget === 0
-			? undefined
-			: (wantedPoint ??
-				(pastSeason
-					? breakpoints.at(-1)
-					: activeCandidate > 0
-						? breakpoints.findLast((point) => point.gathered <= alternateTarget)
-						: recommended));
+	// Without cash, a saved target picks its option when that option needs no cash.
+	const restrictedPoint =
+		restricted?.options?.find((option) => option.gathered === wanted && option.cashCents === 0) ?? restricted?.point;
+	const selected = restrictedPurchases
+		? restrictedPoint
+		: stepPoint
+			? stepPoint
+			: locked
+				? breakpoints.findLast((point) => point.gathered <= lockedGathering)
+				: gatheringTarget === 0
+					? undefined
+					: (wantedPoint ??
+						(pastSeason
+							? breakpoints.at(-1)
+							: activeCandidate > 0
+								? breakpoints.findLast((point) => point.gathered <= alternateTarget)
+								: recommended));
+	// While a saved plan replays, solve its configuration afresh in the background
+	// and offer it only when it pays less, gathers fewer documents for the same
+	// cash, or leaves more TarCoins. Each input change replaces the running solve.
+	const freshRequest = useMemo(() => {
+		if (!locked || !lockedRoute) return null;
+		const owner = locked.claims[0]?.profileKey;
+		return buildDocumentRouteModel({
+			...input,
+			...destinationInput(locked.destination, locked.buyAll, stored.goals),
+			profiles: locked.allProfiles ? input.profiles : input.profiles.filter((profile) => profile.key === owner),
+			useClassified: locked.useClassified,
+		});
+	}, [locked, lockedRoute, input, stored.goals]);
+	const freshSolved = useDocumentRoute(freshRequest ?? request, enabled && !!freshRequest);
+	const betterRoute = useMemo(() => {
+		if (!freshRequest || !lockedRoute || typeof freshSolved === "string") return null;
+		const mode = preferredMode === BALANCED_MODE ? null : preferredMode;
+		const fresh = preferOwners(freshRequest, freshSolved, (key) =>
+			key === mode ? 0 : gatheringFilters[key]?.disabled ? 2 : 1,
+		);
+		return findBetterRoute(lockedRoute, fresh, lockedGathering, {
+			filters,
+			days: daysLeft,
+			wallet: startingTarCoins,
+			allowSpecial,
+			reserve,
+		});
+	}, [
+		freshRequest,
+		freshSolved,
+		lockedRoute,
+		lockedGathering,
+		preferredMode,
+		gatheringFilters,
+		filters,
+		daysLeft,
+		startingTarCoins,
+		allowSpecial,
+		reserve,
+	]);
+	// A dismissed suggestion stays hidden until the saved plan, inputs or suggestion change.
+	const [dismissedHint, writeDismissedHint] = useStoredProfitValue(routeHintKey(seasonId));
+	const betterRouteSignature = betterRoute
+		? JSON.stringify([
+				locked?.savedAt,
+				input.profiles.map((profile) => profile.inventory),
+				input.classified,
+				startingTarCoins,
+				betterRoute.fresh,
+			])
+		: null;
+	const shownBetterRoute = betterRoute && betterRouteSignature !== dismissedHint ? betterRoute : null;
 	const first = breakpoints[0];
 	const adoptRoute = (columns: RouteColumns | null) => setAdopted({ request, columns });
 	/** Adopt the entry's route and save its gathered count as the target together. */
@@ -646,6 +741,23 @@ export function useBattlePassPlan(
 		select: settings.setGatheringTarget,
 		/** The saved target when it needs more days than the season has left, else null. */
 		pastSeason: pastSeason ? { gathered: wanted, days: wantedDays } : null,
+		/** What the plan may buy; anything but "cash" fixes the gathering. */
+		purchases,
+		/** The forced gathering while purchases are restricted: its days and the
+		 * classified still bought because gathering cannot cover them; null otherwise or while solving. */
+		restricted: restricted
+			? {
+					days: restrictedPoint!.parallelWindows,
+					blocked: restricted.blocked,
+					/** Without cash: no gathering up to gathering everything, each where fewer TarCoins buy classified. */
+					options: restricted.options,
+				}
+			: null,
+		/** With cash allowed, the entry after the breakpoints that gathers everything and buys nothing; null when none. */
+		/** After the cash breakpoints: amounts where fewer TarCoins buy classified, up to gathering everything. */
+		steps,
+		/** The selected target is a TarCoin step, gathered without the season cap. */
+		stepSelected: !!stepPoint,
 	};
 	/** Season-end limits on gathering. */
 	const deadline = {
@@ -653,6 +765,8 @@ export function useBattlePassPlan(
 		daysLeft,
 		/** The fastest cash-free finish's days when it ends after the season, else null. */
 		cashFreeDays: gathering.cashFree && gathering.cashFree.days > daysLeft ? gathering.cashFree.days : null,
+		/** The uncapped gathering's days (restricted purchases or a TarCoin step) when it ends after the season, else null. */
+		restrictedDays: uncapped && selected && selected.parallelWindows > daysLeft ? selected.parallelWindows : null,
 	};
 
 	// Step-by-step flow for the gathering target. A breakpoint carries its own
@@ -708,6 +822,8 @@ export function useBattlePassPlan(
 	]);
 	const modeCashFree = useModeCashFree(modePreviews, route, startingTarCoins, filters, reserve);
 
+	/** Classified documents the route may spend before buying any. */
+	const ownedClassified = useClassified ? stored.classified : 0;
 	const flow = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
 		try {
@@ -719,13 +835,23 @@ export function useBattlePassPlan(
 					shownInput.days,
 					shownInput.reserve,
 				);
-				return purchaseFlow(selected.plan, scenario.claims, shownInput.startingTarCoins, scenario.gatheredByClaim);
+				return purchaseFlow(
+					selected.plan,
+					scenario.claims,
+					shownInput.startingTarCoins,
+					scenario.gatheredByClaim,
+					ownedClassified,
+				);
 			}
-			return purchaseFlow(funding.plan, funding.claims, startingTarCoins);
+			const claims = funding.claims.map((claim, index) => ({
+				...claim,
+				classifiedUsed: route.claims[index]?.classifiedUsed ?? 0,
+			}));
+			return purchaseFlow(funding.plan, claims, startingTarCoins, [], ownedClassified);
 		} catch {
 			return null;
 		}
-	}, [route, funding, selected, shownInput, startingTarCoins]);
+	}, [route, funding, selected, shownInput, startingTarCoins, ownedClassified]);
 	/** What is left after the whole route at the gathering target, with the recommended purchase. */
 	const leftover = useMemo(() => {
 		if (!route || typeof funding !== "object" || !funding) return null;
@@ -795,6 +921,8 @@ export function useBattlePassPlan(
 	// Small TarCoin top-ups (farmed in PVP or the seasonal mode) that lower the
 	// cash paid for the chosen gathering target.
 	const farming = useMemo(() => {
+		// Farming TarCoins only lowers cash, which a restriction already rules out.
+		if (restrictedPurchases) return [];
 		try {
 			if (selected && shownInput)
 				return tarCoinFarmingSavings(
@@ -814,7 +942,7 @@ export function useBattlePassPlan(
 			// No hint without a purchase schedule.
 		}
 		return [];
-	}, [selected, shownInput, funding, startingTarCoins, allowSpecial]);
+	}, [restrictedPurchases, selected, shownInput, funding, startingTarCoins, allowSpecial]);
 	// Map choice: price the current gathering amount with other maps, on the
 	// route the breakpoints were solved for.
 	const mapTarget = selected?.gathered ?? 0;
@@ -1110,6 +1238,20 @@ export function useBattlePassPlan(
 		/** Reconfiguring ended on exactly the saved plan: closing writes nothing. */
 		unchanged,
 		savePlan,
+		/** A fresh route that beats the saved plan, or null. */
+		betterRoute: shownBetterRoute,
+		/** Reconfigure at the better route's gathering target. */
+		reviewBetterRoute: () => {
+			if (!shownBetterRoute || !saved.locked) return;
+			const { destination, buyAll, allProfiles } = saved.locked;
+			setSetting({ destination, buyAll, allProfiles });
+			inventory.setPreference("useClassified", saved.locked.useClassified);
+			settings.setGatheringTarget(shownBetterRoute.target);
+			setReconfiguring(true);
+		},
+		dismissBetterRoute: () => {
+			if (betterRouteSignature) writeDismissedHint(() => betterRouteSignature);
+		},
 		/** Edit the configuration, starting from the saved plan's settings. */
 		reconfigure: () => {
 			if (saved.locked) {

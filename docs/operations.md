@@ -381,6 +381,10 @@ summaries; --storage adds PostgreSQL relation sizes. Inspect
 [price store](../src/server/prices/price-store.ts) for the corresponding failures.
 Do not treat content_version as a restore point.
 
+Server render, route handler and action errors are logged by
+[instrumentation](../src/instrumentation.ts) as one `[server-error]` line with the
+route and digest; the digest matches the "Error reference" shown on error pages.
+
 Map/quest-content utilities remain independent: pnpm run pull-map-loot-categories, quest-series-candidates and quest-data-compare. See [maps](maps.md), [quests](quests.md)
 and [data layer](data-layer.md) for their source policies.
 

@@ -12,14 +12,39 @@ import { cn } from "@/lib/utils";
 const usd = (cents: number) =>
 	new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
-/** Wallet inputs live with the route configuration; the funding panel only reports results. */
+/** Purchase and wallet inputs live with the route configuration; the funding panel only reports results.
+ * Buying TarCoins needs buying classified, so each toggle carries the other along. */
 export function FundingInputs() {
 	const id = useId();
 	const { settings } = useBattlePassPlanContext();
 	const [balanceDraft, setBalanceDraft] = useState<string | null>(null);
+	const { purchases } = settings;
 	return (
 		<div className="flex flex-wrap items-end gap-2">
-			<label htmlFor={id} className={fieldLabel}>
+			<Toggle
+				indicator
+				className="h-9 text-sm"
+				checked={purchases !== "none"}
+				onChange={(value) => settings.setPurchases(value ? "tarcoins" : "none")}
+				title="Buy classified documents with TarCoins. Off: gather every missing document instead."
+			>
+				Buy classified
+			</Toggle>
+			<Toggle
+				indicator
+				className="h-9 text-sm"
+				checked={purchases === "cash"}
+				onChange={(value) => settings.setPurchases(value ? "cash" : "tarcoins")}
+				title="Buy TarCoins with cash. Off: only TarCoins you hold or earn from rewards buy classified documents."
+			>
+				Buy TarCoins
+			</Toggle>
+			{/* Unused inputs stay in place, disabled, so the row does not shift. */}
+			<label
+				htmlFor={id}
+				className={cn(fieldLabel, purchases === "none" && "opacity-40")}
+				title={purchases === "none" ? "Unused while buying classified is off." : undefined}
+			>
 				<span>
 					Starting TarCoins <TarCoin />
 				</span>
@@ -29,6 +54,7 @@ export function FundingInputs() {
 					min={0}
 					max={9999999}
 					step={1}
+					disabled={purchases === "none"}
 					value={balanceDraft ?? settings.startingTarCoins}
 					onChange={(event) => {
 						setBalanceDraft(event.target.value);
@@ -38,7 +64,13 @@ export function FundingInputs() {
 					className={cn(flatField, "w-32 tabular-nums")}
 				/>
 			</label>
-			<Toggle indicator className="h-9 text-sm" checked={settings.allowSpecial} onChange={settings.setAllowSpecial}>
+			<Toggle
+				indicator
+				className="h-9 text-sm"
+				checked={settings.allowSpecial}
+				onChange={settings.setAllowSpecial}
+				disabled={purchases !== "cash"}
+			>
 				One-time 2,000 <TarCoin /> offer ($9.99)
 			</Toggle>
 		</div>
@@ -47,7 +79,8 @@ export function FundingInputs() {
 
 export function RouteFundingPanel() {
 	const { route: baseRoute, funding: state, gathering, farming } = useBattlePassPlanContext();
-	if (!baseRoute || !state) return null;
+	// Without cash purchases there is nothing to fund; the Plan lists any TarCoin buys.
+	if (!baseRoute || !state || gathering.purchases !== "cash") return null;
 	// The chosen gathering target carries its own purchase schedule, priced on
 	// the route the gathering worker solved; without one, buy every missing document.
 	const point = gathering.selected;
